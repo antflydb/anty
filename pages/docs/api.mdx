@@ -1,0 +1,175 @@
+# API Reference
+
+The SearchAF API is organized around REST. Our API has predictable resource-oriented URLs, accepts JSON-encoded request bodies, returns JSON-encoded responses, and uses standard HTTP response codes and authentication.
+
+## Base URL
+
+```
+https://searchaf-api.antfly.io/api/v1
+```
+
+## Authentication
+
+The SearchAF API uses two forms of authentication:
+
+- **Bearer Tokens (JWT)**: For user-authenticated requests
+- **API Keys**: For project-specific programmatic access
+
+See [Authentication](/docs/authentication) for detailed information.
+
+## API Endpoints
+
+### Authentication
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/auth/oauth/{provider}/login` | Initiate OAuth login |
+| GET | `/auth/oauth/{provider}/callback` | OAuth callback handler |
+| POST | `/auth/refresh` | Refresh JWT token |
+
+### Users
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/users/me` | Get current user profile |
+| PATCH | `/users/me` | Update current user |
+| GET | `/users/me/oauth-providers` | List linked OAuth providers |
+
+### Organizations
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/organizations` | List organizations |
+| POST | `/organizations` | Create organization |
+| GET | `/organizations/{org_id}` | Get organization details |
+| PATCH | `/organizations/{org_id}` | Update organization |
+| DELETE | `/organizations/{org_id}` | Delete organization |
+| GET | `/organizations/{org_id}/members` | List organization members |
+| POST | `/organizations/{org_id}/members` | Invite member |
+| DELETE | `/organizations/{org_id}/members/{member_id}` | Remove member |
+
+### Projects
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/organizations/{org_id}/projects` | List projects |
+| POST | `/organizations/{org_id}/projects` | Create project |
+| GET | `/projects/{project_id}` | Get project details |
+| PATCH | `/projects/{project_id}` | Update project |
+| DELETE | `/projects/{project_id}` | Delete project |
+
+### API Keys
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/projects/{project_id}/api-keys` | List API keys |
+| POST | `/projects/{project_id}/api-keys` | Create API key |
+| DELETE | `/projects/{project_id}/api-keys/{key_id}` | Revoke API key |
+
+### Subscriptions
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/organizations/{org_id}/subscription` | Get subscription |
+| POST | `/organizations/{org_id}/subscription` | Create subscription |
+| PATCH | `/organizations/{org_id}/subscription` | Update subscription |
+| DELETE | `/organizations/{org_id}/subscription` | Cancel subscription |
+| POST | `/organizations/{org_id}/subscription/portal` | Create billing portal session |
+
+### Usage & Analytics
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/organizations/{org_id}/usage` | Get current usage |
+| GET | `/organizations/{org_id}/usage/history` | Get usage history |
+| GET | `/projects/{project_id}/usage` | Get project usage |
+
+### Audit Logs
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/organizations/{org_id}/audit-logs` | List audit logs |
+
+## Common Patterns
+
+### Pagination
+
+List endpoints support pagination using `offset` and `limit` parameters:
+
+```bash
+GET /organizations?offset=0&limit=20
+```
+
+Response includes pagination metadata:
+
+```json
+{
+  "data": [...],
+  "meta": {
+    "offset": 0,
+    "limit": 20,
+    "total": 100
+  }
+}
+```
+
+### Error Handling
+
+The API uses conventional HTTP response codes:
+
+- `200` - Success
+- `400` - Bad Request
+- `401` - Unauthorized
+- `402` - Payment Required
+- `403` - Forbidden
+- `404` - Not Found
+- `409` - Conflict
+
+Error responses follow the Problem Details (RFC 7807) format:
+
+```json
+{
+  "type": "https://searchaf-api.antfly.io/errors/validation-error",
+  "title": "Validation Error",
+  "status": 400,
+  "detail": "Email address is required",
+  "errors": [
+    {
+      "field": "email",
+      "message": "Email address is required"
+    }
+  ]
+}
+```
+
+## Rate Limiting
+
+API requests are rate-limited based on your subscription tier. Rate limit information is included in response headers:
+
+```
+X-RateLimit-Limit: 1000
+X-RateLimit-Remaining: 999
+X-RateLimit-Reset: 1640995200
+```
+
+## Webhooks
+
+SearchAF supports webhooks for real-time event notifications:
+
+- **Stripe Webhooks**: Billing and subscription events at `/webhooks/stripe`
+- **Shopify Webhooks**: App installation events at `/webhooks/shopify`
+
+See [Webhooks](/docs/webhooks) for configuration details.
+
+## SDKs and Libraries
+
+Official SDKs coming soon for:
+
+- JavaScript/TypeScript
+- Python
+- Ruby
+- PHP
+
+## OpenAPI Specification
+
+Download the complete [OpenAPI 3.0 specification](/openapi.yaml) for use with tools like Postman, Insomnia, or code generators.

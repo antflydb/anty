@@ -1,0 +1,9 @@
+{
+  "index": "Introduction",
+  "authentication": "Authentication",
+  "api": "API Reference",
+  "organizations": "Organizations",
+  "projects": "Projects",
+  "usage": "Usage & Analytics",
+  "webhooks": "Webhooks"
+}

@@ -1,0 +1,97 @@
+# Authentication
+
+SearchAF supports two authentication methods: OAuth 2.0 for user authentication and API keys for programmatic access.
+
+## OAuth 2.0 Authentication
+
+SearchAF supports OAuth authentication through the following providers:
+
+- **Google**
+- **GitHub**
+- **Shopify**
+
+### OAuth Flow
+
+1. Initiate OAuth login by redirecting to:
+   ```
+   GET /auth/oauth/{provider}/login?redirect_uri={your_redirect_uri}
+   ```
+
+2. User authenticates with the OAuth provider
+
+3. Provider redirects to SearchAF callback:
+   ```
+   GET /auth/oauth/{provider}/callback?code={auth_code}&state={state}
+   ```
+
+4. SearchAF returns JWT tokens:
+   ```json
+   {
+     "access_token": "eyJhbGc...",
+     "refresh_token": "eyJhbGc...",
+     "token_type": "Bearer",
+     "expires_in": 3600,
+     "user": {
+       "id": "550e8400-e29b-41d4-a716-446655440000",
+       "email": "user@example.com",
+       "display_name": "John Doe"
+     }
+   }
+   ```
+
+### Refreshing Tokens
+
+When your access token expires, use the refresh token to obtain a new one:
+
+```bash
+POST /auth/refresh
+Content-Type: application/json
+
+{
+  "refresh_token": "eyJhbGc..."
+}
+```
+
+## API Key Authentication
+
+For programmatic access to the SearchAF API, use API keys associated with your projects.
+
+### Creating an API Key
+
+1. Navigate to your project settings
+2. Click "Create API Key"
+3. Choose the key type:
+   - **Read-Only**: For querying data only
+   - **Read-Write**: For full access including mutations
+
+4. Store the key securely - it will only be shown once
+
+### Using API Keys
+
+Include your API key in the `X-API-Key` header:
+
+```bash
+curl https://searchaf-api.antfly.io/api/v1/projects/{project_id}/usage \
+  -H "X-API-Key: sk_live_abcdef123456..."
+```
+
+Or use Bearer authentication with JWT tokens:
+
+```bash
+curl https://searchaf-api.antfly.io/api/v1/users/me \
+  -H "Authorization: Bearer eyJhbGc..."
+```
+
+## Security Best Practices
+
+- **Never commit API keys** to version control
+- **Rotate keys regularly** for enhanced security
+- **Use read-only keys** when write access isn't needed
+- **Set expiration dates** on API keys when possible
+- **Use environment variables** to store sensitive credentials
+
+## Next Steps
+
+- [API Reference](/docs/api) - Explore all available endpoints
+- [Projects](/docs/projects) - Learn about project management
+- [Organizations](/docs/organizations) - Understand organization structure
