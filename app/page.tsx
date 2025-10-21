@@ -1,229 +1,194 @@
+'use client';
+
 import Link from "next/link";
+import Image from "next/image";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { ArrowRight, Search, Zap, Shield, Database, Code, TrendingUp } from "lucide-react";
+import { Announcement, AnnouncementTitle } from "@/components/ui/announcement";
+import { Header } from "@/components/layout/header";
+import { AnimatedHeroSection } from "@/components/ui/animated-hero-section";
+import { Search, Zap, Shield, Database, Code, TrendingUp, ArrowRight } from "lucide-react";
 
 export default function Home() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-14 items-center">
-          <div className="mr-4 flex">
-            <Link href="/" className="mr-6 flex items-center space-x-2">
-              <span className="font-bold text-xl">SearchAF</span>
-            </Link>
-            <nav className="flex items-center space-x-6 text-sm font-medium">
-              <Link href="/docs" className="transition-colors hover:text-foreground/80 text-foreground/60">
-                Documentation
-              </Link>
-              <Link href="/guides" className="transition-colors hover:text-foreground/80 text-foreground/60">
-                Guides
-              </Link>
-              <Link href="/blog" className="transition-colors hover:text-foreground/80 text-foreground/60">
-                Blog
-              </Link>
-            </nav>
-          </div>
-          <div className="flex flex-1 items-center justify-end space-x-2">
-            <Button variant="ghost" asChild>
-              <Link href="/docs">Get Started</Link>
-            </Button>
-          </div>
-        </div>
-      </header>
+      <Header />
+
+      {/* Announcement Bar - Below Header, Above H1 */}
+      <div className="w-full flex justify-center pt-16 pb-1">
+        <Announcement themed className="py-0 pl-2 pr-3">
+          <Link href="https://antfly.io" target="_blank" rel="noopener noreferrer">
+            <AnnouncementTitle className="text-muted-foreground hover:text-foreground transition-colors gap-2">
+              <div className="rounded-full bg-gray-100 p-1.5">
+                <Image
+                  src="/af-logo.svg"
+                  alt="Antfly Logo"
+                  width={16}
+                  height={16}
+                  className="h-4 w-4"
+                />
+              </div>
+              <span>Powered by antfly</span>
+            </AnnouncementTitle>
+          </Link>
+        </Announcement>
+      </div>
 
       {/* Hero Section */}
-      <section className="container flex flex-col items-center text-center py-24 space-y-8">
-        <Badge variant="secondary" className="mb-4">
-          Powered by AntflyDB
-        </Badge>
-        <h1 className="text-4xl font-bold tracking-tight sm:text-6xl">
-          Product Search & Discovery
-          <br />
-          <span className="text-primary">Built for the AI Era</span>
-        </h1>
-        <p className="max-w-[42rem] leading-normal text-muted-foreground sm:text-xl sm:leading-8">
-          SearchAF delivers cutting-edge product search and discovery capabilities on top of AntflyDB,
-          a distributed vector database combining proven distributed systems with AI-powered semantic search.
-        </p>
-        <div className="flex gap-4">
-          <Button size="lg" asChild>
-            <Link href="/docs">
-              Get Started <ArrowRight className="ml-2 h-4 w-4" />
-            </Link>
-          </Button>
-          <Button size="lg" variant="outline" asChild>
-            <Link href="/docs/api">API Reference</Link>
-          </Button>
-        </div>
+      <section className="container py-32">
+        <AnimatedHeroSection
+          heading="Build better search, designed for the AI era."
+          description="Semantic search, vector embeddings, and traditional search in one unified platform. Built for AI from day one. Now available for Shopify, for free."
+          button={
+            <Button size="lg" className="rounded-lg font-bold bg-[#041D2B] hover:bg-[#9A94FF] text-white gap-2 px-10 text-lg h-[65px]">
+              <span>Add SearchAF to</span>
+              <Image
+                src="/shopify-logo-white.svg"
+                alt="Shopify"
+                width={114}
+                height={28}
+                className="h-7 ml-2 w-auto"
+              />
+            </Button>
+          }
+          subtext="Free & paid plans available. No credit card required."
+        />
       </section>
 
       {/* Features Section */}
       <section className="container py-24">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold tracking-tight sm:text-4xl mb-4">
-            Why Choose SearchAF?
+            Why SearchAF?
           </h2>
           <p className="text-muted-foreground max-w-[42rem] mx-auto">
             Enterprise-grade search infrastructure with AI-powered capabilities
           </p>
         </div>
 
-        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-          <Card>
-            <CardHeader>
-              <Search className="h-10 w-10 mb-2 text-primary" />
-              <CardTitle>Semantic Search</CardTitle>
-              <CardDescription>
+        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3 max-w-[1100px] mx-auto">
+          <Card className="flex flex-col min-h-[225px]">
+            <CardHeader className="px-8 py-4 flex-1 flex flex-col justify-between">
+              <div>
+                <Search className="h-6 w-6 mb-4 text-primary" />
+                <CardTitle className="text-lg font-bold mb-2">Semantic search</CardTitle>
+              </div>
+              <CardDescription className="text-muted-foreground">
                 AI-powered vector search that understands intent and context, not just keywords
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Leverage cutting-edge embedding models to deliver search results that truly match user intent.
-              </p>
-            </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <Zap className="h-10 w-10 mb-2 text-primary" />
-              <CardTitle>Lightning Fast</CardTitle>
-              <CardDescription>
-                Optimized for speed with sub-millisecond query performance at scale
+          <Card className="flex flex-col min-h-[225px]">
+            <CardHeader className="px-8 py-4 flex-1 flex flex-col justify-between">
+              <div>
+                <Zap className="h-6 w-6 mb-4 text-primary" />
+                <CardTitle className="text-lg font-bold mb-2">Lightning fast</CardTitle>
+              </div>
+              <CardDescription className="text-muted-foreground">
+                Sub-millisecond query performance with horizontal scalability
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Built on AntflyDB&apos;s distributed architecture for horizontal scalability and reliability.
-              </p>
-            </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <Shield className="h-10 w-10 mb-2 text-primary" />
-              <CardTitle>Enterprise Ready</CardTitle>
-              <CardDescription>
+          <Card className="flex flex-col min-h-[225px]">
+            <CardHeader className="px-8 py-4 flex-1 flex flex-col justify-between">
+              <div>
+                <Shield className="h-6 w-6 mb-4 text-primary" />
+                <CardTitle className="text-lg font-bold mb-2">Enterprise ready</CardTitle>
+              </div>
+              <CardDescription className="text-muted-foreground">
                 Production-grade infrastructure with enterprise security and compliance
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                OAuth integration, role-based access control, and comprehensive audit logging.
-              </p>
-            </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <Database className="h-10 w-10 mb-2 text-primary" />
-              <CardTitle>Vector Database</CardTitle>
-              <CardDescription>
-                Purpose-built for AI applications with hybrid search capabilities
+          <Card className="flex flex-col min-h-[225px]">
+            <CardHeader className="px-8 py-4 flex-1 flex flex-col justify-between">
+              <div>
+                <Database className="h-6 w-6 mb-4 text-primary" />
+                <CardTitle className="text-lg font-bold mb-2">Vector database</CardTitle>
+              </div>
+              <CardDescription className="text-muted-foreground">
+                Hybrid search combining traditional database features with vector search
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Combine traditional database features with advanced vector search in one platform.
-              </p>
-            </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <Code className="h-10 w-10 mb-2 text-primary" />
-              <CardTitle>Developer Friendly</CardTitle>
-              <CardDescription>
-                RESTful API with comprehensive SDKs and documentation
+          <Card className="flex flex-col min-h-[225px]">
+            <CardHeader className="px-8 py-4 flex-1 flex flex-col justify-between">
+              <div>
+                <Code className="h-6 w-6 mb-4 text-primary" />
+                <CardTitle className="text-lg font-bold mb-2">Developer friendly</CardTitle>
+              </div>
+              <CardDescription className="text-muted-foreground">
+                RESTful API with comprehensive SDKs and detailed documentation
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Get up and running in minutes with our intuitive API and detailed guides.
-              </p>
-            </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <TrendingUp className="h-10 w-10 mb-2 text-primary" />
-              <CardTitle>Usage Analytics</CardTitle>
-              <CardDescription>
+          <Card className="flex flex-col min-h-[225px]">
+            <CardHeader className="px-8 py-4 flex-1 flex flex-col justify-between">
+              <div>
+                <TrendingUp className="h-6 w-6 mb-4 text-primary" />
+                <CardTitle className="text-lg font-bold mb-2">Usage analytics</CardTitle>
+              </div>
+              <CardDescription className="text-muted-foreground">
                 Built-in analytics and monitoring for search performance insights
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Track usage metrics, monitor quotas, and optimize your search experience.
-              </p>
-            </CardContent>
           </Card>
-        </div>
-      </section>
-
-      {/* Platform Support */}
-      <section className="border-t bg-muted/50">
-        <div className="container py-24">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl mb-4">
-              Integrations
-            </h2>
-            <p className="text-muted-foreground max-w-[42rem] mx-auto">
-              Seamlessly integrate with your existing e-commerce platform
-            </p>
-          </div>
-
-          <div className="grid gap-6 md:grid-cols-3 max-w-3xl mx-auto">
-            <Card className="text-center">
-              <CardHeader>
-                <CardTitle>Shopify</CardTitle>
-                <CardDescription>
-                  Native Shopify app integration
-                </CardDescription>
-              </CardHeader>
-            </Card>
-
-            <Card className="text-center">
-              <CardHeader>
-                <CardTitle>WooCommerce</CardTitle>
-                <CardDescription>
-                  WordPress plugin for WooCommerce
-                </CardDescription>
-              </CardHeader>
-            </Card>
-
-            <Card className="text-center">
-              <CardHeader>
-                <CardTitle>Custom</CardTitle>
-                <CardDescription>
-                  RESTful API for any platform
-                </CardDescription>
-              </CardHeader>
-            </Card>
-          </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="container py-24">
-        <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-12 text-center">
-          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl mb-4">
-            Ready to Get Started?
+      <section className="container py-32">
+        <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-16 md:p-20 text-center">
+          <h2 className="text-4xl font-bold tracking-tight sm:text-5xl mb-6">
+            Ready to get started?
           </h2>
-          <p className="text-muted-foreground max-w-[42rem] mx-auto mb-8">
+          <p className="text-muted-foreground text-lg max-w-[42rem] mx-auto mb-10">
             Start building with SearchAF today. Check out our documentation and guides to begin.
           </p>
           <div className="flex gap-4 justify-center">
-            <Button size="lg" asChild>
-              <Link href="/docs">
-                Read the Docs <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
+            <Button size="lg" variant="outline" asChild className="rounded-lg">
+              <Link href="/docs">Read Docs</Link>
             </Button>
-            <Button size="lg" variant="outline" asChild>
-              <Link href="/guides">View Guides</Link>
+            <Button asChild className="rounded-lg gap-0 font-medium bg-[#041D2B] text-white border-0 p-0 overflow-hidden">
+              <motion.a
+                href="/signup"
+                className="flex items-center px-4 h-10"
+                initial="idle"
+                whileHover="hover"
+                variants={{
+                  idle: { backgroundColor: '#041D2B' },
+                  hover: { backgroundColor: '#9A94FF' }
+                }}
+                transition={{ duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
+              >
+                <span>Get started</span>
+                <motion.div
+                  className="overflow-hidden flex items-center"
+                  variants={{
+                    idle: { width: 0, opacity: 0 },
+                    hover: { width: 'auto', opacity: 1 }
+                  }}
+                  transition={{ duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
+                >
+                  <motion.div
+                    className="flex items-center ml-3"
+                    variants={{
+                      idle: { x: -8 },
+                      hover: { x: 0 }
+                    }}
+                    transition={{ duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
+                  >
+                    <ArrowRight className="h-4 w-4 flex-shrink-0" />
+                  </motion.div>
+                </motion.div>
+              </motion.a>
             </Button>
           </div>
         </div>
@@ -234,22 +199,31 @@ export default function Home() {
         <div className="container">
           <div className="grid gap-8 md:grid-cols-4">
             <div>
-              <h3 className="font-bold mb-4">SearchAF</h3>
-              <p className="text-sm text-muted-foreground">
-                Product search and discovery powered by AntflyDB.
-              </p>
+              <Link href="/" className="flex items-center gap-2 mb-4">
+                <Image
+                  src="/af-logo.svg"
+                  alt="SearchAF Logo"
+                  width={20}
+                  height={20}
+                  className="h-5 w-5"
+                />
+                <span className="text-base logo-text">
+                  <span style={{ fontWeight: 400 }}>search</span>
+                  <span style={{ fontWeight: 700 }}>af</span>
+                </span>
+              </Link>
             </div>
             <div>
               <h4 className="font-semibold mb-4">Documentation</h4>
               <ul className="space-y-2 text-sm">
                 <li>
                   <Link href="/docs" className="text-muted-foreground hover:text-foreground">
-                    Getting Started
+                    Getting started
                   </Link>
                 </li>
                 <li>
                   <Link href="/docs/api" className="text-muted-foreground hover:text-foreground">
-                    API Reference
+                    API reference
                   </Link>
                 </li>
                 <li>
@@ -274,7 +248,7 @@ export default function Home() {
               <ul className="space-y-2 text-sm">
                 <li>
                   <a href="https://antfly.io" className="text-muted-foreground hover:text-foreground">
-                    About AntflyDB
+                    About Antfly
                   </a>
                 </li>
               </ul>

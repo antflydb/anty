@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Header } from "@/components/layout/header";
 import { BookOpen, Clock } from "lucide-react";
 import { getGuides } from "@/lib/markdown";
 
@@ -9,26 +10,7 @@ export default function GuidesPage() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-14 items-center">
-          <div className="mr-4 flex">
-            <Link href="/" className="mr-6 flex items-center space-x-2">
-              <span className="font-bold text-xl">SearchAF</span>
-            </Link>
-            <nav className="flex items-center space-x-6 text-sm font-medium">
-              <Link href="/docs" className="transition-colors hover:text-foreground/80 text-foreground/60">
-                Documentation
-              </Link>
-              <Link href="/guides" className="transition-colors hover:text-foreground/80 text-foreground">
-                Guides
-              </Link>
-              <Link href="/blog" className="transition-colors hover:text-foreground/80 text-foreground/60">
-                Blog
-              </Link>
-            </nav>
-          </div>
-        </div>
-      </header>
+      <Header />
 
       <main className="flex-1">
         <div className="container py-12">
