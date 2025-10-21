@@ -3,9 +3,8 @@ title: Introducing SearchAF - AI-Powered Product Search
 description: We're excited to announce SearchAF, a next-generation product search platform built on AntflyDB
 date: 2025-01-15
 author: SearchAF Team
+image: /blog-images/introducing-searchaf.png
 ---
-
-# Introducing SearchAF: AI-Powered Product Search
 
 We're thrilled to announce the launch of **SearchAF**, a next-generation product search and discovery platform that brings the power of AI-driven semantic search to e-commerce.
 

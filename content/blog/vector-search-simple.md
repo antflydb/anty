@@ -3,9 +3,8 @@ title: Vector Search Simple - The Technology Behind SearchAF
 description: A deep dive into how vector embeddings and similarity search power modern AI applications
 date: 2025-01-20
 author: Engineering Team
+image: /blog-images/vector-search-simple.png
 ---
-
-## Vector Search Simple: The Technology Behind SearchAF
 
 Vector search is the technology powering SearchAF's advanced semantic search. It allows search systems to understand the *meaning* of a query, not just the keywords.
 

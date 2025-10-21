@@ -3,9 +3,8 @@ title: Getting Started with SearchAF
 description: Learn how to set up your first SearchAF project and integrate it with your e-commerce platform
 category: Quickstart
 readTime: 5 min read
+image: /guide-images/getting-started.png
 ---
-
-# Getting Started with SearchAF
 
 Welcome to SearchAF! This guide will walk you through setting up your first project and integrating search capabilities into your e-commerce platform.
 

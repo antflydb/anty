@@ -1,9 +1,10 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { getGuideBySlug, getGuides } from "@/lib/markdown";
 import { Badge } from "@/components/ui/badge";
 import { Clock, BookOpen } from "lucide-react";
-import ReactMarkdown from 'react-markdown';
+import { MarkdownContent } from "@/components/ui/markdown-content";
 
 export async function generateStaticParams() {
   const guides = getGuides();
@@ -70,9 +71,7 @@ export default async function GuidePage({ params }: { params: Promise<{ slug: st
             )}
           </div>
 
-          <div className="prose prose-slate dark:prose-invert max-w-none">
-            <ReactMarkdown>{guide.content}</ReactMarkdown>
-          </div>
+          <MarkdownContent content={guide.content} />
         </article>
       </main>
 

@@ -3,9 +3,8 @@ title: Implementing Semantic Search
 description: Leverage AI-powered vector search to improve product discovery
 category: Advanced
 readTime: 15 min read
+image: /guide-images/semantic-search.png
 ---
-
-# Implementing Semantic Search
 
 Semantic search uses AI to understand the meaning and intent behind search queries, delivering more relevant results than traditional keyword matching.
 
