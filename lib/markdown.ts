@@ -12,7 +12,7 @@ export interface Post {
   category?: string;
   date?: string;
   author?: string;
-  readTime?: string;
+  image?: string;
   content: string;
 }
 
@@ -36,6 +36,7 @@ export function getGuides(): Post[] {
         description: data.description || '',
         category: data.category,
         readTime: data.readTime,
+        image: data.image,
         content,
       };
     });
@@ -69,6 +70,7 @@ export function getGuideBySlug(slug: string): Post | null {
     description: data.description || '',
     category: data.category,
     readTime: data.readTime,
+    image: data.image,
     content,
   };
 }
@@ -93,6 +95,7 @@ export function getBlogPosts(): Post[] {
         description: data.description || '',
         date: data.date,
         author: data.author,
+        image: data.image,
         content,
       };
     })
@@ -132,6 +135,7 @@ export function getBlogPostBySlug(slug: string): Post | null {
     description: data.description || '',
     date: data.date,
     author: data.author,
+    image: data.image,
     content,
   };
 }

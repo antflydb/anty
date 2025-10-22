@@ -3,9 +3,8 @@ title: Shopify Integration Guide
 description: Step-by-step guide to integrating SearchAF with your Shopify store
 category: Integration
 readTime: 10 min read
+image: /guide-images/shopify-integration.png
 ---
-
-# Shopify Integration Guide
 
 This guide covers the complete integration of SearchAF with your Shopify store for enhanced product search and discovery.
 
