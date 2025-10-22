@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Header } from "@/components/layout/header";
+import { Footer } from "@/components/layout/footer";
 import { Calendar, User } from "lucide-react";
 import { getBlogPosts } from "@/lib/markdown";
 
@@ -80,70 +81,7 @@ export default function BlogPage() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t py-12 md:py-16">
-        <div className="container">
-          <div className="grid gap-8 md:grid-cols-4">
-            <div>
-              <Link href="/" className="flex items-center gap-2 mb-4">
-                <Image
-                  src="/af-logo.svg"
-                  alt="SearchAF Logo"
-                  width={20}
-                  height={20}
-                  className="h-5 w-5"
-                />
-                <span className="text-base logo-text">
-                  <span style={{ fontWeight: 400 }}>search</span>
-                  <span style={{ fontWeight: 700 }}>af</span>
-                </span>
-              </Link>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4">Documentation</h4>
-              <ul className="space-y-2 text-sm">
-                <li>
-                  <Link href="/docs" className="text-muted-foreground hover:text-foreground">
-                    Getting started
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/docs/api" className="text-muted-foreground hover:text-foreground">
-                    API reference
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/guides" className="text-muted-foreground hover:text-foreground">
-                    Guides
-                  </Link>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4">Resources</h4>
-              <ul className="space-y-2 text-sm">
-                <li>
-                  <Link href="/blog" className="text-muted-foreground hover:text-foreground">
-                    Blog
-                  </Link>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4">Company</h4>
-              <ul className="space-y-2 text-sm">
-                <li>
-                  <a href="https://antfly.io" className="text-muted-foreground hover:text-foreground">
-                    About Antfly
-                  </a>
-                </li>
-              </ul>
-            </div>
-          </div>
-          <div className="mt-8 pt-8 border-t text-center text-sm text-muted-foreground">
-            <p>&copy; {new Date().getFullYear()} SearchAF. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

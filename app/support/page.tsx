@@ -1,4 +1,5 @@
 import { Header } from "@/components/layout/header";
+import { Footer } from "@/components/layout/footer";
 
 export default function SupportPage() {
   return (
@@ -38,6 +39,8 @@ export default function SupportPage() {
           </div>
         </div>
       </main>
+
+      <Footer />
     </div>
   );
 }

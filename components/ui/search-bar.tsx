@@ -80,12 +80,12 @@ export const SearchBar = forwardRef<HTMLDivElement, SearchBarProps>(
                 type="text"
                 value={searchValue}
                 onChange={(e) => setSearchValue(e.target.value)}
-                placeholder="Search"
+                placeholder="Ask anything"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.2, ease: 'easeInOut', delay: 0.1 }}
-                className="flex-1 h-full pr-10 pl-3 border-0 bg-transparent text-foreground text-sm focus:outline-none placeholder:text-muted-foreground"
+                className="flex-1 h-full pr-10 pl-3 border-0 bg-transparent text-foreground text-sm focus:outline-none placeholder:text-muted-foreground/40"
                 autoFocus
               />
             )}
