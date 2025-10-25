@@ -1,0 +1,215 @@
+# Webhooks
+
+Webhooks enable real-time event notifications from SearchAF to your application. Configure webhooks to receive updates about important events.
+
+## Overview
+
+SearchAF uses webhooks to notify your application when events occur in your account. Webhooks are particularly useful for:
+
+- Synchronizing data across systems
+- Triggering automated workflows
+- Monitoring important events
+- Integrating with third-party services
+
+## Webhook Events
+
+SearchAF sends webhook notifications for the following event types:
+
+### Subscription Events
+
+- `subscription.created` - New subscription created
+- `subscription.updated` - Subscription plan changed
+- `subscription.cancelled` - Subscription cancelled
+- `subscription.payment_succeeded` - Payment processed successfully
+- `subscription.payment_failed` - Payment failed
+
+### Project Events
+
+- `project.created` - New project created
+- `project.updated` - Project configuration changed
+- `project.deleted` - Project removed
+
+### API Key Events
+
+- `api_key.created` - New API key generated
+- `api_key.revoked` - API key revoked
+
+## Configuring Webhooks
+
+### Stripe Webhooks
+
+SearchAF integrates with Stripe for billing. Configure the webhook endpoint:
+
+```
+https://searchaf-api.antfly.io/webhooks/stripe
+```
+
+Add this endpoint in your Stripe dashboard under Developers > Webhooks.
+
+### Shopify Webhooks
+
+For Shopify app installations, configure webhooks at:
+
+```
+https://searchaf-api.antfly.io/webhooks/shopify
+```
+
+Supported Shopify events:
+
+- `app/uninstalled` - App removed from store
+- `shop/update` - Store information changed
+
+## Webhook Payload
+
+All webhooks follow a consistent structure:
+
+```json
+{
+  "id": "evt_1234567890",
+  "type": "subscription.created",
+  "created": 1640995200,
+  "data": {
+    "object": {
+      "id": "sub_abc123",
+      "organization_id": "org_xyz789",
+      "plan": "pro",
+      "status": "active"
+    }
+  }
+}
+```
+
+## Verifying Webhooks
+
+### Stripe Signature Verification
+
+Verify Stripe webhook signatures to ensure authenticity:
+
+```javascript
+const stripe = require('stripe')('sk_test_...');
+const signature = request.headers['stripe-signature'];
+
+try {
+  const event = stripe.webhooks.constructEvent(
+    request.body,
+    signature,
+    'whsec_...' // Your webhook secret
+  );
+  // Process the event
+} catch (err) {
+  // Invalid signature
+  return res.status(400).send(`Webhook Error: ${err.message}`);
+}
+```
+
+### Shopify HMAC Verification
+
+Verify Shopify webhooks using HMAC:
+
+```javascript
+const crypto = require('crypto');
+
+function verifyShopifyWebhook(data, hmacHeader, secret) {
+  const hash = crypto
+    .createHmac('sha256', secret)
+    .update(data, 'utf8')
+    .digest('base64');
+
+  return hash === hmacHeader;
+}
+```
+
+## Handling Webhook Events
+
+Implement idempotent webhook handlers:
+
+```javascript
+app.post('/webhooks/stripe', async (req, res) => {
+  const event = req.body;
+
+  // Check for duplicate processing
+  const existingEvent = await db.webhookEvents.findOne({
+    id: event.id
+  });
+
+  if (existingEvent) {
+    return res.json({ received: true });
+  }
+
+  // Process the event
+  switch (event.type) {
+    case 'subscription.created':
+      await handleSubscriptionCreated(event.data.object);
+      break;
+    case 'subscription.payment_failed':
+      await handlePaymentFailed(event.data.object);
+      break;
+    // ... handle other event types
+  }
+
+  // Store event to prevent duplicate processing
+  await db.webhookEvents.create({
+    id: event.id,
+    processed_at: new Date()
+  });
+
+  res.json({ received: true });
+});
+```
+
+## Best Practices
+
+### Respond Quickly
+
+- Return a 200 status code immediately
+- Process events asynchronously
+- Use job queues for complex operations
+
+### Handle Failures
+
+- Implement retry logic with exponential backoff
+- Log all webhook failures
+- Monitor webhook health
+
+### Security
+
+- Always verify webhook signatures
+- Use HTTPS endpoints only
+- Implement rate limiting
+- Whitelist webhook IPs when possible
+
+## Testing Webhooks
+
+### Local Development
+
+Use tools like ngrok to test webhooks locally:
+
+```bash
+ngrok http 3000
+```
+
+Then configure the ngrok URL as your webhook endpoint.
+
+### Stripe CLI
+
+Test Stripe webhooks locally:
+
+```bash
+stripe listen --forward-to localhost:3000/webhooks/stripe
+stripe trigger subscription.created
+```
+
+## Troubleshooting
+
+Common webhook issues:
+
+- **Timeouts**: Ensure handlers respond within 30 seconds
+- **Signature Failures**: Verify correct webhook secret
+- **Duplicate Events**: Implement idempotency keys
+- **Missing Events**: Check endpoint configuration and logs
+
+## Next Steps
+
+- [API Reference](/docs/api) - Explore all API endpoints
+- [Projects](/docs/projects) - Configure project webhooks
+- [Organizations](/docs/organizations) - Manage organization settings

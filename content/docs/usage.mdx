@@ -1,0 +1,138 @@
+# Usage & Analytics
+
+Monitor your SearchAF usage, performance metrics, and resource consumption across organizations and projects.
+
+## Usage Dashboard
+
+The usage dashboard provides real-time insights into:
+
+- **API Requests**: Total requests per time period
+- **Data Storage**: Indexed documents and data size
+- **Query Performance**: Average response times
+- **Bandwidth**: Data transfer metrics
+
+## Retrieving Usage Data
+
+### Organization Usage
+
+Get current usage for an organization:
+
+```bash
+GET /api/v1/organizations/{org_id}/usage
+Authorization: Bearer {token}
+```
+
+Response:
+
+```json
+{
+  "period": "2025-10",
+  "api_requests": {
+    "total": 1250000,
+    "limit": 2000000
+  },
+  "storage": {
+    "documents": 500000,
+    "size_gb": 12.5,
+    "limit_gb": 50
+  },
+  "bandwidth": {
+    "total_gb": 45.2,
+    "limit_gb": 100
+  }
+}
+```
+
+### Usage History
+
+Retrieve historical usage data:
+
+```bash
+GET /api/v1/organizations/{org_id}/usage/history?start_date=2025-01-01&end_date=2025-10-31
+Authorization: Bearer {token}
+```
+
+### Project-Specific Usage
+
+Get usage metrics for a specific project:
+
+```bash
+GET /api/v1/projects/{project_id}/usage
+Authorization: Bearer {token}
+```
+
+## Analytics Metrics
+
+### Query Analytics
+
+Track search performance and user behavior:
+
+- **Query Volume**: Requests over time
+- **Popular Searches**: Most frequent queries
+- **Zero-Result Queries**: Searches with no results
+- **Click-Through Rate**: User engagement metrics
+
+### Performance Metrics
+
+Monitor system performance:
+
+- **Average Response Time**: Query latency
+- **P95/P99 Latency**: Percentile performance
+- **Cache Hit Rate**: Caching efficiency
+- **Error Rate**: Failed requests
+
+## Usage Limits
+
+Different subscription tiers have different limits:
+
+### Free Tier
+
+- 10,000 API requests/month
+- 10,000 documents
+- 1 GB storage
+- 5 GB bandwidth
+
+### Pro Tier
+
+- 1,000,000 API requests/month
+- 500,000 documents
+- 25 GB storage
+- 50 GB bandwidth
+
+### Enterprise Tier
+
+- Custom limits
+- Dedicated support
+- SLA guarantees
+- Premium features
+
+## Usage Alerts
+
+Configure alerts for usage thresholds:
+
+```bash
+POST /api/v1/organizations/{org_id}/alerts
+Content-Type: application/json
+Authorization: Bearer {token}
+
+{
+  "type": "usage_threshold",
+  "metric": "api_requests",
+  "threshold": 80,
+  "notification_channels": ["email", "slack"]
+}
+```
+
+## Billing Integration
+
+Usage metrics automatically integrate with billing:
+
+- **Pay-as-you-go**: Charges based on actual usage
+- **Tier Limits**: Stay within subscription allowances
+- **Overage Alerts**: Notifications before exceeding limits
+
+## Next Steps
+
+- [Organizations](/docs/organizations) - Manage organization settings
+- [Projects](/docs/projects) - Configure project resources
+- [API Reference](/docs/api) - Explore all endpoints

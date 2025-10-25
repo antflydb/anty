@@ -1,9 +1,5 @@
-import nextra from 'nextra'
-
-const withNextra = nextra({
-  defaultShowCopyCode: true,
-  latex: true,
-})
+import createMDX from '@next/mdx'
+import remarkGfm from 'remark-gfm'
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -21,4 +17,11 @@ const nextConfig = {
   },
 }
 
-export default withNextra(nextConfig)
+const withMDX = createMDX({
+  options: {
+    remarkPlugins: [remarkGfm],
+    rehypePlugins: [],
+  },
+})
+
+export default withMDX(nextConfig)

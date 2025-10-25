@@ -1,0 +1,94 @@
+# Organizations
+
+Organizations in SearchAF provide a workspace for managing teams, projects, and billing. Each organization can have multiple members with different roles and permissions.
+
+## Creating an Organization
+
+To create a new organization:
+
+1. Navigate to the Organizations dashboard
+2. Click "Create Organization"
+3. Provide organization details:
+   - **Name**: Your organization name
+   - **Slug**: URL-friendly identifier
+   - **Description**: Optional description
+
+```bash
+POST /api/v1/organizations
+Content-Type: application/json
+Authorization: Bearer {token}
+
+{
+  "name": "Acme Corporation",
+  "slug": "acme-corp",
+  "description": "E-commerce search platform"
+}
+```
+
+## Organization Structure
+
+Each organization contains:
+
+- **Members**: Team members with assigned roles
+- **Projects**: Individual search projects
+- **Subscription**: Billing and plan details
+- **Usage**: Analytics and resource consumption
+- **Audit Logs**: Security and activity tracking
+
+## Member Roles
+
+Organizations support role-based access control (RBAC):
+
+- **Owner**: Full administrative access
+- **Admin**: Manage members and projects
+- **Developer**: Create and manage projects
+- **Viewer**: Read-only access
+
+## Managing Members
+
+### Inviting Members
+
+```bash
+POST /api/v1/organizations/{org_id}/members
+Content-Type: application/json
+Authorization: Bearer {token}
+
+{
+  "email": "teammate@example.com",
+  "role": "developer"
+}
+```
+
+### Removing Members
+
+```bash
+DELETE /api/v1/organizations/{org_id}/members/{member_id}
+Authorization: Bearer {token}
+```
+
+### Updating Member Roles
+
+```bash
+PATCH /api/v1/organizations/{org_id}/members/{member_id}
+Content-Type: application/json
+Authorization: Bearer {token}
+
+{
+  "role": "admin"
+}
+```
+
+## Organization Settings
+
+Configure your organization settings including:
+
+- Profile information
+- Billing details
+- Security policies
+- Integrations
+
+## Next Steps
+
+- [Projects](/docs/projects) - Create and manage search projects
+- [Usage & Analytics](/docs/usage) - Monitor resource consumption
+- [API Reference](/docs/api) - Explore the API endpoints

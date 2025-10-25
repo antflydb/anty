@@ -1,0 +1,216 @@
+# API Overview
+
+The SearchAF API provides a comprehensive RESTful interface for integrating product search and discovery into your applications.
+
+## Base URL
+
+All API requests should be made to:
+
+```
+https://searchaf-api.antfly.io/api/v1
+```
+
+## API Design Principles
+
+The SearchAF API follows RESTful conventions and best practices:
+
+- **Resource-Oriented URLs**: Endpoints represent resources
+- **HTTP Methods**: Standard verbs (GET, POST, PATCH, DELETE)
+- **JSON Payloads**: All requests and responses use JSON
+- **Standard Status Codes**: Conventional HTTP response codes
+- **Consistent Patterns**: Predictable request/response structures
+
+## Authentication
+
+All API requests require authentication using one of two methods:
+
+### Bearer Tokens (JWT)
+
+For user-authenticated requests:
+
+```bash
+curl https://searchaf-api.antfly.io/api/v1/users/me \
+  -H "Authorization: Bearer eyJhbGc..."
+```
+
+### API Keys
+
+For project-specific programmatic access:
+
+```bash
+curl https://searchaf-api.antfly.io/api/v1/projects/{project_id}/search \
+  -H "X-API-Key: sk_live_abcdef123456..."
+```
+
+See the [Authentication](/docs/authentication) guide for detailed information.
+
+## Request Format
+
+### Headers
+
+Include these headers in all requests:
+
+```
+Content-Type: application/json
+Authorization: Bearer {token} OR X-API-Key: {api_key}
+```
+
+### Request Body
+
+Send data as JSON:
+
+```bash
+POST /api/v1/organizations
+Content-Type: application/json
+
+{
+  "name": "Acme Corporation",
+  "slug": "acme-corp"
+}
+```
+
+## Response Format
+
+### Success Response
+
+Successful requests return JSON with the requested data:
+
+```json
+{
+  "id": "org_abc123",
+  "name": "Acme Corporation",
+  "slug": "acme-corp",
+  "created_at": "2025-01-15T10:30:00Z"
+}
+```
+
+### List Responses
+
+List endpoints include pagination metadata:
+
+```json
+{
+  "data": [
+    { "id": "org_abc123", "name": "Acme Corporation" },
+    { "id": "org_xyz789", "name": "Tech Startup" }
+  ],
+  "meta": {
+    "offset": 0,
+    "limit": 20,
+    "total": 42
+  }
+}
+```
+
+### Error Response
+
+Errors follow RFC 7807 Problem Details format:
+
+```json
+{
+  "type": "https://searchaf-api.antfly.io/errors/validation-error",
+  "title": "Validation Error",
+  "status": 400,
+  "detail": "Organization name is required",
+  "errors": [
+    {
+      "field": "name",
+      "message": "This field is required"
+    }
+  ]
+}
+```
+
+## HTTP Status Codes
+
+The API uses standard HTTP status codes:
+
+- `200 OK` - Request successful
+- `201 Created` - Resource created successfully
+- `204 No Content` - Request successful, no content returned
+- `400 Bad Request` - Invalid request parameters
+- `401 Unauthorized` - Missing or invalid authentication
+- `403 Forbidden` - Insufficient permissions
+- `404 Not Found` - Resource not found
+- `409 Conflict` - Resource conflict (e.g., duplicate)
+- `429 Too Many Requests` - Rate limit exceeded
+- `500 Internal Server Error` - Server error
+
+## Rate Limiting
+
+API requests are rate-limited based on your subscription:
+
+- Rate limit info included in response headers:
+  ```
+  X-RateLimit-Limit: 1000
+  X-RateLimit-Remaining: 999
+  X-RateLimit-Reset: 1640995200
+  ```
+
+- When rate limit is exceeded, you'll receive a `429` response
+
+## Pagination
+
+List endpoints support pagination:
+
+### Query Parameters
+
+- `offset` - Number of items to skip (default: 0)
+- `limit` - Maximum items to return (default: 20, max: 100)
+
+### Example
+
+```bash
+GET /api/v1/organizations?offset=20&limit=20
+```
+
+## Filtering and Sorting
+
+Some endpoints support filtering and sorting:
+
+### Filtering
+
+```bash
+GET /api/v1/projects?platform=shopify&status=active
+```
+
+### Sorting
+
+```bash
+GET /api/v1/organizations?sort=-created_at
+```
+
+Use `-` prefix for descending order.
+
+## Versioning
+
+The API version is included in the URL path:
+
+```
+/api/v1/...
+```
+
+We maintain backward compatibility within major versions. Breaking changes will result in a new major version.
+
+## API Endpoints
+
+Explore detailed endpoint documentation:
+
+- [Authentication Endpoints](/docs/api/authentication)
+- [Search Endpoints](/docs/api/search)
+- [Management Endpoints](/docs/api/management)
+
+## SDKs and Tools
+
+Official SDKs (coming soon):
+
+- JavaScript/TypeScript
+- Python
+- Ruby
+- PHP
+
+## Next Steps
+
+- [Authentication](/docs/authentication) - Set up API authentication
+- [API Endpoints](/docs/api/endpoints) - Browse all available endpoints
+- [Projects](/docs/projects) - Create your first project

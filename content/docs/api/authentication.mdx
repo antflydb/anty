@@ -1,0 +1,334 @@
+# API Authentication
+
+Detailed guide to authenticating with the SearchAF API using OAuth tokens and API keys.
+
+## Authentication Methods
+
+SearchAF supports two authentication methods:
+
+1. **OAuth 2.0 with JWT tokens** - For user-authenticated requests
+2. **API Keys** - For programmatic, project-specific access
+
+## OAuth 2.0 Authentication
+
+### Supported Providers
+
+SearchAF integrates with popular OAuth providers:
+
+- **Google** - Gmail and Google Workspace accounts
+- **GitHub** - Developer accounts
+- **Shopify** - Store owner accounts
+
+### OAuth Flow
+
+#### Step 1: Initiate Login
+
+Redirect users to the OAuth login endpoint:
+
+```
+GET /auth/oauth/{provider}/login?redirect_uri={your_callback_url}
+```
+
+**Parameters:**
+
+- `provider` - One of: `google`, `github`, `shopify`
+- `redirect_uri` - Your application callback URL
+
+**Example:**
+
+```javascript
+const provider = 'google';
+const redirectUri = encodeURIComponent('https://myapp.com/auth/callback');
+const loginUrl = `https://searchaf-api.antfly.io/auth/oauth/${provider}/login?redirect_uri=${redirectUri}`;
+
+// Redirect user to loginUrl
+window.location.href = loginUrl;
+```
+
+#### Step 2: User Authorizes
+
+The user authenticates with the OAuth provider and grants permissions.
+
+#### Step 3: Handle Callback
+
+SearchAF redirects back to your application with an authorization code:
+
+```
+GET https://myapp.com/auth/callback?code={auth_code}&state={state}
+```
+
+#### Step 4: Exchange Code for Tokens
+
+The callback endpoint automatically exchanges the code for JWT tokens and redirects with the tokens.
+
+**Token Response:**
+
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "Bearer",
+  "expires_in": 3600,
+  "user": {
+    "id": "usr_abc123",
+    "email": "user@example.com",
+    "display_name": "John Doe"
+  }
+}
+```
+
+### Using JWT Tokens
+
+Include the access token in the Authorization header:
+
+```bash
+curl https://searchaf-api.antfly.io/api/v1/users/me \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+```
+
+### Token Expiration
+
+Access tokens expire after 1 hour (3600 seconds). Use the refresh token to obtain a new access token.
+
+### Refreshing Tokens
+
+When your access token expires:
+
+```bash
+POST /auth/refresh
+Content-Type: application/json
+
+{
+  "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+**Response:**
+
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "Bearer",
+  "expires_in": 3600
+}
+```
+
+### Token Storage
+
+**Best Practices:**
+
+- Store tokens securely (encrypted storage, secure cookies)
+- Never expose tokens in URLs or logs
+- Implement token rotation on refresh
+- Clear tokens on logout
+
+## API Key Authentication
+
+API keys provide project-specific authentication for programmatic access.
+
+### Key Types
+
+- **Read-Only** - Query and search operations only
+- **Read-Write** - Full CRUD operations
+
+### Creating an API Key
+
+1. Navigate to your project settings
+2. Click "Create API Key"
+3. Configure the key:
+
+```bash
+POST /api/v1/projects/{project_id}/api-keys
+Content-Type: application/json
+Authorization: Bearer {jwt_token}
+
+{
+  "name": "Production Key",
+  "type": "read_write",
+  "expires_at": "2025-12-31T23:59:59Z"
+}
+```
+
+**Response:**
+
+```json
+{
+  "id": "key_abc123",
+  "key": "sk_live_abc123def456...",
+  "name": "Production Key",
+  "type": "read_write",
+  "created_at": "2025-01-15T10:30:00Z",
+  "expires_at": "2025-12-31T23:59:59Z"
+}
+```
+
+**Important:** The `key` value is only shown once. Store it securely.
+
+### Using API Keys
+
+Include the API key in the `X-API-Key` header:
+
+```bash
+curl https://searchaf-api.antfly.io/api/v1/projects/{project_id}/search \
+  -H "X-API-Key: sk_live_abc123def456..." \
+  -H "Content-Type: application/json" \
+  -d '{"query": "blue shoes"}'
+```
+
+### Key Management
+
+#### List Keys
+
+```bash
+GET /api/v1/projects/{project_id}/api-keys
+Authorization: Bearer {jwt_token}
+```
+
+#### Revoke Key
+
+```bash
+DELETE /api/v1/projects/{project_id}/api-keys/{key_id}
+Authorization: Bearer {jwt_token}
+```
+
+### Key Security
+
+**Best Practices:**
+
+- Use read-only keys when write access isn't needed
+- Set expiration dates on all keys
+- Rotate keys regularly
+- Never commit keys to version control
+- Use environment variables for key storage
+- Implement key rotation before expiration
+
+## Security Considerations
+
+### HTTPS Only
+
+All API requests must use HTTPS. HTTP requests will be rejected.
+
+### Rate Limiting
+
+Both authentication methods are subject to rate limiting:
+
+- OAuth: 10 requests per minute per IP
+- API Keys: Based on subscription tier
+
+### IP Whitelisting
+
+Enterprise plans can restrict API key usage to specific IP addresses.
+
+### Scope and Permissions
+
+- OAuth tokens inherit user permissions
+- API keys are scoped to specific projects
+- Both respect RBAC rules
+
+## Error Responses
+
+### Invalid Token
+
+```json
+{
+  "type": "https://searchaf-api.antfly.io/errors/unauthorized",
+  "title": "Unauthorized",
+  "status": 401,
+  "detail": "Invalid or expired access token"
+}
+```
+
+### Invalid API Key
+
+```json
+{
+  "type": "https://searchaf-api.antfly.io/errors/unauthorized",
+  "title": "Unauthorized",
+  "status": 401,
+  "detail": "Invalid API key"
+}
+```
+
+### Insufficient Permissions
+
+```json
+{
+  "type": "https://searchaf-api.antfly.io/errors/forbidden",
+  "title": "Forbidden",
+  "status": 403,
+  "detail": "Insufficient permissions for this operation"
+}
+```
+
+## Example Implementations
+
+### JavaScript/TypeScript
+
+```typescript
+class SearchAFClient {
+  private apiKey: string;
+  private baseUrl = 'https://searchaf-api.antfly.io/api/v1';
+
+  constructor(apiKey: string) {
+    this.apiKey = apiKey;
+  }
+
+  async search(projectId: string, query: string) {
+    const response = await fetch(
+      `${this.baseUrl}/projects/${projectId}/search`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-Key': this.apiKey,
+        },
+        body: JSON.stringify({ query }),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`API error: ${response.statusText}`);
+    }
+
+    return response.json();
+  }
+}
+
+// Usage
+const client = new SearchAFClient('sk_live_...');
+const results = await client.search('proj_123', 'blue shoes');
+```
+
+### Python
+
+```python
+import requests
+
+class SearchAFClient:
+    def __init__(self, api_key):
+        self.api_key = api_key
+        self.base_url = 'https://searchaf-api.antfly.io/api/v1'
+
+    def search(self, project_id, query):
+        url = f'{self.base_url}/projects/{project_id}/search'
+        headers = {
+            'Content-Type': 'application/json',
+            'X-API-Key': self.api_key,
+        }
+        data = {'query': query}
+
+        response = requests.post(url, json=data, headers=headers)
+        response.raise_for_status()
+        return response.json()
+
+# Usage
+client = SearchAFClient('sk_live_...')
+results = client.search('proj_123', 'blue shoes')
+```
+
+## Next Steps
+
+- [API Endpoints](/docs/api/endpoints) - Explore all available endpoints
+- [Projects](/docs/projects) - Create your first project
+- [Usage & Analytics](/docs/usage) - Monitor API usage

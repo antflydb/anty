@@ -1,0 +1,429 @@
+# API Endpoints
+
+Complete reference for all SearchAF API endpoints organized by resource type.
+
+## Authentication Endpoints
+
+### Initiate OAuth Login
+
+```
+GET /auth/oauth/{provider}/login
+```
+
+Start the OAuth authentication flow.
+
+**Parameters:**
+
+- `provider` (path) - OAuth provider: `google`, `github`, `shopify`
+- `redirect_uri` (query) - URL to redirect after authentication
+
+**Example:**
+
+```bash
+GET /auth/oauth/google/login?redirect_uri=https://myapp.com/callback
+```
+
+### OAuth Callback
+
+```
+GET /auth/oauth/{provider}/callback
+```
+
+Handle OAuth provider callback.
+
+**Parameters:**
+
+- `provider` (path) - OAuth provider
+- `code` (query) - Authorization code from provider
+- `state` (query) - State parameter for CSRF protection
+
+### Refresh Token
+
+```
+POST /auth/refresh
+```
+
+Obtain a new access token using a refresh token.
+
+**Request Body:**
+
+```json
+{
+  "refresh_token": "eyJhbGc..."
+}
+```
+
+**Response:**
+
+```json
+{
+  "access_token": "eyJhbGc...",
+  "refresh_token": "eyJhbGc...",
+  "token_type": "Bearer",
+  "expires_in": 3600
+}
+```
+
+## User Endpoints
+
+### Get Current User
+
+```
+GET /users/me
+```
+
+Retrieve the authenticated user's profile.
+
+**Response:**
+
+```json
+{
+  "id": "usr_abc123",
+  "email": "user@example.com",
+  "display_name": "John Doe",
+  "created_at": "2025-01-15T10:30:00Z"
+}
+```
+
+### Update Current User
+
+```
+PATCH /users/me
+```
+
+Update the authenticated user's profile.
+
+**Request Body:**
+
+```json
+{
+  "display_name": "Jane Doe"
+}
+```
+
+### List OAuth Providers
+
+```
+GET /users/me/oauth-providers
+```
+
+List linked OAuth providers for the current user.
+
+## Organization Endpoints
+
+### List Organizations
+
+```
+GET /organizations
+```
+
+List all organizations the user has access to.
+
+**Query Parameters:**
+
+- `offset` (optional) - Pagination offset
+- `limit` (optional) - Items per page
+
+### Create Organization
+
+```
+POST /organizations
+```
+
+Create a new organization.
+
+**Request Body:**
+
+```json
+{
+  "name": "Acme Corporation",
+  "slug": "acme-corp",
+  "description": "E-commerce company"
+}
+```
+
+### Get Organization
+
+```
+GET /organizations/{org_id}
+```
+
+Retrieve organization details.
+
+### Update Organization
+
+```
+PATCH /organizations/{org_id}
+```
+
+Update organization settings.
+
+### Delete Organization
+
+```
+DELETE /organizations/{org_id}
+```
+
+Delete an organization.
+
+### List Members
+
+```
+GET /organizations/{org_id}/members
+```
+
+List organization members.
+
+### Invite Member
+
+```
+POST /organizations/{org_id}/members
+```
+
+Invite a new member to the organization.
+
+**Request Body:**
+
+```json
+{
+  "email": "teammate@example.com",
+  "role": "developer"
+}
+```
+
+### Remove Member
+
+```
+DELETE /organizations/{org_id}/members/{member_id}
+```
+
+Remove a member from the organization.
+
+## Project Endpoints
+
+### List Projects
+
+```
+GET /organizations/{org_id}/projects
+```
+
+List all projects in an organization.
+
+### Create Project
+
+```
+POST /organizations/{org_id}/projects
+```
+
+Create a new project.
+
+**Request Body:**
+
+```json
+{
+  "name": "Main Store Search",
+  "description": "Primary e-commerce search",
+  "platform": "shopify"
+}
+```
+
+### Get Project
+
+```
+GET /projects/{project_id}
+```
+
+Retrieve project details.
+
+### Update Project
+
+```
+PATCH /projects/{project_id}
+```
+
+Update project configuration.
+
+### Delete Project
+
+```
+DELETE /projects/{project_id}
+```
+
+Delete a project.
+
+## API Key Endpoints
+
+### List API Keys
+
+```
+GET /projects/{project_id}/api-keys
+```
+
+List all API keys for a project.
+
+### Create API Key
+
+```
+POST /projects/{project_id}/api-keys
+```
+
+Generate a new API key.
+
+**Request Body:**
+
+```json
+{
+  "name": "Production Key",
+  "type": "read_write",
+  "expires_at": "2025-12-31T23:59:59Z"
+}
+```
+
+### Revoke API Key
+
+```
+DELETE /projects/{project_id}/api-keys/{key_id}
+```
+
+Revoke an API key immediately.
+
+## Search Endpoints
+
+### Search Products
+
+```
+POST /projects/{project_id}/search
+```
+
+Execute a product search query.
+
+**Request Body:**
+
+```json
+{
+  "query": "blue running shoes",
+  "limit": 20,
+  "offset": 0,
+  "filters": {
+    "category": ["shoes", "running"],
+    "price_range": {
+      "min": 50,
+      "max": 200
+    }
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "results": [
+    {
+      "id": "prod_123",
+      "title": "Blue Running Shoes",
+      "score": 0.95,
+      "price": 129.99
+    }
+  ],
+  "total": 42,
+  "took_ms": 12
+}
+```
+
+## Subscription Endpoints
+
+### Get Subscription
+
+```
+GET /organizations/{org_id}/subscription
+```
+
+Retrieve current subscription details.
+
+### Create Subscription
+
+```
+POST /organizations/{org_id}/subscription
+```
+
+Create or upgrade a subscription.
+
+### Update Subscription
+
+```
+PATCH /organizations/{org_id}/subscription
+```
+
+Modify subscription plan.
+
+### Cancel Subscription
+
+```
+DELETE /organizations/{org_id}/subscription
+```
+
+Cancel the current subscription.
+
+### Create Billing Portal Session
+
+```
+POST /organizations/{org_id}/subscription/portal
+```
+
+Generate a Stripe billing portal session URL.
+
+## Usage Endpoints
+
+### Get Organization Usage
+
+```
+GET /organizations/{org_id}/usage
+```
+
+Retrieve current usage metrics for an organization.
+
+### Get Usage History
+
+```
+GET /organizations/{org_id}/usage/history
+```
+
+Retrieve historical usage data.
+
+**Query Parameters:**
+
+- `start_date` - Start date (ISO 8601)
+- `end_date` - End date (ISO 8601)
+
+### Get Project Usage
+
+```
+GET /projects/{project_id}/usage
+```
+
+Retrieve usage metrics for a specific project.
+
+## Audit Log Endpoints
+
+### List Audit Logs
+
+```
+GET /organizations/{org_id}/audit-logs
+```
+
+Retrieve audit logs for security and compliance.
+
+**Query Parameters:**
+
+- `offset` - Pagination offset
+- `limit` - Items per page
+- `event_type` - Filter by event type
+- `start_date` - Start date filter
+- `end_date` - End date filter
+
+## Next Steps
+
+- [API Overview](/docs/api/overview) - Learn about API design
+- [Authentication](/docs/authentication) - Set up API authentication
+- [Projects](/docs/projects) - Create your first project

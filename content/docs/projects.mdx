@@ -1,0 +1,90 @@
+# Projects
+
+Projects in SearchAF represent individual search implementations. Each project has its own configuration, API keys, and analytics.
+
+## Creating a Project
+
+To create a new project within your organization:
+
+1. Navigate to your organization dashboard
+2. Click "Create Project"
+3. Configure project settings:
+   - **Name**: Project identifier
+   - **Description**: Optional description
+   - **Platform**: Integration type (Shopify, WooCommerce, Custom)
+
+```bash
+POST /api/v1/organizations/{org_id}/projects
+Content-Type: application/json
+Authorization: Bearer {token}
+
+{
+  "name": "Main Store Search",
+  "description": "Primary e-commerce search",
+  "platform": "shopify"
+}
+```
+
+## Project Configuration
+
+Each project can be configured with:
+
+- **Search Settings**: Relevance tuning and ranking
+- **Indexing Options**: Data sync frequency and filters
+- **API Keys**: Authentication credentials
+- **Webhooks**: Event notifications
+
+## API Keys
+
+Projects use API keys for authentication:
+
+### Creating an API Key
+
+```bash
+POST /api/v1/projects/{project_id}/api-keys
+Content-Type: application/json
+Authorization: Bearer {token}
+
+{
+  "name": "Production Key",
+  "type": "read_write",
+  "expires_at": "2025-12-31T23:59:59Z"
+}
+```
+
+### Managing API Keys
+
+- **List Keys**: View all project API keys
+- **Revoke Keys**: Immediately disable access
+- **Rotate Keys**: Best practice for security
+
+## Search Configuration
+
+Customize search behavior for your project:
+
+### Relevance Settings
+
+- **Semantic Search Weight**: Balance between semantic and keyword search
+- **Result Ranking**: Configure ranking factors
+- **Filtering**: Set default filters and facets
+
+### Indexing Configuration
+
+- **Data Sources**: Connect product catalogs
+- **Sync Frequency**: Real-time or batch updates
+- **Field Mapping**: Map product attributes
+
+## Project Analytics
+
+Monitor project performance:
+
+- **Query Volume**: Search request metrics
+- **Response Times**: Performance monitoring
+- **Popular Queries**: User search patterns
+- **Conversion Tracking**: Search-to-purchase analytics
+
+## Next Steps
+
+- [API Keys](/docs/api-keys) - Manage authentication
+- [Usage & Analytics](/docs/usage) - View detailed metrics
+- [API Reference](/docs/api) - Integration documentation
