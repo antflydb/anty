@@ -39,7 +39,7 @@ export function AnimatedHeroSection({ heading, description, button, subtext }: A
       filter: 'blur(0px)',
       transition: {
         duration: 0.4,
-        ease: [0.25, 0.46, 0.45, 0.94], // Smooth, polished easeOutQuad
+        ease: [0.25, 0.46, 0.45, 0.94] as const, // Smooth, polished easeOutQuad
       },
     },
   };
@@ -55,7 +55,7 @@ export function AnimatedHeroSection({ heading, description, button, subtext }: A
       y: 0,
       transition: {
         duration: 0.5,
-        ease: [0.25, 0.46, 0.45, 0.94],
+        ease: [0.25, 0.46, 0.45, 0.94] as const,
       },
     },
   };
@@ -71,7 +71,7 @@ export function AnimatedHeroSection({ heading, description, button, subtext }: A
       y: 0,
       transition: {
         duration: 0.6,
-        ease: [0.25, 0.46, 0.45, 0.94],
+        ease: [0.25, 0.46, 0.45, 0.94] as const,
       },
     },
   };
@@ -87,7 +87,7 @@ export function AnimatedHeroSection({ heading, description, button, subtext }: A
       y: 0,
       transition: {
         duration: 0.6,
-        ease: [0.25, 0.46, 0.45, 0.94],
+        ease: [0.25, 0.46, 0.45, 0.94] as const,
       },
     },
   };
@@ -130,7 +130,7 @@ export function AnimatedHeroSection({ heading, description, button, subtext }: A
         {subtext && (
           <motion.p
             variants={subtextVariants}
-            className="text-xs text-foreground/35 font-medium"
+            className="text-sm text-foreground/35 font-medium"
           >
             {subtext}
           </motion.p>

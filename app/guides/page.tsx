@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
-import { BookOpen, Clock, ArrowRight, Zap, Puzzle, Wrench } from "lucide-react";
+import { BookOpen, ArrowRight, Zap, Puzzle, Wrench, type LucideIcon } from "lucide-react";
 import { getGuides } from "@/lib/markdown";
 
 export default function GuidesPage() {
@@ -19,7 +19,7 @@ export default function GuidesPage() {
   }, {} as Record<string, typeof guides>);
 
   // Category icons and descriptions
-  const categoryInfo: Record<string, { icon: any; description: string; order: number }> = {
+  const categoryInfo: Record<string, { icon: LucideIcon; description: string; order: number }> = {
     'Quickstart': {
       icon: Zap,
       description: 'Get up and running quickly with SearchAF',
@@ -107,12 +107,6 @@ export default function GuidesPage() {
                               <Badge variant="secondary" className="font-normal">
                                 {guide.category}
                               </Badge>
-                            )}
-                            {guide.readTime && (
-                              <div className="flex items-center gap-1.5 text-muted-foreground">
-                                <Clock className="h-3.5 w-3.5" />
-                                <span>{guide.readTime}</span>
-                              </div>
                             )}
                           </div>
                         </div>

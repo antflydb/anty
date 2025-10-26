@@ -69,7 +69,6 @@ export function getGuideBySlug(slug: string): Post | null {
     title: data.title || slug,
     description: data.description || '',
     category: data.category,
-    readTime: data.readTime,
     image: data.image,
     content,
   };

@@ -34,7 +34,7 @@ export function AnimatedHeroHeading({ text, className = '' }: AnimatedHeroHeadin
       y: 0,
       transition: {
         duration: 0.25,
-        ease: [0.4, 0, 0.2, 1], // Custom cubic-bezier for smooth, classy motion
+        ease: [0.4, 0, 0.2, 1] as const, // Custom cubic-bezier for smooth, classy motion
       },
     },
   };

@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SearchBar } from '@/components/ui/search-bar';
+import { MobileMenu } from '@/components/layout/mobile-menu';
 import { cn } from '@/lib/utils';
 
 export function Header() {
@@ -47,7 +48,7 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center justify-between">
+      <div className="container flex h-14 md:h-16 items-center justify-between">
         {/* Logo - Far Left with Dropdown */}
         <div ref={logoRef} className="relative">
           <Link
@@ -59,9 +60,9 @@ export function Header() {
               alt="SearchAF Logo"
               width={28}
               height={28}
-              className="h-7 w-7"
+              className="h-6 w-6 md:h-7 md:w-7"
             />
-            <span className="text-xl logo-text relative" style={{ top: '-2px' }}>
+            <span className="text-lg md:text-xl logo-text relative" style={{ top: '-2px' }}>
               <span style={{ fontWeight: 400 }}>search</span>
               <span style={{ fontWeight: 700 }}>af</span>
             </span>
@@ -111,8 +112,8 @@ export function Header() {
           </AnimatePresence>
         </div>
 
-        {/* Right Section - Navigation */}
-        <nav ref={rightNavRef} className="flex items-center gap-6 flex-1">
+        {/* Desktop Navigation - Hidden on mobile */}
+        <nav ref={rightNavRef} className="hidden md:flex items-center gap-6 flex-1">
           {/* Search Button */}
           <SearchBar ref={searchBarRef} opticalMargin={opticalMargin} />
 
@@ -229,6 +230,9 @@ export function Header() {
             </motion.a>
           </Button>
         </nav>
+
+        {/* Mobile Menu Button */}
+        <MobileMenu />
       </div>
     </header>
   );
