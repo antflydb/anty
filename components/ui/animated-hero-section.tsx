@@ -7,12 +7,17 @@ interface AnimatedHeroSectionProps {
   heading: string;
   description: string;
   button: ReactNode;
-  subtext?: string;
+  subtext?: ReactNode;
 }
 
 export function AnimatedHeroSection({ heading, description, button, subtext }: AnimatedHeroSectionProps) {
-  // Split heading into words
-  const words = heading.split(' ');
+  // Split heading into two parts: "The easy answer bar" and "for every question."
+  const firstLine = "The easy answer bar";
+  const secondLine = "for every question.";
+
+  // Split into words for animation
+  const firstLineWords = firstLine.split(' ');
+  const secondLineWords = secondLine.split(' ');
 
   // Container animation
   const containerVariants = {
@@ -94,30 +99,52 @@ export function AnimatedHeroSection({ heading, description, button, subtext }: A
 
   return (
     <motion.div
-      className="flex flex-col items-center text-center space-y-12"
+      className="flex flex-col items-center text-center"
       variants={containerVariants}
       initial="hidden"
       animate="visible"
     >
-      {/* Animated Heading */}
-      <h1 className="text-5xl font-bold tracking-tight sm:text-8xl max-w-5xl">
-        {words.map((word, index) => (
-          <motion.span
-            key={`${word}-${index}`}
-            variants={wordVariants}
-            className="inline-block mr-[0.25em] last:mr-0"
-          >
-            {word}
-          </motion.span>
-        ))}
-      </h1>
+      {/* Animated Heading - Two Lines */}
+      <div className="mb-8">
+        {/* First line - normal text, stays on one line */}
+        <h1 className="text-[48px] md:text-[70px] lg:text-[94px] font-bold leading-[1] mb-0 whitespace-nowrap" style={{ fontFamily: 'Aeonik, sans-serif', color: 'var(--home-primary-text)' }}>
+          {firstLineWords.map((word, index) => (
+            <motion.span
+              key={`first-${word}-${index}`}
+              variants={wordVariants}
+              className="inline-block mr-[0.25em] last:mr-0"
+            >
+              {word}
+            </motion.span>
+          ))}
+        </h1>
 
-      {/* Animated Description */}
+        {/* Second line - gradient text, animated as whole line to preserve gradient */}
+        <motion.h1
+          variants={wordVariants}
+          className="text-[48px] md:text-[70px] lg:text-[94px] font-bold leading-[1.15] whitespace-nowrap"
+          style={{
+            fontFamily: 'Aeonik, sans-serif',
+            background: 'linear-gradient(to right, var(--home-gradient-blue), var(--home-gradient-purple), var(--home-gradient-pink), var(--home-gradient-orange))',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+            paddingBottom: '4px' // Extra padding to prevent descender clipping
+          }}
+        >
+          {secondLine}
+        </motion.h1>
+      </div>
+
+      {/* Animated Description - 24px text with smart line break */}
       <motion.p
         variants={descriptionVariants}
-        className="max-w-4xl leading-normal text-muted-foreground sm:text-xl sm:leading-8"
+        className="text-[18px] md:text-[20px] lg:text-[24px] leading-[1.56] mb-12 max-w-[758px]"
+        style={{ color: 'var(--home-muted-text)' }}
       >
-        {description}
+        Your customers don&apos;t search stores like they used to.
+        <br className="hidden lg:block" />
+        {' '}Give them instant answers, not search results.
       </motion.p>
 
       {/* Animated Button and Subtext */}
@@ -128,12 +155,11 @@ export function AnimatedHeroSection({ heading, description, button, subtext }: A
 
         {/* Subtext below button */}
         {subtext && (
-          <motion.p
+          <motion.div
             variants={subtextVariants}
-            className="text-sm text-foreground/35 font-medium"
           >
             {subtext}
-          </motion.p>
+          </motion.div>
         )}
       </div>
     </motion.div>

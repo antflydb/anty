@@ -62,6 +62,18 @@
 
 :root {
   --radius: 0.625rem;
+  /* Homepage design tokens */
+  --home-background: #EDECEC; /* Gray background */
+  --home-container: #FFFFFF; /* White container */
+  --home-primary-text: #1A1A23; /* Primary dark text */
+  --home-muted-text: #77777F; /* Muted text */
+  /* Gradient colors for "for every question." */
+  --home-gradient-blue: #7AAEFF; /* Blue */
+  --home-gradient-purple: #B088F9; /* Purple */
+  --home-gradient-pink: #FF88CE; /* Pink */
+  --home-gradient-orange: #FFC988; /* Orange */
+  --home-shopify-green: #95BF47; /* Shopify brand green */
+
   --background: oklch(1 0 0);
   --foreground: oklch(0.165 0.025 210); /* #052333 */
   --card: oklch(1 0 0);
@@ -93,6 +105,15 @@
   --sidebar-accent-foreground: oklch(0.165 0.025 210); /* #052333 */
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+}
+
+/* Center nav hover effect */
+.center-nav-hover {
+  transition: box-shadow 0.3s ease-in-out;
+}
+
+.center-nav-hover:hover {
+  box-shadow: 0 8px 30px 0 rgba(0, 0, 0, 0.08), 0 4px 16px 0 rgba(0, 0, 0, 0.06), 0 2px 8px 0 rgba(0, 0, 0, 0.04) !important;
 }
 
 .dark {
