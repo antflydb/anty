@@ -4,8 +4,6 @@ import { motion } from 'framer-motion';
 import { ReactNode } from 'react';
 
 interface AnimatedHeroSectionProps {
-  heading: string;
-  description: string;
   button: ReactNode;
   subtext?: ReactNode;
 }
