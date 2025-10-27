@@ -103,8 +103,8 @@ export function AnimatedHeroSection({ button, subtext }: AnimatedHeroSectionProp
     >
       {/* Animated Heading - Two Lines */}
       <div className="mb-8">
-        {/* First line - normal text, stays on one line */}
-        <h1 className="text-[48px] md:text-[70px] lg:text-[94px] font-bold leading-[1] mb-0 whitespace-nowrap" style={{ fontFamily: 'Aeonik, sans-serif', color: 'var(--home-primary-text)' }}>
+        {/* First line - normal text, wraps on mobile */}
+        <h1 className="text-[32px] md:text-[70px] lg:text-[94px] font-bold leading-[1.1] md:leading-[1] mb-0 md:whitespace-nowrap" style={{ fontFamily: 'Aeonik, sans-serif', color: 'var(--home-primary-text)' }}>
           {firstLineWords.map((word, index) => (
             <motion.span
               key={`first-${word}-${index}`}
@@ -119,7 +119,7 @@ export function AnimatedHeroSection({ button, subtext }: AnimatedHeroSectionProp
         {/* Second line - gradient text, animated as whole line to preserve gradient */}
         <motion.h1
           variants={wordVariants}
-          className="text-[48px] md:text-[70px] lg:text-[94px] font-bold leading-[1.15] whitespace-nowrap"
+          className="text-[32px] md:text-[70px] lg:text-[94px] font-bold leading-[1.2] md:leading-[1.15] md:whitespace-nowrap"
           style={{
             fontFamily: 'Aeonik, sans-serif',
             background: 'linear-gradient(to right, var(--home-gradient-blue), var(--home-gradient-purple), var(--home-gradient-pink), var(--home-gradient-orange))',

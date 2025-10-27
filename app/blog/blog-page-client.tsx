@@ -43,25 +43,25 @@ export function BlogPageClient({ posts }: BlogPageClientProps) {
           {/* Mobile Navigation - visible on small screens */}
           <div className="flex md:hidden items-center justify-between w-full">
             {/* Left - Logo */}
-            <div className="flex items-center gap-2.5">
+            <Link href="/" className="flex items-center gap-2">
               <Image
                 src="/af-logo.svg"
                 alt="SearchAF Logo"
-                width={32}
-                height={32}
-                className="w-[32px] h-[32px]"
+                width={27}
+                height={27}
+                className="w-[27px] h-[27px]"
               />
-              <span className="text-[22px] logo-text">
+              <span className="text-[19px] logo-text">
                 <span style={{ fontWeight: 400 }}>search</span>
                 <span style={{ fontWeight: 700 }}>af</span>
               </span>
-            </div>
+            </Link>
 
             {/* Right - Get Started Button + Hamburger */}
-            <div className="flex items-center gap-3">
-              <Link href="/signup">
+            <div className="flex items-center gap-2">
+              <Link href="/signup" className="hidden min-[400px]:block">
                 <Button variant="outline" className="h-[52px] px-4 rounded-full border-[1.5px] border-[#ADB4B7]/30 bg-transparent hover:border-[#ADB4B7]/50 text-[#1A1A23] font-semibold text-sm transition-all">
-                  Get started for free
+                  Get started
                 </Button>
               </Link>
               <button
@@ -120,7 +120,7 @@ export function BlogPageClient({ posts }: BlogPageClientProps) {
               {/* Filter Pills + Divider */}
               <div className="flex flex-col gap-[30px] items-center w-full">
                 {/* Filter Pills */}
-                <div className="flex gap-[12px] items-start">
+                <div className="flex flex-wrap gap-[12px] items-start w-full justify-start md:justify-center">
                   {['All', 'Guides', 'Product Updates', 'Search', 'Engineering'].map((filter, index) => (
                     <button
                       key={`${filter}-${index}`}
@@ -135,7 +135,6 @@ export function BlogPageClient({ posts }: BlogPageClientProps) {
                         className={`text-[14px] font-semibold leading-[1.6] tracking-[0.3698px] ${
                           activeFilter === filter ? 'text-white' : 'text-[rgba(26,26,35,0.5)]'
                         }`}
-                        style={{ fontFamily: 'SF Pro Display, sans-serif' }}
                       >
                         {filter}
                       </span>
@@ -158,7 +157,7 @@ export function BlogPageClient({ posts }: BlogPageClientProps) {
             </div>
 
             {/* Blog Posts List */}
-            <div className="flex flex-col gap-[60px] pt-[81px] pb-12">
+            <div className="flex flex-col gap-[80px] pt-[81px] pb-12">
               {posts.length === 0 ? (
                 <div className="text-center py-12">
                   <p className="text-[#77777F]">No blog posts yet. Check back soon!</p>
@@ -167,10 +166,10 @@ export function BlogPageClient({ posts }: BlogPageClientProps) {
                 <>
                   {posts.map((post, index) => (
                     <Link key={post.slug} href={`/blog/${post.slug}`}>
-                      <div className="flex gap-[75px] items-center w-full">
+                      <div className="flex flex-col md:flex-row gap-[24px] md:gap-[75px] items-start md:items-center w-full">
                         {/* Featured Image */}
                         <div
-                          className="w-[375px] h-[280px] rounded-[30px] shrink-0"
+                          className="w-full md:w-[375px] h-[240px] md:h-[280px] rounded-[30px] md:shrink-0"
                           style={{
                             backgroundImage: index % 3 === 0
                               ? "linear-gradient(92.3483deg, rgba(116, 174, 255, 0.2) 1.1955%, rgba(255, 109, 250, 0.157) 101.41%, rgba(255, 199, 182, 0.19) 166.96%, rgba(255, 201, 94, 0.2) 201.18%, rgba(185, 64, 255, 0.2) 307.72%), linear-gradient(90deg, rgb(252, 246, 255) 0%, rgb(252, 246, 255) 100%)"
@@ -189,7 +188,7 @@ export function BlogPageClient({ posts }: BlogPageClientProps) {
 
                           {/* Description + Meta */}
                           <div className="flex flex-col gap-[12px]">
-                            <p className="text-[16px] font-medium leading-[1.5] text-[#77777F]" style={{ fontFamily: 'SF Pro, sans-serif', fontWeight: 500 }}>
+                            <p className="text-[16px] font-medium leading-[1.5] text-[#77777F]">
                               {post.description}
                             </p>
 

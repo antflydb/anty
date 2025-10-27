@@ -51,11 +51,11 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
             transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
-            className="fixed inset-[26px] z-50 bg-[rgba(14,14,15,0.83)] rounded-[16px] overflow-y-auto px-[26px] pt-[20px] pb-[31px] flex flex-col"
+            className="fixed inset-[16px] z-50 bg-[rgba(14,14,15,0.83)] rounded-[16px] overflow-y-auto px-[20px] pt-[16px] pb-[24px] flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="flex items-center justify-between mb-[36px] pl-[10px]">
+            <div className="flex items-center justify-between mb-[24px] pl-[8px]">
               {/* Logo */}
               <div className="flex items-center gap-2.5">
                 <Image
@@ -70,14 +70,14 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
               {/* Close button */}
               <button
                 onClick={onClose}
-                className="w-[41px] h-[41px] rounded-full flex items-center justify-center hover:bg-white/10 transition-colors"
+                className="w-[38px] h-[38px] rounded-full flex items-center justify-center hover:bg-white/10 transition-colors"
               >
-                <X className="w-[17px] h-[17px] text-white" strokeWidth={3.3} />
+                <X className="w-[16px] h-[16px] text-white" strokeWidth={3.3} />
               </button>
             </div>
 
             {/* Search Bar */}
-            <div className="mb-[36px]">
+            <div className="mb-[24px]">
               <div className="relative rounded-[16px] p-[1.5px] bg-gradient-to-r from-[rgba(116,174,255,0.95)] via-[rgba(177,136,249,0.95)] via-[rgba(255,136,206,0.95)] to-[rgba(255,201,136,0.95)]">
                 <div className="relative flex items-center">
                   <input
@@ -90,15 +90,14 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
                         handleSearch();
                       }
                     }}
-                    className="w-full h-[75px] bg-[rgba(14,14,15,0.75)] focus:bg-[rgba(14,14,15,0.55)] px-[28px] rounded-[14.5px] text-[#FFFFFF] text-[20px] font-medium placeholder:text-white/40 focus:outline-none transition-colors duration-200"
-                    style={{ fontFamily: 'SF Pro Display, sans-serif' }}
+                    className="w-full h-[56px] bg-[rgba(14,14,15,0.75)] focus:bg-[rgba(14,14,15,0.55)] px-[20px] rounded-[14.5px] text-[#FFFFFF] text-[17px] font-medium placeholder:text-white/40 focus:outline-none transition-colors duration-200"
                   />
                   {searchQuery && (
                     <button
                       onClick={handleSearch}
-                      className="absolute right-[20px] w-[44px] h-[44px] rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+                      className="absolute right-[16px] w-[36px] h-[36px] rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
                     >
-                      <ArrowUp className="w-[22px] h-[22px] text-white" strokeWidth={2} />
+                      <ArrowUp className="w-[18px] h-[18px] text-white" strokeWidth={2} />
                     </button>
                   )}
                 </div>
@@ -106,58 +105,57 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
             </div>
 
             {/* Navigation Items */}
-            <nav className="mb-[40px] px-[10px] space-y-[21px]">
+            <nav className="mt-[24px] mb-[32px] px-[8px] space-y-[28px]">
               <Link
                 href="/"
-                className="flex items-center gap-[17px] text-white hover:text-white/80 transition-colors"
+                className="flex items-center gap-[14px] text-white hover:text-white/80 transition-colors"
                 onClick={onClose}
               >
-                <Home className="w-[22px] h-[22px]" strokeWidth={2} />
-                <span className="text-[20.5px] font-semibold tracking-[0.46px]" style={{ fontFamily: 'SF Pro Display, sans-serif' }}>
+                <Home className="w-[20px] h-[20px]" strokeWidth={2} />
+                <span className="text-[17px] font-semibold tracking-[0.3px]">
                   Home
                 </span>
               </Link>
 
               <Link
                 href="/docs"
-                className="flex items-center gap-[17px] text-white hover:text-white/80 transition-colors"
+                className="flex items-center gap-[14px] text-white hover:text-white/80 transition-colors"
                 onClick={onClose}
               >
-                <BookMarked className="w-[22px] h-[22px]" strokeWidth={2} />
-                <span className="text-[20.5px] font-semibold tracking-[0.46px]" style={{ fontFamily: 'SF Pro Display, sans-serif' }}>
+                <BookMarked className="w-[20px] h-[20px]" strokeWidth={2} />
+                <span className="text-[17px] font-semibold tracking-[0.3px]">
                   Docs
                 </span>
               </Link>
 
               <Link
                 href="/blog"
-                className="flex items-center gap-[17px] text-white hover:text-white/80 transition-colors"
+                className="flex items-center gap-[14px] text-white hover:text-white/80 transition-colors"
                 onClick={onClose}
               >
-                <LayoutGrid className="w-[22px] h-[22px]" strokeWidth={2} />
-                <span className="text-[20.5px] font-semibold tracking-[0.46px]" style={{ fontFamily: 'SF Pro Display, sans-serif' }}>
+                <LayoutGrid className="w-[20px] h-[20px]" strokeWidth={2} />
+                <span className="text-[17px] font-semibold tracking-[0.3px]">
                   Blog
                 </span>
               </Link>
 
               <Link
                 href="/team"
-                className="flex items-center gap-[17px] text-white hover:text-white/80 transition-colors"
+                className="flex items-center gap-[14px] text-white hover:text-white/80 transition-colors"
                 onClick={onClose}
               >
-                <Pyramid className="w-[22px] h-[22px]" strokeWidth={2} />
-                <span className="text-[20.5px] font-semibold tracking-[0.46px]" style={{ fontFamily: 'SF Pro Display, sans-serif' }}>
+                <Pyramid className="w-[20px] h-[20px]" strokeWidth={2} />
+                <span className="text-[17px] font-semibold tracking-[0.3px]">
                   Team
                 </span>
               </Link>
             </nav>
 
             {/* CTA Buttons */}
-            <div className="space-y-[12px] mb-[40px]">
+            <div className="space-y-[10px] mb-[28px]">
               <Link href="/signup" onClick={onClose} className="block">
                 <Button
-                  className="w-full h-[72px] rounded-[44px] bg-[#4c4c56] hover:bg-[#4c4c56]/90 text-white font-semibold text-[20.5px] tracking-[0.46px] shadow-[0px_0px_15.5px_0px_rgba(0,0,0,0.09)]"
-                  style={{ fontFamily: 'SF Pro Display, sans-serif' }}
+                  className="w-full h-[56px] rounded-[44px] bg-[#4c4c56] hover:bg-[#4c4c56]/90 text-white font-semibold text-[17px] tracking-[0.3px] shadow-[0px_0px_15.5px_0px_rgba(0,0,0,0.09)]"
                 >
                   Get started for free
                 </Button>
@@ -166,8 +164,7 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
               <Link href="/login" onClick={onClose} className="block">
                 <Button
                   variant="outline"
-                  className="w-full h-[72px] rounded-[44px] border-[1.5px] border-[#4c4c56] bg-transparent hover:bg-[#4c4c56]/20 text-white hover:text-white font-semibold text-[20.5px] tracking-[0.46px]"
-                  style={{ fontFamily: 'SF Pro Display, sans-serif' }}
+                  className="w-full h-[56px] rounded-[44px] border-[1.5px] border-[#4c4c56] bg-transparent hover:bg-[#4c4c56]/20 text-white hover:text-white font-semibold text-[17px] tracking-[0.3px]"
                 >
                   Login
                 </Button>
@@ -175,32 +172,32 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
             </div>
 
             {/* Shopify Integration */}
-            <div className="px-[8px] pt-[32px] pb-[32px] mb-auto">
+            <div className="px-[8px] pt-[20px] pb-[20px] mb-auto">
               <Link
                 href="#"
-                className="flex items-center gap-[17px] hover:opacity-80 transition-opacity"
+                className="flex items-center gap-[14px] hover:opacity-80 transition-opacity"
                 onClick={onClose}
               >
-                <div className="w-[40px] h-[40px] rounded-full bg-white flex items-center justify-center">
+                <div className="w-[36px] h-[36px] rounded-full bg-white flex items-center justify-center">
                   <Image
                     src="/shopify-logo-color.svg"
                     alt="Shopify"
-                    width={19}
-                    height={24}
-                    className="w-[19px] h-[24px]"
+                    width={17}
+                    height={20}
+                    className="w-[17px] h-[20px]"
                   />
                 </div>
-                <span className="text-white font-semibold text-[18px] tracking-[0.4px]" style={{ fontFamily: 'SF Pro Display, sans-serif' }}>
+                <span className="text-white font-semibold text-[16px] tracking-[0.3px]">
                   Add SearchAF to Shopify
                 </span>
               </Link>
             </div>
 
             {/* Separator */}
-            <div className="w-full h-[1px] bg-white/20 mb-[32px]" />
+            <div className="w-full h-[1px] bg-white/20 mb-[20px]" />
 
             {/* Social Icons */}
-            <div className="flex items-center gap-[35px] px-[8px] mb-[32px] opacity-50">
+            <div className="flex items-center gap-[28px] px-[8px] mb-[20px] opacity-50">
               <Link href="https://twitter.com" target="_blank" className="hover:opacity-70 transition-opacity">
                 <svg className="w-[20px] h-[21px]" fill="white" viewBox="0 0 24 24">
                   <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
@@ -215,9 +212,9 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
             </div>
 
             {/* Footer */}
-            <div className="flex items-center justify-between px-[4px] text-[13.4px] font-medium text-white/46" style={{ fontFamily: 'SF Pro, sans-serif' }}>
+            <div className="flex items-center justify-between px-[4px] text-[12px] font-medium text-white/46">
               <span>SearchAF by Antfly</span>
-              <div className="flex items-center gap-[38px]">
+              <div className="flex items-center gap-[24px]">
                 <Link href="/terms" className="hover:text-white/70 transition-colors" onClick={onClose}>
                   Use Terms
                 </Link>

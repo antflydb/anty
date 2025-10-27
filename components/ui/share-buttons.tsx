@@ -28,9 +28,9 @@ export function ShareButtons({ title, url }: ShareButtonsProps) {
   };
 
   return (
-    <div className="flex items-center gap-3 pt-8 mt-8 border-t">
+    <div className="flex flex-col sm:flex-row sm:items-center gap-3 pt-8 mt-8 border-t">
       <span className="text-sm font-medium text-muted-foreground">Share this post:</span>
-      <div className="flex gap-2">
+      <div className="flex flex-col sm:flex-row gap-3">
         <Button
           variant="outline"
           size="sm"

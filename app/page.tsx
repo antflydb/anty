@@ -36,7 +36,8 @@ export default function Home() {
           <div className="rounded-full px-6 py-2 w-full max-w-[1665px] bg-gradient-to-r from-[rgba(122,174,255,0.25)] via-[rgba(255,136,206,0.25)] to-[rgba(255,201,136,0.25)] flex justify-center">
             <p className="text-sm text-center" style={{ color: 'var(--home-primary-text)' }}>
               <span className="font-bold">SearchAF</span>
-              <span className="font-medium"> now in early release access— Available for Shopify customers!  🎉</span>
+              <span className="font-medium"> now in early release access— Available for Shopify customers!</span>
+              <span className="font-medium ml-2">🎉</span>
             </p>
           </div>
         </div>
@@ -46,25 +47,25 @@ export default function Home() {
           {/* Mobile Navigation - visible on small screens */}
           <div className="flex md:hidden items-center justify-between w-full">
             {/* Left - Logo */}
-            <div className="flex items-center gap-2.5">
+            <Link href="/" className="flex items-center gap-2">
               <Image
                 src="/af-logo.svg"
                 alt="SearchAF Logo"
-                width={32}
-                height={32}
-                className="w-[32px] h-[32px]"
+                width={27}
+                height={27}
+                className="w-[27px] h-[27px]"
               />
-              <span className="text-[22px] logo-text">
+              <span className="text-[19px] logo-text">
                 <span style={{ fontWeight: 400 }}>search</span>
                 <span style={{ fontWeight: 700 }}>af</span>
               </span>
-            </div>
+            </Link>
 
             {/* Right - Get Started Button + Hamburger */}
-            <div className="flex items-center gap-3">
-              <Link href="/signup">
+            <div className="flex items-center gap-2">
+              <Link href="/signup" className="hidden min-[400px]:block">
                 <Button variant="outline" className="h-[52px] px-4 rounded-full border-[1.5px] border-[#ADB4B7]/30 bg-transparent hover:border-[#ADB4B7]/50 text-[#1A1A23] font-semibold text-sm transition-all">
-                  Get started for free
+                  Get started
                 </Button>
               </Link>
               <button
@@ -121,7 +122,7 @@ export default function Home() {
                     className="w-[25px] h-[30px] lg:w-[26px] lg:h-[32px]"
                   />
                 </div>
-                <span className="text-lg lg:text-[18px] font-semibold">Add SearchAF to Shopify</span>
+                <span className="text-base lg:text-lg font-semibold">Add SearchAF to Shopify</span>
               </Button>
             }
             subtext={

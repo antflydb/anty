@@ -34,7 +34,7 @@ export function CenterNav({ onMenuClick }: CenterNavProps) {
       {/* CMD+K Shortcut */}
       <div className="flex items-center gap-3">
         <div
-          className="flex items-center gap-1 border border-gray-200 rounded-lg px-2 py-1 text-sm font-medium opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300"
+          className="flex items-center gap-1 border border-gray-200 rounded-md px-1.5 py-0.5 text-xs font-medium opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300"
           style={{
             color: '#ADB4B7',
             transitionTimingFunction: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)'
@@ -45,7 +45,7 @@ export function CenterNav({ onMenuClick }: CenterNavProps) {
         </div>
         <button
           onClick={onMenuClick}
-          className="w-[52px] h-[52px] rounded-full relative overflow-hidden flex items-center justify-center group/button">
+          className="w-[52px] h-[52px] rounded-full relative overflow-hidden flex items-center justify-center group/button cursor-pointer">
           {/* Base gradient */}
           <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-[#EAF1FF] to-[#FAEDFE] transition-opacity duration-300 ease-in-out" />
           {/* Hover gradient */}

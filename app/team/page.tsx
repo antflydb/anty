@@ -35,25 +35,25 @@ export default function TeamPage() {
           {/* Mobile Navigation - visible on small screens */}
           <div className="flex md:hidden items-center justify-between w-full">
             {/* Left - Logo */}
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2">
               <Image
                 src="/af-logo.svg"
                 alt="SearchAF Logo"
-                width={32}
-                height={32}
-                className="w-[32px] h-[32px]"
+                width={27}
+                height={27}
+                className="w-[27px] h-[27px]"
               />
-              <span className="text-[22px] logo-text">
+              <span className="text-[19px] logo-text">
                 <span style={{ fontWeight: 400 }}>search</span>
                 <span style={{ fontWeight: 700 }}>af</span>
               </span>
             </div>
 
             {/* Right - Get Started Button + Hamburger */}
-            <div className="flex items-center gap-3">
-              <Link href="/signup">
+            <div className="flex items-center gap-2">
+              <Link href="/signup" className="hidden min-[400px]:block">
                 <Button variant="outline" className="h-[52px] px-4 rounded-full border-[1.5px] border-[#ADB4B7]/30 bg-transparent hover:border-[#ADB4B7]/50 text-[#1A1A23] font-semibold text-sm transition-all">
-                  Get started for free
+                  Get started
                 </Button>
               </Link>
               <button
@@ -106,12 +106,12 @@ export default function TeamPage() {
                 alt="Anty Character"
                 width={302}
                 height={203}
-                className="w-[302px] h-[203px]"
+                className="w-[240px] h-[161px] md:w-[302px] md:h-[203px]"
               />
             </div>
 
             {/* Description Text */}
-            <p className="text-[16px] leading-[1.7] text-[#77777F] mb-16" style={{ fontFamily: 'SF Pro, sans-serif', fontWeight: 500 }}>
+            <p className="text-[15px] md:text-[16px] leading-[1.7] text-[#77777F] mb-16 font-medium">
               SearchAF is built by engineers, designers, and data scientists with decades of experience building search infrastructure and software at scale. We saw the gap between how people ask questions now and how traditional search actually works. So we fixed it.
             </p>
 
@@ -119,8 +119,7 @@ export default function TeamPage() {
             <div className="flex flex-col gap-[6px] items-center">
               <a
                 href="mailto:teamaf@searchaf.com"
-                className="text-[24px] font-semibold leading-[1.7] text-[#1A1A23] no-underline hover:text-[#77777F] hover:underline transition-colors"
-                style={{ fontFamily: 'SF Pro, sans-serif' }}
+                className="text-[20px] md:text-[24px] font-semibold leading-[1.7] text-[#1A1A23] no-underline hover:text-[#77777F] hover:underline transition-colors"
               >
                 teamaf@searchaf.com
               </a>

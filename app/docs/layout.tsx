@@ -20,7 +20,7 @@ export default function DocsLayout({
               height={28}
               className="h-7 w-7"
             />
-            <span className="text-xl logo-text relative" style={{ top: '-2px' }}>
+            <span className="hidden sm:inline text-xl logo-text relative" style={{ top: '-2px' }}>
               <span style={{ fontWeight: 400 }}>search</span>
               <span style={{ fontWeight: 700 }}>af</span>
             </span>

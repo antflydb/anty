@@ -92,7 +92,8 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                     alt="SearchAF Logo"
                     width={32}
                     height={32}
-                    className="w-[32px] h-[32px] brightness-0 invert pl-[8px]"
+                    className="w-[32px] brightness-0 invert pl-[8px]"
+                    style={{ height: 'auto' }}
                   />
 
                   {/* Close button */}
@@ -148,7 +149,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                   <div className="px-[16px] py-[24px] space-y-[6px]">
                     <button
                       onClick={() => handleNavigate('/')}
-                      className="flex items-center gap-[16px] text-white hover:bg-white/10 hover:text-white transition-all w-[250px] rounded-lg px-3 py-3"
+                      className="flex items-center gap-[16px] text-white hover:bg-white/10 hover:text-white transition-all w-[250px] rounded-lg px-3 py-3 cursor-pointer"
                     >
                       <Home className="w-[20px] h-[20px]" strokeWidth={2} />
                       <span className="text-[18px] font-semibold tracking-[0.4px]" style={{ fontFamily: systemFont }}>
@@ -158,7 +159,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
 
                     <button
                       onClick={() => handleNavigate('/docs')}
-                      className="flex items-center gap-[16px] text-white hover:bg-white/10 hover:text-white transition-all w-[250px] rounded-lg px-3 py-3"
+                      className="flex items-center gap-[16px] text-white hover:bg-white/10 hover:text-white transition-all w-[250px] rounded-lg px-3 py-3 cursor-pointer"
                     >
                       <BookMarked className="w-[20px] h-[20px]" strokeWidth={2} />
                       <span className="text-[18px] font-semibold tracking-[0.4px]" style={{ fontFamily: systemFont }}>
@@ -168,7 +169,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
 
                     <button
                       onClick={() => handleNavigate('/blog')}
-                      className="flex items-center gap-[16px] text-white hover:bg-white/10 hover:text-white transition-all w-[250px] rounded-lg px-3 py-3"
+                      className="flex items-center gap-[16px] text-white hover:bg-white/10 hover:text-white transition-all w-[250px] rounded-lg px-3 py-3 cursor-pointer"
                     >
                       <LayoutGrid className="w-[20px] h-[20px]" strokeWidth={2} />
                       <span className="text-[18px] font-semibold tracking-[0.4px]" style={{ fontFamily: systemFont }}>
@@ -178,7 +179,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
 
                     <button
                       onClick={() => handleNavigate('/team')}
-                      className="flex items-center gap-[16px] text-white hover:bg-white/10 hover:text-white transition-all w-[250px] rounded-lg px-3 py-3"
+                      className="flex items-center gap-[16px] text-white hover:bg-white/10 hover:text-white transition-all w-[250px] rounded-lg px-3 py-3 cursor-pointer"
                     >
                       <Pyramid className="w-[20px] h-[20px]" strokeWidth={2} />
                       <span className="text-[18px] font-semibold tracking-[0.4px]" style={{ fontFamily: systemFont }}>
