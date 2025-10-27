@@ -73,7 +73,7 @@ export default function SignupPage() {
             {/* Divider */}
             <div className="flex items-center gap-4">
               <div className="flex-1 h-[1px] bg-[#ADB4B7]/30" />
-              <span className="text-[14px] text-[#77777F]" style={{ fontFamily: 'SF Pro, sans-serif' }}>
+              <span className="text-[14px] text-[#77777F]">
                 or
               </span>
               <div className="flex-1 h-[1px] bg-[#ADB4B7]/30" />
@@ -124,7 +124,7 @@ export default function SignupPage() {
 
             {/* Login Link */}
             <div className="text-center pt-4">
-              <span className="text-[14px] text-[#77777F]" style={{ fontFamily: 'SF Pro, sans-serif' }}>
+              <span className="text-[14px] text-[#77777F]">
                 Already have an account?{' '}
                 <Link
                   href="/login"

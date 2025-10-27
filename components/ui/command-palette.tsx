@@ -99,7 +99,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                   {/* Close button */}
                   <button
                     onClick={onClose}
-                    className="w-[41px] h-[41px] rounded-full flex items-center justify-center hover:bg-white/10 transition-colors"
+                    className="w-[41px] h-[41px] rounded-full flex items-center justify-center hover:bg-white/10 transition-colors cursor-pointer"
                   >
                     <X className="w-[17px] h-[17px] text-white" strokeWidth={3.3} />
                   </button>
@@ -123,15 +123,27 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                       style={{ fontFamily: systemFont }}
                     />
                     <motion.button
-                      onClick={handleSearch}
-                      initial={{ opacity: 0, x: -10, width: 0, marginLeft: 0 }}
-                      animate={searchQuery ? { opacity: 1, x: 0, width: 40, marginLeft: 8 } : { opacity: 0, x: -10, width: 0, marginLeft: 0 }}
-                      transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
-                      className="rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors overflow-hidden"
-                      style={{ height: 40 }}
+                      onClick={() => setSearchQuery('')}
+                      initial={{ opacity: 0, x: 10 }}
+                      animate={searchQuery ? { opacity: 1, x: 0 } : { opacity: 0, x: 10 }}
+                      transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94], delay: 0.05 }}
+                      className="rounded-full flex items-center justify-center ml-2 w-[32px] h-[32px] group cursor-pointer"
                     >
-                      <ArrowRight className="w-[20px] h-[20px] text-white" strokeWidth={2} />
+                      <X className="w-[16px] h-[16px] text-white/50 group-hover:text-white transition-colors" strokeWidth={2} />
                     </motion.button>
+                    <motion.div
+                      initial={{ opacity: 0, x: 50 }}
+                      animate={searchQuery ? { opacity: 1, x: 0 } : { opacity: 0, x: 50 }}
+                      transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
+                      className="ml-2"
+                    >
+                      <button
+                        onClick={handleSearch}
+                        className="rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors w-[40px] h-[40px] group cursor-pointer"
+                      >
+                        <ArrowRight className="w-[20px] h-[20px] text-white group-hover:translate-x-0.5 transition-transform" strokeWidth={2} />
+                      </button>
+                    </motion.div>
                   </div>
                 </div>
               </motion.div>

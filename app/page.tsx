@@ -112,18 +112,20 @@ export default function Home() {
         <div className="flex-1 flex flex-col items-center justify-center px-4 pt-0 pb-8">
           <AnimatedHeroSection
             button={
-              <Button className="h-[64px] lg:h-[84px] pl-3 lg:pl-4 pr-6 lg:pr-9 rounded-full bg-[#1A1A23] hover:bg-[#1A1A23]/90 text-white shadow-[0px_0px_22px_0px_rgba(0,0,0,0.09)] flex items-center gap-2 lg:gap-3">
-                <div className="w-[48px] h-[48px] lg:w-[60px] lg:h-[60px] flex items-center justify-center">
-                  <Image
-                    src="/shopify-logo-color.svg"
-                    alt="Shopify"
-                    width={31}
-                    height={38}
-                    className="w-[25px] h-[30px] lg:w-[26px] lg:h-[32px]"
-                  />
-                </div>
-                <span className="text-base lg:text-lg font-semibold">Add SearchAF to Shopify</span>
-              </Button>
+              <Link href="/signup">
+                <Button className="h-[64px] lg:h-[84px] pl-3 lg:pl-4 pr-6 lg:pr-9 rounded-full bg-[#1A1A23] hover:bg-[#1A1A23]/90 text-white shadow-[0px_0px_22px_0px_rgba(0,0,0,0.09)] flex items-center gap-2 lg:gap-3">
+                  <div className="w-[48px] h-[48px] lg:w-[60px] lg:h-[60px] flex items-center justify-center">
+                    <Image
+                      src="/shopify-logo-color.svg"
+                      alt="Shopify"
+                      width={31}
+                      height={38}
+                      className="w-[25px] h-[30px] lg:w-[26px] lg:h-[32px]"
+                    />
+                  </div>
+                  <span className="text-base lg:text-lg font-semibold">Add SearchAF to Shopify</span>
+                </Button>
+              </Link>
             }
             subtext={
               <span className="text-base font-medium" style={{ color: '#ADB4B7' }}>

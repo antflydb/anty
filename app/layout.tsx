@@ -5,10 +5,14 @@ export const metadata: Metadata = {
   title: "SearchAF - Answer Engine Built for the AI Era",
   description: "SearchAF delivers an answer engine with an answer bar to elevate the traditional search experience - more than search, it's answers. Powered by Antfly DB.",
   icons: {
-    icon: "/af-logo.svg",
-    shortcut: "/af-logo.svg",
-    apple: "/af-logo.svg",
+    icon: [
+      { url: "/favicon-96x96.png", sizes: "96x96", type: "image/png" },
+      { url: "/favicon.svg", type: "image/svg+xml" },
+    ],
+    shortcut: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
   },
+  manifest: "/site.webmanifest",
 };
 
 export default function RootLayout({
