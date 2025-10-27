@@ -3,7 +3,8 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
-import { X, Home, BookMarked, LayoutGrid, Pyramid } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { X, Home, BookMarked, LayoutGrid, Pyramid, ArrowUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface MobileMenuProps {
@@ -12,6 +13,24 @@ interface MobileMenuProps {
 }
 
 export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Reset search query when menu closes
+  useEffect(() => {
+    if (!isOpen) {
+      setSearchQuery('');
+    }
+  }, [isOpen]);
+
+  // Handle search submission
+  const handleSearch = () => {
+    if (searchQuery.trim()) {
+      // TODO: Implement search functionality
+      console.log('Search query:', searchQuery);
+      onClose();
+    }
+  };
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -36,7 +55,7 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="flex items-center justify-between mb-[36px] px-[10px]">
+            <div className="flex items-center justify-between mb-[36px] pl-[10px]">
               {/* Logo */}
               <div className="flex items-center gap-2.5">
                 <Image
@@ -60,12 +79,29 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
             {/* Search Bar */}
             <div className="mb-[36px]">
               <div className="relative rounded-[16px] p-[1.5px] bg-gradient-to-r from-[rgba(116,174,255,0.95)] via-[rgba(177,136,249,0.95)] via-[rgba(255,136,206,0.95)] to-[rgba(255,201,136,0.95)]">
-                <input
-                  type="text"
-                  placeholder="Search docs..."
-                  className="w-full h-[75px] bg-[rgba(14,14,15,0.83)] px-[28px] rounded-[14.5px] text-white/40 text-[20px] font-medium placeholder:text-white/40 focus:outline-none"
-                  style={{ fontFamily: 'SF Pro Display, sans-serif' }}
-                />
+                <div className="relative flex items-center">
+                  <input
+                    type="text"
+                    placeholder="Search docs..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        handleSearch();
+                      }
+                    }}
+                    className="w-full h-[75px] bg-[rgba(14,14,15,0.75)] focus:bg-[rgba(14,14,15,0.55)] px-[28px] rounded-[14.5px] text-[#FFFFFF] text-[20px] font-medium placeholder:text-white/40 focus:outline-none transition-colors duration-200"
+                    style={{ fontFamily: 'SF Pro Display, sans-serif' }}
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={handleSearch}
+                      className="absolute right-[20px] w-[44px] h-[44px] rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+                    >
+                      <ArrowUp className="w-[22px] h-[22px] text-white" strokeWidth={2} />
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
 

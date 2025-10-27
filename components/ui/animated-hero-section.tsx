@@ -139,12 +139,12 @@ export function AnimatedHeroSection({ heading, description, button, subtext }: A
       {/* Animated Description - 24px text with smart line break */}
       <motion.p
         variants={descriptionVariants}
-        className="text-[18px] md:text-[20px] lg:text-[24px] leading-[1.56] mb-12 max-w-[758px]"
+        className="text-[18px] md:text-[20px] lg:text-[24px] leading-[1.56] mb-12 max-w-[758px] px-6 lg:px-0"
         style={{ color: 'var(--home-muted-text)' }}
       >
         Your customers don&apos;t search stores like they used to.
         <br className="hidden lg:block" />
-        {' '}Give them instant answers, not search results.
+        {' '}Give them instant answers, not just search results.
       </motion.p>
 
       {/* Animated Button and Subtext */}

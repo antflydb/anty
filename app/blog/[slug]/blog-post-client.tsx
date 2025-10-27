@@ -4,21 +4,27 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { AnimatedHeroSection } from "@/components/ui/animated-hero-section";
 import { MobileMenu } from "@/components/ui/mobile-menu";
 import { CommandPalette } from "@/components/ui/command-palette";
 import { CenterNav } from "@/components/layout/center-nav";
+import { MarkdownContent } from "@/components/ui/markdown-content";
+import { ShareButtons } from "@/components/ui/share-buttons";
+import { Calendar, User, ArrowLeft } from "lucide-react";
+import type { Post } from "@/lib/markdown";
 
-export default function Home() {
+interface BlogPostClientProps {
+  post: Post;
+}
+
+export function BlogPostClient({ post }: BlogPostClientProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
 
   // Handle keyboard shortcut for command palette
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Check for Cmd+K (Mac) or Ctrl+K (Windows/Linux)
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault(); // Prevent default browser search
+        e.preventDefault();
         setIsCommandPaletteOpen(true);
       }
     };
@@ -26,20 +32,11 @@ export default function Home() {
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
+
   return (
-    <div className="relative h-screen overflow-hidden flex flex-col p-[9px]" style={{ backgroundColor: 'var(--home-background)' }}>
+    <div className="relative min-h-screen flex flex-col p-[9px]" style={{ backgroundColor: 'var(--home-background)' }}>
       {/* Main White Container */}
       <div className="relative bg-white rounded-[30px] shadow-[0px_0px_34px_0px_rgba(0,0,0,0.05)] flex-1 flex flex-col w-full">
-
-        {/* Announcement Bar */}
-        <div className="w-full hidden md:flex justify-center pt-3 pb-2 px-6">
-          <div className="rounded-full px-6 py-2 w-full max-w-[1665px] bg-gradient-to-r from-[rgba(122,174,255,0.25)] via-[rgba(255,136,206,0.25)] to-[rgba(255,201,136,0.25)] flex justify-center">
-            <p className="text-sm text-center" style={{ color: 'var(--home-primary-text)' }}>
-              <span className="font-bold">SearchAF</span>
-              <span className="font-medium"> now in early release access— Available for Shopify customers!  🎉</span>
-            </p>
-          </div>
-        </div>
 
         {/* Navigation Row */}
         <div className="flex items-center justify-between px-6 pt-6 pb-8">
@@ -103,31 +100,85 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Hero Section */}
-        <div className="flex-1 flex flex-col items-center justify-center px-4 pt-0 pb-8">
-          <AnimatedHeroSection
-            heading="The easy answer bar for every question."
-            description="Your customers don't search stores like they used to. Give them instant answers, not just search results."
-            button={
-              <Button className="h-[64px] lg:h-[84px] pl-3 lg:pl-4 pr-6 lg:pr-9 rounded-full bg-[#1A1A23] hover:bg-[#1A1A23]/90 text-white shadow-[0px_0px_22px_0px_rgba(0,0,0,0.09)] flex items-center gap-2 lg:gap-3">
-                <div className="w-[48px] h-[48px] lg:w-[60px] lg:h-[60px] flex items-center justify-center">
-                  <Image
-                    src="/shopify-logo-color.svg"
-                    alt="Shopify"
-                    width={31}
-                    height={38}
-                    className="w-[25px] h-[30px] lg:w-[26px] lg:h-[32px]"
-                  />
+        {/* Blog Content */}
+        <div className="flex-1 flex flex-col items-center px-6 pb-12">
+          {/* Content Container - Max Width 1000px */}
+          <div className="w-full max-w-[1000px]">
+            {/* Content with proper top spacing */}
+            <div className="flex flex-col gap-[45px] pt-[80px] md:pt-[120px] lg:pt-[173px]">
+
+              {/* Back Button & Separator Section */}
+              <div className="flex gap-[36px] items-center w-full">
+                <Link href="/blog">
+                  <button className="w-[52px] h-[52px] rounded-full bg-[rgba(238,238,243,0.41)] flex items-center justify-center group transition-colors hover:bg-[rgba(238,238,243,0.6)]">
+                    <ArrowLeft
+                      className="w-[28px] h-[28px] text-[#77777F] group-hover:-translate-x-0.5 transition-transform"
+                      strokeWidth={2}
+                    />
+                  </button>
+                </Link>
+                <div className="flex-1 h-px bg-[rgba(0,0,0,0.1)]" />
+              </div>
+
+              {/* Title Section */}
+              <div className="flex flex-col gap-[60px]">
+                <h1 className="text-[40px] md:text-[60px] lg:text-[76px] font-bold leading-none text-[#1A1A23]" style={{ fontFamily: 'Aeonik, sans-serif' }}>
+                  {post.title}
+                </h1>
+              </div>
+
+              {/* Description & Meta Section */}
+              <div className="flex flex-col gap-[24px]">
+                {/* Description */}
+                {post.description && (
+                  <p className="text-[20px] md:text-[24px] leading-[1.7] text-[#77777F]" style={{ fontFamily: 'SF Pro, sans-serif', fontWeight: 500 }}>
+                    {post.description}
+                  </p>
+                )}
+
+                {/* Meta Info */}
+                <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                  {post.date && (
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4" />
+                      <span>{new Date(post.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                    </div>
+                  )}
+                  {post.author && (
+                    <div className="flex items-center gap-2">
+                      <User className="h-4 w-4" />
+                      <span>{post.author}</span>
+                    </div>
+                  )}
                 </div>
-                <span className="text-lg lg:text-[18px] font-semibold">Add SearchAF to Shopify</span>
-              </Button>
-            }
-            subtext={
-              <span className="text-base font-medium" style={{ color: '#ADB4B7' }}>
-                What is SearchAF? <Link href="/docs" className="underline transition-colors duration-200 ml-3 hover:text-[#1A1A23]">Read docs</Link>
-              </span>
-            }
-          />
+              </div>
+
+              {/* Featured Image */}
+              <div
+                className="w-full h-[300px] md:h-[400px] rounded-[45px]"
+                style={{
+                  backgroundImage: post.slug.charCodeAt(0) % 3 === 0
+                    ? "linear-gradient(92.3483deg, rgba(116, 174, 255, 0.2) 1.1955%, rgba(255, 109, 250, 0.157) 101.41%, rgba(255, 199, 182, 0.19) 166.96%, rgba(255, 201, 94, 0.2) 201.18%, rgba(185, 64, 255, 0.2) 307.72%), linear-gradient(90deg, rgb(252, 246, 255) 0%, rgb(252, 246, 255) 100%)"
+                    : post.slug.charCodeAt(0) % 3 === 1
+                    ? "linear-gradient(-77.8169deg, rgba(116, 174, 255, 0.2) 107.42%, rgba(255, 109, 250, 0.157) 31.777%, rgba(255, 199, 182, 0.19) 17.702%, rgba(255, 201, 94, 0.2) 103.32%, rgba(185, 64, 255, 0.2) 123.96%), linear-gradient(90deg, rgb(252, 246, 255) 0%, rgb(252, 246, 255) 100%)"
+                    : "linear-gradient(50.9431deg, rgba(116, 174, 255, 0.2) 34.665%, rgba(255, 109, 250, 0.157) 35.393%, rgba(255, 199, 182, 0.19) 81.221%, rgba(255, 201, 94, 0.2) 105.15%, rgba(185, 64, 255, 0.2) 179.63%), linear-gradient(90deg, rgb(252, 246, 255) 0%, rgb(252, 246, 255) 100%)"
+                }}
+              />
+
+              {/* Markdown Content */}
+              <div className="mb-16 md:mb-20">
+                <MarkdownContent content={post.content} />
+              </div>
+
+              {/* Share Buttons */}
+              <div className="pt-8 border-t border-border/30">
+                <ShareButtons
+                  title={post.title}
+                  url={`https://searchaf.antfly.io/blog/${post.slug}`}
+                />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 

@@ -6,8 +6,6 @@ author: Engineering Team
 image: /blog-images/hybrid-search.png
 ---
 
-# Hybrid Search: Combining the Best of Vector and Keyword Search
-
 When building modern search experiences, you often face a choice: should you use traditional keyword search or cutting-edge vector search? The answer is increasingly "both" - and that's where hybrid search comes in.
 
 ## The Limitations of Each Approach

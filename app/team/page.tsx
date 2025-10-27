@@ -4,21 +4,19 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { AnimatedHeroSection } from "@/components/ui/animated-hero-section";
 import { MobileMenu } from "@/components/ui/mobile-menu";
 import { CommandPalette } from "@/components/ui/command-palette";
 import { CenterNav } from "@/components/layout/center-nav";
 
-export default function Home() {
+export default function TeamPage() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
 
   // Handle keyboard shortcut for command palette
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Check for Cmd+K (Mac) or Ctrl+K (Windows/Linux)
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault(); // Prevent default browser search
+        e.preventDefault();
         setIsCommandPaletteOpen(true);
       }
     };
@@ -26,20 +24,11 @@ export default function Home() {
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
+
   return (
     <div className="relative h-screen overflow-hidden flex flex-col p-[9px]" style={{ backgroundColor: 'var(--home-background)' }}>
       {/* Main White Container */}
       <div className="relative bg-white rounded-[30px] shadow-[0px_0px_34px_0px_rgba(0,0,0,0.05)] flex-1 flex flex-col w-full">
-
-        {/* Announcement Bar */}
-        <div className="w-full hidden md:flex justify-center pt-3 pb-2 px-6">
-          <div className="rounded-full px-6 py-2 w-full max-w-[1665px] bg-gradient-to-r from-[rgba(122,174,255,0.25)] via-[rgba(255,136,206,0.25)] to-[rgba(255,201,136,0.25)] flex justify-center">
-            <p className="text-sm text-center" style={{ color: 'var(--home-primary-text)' }}>
-              <span className="font-bold">SearchAF</span>
-              <span className="font-medium"> now in early release access— Available for Shopify customers!  🎉</span>
-            </p>
-          </div>
-        </div>
 
         {/* Navigation Row */}
         <div className="flex items-center justify-between px-6 pt-6 pb-8">
@@ -103,31 +92,36 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Hero Section */}
-        <div className="flex-1 flex flex-col items-center justify-center px-4 pt-0 pb-8">
-          <AnimatedHeroSection
-            heading="The easy answer bar for every question."
-            description="Your customers don't search stores like they used to. Give them instant answers, not just search results."
-            button={
-              <Button className="h-[64px] lg:h-[84px] pl-3 lg:pl-4 pr-6 lg:pr-9 rounded-full bg-[#1A1A23] hover:bg-[#1A1A23]/90 text-white shadow-[0px_0px_22px_0px_rgba(0,0,0,0.09)] flex items-center gap-2 lg:gap-3">
-                <div className="w-[48px] h-[48px] lg:w-[60px] lg:h-[60px] flex items-center justify-center">
-                  <Image
-                    src="/shopify-logo-color.svg"
-                    alt="Shopify"
-                    width={31}
-                    height={38}
-                    className="w-[25px] h-[30px] lg:w-[26px] lg:h-[32px]"
-                  />
-                </div>
-                <span className="text-lg lg:text-[18px] font-semibold">Add SearchAF to Shopify</span>
-              </Button>
-            }
-            subtext={
-              <span className="text-base font-medium" style={{ color: '#ADB4B7' }}>
-                What is SearchAF? <Link href="/docs" className="underline transition-colors duration-200 ml-3 hover:text-[#1A1A23]">Read docs</Link>
-              </span>
-            }
-          />
+        {/* Content Section */}
+        <div className="flex-1 flex flex-col items-center justify-center px-6 pb-8">
+          <div className="flex flex-col items-center text-center max-w-[588px]">
+            {/* Anty Character Image */}
+            <div className="mb-12">
+              <Image
+                src="/anty-a.png"
+                alt="Anty Character"
+                width={302}
+                height={203}
+                className="w-[302px] h-[203px]"
+              />
+            </div>
+
+            {/* Description Text */}
+            <p className="text-[16px] leading-[1.7] text-[#77777F] mb-16" style={{ fontFamily: 'SF Pro, sans-serif', fontWeight: 500 }}>
+              SearchAF is built by engineers, designers, and data scientists with decades of experience building search infrastructure and software at scale. We saw the gap between how people ask questions now and how traditional search actually works. So we fixed it.
+            </p>
+
+            {/* Contact Section */}
+            <div className="flex flex-col gap-[6px] items-center">
+              <a
+                href="mailto:teamaf@searchaf.com"
+                className="text-[24px] font-semibold leading-[1.7] text-[#1A1A23] no-underline hover:text-[#77777F] hover:underline transition-colors"
+                style={{ fontFamily: 'SF Pro, sans-serif' }}
+              >
+                teamaf@searchaf.com
+              </a>
+            </div>
+          </div>
         </div>
       </div>
 

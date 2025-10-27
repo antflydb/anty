@@ -3,11 +3,11 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { MobileMenu } from "@/components/ui/mobile-menu";
 import { CommandPalette } from "@/components/ui/command-palette";
-import { Calendar, User } from "lucide-react";
+import { CenterNav } from "@/components/layout/center-nav";
+import { Calendar, User, X } from "lucide-react";
 import type { Post } from "@/lib/markdown";
 
 interface BlogPageClientProps {
@@ -17,6 +17,7 @@ interface BlogPageClientProps {
 export function BlogPageClient({ posts }: BlogPageClientProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  const [activeFilter, setActiveFilter] = useState('All');
 
   // Handle keyboard shortcut for command palette
   useEffect(() => {
@@ -87,51 +88,7 @@ export function BlogPageClient({ posts }: BlogPageClientProps) {
 
             {/* Centered Menu Bar */}
             <div className="flex items-center justify-center flex-1">
-              <div
-                className="flex items-center justify-between bg-white rounded-full pl-6 pr-2 py-2 w-[356px] center-nav-hover"
-                style={{
-                  border: '1px solid rgba(227, 220, 220, 0.53)',
-                  boxShadow: '0 5.635px 21.287px 0 rgba(0, 0, 0, 0.03), 0 2.993px 11.305px 0 rgba(0, 0, 0, 0.02), 0 1.245px 4.704px 0 rgba(0, 0, 0, 0.02)'
-                }}
-              >
-                {/* Logo */}
-                <div className="flex items-center gap-2">
-                  <Image
-                    src="/af-logo.svg"
-                    alt="SearchAF Logo"
-                    width={27.55}
-                    height={27.55}
-                    className="w-[27.55px] h-[27.55px]"
-                  />
-                  <span className="text-[20px] logo-text relative" style={{ top: '-1px', width: '96px', display: 'inline-block' }}>
-                    <span style={{ fontWeight: 400 }}>search</span>
-                    <span style={{ fontWeight: 700 }}>af</span>
-                  </span>
-                </div>
-
-                {/* CMD+K Shortcut */}
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-1 border border-gray-200 rounded-lg px-2 py-1 text-sm font-medium" style={{ color: '#ADB4B7' }}>
-                    <span>⌘</span>
-                    <span>K</span>
-                  </div>
-                  <button
-                    onClick={() => setIsCommandPaletteOpen(true)}
-                    className="w-[52px] h-[52px] rounded-full relative overflow-hidden flex items-center justify-center group">
-                    {/* Base gradient */}
-                    <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-[#EAF1FF] to-[#FAEDFE] transition-opacity duration-300 ease-in-out" />
-                    {/* Hover gradient */}
-                    <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-[#C2D9FC] to-[#F7CCFA] opacity-0 group-hover:opacity-100 transition-opacity duration-300 ease-in-out" />
-                    <Image
-                      src="/menu1.svg"
-                      alt="Menu"
-                      width={34}
-                      height={34}
-                      className="w-[34px] h-[34px] relative z-10"
-                    />
-                  </button>
-                </div>
-              </div>
+              <CenterNav onMenuClick={() => setIsCommandPaletteOpen(true)} />
             </div>
 
             {/* Right - Get Started Button */}
@@ -144,67 +101,117 @@ export function BlogPageClient({ posts }: BlogPageClientProps) {
         </div>
 
         {/* Blog Content */}
-        <div className="flex-1 px-6 pb-12">
-          {/* Hero Section */}
-          <div className="py-16 md:py-20">
-            <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">Blog</h1>
-            <p className="text-xl text-muted-foreground max-w-[42rem]">
-              Latest updates, insights, and best practices from the SearchAF team
-            </p>
-          </div>
-
-          {/* Blog Posts Grid */}
-          <div className="pb-12">
-            {posts.length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground">No blog posts yet. Check back soon!</p>
+        <div className="flex-1 flex flex-col items-center px-6 pb-12">
+          {/* Content Container - Max Width 1200px */}
+          <div className="w-full max-w-[1200px]">
+            {/* Hero Section */}
+            <div className="flex flex-col gap-[45px] pt-[100px]">
+              {/* Title */}
+              <div className="flex items-center justify-center w-full">
+                <h1 className="text-[50px] font-bold leading-none text-[#1A1A23] text-center" style={{ fontFamily: 'Aeonik, sans-serif' }}>
+                  BlogAF
+                </h1>
               </div>
-            ) : (
-              <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-                {posts.map((post) => (
-                  <Link key={post.slug} href={`/blog/${post.slug}`} className="group">
-                    <Card className="h-full overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-2 hover:border-primary/50 p-0">
-                      {/* Featured Image */}
-                      {post.image && (
-                        <div className="relative w-full h-48 overflow-hidden bg-muted">
-                          <Image
-                            src={post.image}
-                            alt={post.title}
-                            fill
-                            className="object-cover transition-transform duration-300 group-hover:scale-105"
-                          />
-                        </div>
+
+              {/* Filter Pills + Divider */}
+              <div className="flex flex-col gap-[30px] items-center w-full">
+                {/* Filter Pills */}
+                <div className="flex gap-[12px] items-start">
+                  {['All', 'Engineering', 'Product Updates', 'Tutorials', 'Best Practices', 'Case Studies'].map((filter, index) => (
+                    <button
+                      key={`${filter}-${index}`}
+                      onClick={() => setActiveFilter(filter)}
+                      className={`px-[18px] py-[6px] rounded-full transition-all duration-200 flex items-center gap-2 ${
+                        activeFilter === filter
+                          ? 'bg-[#1A1A23]'
+                          : 'bg-[#F8F8FB] hover:bg-[rgba(76,76,86,0.12)]'
+                      }`}
+                    >
+                      <span
+                        className={`text-[14px] font-semibold leading-[1.6] tracking-[0.3698px] ${
+                          activeFilter === filter ? 'text-white' : 'text-[rgba(26,26,35,0.5)]'
+                        }`}
+                        style={{ fontFamily: 'SF Pro Display, sans-serif' }}
+                      >
+                        {filter}
+                      </span>
+                      {activeFilter === filter && filter !== 'All' && (
+                        <X
+                          className="w-3.5 h-3.5 text-white hover:opacity-70 transition-opacity"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveFilter('All');
+                          }}
+                        />
                       )}
+                    </button>
+                  ))}
+                </div>
 
-                      <CardHeader className="pb-4 pt-6">
-                        <CardTitle className="text-xl group-hover:text-primary transition-colors mb-2 line-clamp-2">
-                          {post.title}
-                        </CardTitle>
-                        <CardDescription className="text-base line-clamp-3 leading-relaxed">
-                          {post.description}
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent className="pt-0 pb-6">
-                        <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                          {post.date && (
-                            <div className="flex items-center gap-1.5">
-                              <Calendar className="h-3.5 w-3.5" />
-                              <span>{new Date(post.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</span>
-                            </div>
-                          )}
-                          {post.author && (
-                            <div className="flex items-center gap-1.5">
-                              <User className="h-3.5 w-3.5" />
-                              <span>{post.author}</span>
-                            </div>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </Link>
-                ))}
+                {/* Horizontal Divider */}
+                <div className="w-full h-[1px] bg-[rgba(0,0,0,0.1)]" />
               </div>
-            )}
+            </div>
+
+            {/* Blog Posts List */}
+            <div className="flex flex-col gap-[60px] pt-[81px] pb-12">
+              {posts.length === 0 ? (
+                <div className="text-center py-12">
+                  <p className="text-[#77777F]">No blog posts yet. Check back soon!</p>
+                </div>
+              ) : (
+                <>
+                  {posts.map((post, index) => (
+                    <Link key={post.slug} href={`/blog/${post.slug}`}>
+                      <div className="flex gap-[75px] items-center w-full">
+                        {/* Featured Image */}
+                        <div
+                          className="w-[375px] h-[280px] rounded-[30px] shrink-0"
+                          style={{
+                            backgroundImage: index % 3 === 0
+                              ? "linear-gradient(92.3483deg, rgba(116, 174, 255, 0.2) 1.1955%, rgba(255, 109, 250, 0.157) 101.41%, rgba(255, 199, 182, 0.19) 166.96%, rgba(255, 201, 94, 0.2) 201.18%, rgba(185, 64, 255, 0.2) 307.72%), linear-gradient(90deg, rgb(252, 246, 255) 0%, rgb(252, 246, 255) 100%)"
+                              : index % 3 === 1
+                              ? "linear-gradient(-77.8169deg, rgba(116, 174, 255, 0.2) 107.42%, rgba(255, 109, 250, 0.157) 31.777%, rgba(255, 199, 182, 0.19) 17.702%, rgba(255, 201, 94, 0.2) 103.32%, rgba(185, 64, 255, 0.2) 123.96%), linear-gradient(90deg, rgb(252, 246, 255) 0%, rgb(252, 246, 255) 100%)"
+                              : "linear-gradient(50.9431deg, rgba(116, 174, 255, 0.2) 34.665%, rgba(255, 109, 250, 0.157) 35.393%, rgba(255, 199, 182, 0.19) 81.221%, rgba(255, 201, 94, 0.2) 105.15%, rgba(185, 64, 255, 0.2) 179.63%), linear-gradient(90deg, rgb(252, 246, 255) 0%, rgb(252, 246, 255) 100%)"
+                          }}
+                        />
+
+                        {/* Content */}
+                        <div className="flex-1 flex flex-col gap-[12px]">
+                          {/* Title */}
+                          <h2 className="text-[28px] font-bold leading-[1.4] text-[#1A1A23]" style={{ fontFamily: 'Aeonik, sans-serif' }}>
+                            {post.title}
+                          </h2>
+
+                          {/* Description + Meta */}
+                          <div className="flex flex-col gap-[12px]">
+                            <p className="text-[16px] font-medium leading-[1.5] text-[#77777F]" style={{ fontFamily: 'SF Pro, sans-serif', fontWeight: 500 }}>
+                              {post.description}
+                            </p>
+
+                            {/* Meta Info */}
+                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                              {post.date && (
+                                <div className="flex items-center gap-1.5">
+                                  <Calendar className="h-3.5 w-3.5" />
+                                  <span>{new Date(post.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</span>
+                                </div>
+                              )}
+                              {post.author && (
+                                <div className="flex items-center gap-1.5">
+                                  <User className="h-3.5 w-3.5" />
+                                  <span>{post.author}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -219,8 +226,8 @@ export function BlogPageClient({ posts }: BlogPageClientProps) {
               alt="Antfly Logo"
               width={16}
               height={16}
-              className="h-4 w-4 opacity-60"
-              style={{ filter: 'grayscale(100%) brightness(1.2)' }}
+              className="h-4 w-4"
+              style={{ filter: 'brightness(0) saturate(100%) invert(73%) sepia(6%) saturate(336%) hue-rotate(169deg) brightness(89%) contrast(87%)' }}
             />
           </div>
           <span className="text-sm font-medium text-[#ADB4B7]">
