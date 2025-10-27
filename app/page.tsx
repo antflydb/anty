@@ -1,14 +1,30 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { AnimatedHeroSection } from "@/components/ui/animated-hero-section";
 import { MobileMenu } from "@/components/ui/mobile-menu";
+import { CommandPalette } from "@/components/ui/command-palette";
 
 export default function Home() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+
+  // Handle keyboard shortcut for command palette
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Check for Cmd+K (Mac) or Ctrl+K (Windows/Linux)
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault(); // Prevent default browser search
+        setIsCommandPaletteOpen(true);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
   return (
     <div className="relative h-screen overflow-hidden flex flex-col p-[9px]" style={{ backgroundColor: 'var(--home-background)' }}>
       {/* Main White Container */}
@@ -102,7 +118,9 @@ export default function Home() {
                     <span>⌘</span>
                     <span>K</span>
                   </div>
-                  <button className="w-[52px] h-[52px] rounded-full relative overflow-hidden flex items-center justify-center group">
+                  <button
+                    onClick={() => setIsCommandPaletteOpen(true)}
+                    className="w-[52px] h-[52px] rounded-full relative overflow-hidden flex items-center justify-center group">
                     {/* Base gradient */}
                     <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-[#EAF1FF] to-[#FAEDFE] transition-opacity duration-300 ease-in-out" />
                     {/* Hover gradient */}
@@ -192,6 +210,9 @@ export default function Home() {
 
       {/* Mobile Menu Modal */}
       <MobileMenu isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
+
+      {/* Desktop Command Palette */}
+      <CommandPalette isOpen={isCommandPaletteOpen} onClose={() => setIsCommandPaletteOpen(false)} />
     </div>
   );
 }
