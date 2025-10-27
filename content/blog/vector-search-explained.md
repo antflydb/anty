@@ -6,7 +6,7 @@ author: Engineering Team
 image: /blog-images/vector-search.png
 ---
 
-Vector search is revolutionizing how we build search and discovery systems. In this post, we'll explore the technology that powers SearchAF's semantic search capabilities.
+Vector search is revolutionizing how we build answer engines and intelligent search systems. In this post, we'll explore the technology that powers SearchAF's answer generation capabilities.
 
 ## What Are Vector Embeddings?
 
@@ -55,9 +55,9 @@ Traditional databases struggle with vector operations:
 - **Similarity Computation**: Requires specialized indexes
 - **Scale**: Millions of products need efficient search
 
-### AntflyDB's Advantage
+### Antfly's Advantage
 
-SearchAF is built on AntflyDB, which provides:
+SearchAF is built on Antfly, which provides:
 
 - **HNSW Indexes**: Hierarchical navigable small world graphs for fast similarity search
 - **Distributed Architecture**: Horizontal scaling for massive catalogs
@@ -130,7 +130,7 @@ Our benchmarks show:
 
 ### Challenge 2: Query Latency
 **Problem**: Vector operations are compute-intensive
-**Solution**: AntflyDB's distributed architecture and HNSW indexes
+**Solution**: Antfly's distributed architecture and HNSW indexes
 
 ### Challenge 3: Embedding Drift
 **Problem**: Models can become outdated
@@ -141,7 +141,7 @@ Our benchmarks show:
 Want to leverage vector search in your application?
 
 1. **Use SearchAF**: Get started in minutes with our managed platform
-2. **Explore AntflyDB**: Self-host for complete control
+2. **Explore Antfly**: Self-host for complete control
 3. **Read the Docs**: [API Reference](/docs/api)
 
 ## The Future

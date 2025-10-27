@@ -6,7 +6,7 @@ readTime: 8 min read
 image: /guide-images/product-indexing.png
 ---
 
-Learn how to configure product indexing in SearchAF to ensure your catalog is searchable, discoverable, and optimized for the best search experience.
+Learn how to configure product indexing in SearchAF to ensure your catalog is searchable and optimized for intelligent answer generation.
 
 ## What is Product Indexing?
 

@@ -85,9 +85,9 @@ When searching technical docs for "how to connect to postgres", you want:
 - Vector search to understand "connect" includes tutorials on "setup", "configuration", and "getting started"
 - Combined results that prioritize official PostgreSQL connection guides while including related database setup content
 
-## Implementing Hybrid Search with AntflyDB
+## Implementing Hybrid Search with Antfly
 
-AntflyDB makes hybrid search straightforward by supporting both full-text and vector search natively:
+Antfly makes hybrid search straightforward by supporting both full-text and vector search natively:
 
 ```typescript
 const results = await antflyDB.search({
@@ -127,7 +127,7 @@ Use A/B testing and analytics to find your ideal configuration. Monitor metrics 
 
 As LLMs and embedding models continue to improve, vector search will get even better at understanding intent. But keyword search will remain valuable for precision matching. Hybrid search isn't just a compromise - it's a synergy that delivers the best of both worlds.
 
-By implementing hybrid search with a platform like SearchAF and AntflyDB, you can future-proof your search experience while maintaining the precision users expect today.
+By implementing hybrid search with a platform like SearchAF and Antfly, you can future-proof your search experience while maintaining the precision users expect today.
 
 ---
 

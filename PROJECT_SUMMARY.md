@@ -2,7 +2,7 @@
 
 ## Overview
 
-Successfully built a comprehensive Next.js 15 website for SearchAF, a product search and discovery platform powered by AntflyDB. The site includes a marketing homepage, documentation powered by Nextra, guides section, and blog - all with SSR capabilities.
+Successfully built a comprehensive Next.js 15 website for SearchAF, an answer engine that provides an answer bar to elevate the traditional search experience, powered by Antfly. The site includes a marketing homepage, documentation powered by Nextra, guides section, and blog - all with SSR capabilities.
 
 ## Technology Stack
 

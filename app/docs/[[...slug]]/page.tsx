@@ -24,6 +24,12 @@ async function getMdxContent(slug: string[]) {
     // Read the MDX file
     const source = fs.readFileSync(filePath, 'utf8')
 
+    // Dynamically import ESM-only rehype plugins
+    const [rehypeSlug, rehypeAutolinkHeadings] = await Promise.all([
+      import('rehype-slug').then(mod => mod.default),
+      import('rehype-autolink-headings').then(mod => mod.default)
+    ])
+
     // Compile the MDX
     const { content } = await compileMDX({
       source,
@@ -31,7 +37,22 @@ async function getMdxContent(slug: string[]) {
         parseFrontmatter: true,
         mdxOptions: {
           remarkPlugins: [remarkGfm],
-          rehypePlugins: [],
+          rehypePlugins: [
+            rehypeSlug,
+            [rehypeAutolinkHeadings, {
+              behavior: 'append',
+              properties: {
+                className: ['heading-anchor'],
+                ariaLabel: 'Link to section',
+              },
+              content: {
+                type: 'element',
+                tagName: 'span',
+                properties: { className: ['anchor-icon'] },
+                children: [{ type: 'text', value: '#' }]
+              }
+            }],
+          ],
         },
       },
     })

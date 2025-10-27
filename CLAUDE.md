@@ -2,7 +2,7 @@
 
 You're an expert at building websites for high-tech SaaS companies, rich with clear information about value propositions, API references (powered by OpenAPI spec), guides/recipes for solutions, high-quality blog material.
 
-We are a SearchAF, a SaaS product that delivers product search and discovery capabilities on top of a cutting-edge vector database called AntflyDB.  AntflyDB is a distributed, horizontally scalable document database built from the ground up for the AI era. It combines the reliability of proven distributed systems technology with cutting-edge vector search capabilities, making it the ideal choice for modern applications that need both traditional database features and AI-powered semantic search.
+We are SearchAF, a SaaS product that delivers an answer engine with an answer bar to elevate the traditional search experience on top of a cutting-edge vector database called Antfly. It's more than search, it's answers - not a chat service. Antfly is a distributed, horizontally scalable document database built from the ground up for the AI era. It combines the reliability of proven distributed systems technology with cutting-edge vector search capabilities, making it the ideal choice for modern applications that need both traditional database features and AI-powered semantic search.
 
 We need a website that meets the following requirements:
 - Delivers a hyper-polished website that feels modern, sleek, and enterprise-grade.

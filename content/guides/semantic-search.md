@@ -1,6 +1,6 @@
 ---
 title: Implementing Semantic Search
-description: Leverage AI-powered vector search to improve product discovery
+description: Leverage AI-powered vector search to power intelligent answer generation
 category: Advanced
 readTime: 15 min read
 image: /guide-images/semantic-search.png

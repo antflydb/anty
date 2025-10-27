@@ -96,7 +96,7 @@ export function Header() {
                     className="block px-3 py-2 rounded-md hover:bg-accent transition-colors text-left"
                   >
                     <div className="font-medium text-sm">SearchAF</div>
-                    <div className="text-xs text-muted-foreground">AI-powered product search</div>
+                    <div className="text-xs text-muted-foreground">AI-powered answer engine</div>
                   </Link>
                   <Link
                     href="https://antfly.io"

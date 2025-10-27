@@ -6,7 +6,7 @@ readTime: 10 min read
 image: /guide-images/shopify-integration.png
 ---
 
-This guide covers the complete integration of SearchAF with your Shopify store for enhanced product search and discovery.
+This guide covers the complete integration of SearchAF with your Shopify store to add an intelligent answer bar that elevates the traditional search experience.
 
 ## Overview
 
