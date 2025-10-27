@@ -10,14 +10,13 @@ interface AnimatedHeroSectionProps {
   subtext?: ReactNode;
 }
 
-export function AnimatedHeroSection({ heading, description, button, subtext }: AnimatedHeroSectionProps) {
+export function AnimatedHeroSection({ button, subtext }: AnimatedHeroSectionProps) {
   // Split heading into two parts: "The easy answer bar" and "for every question."
   const firstLine = "The easy answer bar";
   const secondLine = "for every question.";
 
   // Split into words for animation
   const firstLineWords = firstLine.split(' ');
-  const secondLineWords = secondLine.split(' ');
 
   // Container animation
   const containerVariants = {
