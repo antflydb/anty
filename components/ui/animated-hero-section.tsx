@@ -148,7 +148,7 @@ export function AnimatedHeroSection({ heading, description, button, subtext }: A
       </motion.p>
 
       {/* Animated Button and Subtext */}
-      <div className="flex flex-col items-center gap-8">
+      <div className="flex flex-col items-center gap-12">
         <motion.div variants={buttonVariants}>
           {button}
         </motion.div>

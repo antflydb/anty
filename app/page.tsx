@@ -1,11 +1,14 @@
 'use client';
 
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { AnimatedHeroSection } from "@/components/ui/animated-hero-section";
+import { MobileMenu } from "@/components/ui/mobile-menu";
 
 export default function Home() {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   return (
     <div className="relative h-screen overflow-hidden flex flex-col p-[9px]" style={{ backgroundColor: 'var(--home-background)' }}>
       {/* Main White Container */}
@@ -40,12 +43,15 @@ export default function Home() {
               </span>
             </div>
 
-            {/* Right - Button + Menu */}
-            <div className="flex items-center gap-4">
-              <Button className="h-[52px] px-5 rounded-full border border-[rgba(5,35,51,0.13)] bg-white hover:bg-gray-50 text-[#052333] text-[15px] font-semibold">
+            {/* Right - Get Started Button + Hamburger */}
+            <div className="flex items-center gap-3">
+              <Button variant="outline" className="h-[52px] px-4 rounded-full border-[1.5px] border-[#ADB4B7]/30 bg-transparent hover:border-[#ADB4B7]/50 text-[#1A1A23] font-semibold text-sm transition-all">
                 Get started for free
               </Button>
-              <button className="w-[52px] h-[52px] rounded-full relative overflow-hidden flex items-center justify-center group">
+              <button
+                onClick={() => setIsMobileMenuOpen(true)}
+                className="w-[52px] h-[52px] rounded-full relative overflow-hidden flex items-center justify-center group"
+              >
                 {/* Base gradient */}
                 <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-[#EAF1FF] to-[#FAEDFE] transition-opacity duration-300 ease-in-out" />
                 {/* Hover gradient */}
@@ -128,17 +134,17 @@ export default function Home() {
             heading="The easy answer bar for every question."
             description="Your customers don't search stores like they used to. Give them instant answers, not search results."
             button={
-              <Button className="h-[64px] md:h-[84px] pl-3 md:pl-4 pr-6 md:pr-9 rounded-full bg-[#1A1A23] hover:bg-[#1A1A23]/90 text-white shadow-[0px_0px_22px_0px_rgba(0,0,0,0.09)] flex items-center gap-2 md:gap-3">
-                <div className="w-[48px] h-[48px] md:w-[60px] md:h-[60px] flex items-center justify-center">
+              <Button className="h-[64px] lg:h-[84px] pl-3 lg:pl-4 pr-6 lg:pr-9 rounded-full bg-[#1A1A23] hover:bg-[#1A1A23]/90 text-white shadow-[0px_0px_22px_0px_rgba(0,0,0,0.09)] flex items-center gap-2 lg:gap-3">
+                <div className="w-[48px] h-[48px] lg:w-[60px] lg:h-[60px] flex items-center justify-center">
                   <Image
                     src="/shopify-logo-color.svg"
                     alt="Shopify"
                     width={31}
                     height={38}
-                    className="w-[25px] h-[30px] md:w-[31px] md:h-[38px]"
+                    className="w-[25px] h-[30px] lg:w-[31px] lg:h-[38px]"
                   />
                 </div>
-                <span className="text-lg md:text-xl font-semibold">Add SearchAF to Shopify</span>
+                <span className="text-lg lg:text-xl font-semibold">Add SearchAF to Shopify</span>
               </Button>
             }
             subtext={
@@ -183,6 +189,9 @@ export default function Home() {
           </Link>
         </div>
       </div>
+
+      {/* Mobile Menu Modal */}
+      <MobileMenu isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
     </div>
   );
 }
