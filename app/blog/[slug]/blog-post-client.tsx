@@ -25,7 +25,7 @@ export function BlogPostClient({ post }: BlogPostClientProps) {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
-        setIsCommandPaletteOpen(true);
+        setIsCommandPaletteOpen(prev => !prev); // Toggle instead of just opening
       }
     };
 
@@ -59,9 +59,11 @@ export function BlogPostClient({ post }: BlogPostClientProps) {
 
             {/* Right - Get Started Button + Hamburger */}
             <div className="flex items-center gap-3">
-              <Button variant="outline" className="h-[52px] px-4 rounded-full border-[1.5px] border-[#ADB4B7]/30 bg-transparent hover:border-[#ADB4B7]/50 text-[#1A1A23] font-semibold text-sm transition-all">
-                Get started for free
-              </Button>
+              <Link href="/signup">
+                <Button variant="outline" className="h-[52px] px-4 rounded-full border-[1.5px] border-[#ADB4B7]/30 bg-transparent hover:border-[#ADB4B7]/50 text-[#1A1A23] font-semibold text-sm transition-all">
+                  Get started for free
+                </Button>
+              </Link>
               <button
                 onClick={() => setIsMobileMenuOpen(true)}
                 className="w-[52px] h-[52px] rounded-full relative overflow-hidden flex items-center justify-center group"
@@ -93,9 +95,11 @@ export function BlogPostClient({ post }: BlogPostClientProps) {
 
             {/* Right - Get Started Button */}
             <div className="flex-1 flex justify-end">
-              <Button className="h-[61px] px-5 rounded-full bg-[#1A1A23] hover:bg-[#1A1A23]/90 text-white font-semibold">
-                Get started for free
-              </Button>
+              <Link href="/signup">
+                <Button className="h-[61px] px-5 rounded-full bg-[#1A1A23] hover:bg-[#1A1A23]/90 text-white font-semibold">
+                  Get started for free
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
@@ -105,7 +109,7 @@ export function BlogPostClient({ post }: BlogPostClientProps) {
           {/* Content Container - Max Width 1000px */}
           <div className="w-full max-w-[1000px]">
             {/* Content with proper top spacing */}
-            <div className="flex flex-col gap-[45px] pt-[80px] md:pt-[120px] lg:pt-[173px]">
+            <div className="flex flex-col gap-[45px] pt-[40px] md:pt-[60px] lg:pt-[80px]">
 
               {/* Back Button & Separator Section */}
               <div className="flex gap-[36px] items-center w-full">

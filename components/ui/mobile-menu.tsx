@@ -154,22 +154,24 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
 
             {/* CTA Buttons */}
             <div className="space-y-[12px] mb-[40px]">
-              <Button
-                className="w-full h-[72px] rounded-[44px] bg-[#4c4c56] hover:bg-[#4c4c56]/90 text-white font-semibold text-[20.5px] tracking-[0.46px] shadow-[0px_0px_15.5px_0px_rgba(0,0,0,0.09)]"
-                style={{ fontFamily: 'SF Pro Display, sans-serif' }}
-                onClick={onClose}
-              >
-                Get started for free
-              </Button>
+              <Link href="/signup" onClick={onClose} className="block">
+                <Button
+                  className="w-full h-[72px] rounded-[44px] bg-[#4c4c56] hover:bg-[#4c4c56]/90 text-white font-semibold text-[20.5px] tracking-[0.46px] shadow-[0px_0px_15.5px_0px_rgba(0,0,0,0.09)]"
+                  style={{ fontFamily: 'SF Pro Display, sans-serif' }}
+                >
+                  Get started for free
+                </Button>
+              </Link>
 
-              <Button
-                variant="outline"
-                className="w-full h-[72px] rounded-[44px] border-[1.5px] border-[#4c4c56] bg-transparent hover:bg-[#4c4c56]/20 text-white hover:text-white font-semibold text-[20.5px] tracking-[0.46px]"
-                style={{ fontFamily: 'SF Pro Display, sans-serif' }}
-                onClick={onClose}
-              >
-                Login
-              </Button>
+              <Link href="/login" onClick={onClose} className="block">
+                <Button
+                  variant="outline"
+                  className="w-full h-[72px] rounded-[44px] border-[1.5px] border-[#4c4c56] bg-transparent hover:bg-[#4c4c56]/20 text-white hover:text-white font-semibold text-[20.5px] tracking-[0.46px]"
+                  style={{ fontFamily: 'SF Pro Display, sans-serif' }}
+                >
+                  Login
+                </Button>
+              </Link>
             </div>
 
             {/* Shopify Integration */}

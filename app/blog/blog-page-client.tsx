@@ -25,7 +25,7 @@ export function BlogPageClient({ posts }: BlogPageClientProps) {
       // Check for Cmd+K (Mac) or Ctrl+K (Windows/Linux)
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault(); // Prevent default browser search
-        setIsCommandPaletteOpen(true);
+        setIsCommandPaletteOpen(prev => !prev); // Toggle instead of just opening
       }
     };
 
@@ -59,9 +59,11 @@ export function BlogPageClient({ posts }: BlogPageClientProps) {
 
             {/* Right - Get Started Button + Hamburger */}
             <div className="flex items-center gap-3">
-              <Button variant="outline" className="h-[52px] px-4 rounded-full border-[1.5px] border-[#ADB4B7]/30 bg-transparent hover:border-[#ADB4B7]/50 text-[#1A1A23] font-semibold text-sm transition-all">
-                Get started for free
-              </Button>
+              <Link href="/signup">
+                <Button variant="outline" className="h-[52px] px-4 rounded-full border-[1.5px] border-[#ADB4B7]/30 bg-transparent hover:border-[#ADB4B7]/50 text-[#1A1A23] font-semibold text-sm transition-all">
+                  Get started for free
+                </Button>
+              </Link>
               <button
                 onClick={() => setIsMobileMenuOpen(true)}
                 className="w-[52px] h-[52px] rounded-full relative overflow-hidden flex items-center justify-center group"
@@ -93,9 +95,11 @@ export function BlogPageClient({ posts }: BlogPageClientProps) {
 
             {/* Right - Get Started Button */}
             <div className="flex-1 flex justify-end">
-              <Button className="h-[61px] px-5 rounded-full bg-[#1A1A23] hover:bg-[#1A1A23]/90 text-white font-semibold">
-                Get started for free
-              </Button>
+              <Link href="/signup">
+                <Button className="h-[61px] px-5 rounded-full bg-[#1A1A23] hover:bg-[#1A1A23]/90 text-white font-semibold">
+                  Get started for free
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
@@ -117,7 +121,7 @@ export function BlogPageClient({ posts }: BlogPageClientProps) {
               <div className="flex flex-col gap-[30px] items-center w-full">
                 {/* Filter Pills */}
                 <div className="flex gap-[12px] items-start">
-                  {['All', 'Engineering', 'Product Updates', 'Tutorials', 'Best Practices', 'Case Studies'].map((filter, index) => (
+                  {['All', 'Guides', 'Product Updates', 'Search', 'Engineering'].map((filter, index) => (
                     <button
                       key={`${filter}-${index}`}
                       onClick={() => setActiveFilter(filter)}

@@ -121,14 +121,16 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                       className="flex-1 bg-transparent text-[#FFFFFF] text-[20px] font-medium placeholder:text-white/40 focus:outline-none"
                       style={{ fontFamily: systemFont }}
                     />
-                    {searchQuery && (
-                      <button
-                        onClick={handleSearch}
-                        className="ml-2 w-[40px] h-[40px] rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
-                      >
-                        <ArrowRight className="w-[20px] h-[20px] text-white" strokeWidth={2} />
-                      </button>
-                    )}
+                    <motion.button
+                      onClick={handleSearch}
+                      initial={{ opacity: 0, x: -10, width: 0, marginLeft: 0 }}
+                      animate={searchQuery ? { opacity: 1, x: 0, width: 40, marginLeft: 8 } : { opacity: 0, x: -10, width: 0, marginLeft: 0 }}
+                      transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
+                      className="rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors overflow-hidden"
+                      style={{ height: 40 }}
+                    >
+                      <ArrowRight className="w-[20px] h-[20px] text-white" strokeWidth={2} />
+                    </motion.button>
                   </div>
                 </div>
               </motion.div>
@@ -186,23 +188,25 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                   </div>
 
                   {/* Right Section - CTAs */}
-                  <div className="py-[20px] space-y-[16px]">
-                    <Button
-                      className="w-full h-[64px] rounded-[44px] bg-[#4c4c56] hover:bg-[#5c5c66] text-white font-semibold text-[18px] tracking-[0.4px] shadow-[0px_0px_15.5px_0px_rgba(0,0,0,0.09)] transition-all"
-                      style={{ fontFamily: systemFont }}
-                      onClick={onClose}
-                    >
-                      Get started for free
-                    </Button>
+                  <div className="py-[20px] space-y-[16px] min-w-[280px]">
+                    <Link href="/signup" onClick={onClose} className="block">
+                      <Button
+                        className="w-full h-[64px] rounded-[44px] bg-[#4c4c56] hover:bg-[#5c5c66] text-white font-semibold text-[18px] tracking-[0.4px] shadow-[0px_0px_15.5px_0px_rgba(0,0,0,0.09)] transition-all"
+                        style={{ fontFamily: systemFont }}
+                      >
+                        Get started for free
+                      </Button>
+                    </Link>
 
-                    <Button
-                      variant="outline"
-                      className="w-full h-[56px] rounded-[44px] border-[1.5px] border-[#4c4c56] bg-transparent hover:bg-[#4c4c56]/30 text-white hover:text-white font-semibold text-[18px] tracking-[0.4px] transition-all"
-                      style={{ fontFamily: systemFont }}
-                      onClick={onClose}
-                    >
-                      Log in
-                    </Button>
+                    <Link href="/login" onClick={onClose} className="block">
+                      <Button
+                        variant="outline"
+                        className="w-full h-[64px] rounded-[44px] border-[1.5px] border-[#4c4c56] bg-transparent hover:bg-[#4c4c56]/30 text-white hover:text-white font-semibold text-[18px] tracking-[0.4px] transition-all"
+                        style={{ fontFamily: systemFont }}
+                      >
+                        Log in
+                      </Button>
+                    </Link>
                   </div>
                 </div>
 
