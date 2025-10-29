@@ -26,7 +26,7 @@ export default function TeamPage() {
   }, []);
 
   return (
-    <div className="relative h-screen overflow-hidden flex flex-col p-[9px]" style={{ backgroundColor: 'var(--home-background)' }}>
+    <div className="relative h-screen overflow-visible flex flex-col p-[9px]" style={{ backgroundColor: 'var(--home-background)' }}>
       {/* Main White Container */}
       <div className="relative bg-white rounded-[30px] shadow-[0px_0px_34px_0px_rgba(0,0,0,0.05)] flex-1 flex flex-col w-full">
 
@@ -35,7 +35,7 @@ export default function TeamPage() {
           {/* Mobile Navigation - visible on small screens */}
           <div className="flex md:hidden items-center justify-between w-full">
             {/* Left - Logo */}
-            <div className="flex items-center gap-2">
+            <Link href="/" className="flex items-center gap-2">
               <Image
                 src="/af-logo.svg"
                 alt="SearchAF Logo"
@@ -47,7 +47,7 @@ export default function TeamPage() {
                 <span style={{ fontWeight: 400 }}>search</span>
                 <span style={{ fontWeight: 700 }}>af</span>
               </span>
-            </div>
+            </Link>
 
             {/* Right - Get Started Button + Hamburger */}
             <div className="flex items-center gap-2">

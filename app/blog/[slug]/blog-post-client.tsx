@@ -34,7 +34,7 @@ export function BlogPostClient({ post }: BlogPostClientProps) {
   }, []);
 
   return (
-    <div className="relative min-h-screen flex flex-col p-[9px]" style={{ backgroundColor: 'var(--home-background)' }}>
+    <div className="relative min-h-screen overflow-visible flex flex-col p-[9px]" style={{ backgroundColor: 'var(--home-background)' }}>
       {/* Main White Container */}
       <div className="relative bg-white rounded-[30px] shadow-[0px_0px_34px_0px_rgba(0,0,0,0.05)] flex-1 flex flex-col w-full">
 

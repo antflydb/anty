@@ -31,6 +31,92 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
     }
   };
 
+  // High-energy stagger animation variants
+  const containerVariants = {
+    hidden: { opacity: 1 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.05,
+        delayChildren: 0.08,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: {
+      y: 40,
+      opacity: 0,
+    },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: {
+        type: 'spring' as const,
+        damping: 24,
+        stiffness: 300,
+        mass: 1.2,
+      },
+    },
+  };
+
+  // First button variant
+  const button1Variants = {
+    hidden: {
+      y: 40,
+      opacity: 0,
+    },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: {
+        type: 'spring' as const,
+        damping: 35,
+        stiffness: 300,
+        mass: 1.2,
+        delay: 0.15,
+      },
+    },
+  };
+
+  // Second button variant
+  const button2Variants = {
+    hidden: {
+      y: 40,
+      opacity: 0,
+    },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: {
+        type: 'spring' as const,
+        damping: 35,
+        stiffness: 300,
+        mass: 1.2,
+        delay: 0.28,
+      },
+    },
+  };
+
+  // Shopify variant - chained after button 2
+  const shopifyVariants = {
+    hidden: {
+      y: 40,
+      opacity: 0,
+    },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: {
+        type: 'spring' as const,
+        damping: 35,
+        stiffness: 300,
+        mass: 1.2,
+        delay: 0.41,
+      },
+    },
+  };
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -51,13 +137,20 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
             transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
-            className="fixed inset-[16px] z-50 bg-[rgba(14,14,15,0.83)] rounded-[16px] overflow-y-auto px-[20px] pt-[16px] pb-[24px] flex flex-col"
+            className="fixed inset-[9px] z-50 bg-[rgba(14,14,15,0.83)] rounded-[30px] overflow-y-auto px-[20px] pt-[16px] pb-[24px] flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
+            {/* Stagger animation container */}
+            <motion.div
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+              className="flex flex-col flex-1"
+            >
             {/* Header */}
             <div className="flex items-center justify-between mb-[24px] pl-[8px]">
               {/* Logo */}
-              <div className="flex items-center gap-2.5">
+              <Link href="/" onClick={onClose} className="flex items-center gap-2.5">
                 <Image
                   src="/af-logo.svg"
                   alt="SearchAF Logo"
@@ -65,7 +158,7 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
                   height={28}
                   className="w-[28px] h-[28px] brightness-0 invert"
                 />
-              </div>
+              </Link>
 
               {/* Close button */}
               <button
@@ -106,73 +199,85 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
 
             {/* Navigation Items */}
             <nav className="mt-[24px] mb-[32px] px-[8px] space-y-[28px]">
-              <Link
-                href="/"
-                className="flex items-center gap-[14px] text-white hover:text-white/80 transition-colors"
-                onClick={onClose}
-              >
-                <Home className="w-[20px] h-[20px]" strokeWidth={2} />
-                <span className="text-[17px] font-semibold tracking-[0.3px]">
-                  Home
-                </span>
-              </Link>
+              <motion.div variants={itemVariants}>
+                <Link
+                  href="/"
+                  className="flex items-center gap-[14px] text-white hover:text-white/80 transition-colors"
+                  onClick={onClose}
+                >
+                  <Home className="w-[20px] h-[20px]" strokeWidth={2} />
+                  <span className="text-[17px] font-semibold tracking-[0.3px]">
+                    Home
+                  </span>
+                </Link>
+              </motion.div>
 
-              <Link
-                href="/docs"
-                className="flex items-center gap-[14px] text-white hover:text-white/80 transition-colors"
-                onClick={onClose}
-              >
-                <BookMarked className="w-[20px] h-[20px]" strokeWidth={2} />
-                <span className="text-[17px] font-semibold tracking-[0.3px]">
-                  Docs
-                </span>
-              </Link>
+              <motion.div variants={itemVariants}>
+                <Link
+                  href="/docs"
+                  className="flex items-center gap-[14px] text-white hover:text-white/80 transition-colors"
+                  onClick={onClose}
+                >
+                  <BookMarked className="w-[20px] h-[20px]" strokeWidth={2} />
+                  <span className="text-[17px] font-semibold tracking-[0.3px]">
+                    Docs
+                  </span>
+                </Link>
+              </motion.div>
 
-              <Link
-                href="/blog"
-                className="flex items-center gap-[14px] text-white hover:text-white/80 transition-colors"
-                onClick={onClose}
-              >
-                <LayoutGrid className="w-[20px] h-[20px]" strokeWidth={2} />
-                <span className="text-[17px] font-semibold tracking-[0.3px]">
-                  Blog
-                </span>
-              </Link>
+              <motion.div variants={itemVariants}>
+                <Link
+                  href="/blog"
+                  className="flex items-center gap-[14px] text-white hover:text-white/80 transition-colors"
+                  onClick={onClose}
+                >
+                  <LayoutGrid className="w-[20px] h-[20px]" strokeWidth={2} />
+                  <span className="text-[17px] font-semibold tracking-[0.3px]">
+                    Blog
+                  </span>
+                </Link>
+              </motion.div>
 
-              <Link
-                href="/team"
-                className="flex items-center gap-[14px] text-white hover:text-white/80 transition-colors"
-                onClick={onClose}
-              >
-                <Pyramid className="w-[20px] h-[20px]" strokeWidth={2} />
-                <span className="text-[17px] font-semibold tracking-[0.3px]">
-                  Team
-                </span>
-              </Link>
+              <motion.div variants={itemVariants}>
+                <Link
+                  href="/team"
+                  className="flex items-center gap-[14px] text-white hover:text-white/80 transition-colors"
+                  onClick={onClose}
+                >
+                  <Pyramid className="w-[20px] h-[20px]" strokeWidth={2} />
+                  <span className="text-[17px] font-semibold tracking-[0.3px]">
+                    Team
+                  </span>
+                </Link>
+              </motion.div>
             </nav>
 
             {/* CTA Buttons */}
             <div className="space-y-[10px] mb-[28px]">
-              <Link href="/signup" onClick={onClose} className="block">
-                <Button
-                  className="w-full h-[56px] rounded-[44px] bg-[#4c4c56] hover:bg-[#4c4c56]/90 text-white font-semibold text-[17px] tracking-[0.3px] shadow-[0px_0px_15.5px_0px_rgba(0,0,0,0.09)]"
-                >
-                  Get started for free
-                </Button>
-              </Link>
+              <motion.div variants={button1Variants}>
+                <Link href="/signup" onClick={onClose} className="block">
+                  <Button
+                    className="w-full h-[56px] rounded-[44px] bg-[#4c4c56] hover:bg-[#4c4c56]/90 text-white font-semibold text-[17px] tracking-[0.3px] shadow-[0px_0px_15.5px_0px_rgba(0,0,0,0.09)]"
+                  >
+                    Get started for free
+                  </Button>
+                </Link>
+              </motion.div>
 
-              <Link href="/login" onClick={onClose} className="block">
-                <Button
-                  variant="outline"
-                  className="w-full h-[56px] rounded-[44px] border-[1.5px] border-[#4c4c56] bg-transparent hover:bg-[#4c4c56]/20 text-white hover:text-white font-semibold text-[17px] tracking-[0.3px]"
-                >
-                  Login
-                </Button>
-              </Link>
+              <motion.div variants={button2Variants}>
+                <Link href="/login" onClick={onClose} className="block">
+                  <Button
+                    variant="outline"
+                    className="w-full h-[56px] rounded-[44px] border-[1.5px] border-[#4c4c56] bg-transparent hover:bg-[#4c4c56]/20 text-white hover:text-white font-semibold text-[17px] tracking-[0.3px]"
+                  >
+                    Login
+                  </Button>
+                </Link>
+              </motion.div>
             </div>
 
             {/* Shopify Integration */}
-            <div className="px-[8px] pt-[20px] pb-[20px] mb-auto">
+            <motion.div variants={shopifyVariants} className="px-[8px] pt-[20px] pb-[20px] mb-auto">
               <Link
                 href="#"
                 className="flex items-center gap-[14px] hover:opacity-80 transition-opacity"
@@ -191,7 +296,8 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
                   Add SearchAF to Shopify
                 </span>
               </Link>
-            </div>
+            </motion.div>
+            </motion.div>
 
             {/* Separator */}
             <div className="w-full h-[1px] bg-white/20 mb-[20px]" />

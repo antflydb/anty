@@ -27,7 +27,7 @@ export default function Home() {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
   return (
-    <div className="relative h-screen overflow-hidden flex flex-col p-[9px]" style={{ backgroundColor: 'var(--home-background)' }}>
+    <div className="relative h-screen overflow-visible flex flex-col p-[9px]" style={{ backgroundColor: 'var(--home-background)' }}>
       {/* Main White Container */}
       <div className="relative bg-white rounded-[30px] shadow-[0px_0px_34px_0px_rgba(0,0,0,0.05)] flex-1 flex flex-col w-full">
 
@@ -113,7 +113,7 @@ export default function Home() {
           <AnimatedHeroSection
             button={
               <Link href="/signup">
-                <Button className="h-[64px] lg:h-[84px] pl-3 lg:pl-4 pr-6 lg:pr-9 rounded-full bg-[#1A1A23] hover:bg-[#1A1A23]/90 text-white shadow-[0px_0px_22px_0px_rgba(0,0,0,0.09)] flex items-center gap-2 lg:gap-3">
+                <Button className="h-[64px] lg:h-[84px] pl-3 lg:pl-4 pr-8 lg:pr-12 rounded-full bg-[#1A1A23] hover:bg-[#1A1A23]/90 text-white shadow-[0px_0px_22px_0px_rgba(0,0,0,0.09)] flex items-center gap-2 lg:gap-3">
                   <div className="w-[48px] h-[48px] lg:w-[60px] lg:h-[60px] flex items-center justify-center">
                     <Image
                       src="/shopify-logo-color.svg"
