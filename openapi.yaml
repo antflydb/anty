@@ -5,11 +5,12 @@ info:
   version: 1.0.0
   contact:
     name: SearchAF API Support
-    url: https://searchaf-api.antfly.io
+    url: https://searchaf.antfly.io
   license:
     name: Proprietary
+    url: https://searchaf.antfly.io
 servers:
-  - url: https://searchaf-api.antfly.io/api/v1
+  - url: https://searchaf.antfly.io/api/v1
     description: Production
 tags:
   - name: Authentication
@@ -39,11 +40,24 @@ tags:
   - name: Webhooks
     description: Webhook endpoints (Stripe, Shopify)
     x-displayName: Webhooks
+  - name: Shopify
+    description: Shopify embedded app integration
+    x-displayName: Shopify
+  - name: Shopify AEO
+    description: Answer Engine Optimization for Shopify content
+    x-displayName: Shopify AEO
+  - name: AEO Analysis
+    description: Content analysis and scoring
+    x-displayName: AEO Analysis
+  - name: AEO Visibility
+    description: AI engine visibility testing
+    x-displayName: AEO Visibility
 paths:
   /auth/oauth/{provider}/login:
     get:
       summary: Initiate OAuth login
       description: Redirects to OAuth provider login page
+      operationId: oauthLogin
       tags:
         - Authentication
       security: []
@@ -60,6 +74,19 @@ paths:
             format: uri
           description: Post-login redirect URL
       responses:
+        '200':
+          description: OAuth provider redirect URL (alternative to 302 redirect)
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - redirect_url
+                properties:
+                  redirect_url:
+                    type: string
+                    format: uri
+                    description: URL to redirect to for OAuth provider login
         '302':
           description: Redirect to OAuth provider
         '400':
@@ -68,6 +95,7 @@ paths:
     get:
       summary: OAuth callback handler
       description: Handles OAuth provider callback and generates JWT
+      operationId: oauthCallback
       tags:
         - Authentication
       security: []
@@ -100,10 +128,54 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+  /auth/oauth/{provider}/link:
+    get:
+      summary: Link OAuth provider to account
+      description: Initiate OAuth flow to link provider to authenticated user account
+      operationId: oauthLink
+      tags:
+        - Authentication
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/OAuthProviderType'
+        - name: redirect_uri
+          in: query
+          schema:
+            type: string
+            format: uri
+          description: Post-link redirect URL
+      responses:
+        '200':
+          description: OAuth provider redirect URL (alternative to 302 redirect)
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - redirect_url
+                properties:
+                  redirect_url:
+                    type: string
+                    format: uri
+                    description: URL to redirect to for OAuth provider linking
+        '302':
+          description: Redirect to OAuth provider
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
   /auth/refresh:
     post:
       summary: Refresh JWT token
       description: Generate new JWT from refresh token
+      operationId: refreshToken
       tags:
         - Authentication
       security: []
@@ -127,10 +199,86 @@ paths:
                 $ref: '#/components/schemas/AuthResponse'
         '401':
           $ref: '#/components/responses/Unauthorized'
+  /auth/signout:
+    post:
+      summary: Sign out user
+      description: Clears authentication cookies (access_token and refresh_token)
+      operationId: signOut
+      tags:
+        - Authentication
+      security: []
+      responses:
+        '200':
+          description: Successfully signed out
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+        '204':
+          description: Successfully signed out, cookies cleared
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /auth/apikey/exchange:
+    post:
+      summary: Exchange API key for JWT
+      description: |
+        Exchange a long-lived API key for a short-lived JWT token.
+        The JWT can then be used to authenticate subsequent search and batch requests.
+      operationId: postAuthApikeyExchange
+      tags:
+        - Authentication
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - api_key
+              properties:
+                api_key:
+                  type: string
+                  description: The API key to exchange for a JWT
+                  example: searchaf_a1b2c3d4_e5f6g7h8i9j0k1l2m3n4o5p6
+      responses:
+        '200':
+          description: JWT token generated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - token
+                  - expires_in
+                properties:
+                  token:
+                    type: string
+                    description: Short-lived JWT token (15-30 minutes)
+                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                  expires_in:
+                    type: integer
+                    description: Token expiration time in seconds
+                    example: 1800
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /users/me:
     get:
       summary: Get current user
       description: Returns authenticated user profile
+      operationId: getCurrentUser
       tags:
         - Users
       security:
@@ -147,6 +295,7 @@ paths:
     patch:
       summary: Update current user
       description: Update authenticated user profile
+      operationId: updateCurrentUser
       tags:
         - Users
       security:
@@ -184,6 +333,7 @@ paths:
     get:
       summary: List OAuth providers
       description: List linked OAuth providers for current user
+      operationId: listUserOAuthProviders
       tags:
         - Users
       security:
@@ -208,6 +358,7 @@ paths:
     get:
       summary: List organizations
       description: List organizations where user is a member
+      operationId: listOrganizations
       tags:
         - Organizations
       security:
@@ -237,6 +388,7 @@ paths:
     post:
       summary: Create organization
       description: Create new organization (user becomes owner)
+      operationId: createOrganization
       tags:
         - Organizations
       security:
@@ -284,6 +436,7 @@ paths:
     get:
       summary: Get organization
       description: Get organization details
+      operationId: getOrganization
       tags:
         - Organizations
       security:
@@ -306,6 +459,7 @@ paths:
     patch:
       summary: Update organization
       description: Update organization (requires admin+ role)
+      operationId: updateOrganization
       tags:
         - Organizations
       security:
@@ -347,6 +501,7 @@ paths:
     delete:
       summary: Delete organization
       description: Delete organization (requires owner role, cascades to projects)
+      operationId: deleteOrganization
       tags:
         - Organizations
       security:
@@ -366,6 +521,7 @@ paths:
     get:
       summary: List organization members
       description: List all members of organization
+      operationId: listOrganizationMembers
       tags:
         - Organizations
       security:
@@ -400,6 +556,7 @@ paths:
     post:
       summary: Invite member
       description: Invite user to organization (requires admin+ role)
+      operationId: inviteOrganizationMember
       tags:
         - Organizations
       security:
@@ -440,6 +597,7 @@ paths:
     delete:
       summary: Remove member
       description: Remove user from organization (requires admin+ role)
+      operationId: removeOrganizationMember
       tags:
         - Organizations
       security:
@@ -460,6 +618,7 @@ paths:
     get:
       summary: List projects
       description: List projects in organization
+      operationId: listProjects
       tags:
         - Projects
       security:
@@ -494,6 +653,7 @@ paths:
     post:
       summary: Create project
       description: Create new project in organization
+      operationId: createProject
       tags:
         - Projects
       security:
@@ -551,6 +711,7 @@ paths:
     get:
       summary: Get project
       description: Get project details
+      operationId: getProject
       tags:
         - Projects
       security:
@@ -573,6 +734,7 @@ paths:
     patch:
       summary: Update project
       description: Update project (requires developer+ role)
+      operationId: updateProject
       tags:
         - Projects
       security:
@@ -616,6 +778,7 @@ paths:
     delete:
       summary: Delete project
       description: Delete project (requires project_admin role)
+      operationId: deleteProject
       tags:
         - Projects
       security:
@@ -631,10 +794,180 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+  /projects/{project_id}/tables:
+    get:
+      summary: List all tables for a project
+      description: List all AntflyDB tables associated with a project
+      operationId: listProjectTables
+      tags:
+        - Projects
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      responses:
+        '200':
+          description: List of project tables
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ProjectTable'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      summary: Create a new table for a project
+      description: Create a new AntflyDB table for a project (requires developer+ role)
+      operationId: createProjectTable
+      tags:
+        - Projects
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectTableCreate'
+      responses:
+        '201':
+          description: Table created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectTable'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /projects/{project_id}/tables/{table_id}:
+    get:
+      summary: Get a specific table
+      description: Get details of a specific project table
+      operationId: getProjectTable
+      tags:
+        - Projects
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+        - $ref: '#/components/parameters/TableId'
+      responses:
+        '200':
+          description: Table details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectTable'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      summary: Update a table
+      description: Update a project table (requires developer+ role)
+      operationId: updateProjectTable
+      tags:
+        - Projects
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+        - $ref: '#/components/parameters/TableId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectTableUpdate'
+      responses:
+        '200':
+          description: Table updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectTable'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    delete:
+      summary: Delete a table
+      description: Delete a project table (requires project_admin role)
+      operationId: deleteProjectTable
+      tags:
+        - Projects
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+        - $ref: '#/components/parameters/TableId'
+      responses:
+        '204':
+          description: Table deleted successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /projects/{project_id}/stats:
+    get:
+      summary: Get project statistics
+      description: Get statistics for a project including indexed item counts across all tables and integration-specific metadata
+      operationId: getProjectStats
+      tags:
+        - Projects
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      responses:
+        '200':
+          description: Project statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectStats'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /projects/{project_id}/api-keys:
     get:
       summary: List API keys
       description: List API keys for project
+      operationId: listAPIKeys
       tags:
         - API Keys
       security:
@@ -664,6 +997,7 @@ paths:
     post:
       summary: Create API key
       description: Create new API key for project (requires project_admin role)
+      operationId: createAPIKey
       tags:
         - API Keys
       security:
@@ -717,6 +1051,7 @@ paths:
     delete:
       summary: Revoke API key
       description: Revoke API key (requires project_admin role)
+      operationId: revokeAPIKey
       tags:
         - API Keys
       security:
@@ -733,10 +1068,94 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+  /projects/{project_id}/api-keys/{key_id}/rotate:
+    post:
+      summary: Rotate API key
+      description: |
+        Atomically rotate an API key by revoking the old key and creating a new one
+        with the same name and type. This operation is transactional - both the revoke
+        and create succeed or both fail. Requires project_admin role.
+      operationId: rotateAPIKey
+      tags:
+        - API Keys
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+        - $ref: '#/components/parameters/KeyId'
+      responses:
+        '200':
+          description: API key rotated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - old_key
+                  - new_key
+                  - key
+                properties:
+                  old_key:
+                    $ref: '#/components/schemas/RevokedAPIKey'
+                    description: Metadata for the revoked key
+                  new_key:
+                    $ref: '#/components/schemas/APIKey'
+                    description: Metadata for the new key
+                  key:
+                    type: string
+                    description: Full API key with secret (only shown once)
+                    example: searchaf_a1b2c3d4_e5f6g7h8i9j0k1l2m3n4o5p6
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /projects/{project_id}/api-keys/{key_id}/decrypt:
+    get:
+      summary: Decrypt API key
+      description: |
+        Retrieve the full decrypted API key. This endpoint returns the plaintext key
+        for copying or reference. Access is restricted to users with project access.
+      operationId: decryptAPIKey
+      tags:
+        - API Keys
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+        - $ref: '#/components/parameters/KeyId'
+      responses:
+        '200':
+          description: Decrypted API key
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - key
+                properties:
+                  key:
+                    type: string
+                    description: Full decrypted API key
+                    example: searchaf_a1b2c3d4_e5f6g7h8i9j0k1l2m3n4o5p6
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /organizations/{org_id}/audit-logs:
     get:
       summary: List audit logs
       description: List audit logs for organization (requires admin+ role)
+      operationId: listAuditLogs
       tags:
         - Audit
       security:
@@ -784,6 +1203,7 @@ paths:
     get:
       summary: Get subscription
       description: Get organization subscription details
+      operationId: getSubscription
       tags:
         - Subscriptions
       security:
@@ -806,6 +1226,7 @@ paths:
     post:
       summary: Create subscription
       description: Create Stripe subscription for organization (requires admin+ role)
+      operationId: createSubscription
       tags:
         - Subscriptions
       security:
@@ -848,6 +1269,7 @@ paths:
     patch:
       summary: Update subscription
       description: Update subscription plan (requires admin+ role)
+      operationId: updateSubscription
       tags:
         - Subscriptions
       security:
@@ -884,6 +1306,7 @@ paths:
     delete:
       summary: Cancel subscription
       description: Cancel subscription (requires admin+ role, downgrades to free)
+      operationId: cancelSubscription
       tags:
         - Subscriptions
       security:
@@ -901,8 +1324,14 @@ paths:
           $ref: '#/components/responses/NotFound'
   /organizations/{org_id}/subscription/portal:
     post:
-      summary: Create billing portal session
-      description: Create Stripe billing portal session URL (requires admin+ role)
+      summary: Create billing/checkout session
+      description: |
+        Smart billing endpoint that automatically routes users based on their subscription status:
+        - **Paid plan users** → Redirected to Stripe Billing Portal (manage payment, view invoices, cancel)
+        - **Free plan users** → Redirected to Stripe Checkout (upgrade to paid plan)
+
+        The response includes a `type` field indicating which flow was used.
+      operationId: createBillingSession
       tags:
         - Subscriptions
       security:
@@ -921,22 +1350,51 @@ paths:
                 return_url:
                   type: string
                   format: uri
-                  description: URL to return to after portal session
+                  description: URL to return to after session completes
+                  example: https://searchaf.antfly.io/settings/billing
+                plan:
+                  type: string
+                  enum:
+                    - growth
+                    - enterprise
+                  description: |
+                    Plan to upgrade to (only used for free plan users).
+                    Defaults to "growth" if not specified.
+                  example: growth
       responses:
         '200':
-          description: Portal session created
+          description: Session created successfully
           content:
             application/json:
               schema:
                 type: object
                 required:
                   - url
+                  - type
                 properties:
                   url:
                     type: string
                     format: uri
-                    description: Stripe billing portal URL
-                    example: https://billing.stripe.com/session/...
+                    description: Redirect URL for Stripe session
+                    example: https://checkout.stripe.com/c/pay/cs_test_...
+                  type:
+                    type: string
+                    enum:
+                      - portal
+                      - checkout
+                    description: Type of session created
+                    example: checkout
+              examples:
+                checkout:
+                  summary: Free user upgrade flow
+                  value:
+                    url: https://checkout.stripe.com/c/pay/cs_test_...
+                    type: checkout
+                portal:
+                  summary: Paid user billing portal
+                  value:
+                    url: https://billing.stripe.com/p/session/test_...
+                    type: portal
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -949,6 +1407,7 @@ paths:
     get:
       summary: Get current usage
       description: Get current billing cycle usage and quotas
+      operationId: getCurrentUsage
       tags:
         - Usage
       security:
@@ -972,6 +1431,7 @@ paths:
     get:
       summary: Get usage history
       description: Get historical usage data by billing cycle
+      operationId: getUsageHistory
       tags:
         - Usage
       security:
@@ -1019,6 +1479,7 @@ paths:
     get:
       summary: Get project usage
       description: Get current billing cycle usage for specific project
+      operationId: getProjectUsage
       tags:
         - Usage
       security:
@@ -1045,6 +1506,7 @@ paths:
     post:
       summary: Stripe webhook
       description: Handle Stripe webhook events (billing events, subscription updates)
+      operationId: handleStripeWebhook
       tags:
         - Webhooks
       security: []
@@ -1067,12 +1529,215 @@ paths:
           description: Webhook processed
         '400':
           description: Invalid payload or signature
+  /shopify/shop/status:
+    get:
+      summary: Get shop configuration status
+      description: |
+        Check if a Shopify shop has completed OAuth and has a configured project.
+        Used by the embedded app to determine which UI to show (wizard vs dashboard).
+
+        Authentication: Requires Shopify session token via Authorization header.
+        The shop domain is extracted from the session token's 'dest' claim.
+
+        Called from the Shopify embedded app on initial load.
+      tags:
+        - Shopify
+      operationId: getShopStatus
+      security:
+        - shopifySessionToken: []
+      responses:
+        '200':
+          description: Shop status retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - has_oauth
+                  - has_project
+                  - shop_domain
+                properties:
+                  has_oauth:
+                    type: boolean
+                    description: Whether shop has completed OAuth flow
+                    example: true
+                  has_project:
+                    type: boolean
+                    description: Whether shop has a linked SearchAF project
+                    example: false
+                  shop_domain:
+                    type: string
+                    description: The shop's myshopify.com domain
+                    pattern: ^[a-z0-9-]+\.myshopify\.com$
+                    example: example.myshopify.com
+                  project:
+                    $ref: '#/components/schemas/Project'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /shopify/widget-config:
+    get:
+      summary: Get widget configuration for shop
+      description: |
+        Returns the configuration needed for the theme extension widget, including
+        a read-only API key, table slug, and API URL. This endpoint is used by the
+        embedded app dashboard to sync configuration to app metafields.
+
+        Authentication: Requires Shopify session token via Authorization header.
+        The shop domain is extracted from the session token's 'dest' claim.
+      tags:
+        - Shopify
+      operationId: getWidgetConfig
+      security:
+        - shopifySessionToken: []
+      responses:
+        '200':
+          description: Widget configuration retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - api_key
+                  - table_slug
+                  - api_url
+                properties:
+                  api_key:
+                    type: string
+                    description: Read-only API key for widget
+                    example: searchaf_ro_abc123...
+                  table_slug:
+                    type: string
+                    description: Table slug to query (usually "products" for Shopify)
+                    example: products
+                  api_url:
+                    type: string
+                    description: SearchAF API base URL
+                    example: https://searchaf.antfly.io/api/v1
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Shop or project not found, or no read-only API key available
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /shopify/projects:
+    post:
+      summary: Create a Shopify project
+      description: |
+        Creates a new project linked to a Shopify shop. This endpoint:
+        1. Looks up shop details from the user's pending OAuth token (user_shop_tokens)
+        2. Creates a new project with type "shopify"
+        3. Links the shop to the project by creating shopify_shops record
+        4. Moves the access token from user_shop_tokens to shopify_access_tokens
+
+        Requires the user to have completed OAuth with the Shopify shop first.
+        Called from the SearchAF dashboard after OAuth completion.
+      tags:
+        - Shopify
+      operationId: createShopifyProject
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - organization_id
+                - shop_domain
+              properties:
+                organization_id:
+                  type: string
+                  format: uuid
+                  description: The organization ID to create the project under
+                  example: 123e4567-e89b-12d3-a456-426614174000
+                shop_domain:
+                  type: string
+                  description: The myshopify.com domain of the shop
+                  example: my-store.myshopify.com
+      responses:
+        '201':
+          description: Shopify project created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Shop OAuth token not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Shop is already linked to a project
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /shopify/sync/{id}:
+    get:
+      summary: Get sync job status
+      description: |
+        Poll sync job status to track product sync progress.
+        Returns current status, progress percentage, and any error messages.
+
+        Use this endpoint to poll for sync completion (typically every 2 seconds).
+        Stop polling when status is 'completed' or 'failed'.
+
+        Called from the Shopify embedded app dashboard.
+      tags:
+        - Shopify
+      operationId: getShopifySyncStatus
+      security:
+        - shopifySessionToken: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Sync job ID
+          example: 123e4567-e89b-12d3-a456-426614174000
+      responses:
+        '200':
+          description: Sync job status retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShopifySync'
+        '404':
+          description: Sync job not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /webhooks/shopify:
     post:
       summary: Shopify webhook
-      description: Handle Shopify webhook events (app install/uninstall)
+      description: |
+        Handle Shopify webhook events (app/uninstalled, shop/update, etc).
+        This endpoint:
+        1. Verifies the HMAC signature from Shopify
+        2. Routes to the appropriate handler based on X-Shopify-Topic header
+
+        For app/uninstalled events:
+        - Freezes the associated project (sets status to 'frozen')
+        - Deletes access tokens for the shop
+        - Updates shop records with uninstall timestamp
+
+        This webhook is automatically called by Shopify based on the configured topics.
       tags:
-        - Webhooks
+        - Shopify
+      operationId: postWebhooksShopify
       security: []
       parameters:
         - name: X-Shopify-Hmac-Sha256
@@ -1080,25 +1745,497 @@ paths:
           required: true
           schema:
             type: string
-          description: Shopify webhook signature for verification
+          description: HMAC signature for webhook verification
         - name: X-Shopify-Shop-Domain
+          in: header
+          required: false
+          schema:
+            type: string
+          description: Shop domain (optional, included in payload)
+        - name: X-Shopify-Topic
           in: header
           required: true
           schema:
             type: string
-          description: Shop domain
+          description: Webhook topic (e.g., app/uninstalled, shop/update)
+          example: app/uninstalled
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              description: Shopify event payload (varies by event type)
+              description: Shopify webhook payload (varies by topic)
+              properties:
+                id:
+                  type: integer
+                  format: int64
+                  description: Shopify shop ID
+                  example: 123456
+                domain:
+                  type: string
+                  description: Shop's myshopify.com domain
+                  example: example.myshopify.com
       responses:
         '200':
-          description: Webhook processed
+          description: Webhook processed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  received:
+                    type: boolean
+                    example: true
         '400':
-          description: Invalid payload or signature
+          description: Invalid payload
+        '401':
+          description: Invalid HMAC signature
+  /shopify/aeo/analyze:
+    post:
+      summary: Analyze Shopify resource(s) for AEO
+      description: |
+        Analyzes one or more Shopify resources (product, collection, page, or blog post) and returns
+        AEO scores with actionable suggestions. Converts resources to semantic HTML
+        and delegates to the core AEO analyzer.
+
+        **Single resource mode** (application/json): Provide a single JSON object with resource_type and resource_id.
+        Returns an array with one AnalysisReport.
+
+        **Bulk mode** (application/x-ndjson): Provide newline-delimited JSON with one resource per line.
+        Each line should be a JSON object with resource_type and resource_id.
+        Returns an array of AnalysisReport objects (one per input resource).
+
+        Example NDJSON:
+        ```
+        {"resource_type":"product","resource_id":"123"}
+        {"resource_type":"product","resource_id":"456"}
+        ```
+
+        **v1 Limitation**: Only supports resourceType='product'. Other resource types will
+        return a 400 Bad Request error.
+
+        Authentication: Requires Shopify session token via Authorization header.
+        The shop domain is extracted from the session token's 'dest' claim.
+      tags:
+        - Shopify AEO
+      operationId: analyzeShopifyResource
+      security:
+        - shopifySessionToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - resource_type
+                - resource_id
+              properties:
+                resource_type:
+                  $ref: '#/components/schemas/ShopifyResourceType'
+                resource_id:
+                  type: string
+                  description: Shopify resource ID (e.g., gid://shopify/Product/123 or just "123")
+                  example: '123456789'
+          application/x-ndjson:
+            schema:
+              type: string
+              description: Newline-delimited JSON, one resource per line
+              example: |
+                {"resource_type":"product","resource_id":"123"}
+                {"resource_type":"product","resource_id":"456"}
+      responses:
+        '200':
+          description: Resource(s) analyzed successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AnalysisReport'
+                description: Array of analysis reports (one per resource)
+        '400':
+          description: Bad request (invalid resource_type, unsupported in v1, or missing fields)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    get:
+      summary: Get AEO analysis history
+      description: |
+        Retrieves all AEO analyses for the authenticated shop's resources.
+        Returns historical analysis reports ordered by most recent first.
+
+        Authentication: Requires Shopify session token via Authorization header.
+        The shop domain is extracted from the session token's 'dest' claim.
+      tags:
+        - Shopify AEO
+      operationId: getShopifyAnalysisHistory
+      security:
+        - shopifySessionToken: []
+      parameters:
+        - name: resource_type
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/ShopifyResourceType'
+          description: Filter by resource type (optional)
+        - name: resource_id
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter by specific resource ID (optional)
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+          description: Maximum number of results to return
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          description: Number of results to skip for pagination
+      responses:
+        '200':
+          description: Analysis history retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AnalysisReport'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /shopify/aeo/visibility:
+    post:
+      summary: Test resource visibility in AI search
+      description: |
+        Tests how visible a Shopify resource is in AI search results for given queries.
+        Returns relevance scores and recommendations for improving visibility.
+
+        **v1 Limitation**: Only supports resourceType='product'. Other resource types will
+        return a 400 Bad Request error.
+
+        Authentication: Requires Shopify session token via Authorization header.
+        The shop domain is extracted from the session token's 'dest' claim.
+      tags:
+        - Shopify AEO
+      operationId: testResourceVisibility
+      security:
+        - shopifySessionToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - resource_type
+                - resource_id
+                - queries
+              properties:
+                resource_type:
+                  $ref: '#/components/schemas/ShopifyResourceType'
+                resource_id:
+                  type: string
+                  description: Shopify resource ID
+                  example: '123456789'
+                queries:
+                  type: array
+                  items:
+                    type: string
+                  minItems: 1
+                  description: Search queries to test visibility against
+                  example:
+                    - What is organic coffee?
+                    - Best coffee beans for espresso
+      responses:
+        '200':
+          description: Visibility test completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VisibilityTestResult'
+        '400':
+          description: Bad request (invalid resource_type, unsupported in v1, or missing fields)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    get:
+      summary: Get visibility test history
+      description: |
+        Retrieves all visibility test results for the authenticated shop's resources.
+        Returns historical visibility tests ordered by most recent first.
+
+        Authentication: Requires Shopify session token via Authorization header.
+        The shop domain is extracted from the session token's 'dest' claim.
+      tags:
+        - Shopify AEO
+      operationId: getShopifyVisibilityHistory
+      security:
+        - shopifySessionToken: []
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+          description: Maximum number of results to return
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          description: Number of results to skip for pagination
+      responses:
+        '200':
+          description: Visibility test history retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/VisibilityTestResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /shopify/aeo/publish:
+    post:
+      summary: Publish AEO optimizations to Shopify
+      description: |
+        Applies saved optimization suggestions from a previous analysis to the Shopify resource
+        via the Shopify Admin GraphQL API. This endpoint:
+        1. Fetches the analysis and optimizations from aeo_shopify_analyses and aeo_shopify_optimizations
+        2. Applies optimized values (title, description, meta fields, etc.) to Shopify
+        3. Marks optimizations as applied (sets applied_at timestamp)
+
+        **v1 Implementation**: Updates product title, meta description, and SEO fields.
+        Future versions will support auto-applying all optimization types.
+
+        Authentication: Requires Shopify session token via Authorization header.
+        The shop domain is extracted from the session token's 'dest' claim.
+      tags:
+        - Shopify AEO
+      operationId: publishShopifyOptimizations
+      security:
+        - shopifySessionToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - analysis_id
+              properties:
+                analysis_id:
+                  type: string
+                  format: uuid
+                  description: ID of the Shopify AEO analysis containing optimizations to publish
+                  example: 123e4567-e89b-12d3-a456-426614174000
+                fields:
+                  type: array
+                  items:
+                    type: string
+                  description: Optional list of specific fields to publish (if omitted, publishes all auto-applicable optimizations)
+                  example:
+                    - title
+                    - meta_description
+      responses:
+        '200':
+          description: Optimizations published successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublishOptimizationsResponse'
+        '400':
+          description: Bad request (invalid analysis_id or no optimizations found)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Analysis not found or already published
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /organizations/{org_id}/aeo/analyze:
+    post:
+      summary: Analyze content for AEO score
+      description: |
+        Analyze HTML, Markdown, or URL content for Answer Engine Optimization.
+        Requires organization membership for the specified organization.
+      tags:
+        - AEO Analysis
+      operationId: analyzeContent
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: org_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/UUID'
+          description: Organization ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnalysisRequest'
+      responses:
+        '200':
+          description: Analysis complete
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalysisReport'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    get:
+      summary: Get full history of analyses
+      description: |
+        Retrieve all analyses for the specified organization.
+        Requires organization membership.
+      tags:
+        - AEO Analysis
+      operationId: getAnalysisHistory
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: org_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/UUID'
+          description: Organization ID
+      responses:
+        '200':
+          description: List of all analyses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AnalysisReport'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /organizations/{org_id}/aeo/visibility:
+    post:
+      summary: Run a new visibility test across AI engines
+      description: |
+        Test content visibility in AI engines (Gemini, Gemma, etc.).
+        Requires organization membership for the specified organization.
+      tags:
+        - AEO Visibility
+      operationId: runVisibilityTest
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: org_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/UUID'
+          description: Organization ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VisibilityTestRequest'
+      responses:
+        '200':
+          description: Visibility test results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VisibilityTestResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    get:
+      summary: Get full history of visibility tests
+      description: |
+        Retrieve all visibility test results for the specified organization.
+        Requires organization membership.
+      tags:
+        - AEO Visibility
+      operationId: getVisibilityTestHistory
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: org_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/UUID'
+          description: Organization ID
+      responses:
+        '200':
+          description: List of all visibility test results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/VisibilityTestResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
 components:
   schemas:
     UUID:
@@ -1116,20 +2253,6 @@ components:
       format: date
       description: ISO 8601 date
       example: '2025-10-02'
-    PaginationParams:
-      type: object
-      properties:
-        offset:
-          type: integer
-          minimum: 0
-          default: 0
-          description: Number of items to skip
-        limit:
-          type: integer
-          minimum: 1
-          maximum: 100
-          default: 20
-          description: Maximum number of items to return
     PaginationMeta:
       type: object
       required:
@@ -1158,7 +2281,7 @@ components:
           type: string
           format: uri
           description: URI identifying the problem type
-          example: https://searchaf-api.antfly.io/errors/validation-error
+          example: https://searchaf.antfly.io/errors/validation-error
         title:
           type: string
           description: Short, human-readable summary
@@ -1175,7 +2298,7 @@ components:
           type: string
           format: uri
           description: URI reference identifying the specific occurrence
-          example: /api/v1/users/550e8400-e29b-41d4-a716-446655440000
+          example: https://searchaf.antfly.io/api/v1/users/550e8400-e29b-41d4-a716-446655440000
         errors:
           type: array
           description: Additional validation errors
@@ -1381,6 +2504,7 @@ components:
         - woocommerce
         - shopify
         - wordpress
+        - custom
       description: E-commerce platform type
     ProjectStatus:
       type: string
@@ -1420,11 +2544,23 @@ components:
           example: my-store
         project_type:
           $ref: '#/components/schemas/ProjectType'
+        antfly_cluster_id:
+          type: string
+          minLength: 1
+          maxLength: 50
+          description: AntflyDB cluster ID where project tables are stored (internal only, not returned in API responses)
+          readOnly: true
+          x-go-name: AntflyClusterID
         integration_config:
           type: object
           nullable: true
           description: Platform-specific configuration
           additionalProperties: true
+        tables:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProjectTable'
+          description: AntflyDB tables associated with this project
         status:
           $ref: '#/components/schemas/ProjectStatus'
         created_at:
@@ -1436,38 +2572,60 @@ components:
           nullable: true
           description: Extensible project settings
           additionalProperties: true
-    ProjectRole:
-      type: string
-      enum:
-        - project_admin
-        - developer
-      description: Project-level role
-    ProjectMember:
+    ProjectTable:
       type: object
       required:
         - id
-        - user_id
         - project_id
-        - role
-        - granted_at
+        - slug
+        - is_default
+        - created_at
+        - updated_at
       properties:
         id:
           $ref: '#/components/schemas/UUID'
-        user_id:
-          $ref: '#/components/schemas/UUID'
+          description: The table UUID (used as AntflyDB table name)
         project_id:
           $ref: '#/components/schemas/UUID'
-        role:
-          $ref: '#/components/schemas/ProjectRole'
-        granted_by:
-          $ref: '#/components/schemas/UUID'
-          nullable: true
-        granted_at:
+          description: The project this table belongs to
+        slug:
+          type: string
+          maxLength: 100
+          pattern: ^[a-z0-9-]+$
+          description: Human-friendly slug (e.g., 'products', 'blog-posts')
+          example: products
+        is_default:
+          type: boolean
+          description: Whether this is the default table for the project
+          default: false
+        created_at:
           $ref: '#/components/schemas/Timestamp'
-        user:
-          $ref: '#/components/schemas/User'
-          nullable: true
-          description: Populated in list responses
+        updated_at:
+          $ref: '#/components/schemas/Timestamp'
+    ProjectTableCreate:
+      type: object
+      required:
+        - slug
+      properties:
+        slug:
+          type: string
+          maxLength: 100
+          pattern: ^[a-z0-9-]+$
+          description: Human-friendly slug
+          example: products
+        is_default:
+          type: boolean
+          description: Whether this should be the default table
+          default: false
+    ProjectTableUpdate:
+      type: object
+      properties:
+        slug:
+          type: string
+          maxLength: 100
+          pattern: ^[a-z0-9-]+$
+        is_default:
+          type: boolean
     APIKeyType:
       type: string
       enum:
@@ -1480,6 +2638,24 @@ components:
         - active
         - revoked
       description: API key status
+    RevokedAPIKey:
+      type: object
+      required:
+        - id
+        - status
+        - revoked_at
+      properties:
+        id:
+          $ref: '#/components/schemas/UUID'
+          description: ID of the revoked key
+        status:
+          type: string
+          enum:
+            - revoked
+          description: Status of the old key
+        revoked_at:
+          $ref: '#/components/schemas/Timestamp'
+          description: When the old key was revoked
     APIKey:
       type: object
       required:
@@ -1581,6 +2757,63 @@ components:
           example: Mozilla/5.0...
         created_at:
           $ref: '#/components/schemas/Timestamp'
+    UserOrganization:
+      $ref: '#/components/schemas/OrganizationMember'
+    ShopifySyncStatus:
+      type: string
+      enum:
+        - pending
+        - running
+        - completed
+        - failed
+        - errored
+      description: Shopify sync job status
+    ShopifySync:
+      type: object
+      required:
+        - id
+        - shopify_shop_id
+        - status
+        - progress_percent
+        - created_at
+        - updated_at
+      properties:
+        id:
+          $ref: '#/components/schemas/UUID'
+          description: Sync job ID
+        shopify_shop_id:
+          $ref: '#/components/schemas/UUID'
+          description: Shopify shop ID (foreign key to shopify_shops.id)
+        status:
+          $ref: '#/components/schemas/ShopifySyncStatus'
+        progress_percent:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: Sync progress percentage (0-100)
+          example: 45
+        last_cursor:
+          type: string
+          nullable: true
+          description: Last Shopify API pagination cursor (for resume capability)
+        error_message:
+          type: string
+          nullable: true
+          description: Error message if status is failed or errored
+        started_at:
+          $ref: '#/components/schemas/Timestamp'
+          nullable: true
+          description: When the sync job started running
+        completed_at:
+          $ref: '#/components/schemas/Timestamp'
+          nullable: true
+          description: When the sync job completed (success or failure)
+        created_at:
+          $ref: '#/components/schemas/Timestamp'
+          description: When the sync job was created
+        updated_at:
+          $ref: '#/components/schemas/Timestamp'
+          description: When the sync job was last updated
     AuthResponse:
       type: object
       required:
@@ -1606,6 +2839,86 @@ components:
           example: 3600
         user:
           $ref: '#/components/schemas/User'
+    ProjectStats:
+      type: object
+      required:
+        - project_id
+        - total_indexed_items
+        - tables
+      properties:
+        project_id:
+          $ref: '#/components/schemas/UUID'
+        total_indexed_items:
+          type: integer
+          format: int64
+          description: Total number of indexed items across all tables
+          example: 15234
+        tables:
+          type: array
+          items:
+            $ref: '#/components/schemas/TableStats'
+          description: Per-table statistics breakdown
+        integration_metadata:
+          $ref: '#/components/schemas/IntegrationMetadata'
+          nullable: true
+          description: Integration-specific metadata (Shopify, WooCommerce, etc.)
+    TableStats:
+      type: object
+      required:
+        - table_id
+        - slug
+        - indexed_items
+      properties:
+        table_id:
+          $ref: '#/components/schemas/UUID'
+          description: Table UUID (AntflyDB table name)
+        slug:
+          type: string
+          description: Human-friendly table slug
+          example: products
+        indexed_items:
+          type: integer
+          format: int64
+          description: Number of indexed items in this table
+          example: 15234
+        is_default:
+          type: boolean
+          description: Whether this is the default table for the project
+    IntegrationMetadata:
+      type: object
+      description: Integration-specific metadata for various project types
+      properties:
+        shopify:
+          $ref: '#/components/schemas/ShopifyIntegrationMetadata'
+          nullable: true
+    ShopifyIntegrationMetadata:
+      type: object
+      required:
+        - shop_name
+        - shop_domain
+        - sync_in_progress
+      properties:
+        shop_name:
+          type: string
+          description: Shopify shop display name
+          example: Acme Store
+        shop_domain:
+          type: string
+          pattern: ^[a-z0-9-]+\.myshopify\.com$
+          description: Shop's myshopify.com domain
+          example: acme-store.myshopify.com
+        last_sync_completed_at:
+          $ref: '#/components/schemas/Timestamp'
+          nullable: true
+          description: When the last successful sync completed
+        last_sync_status:
+          $ref: '#/components/schemas/ShopifySyncStatus'
+          nullable: true
+          description: Status of the most recent sync job
+        sync_in_progress:
+          type: boolean
+          description: Whether a sync is currently running
+          example: false
     SubscriptionStatus:
       type: string
       enum:
@@ -1765,6 +3078,829 @@ components:
                 type: integer
                 minimum: 0
                 description: Total usage for this billing cycle
+    ShopifyResourceType:
+      type: string
+      enum:
+        - product
+        - collection
+        - page
+        - blog_post
+      description: Type of Shopify resource
+      example: product
+    PublishOptimizationsResponse:
+      type: object
+      required:
+        - analysis_id
+        - published_count
+        - applied_fields
+      properties:
+        analysis_id:
+          type: string
+          format: uuid
+          description: ID of the analysis
+        published_count:
+          type: integer
+          description: Number of optimizations published
+          example: 3
+        applied_fields:
+          type: array
+          items:
+            type: string
+          description: List of fields that were updated
+          example:
+            - title
+            - meta_description
+            - seo_title
+        shopify_resource_id:
+          type: string
+          description: Shopify GID of the updated resource
+          example: gid://shopify/Product/123456789
+    Grade:
+      type: string
+      enum:
+        - excellent
+        - good
+        - needs-work
+      description: Quality grade based on AEO score
+    AEOScore:
+      type: object
+      required:
+        - value
+        - grade
+      properties:
+        value:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: Numerical AEO score
+          example: 75
+        grade:
+          $ref: '#/components/schemas/Grade'
+    ReportSummary:
+      type: object
+      required:
+        - total_issues
+        - critical_count
+        - warning_count
+        - info_count
+      properties:
+        total_issues:
+          type: integer
+          minimum: 0
+        critical_count:
+          type: integer
+          minimum: 0
+        warning_count:
+          type: integer
+          minimum: 0
+        info_count:
+          type: integer
+          minimum: 0
+    SuggestionCategory:
+      type: string
+      enum:
+        - structure
+        - content
+        - metadata
+        - schema
+      description: Category of optimization suggestion
+    Priority:
+      type: string
+      enum:
+        - critical
+        - warning
+        - info
+      description: Priority level of suggestion
+    Impact:
+      type: string
+      enum:
+        - high
+        - medium
+        - low
+      description: Impact level of suggestion
+    Suggestion:
+      type: object
+      required:
+        - id
+        - category
+        - priority
+        - title
+        - description
+        - impact
+      properties:
+        id:
+          type: string
+          description: Unique suggestion identifier
+          example: STR-001
+        category:
+          $ref: '#/components/schemas/SuggestionCategory'
+        priority:
+          $ref: '#/components/schemas/Priority'
+        title:
+          type: string
+          description: Short suggestion title
+          example: Missing H1 Heading
+        description:
+          type: string
+          description: Detailed explanation
+          example: Add a clear H1 heading that describes the main topic of the page.
+        example:
+          type: string
+          nullable: true
+          description: Example implementation
+        impact:
+          $ref: '#/components/schemas/Impact'
+    ContentType:
+      type: string
+      enum:
+        - html
+        - markdown
+        - url
+      description: Type of content being analyzed
+    AnalysisMetadata:
+      type: object
+      required:
+        - source
+        - content_type
+        - analyzed_at
+      properties:
+        source:
+          type: string
+          description: Original source URL or content snippet
+        content_type:
+          $ref: '#/components/schemas/ContentType'
+        analyzed_at:
+          $ref: '#/components/schemas/Timestamp'
+        processing_time:
+          type: integer
+          description: Processing time in milliseconds
+        content_length:
+          type: integer
+          nullable: true
+          description: Length of content analyzed
+        additional_fields:
+          type: object
+          nullable: true
+          additionalProperties: true
+          description: Additional resource-specific fields (e.g., resource_id, resource_title for Shopify)
+    ExperienceAnalysis:
+      type: object
+      required:
+        - score
+        - signals
+        - missing
+      properties:
+        score:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: Experience score (0-100)
+        signals:
+          type: array
+          items:
+            type: string
+          description: Detected experience signals (narratives, case studies, etc.)
+        missing:
+          type: array
+          items:
+            type: string
+          description: Missing experience elements
+    ExpertiseAnalysis:
+      type: object
+      required:
+        - score
+        - author_info
+        - credentials
+        - expert_quotes
+        - missing
+      properties:
+        score:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: Expertise score (0-100)
+        author_info:
+          type: boolean
+          description: Has author information
+        credentials:
+          type: array
+          items:
+            type: string
+          description: Detected credentials
+        expert_quotes:
+          type: integer
+          minimum: 0
+          description: Number of expert quotes or citations
+        missing:
+          type: array
+          items:
+            type: string
+          description: Missing expertise elements
+    AuthoritativenessAnalysis:
+      type: object
+      required:
+        - score
+        - citations
+        - external_links
+        - source_quality
+        - missing
+      properties:
+        score:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: Authoritativeness score (0-100)
+        citations:
+          type: integer
+          minimum: 0
+          description: Number of citations found
+        external_links:
+          type: integer
+          minimum: 0
+          description: Number of external authoritative links
+        source_quality:
+          type: string
+          enum:
+            - high
+            - medium
+            - low
+          description: Overall source quality assessment
+        missing:
+          type: array
+          items:
+            type: string
+          description: Missing authoritativeness elements
+    TrustworthinessAnalysis:
+      type: object
+      required:
+        - score
+        - contact_info
+        - about_page
+        - transparency_signals
+        - missing
+      properties:
+        score:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: Trustworthiness score (0-100)
+        contact_info:
+          type: boolean
+          description: Has contact information
+        about_page:
+          type: boolean
+          description: Has about page link
+        transparency_signals:
+          type: array
+          items:
+            type: string
+          description: Detected transparency signals
+        missing:
+          type: array
+          items:
+            type: string
+          description: Missing trustworthiness elements
+    EEATAnalysis:
+      type: object
+      required:
+        - experience
+        - expertise
+        - authoritativeness
+        - trustworthiness
+        - overall_score
+      description: E-E-A-T (Experience, Expertise, Authoritativeness, Trustworthiness) analysis
+      properties:
+        experience:
+          $ref: '#/components/schemas/ExperienceAnalysis'
+        expertise:
+          $ref: '#/components/schemas/ExpertiseAnalysis'
+        authoritativeness:
+          $ref: '#/components/schemas/AuthoritativenessAnalysis'
+        trustworthiness:
+          $ref: '#/components/schemas/TrustworthinessAnalysis'
+        overall_score:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: Overall E-E-A-T score (average of all components)
+    QuestionAnswerPair:
+      type: object
+      required:
+        - question
+        - answer
+        - quality
+      properties:
+        question:
+          type: string
+          description: Question text
+        answer:
+          type: string
+          description: Answer text (may be truncated)
+        quality:
+          type: string
+          enum:
+            - high
+            - medium
+            - low
+          description: Quality of the answer
+    NaturalLanguageOptimization:
+      type: object
+      required:
+        - score
+        - conversational_tone
+        - direct_answers
+        - improvements
+      properties:
+        score:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: Natural language optimization score
+        conversational_tone:
+          type: boolean
+          description: Has conversational tone (you, your, we, etc.)
+        direct_answers:
+          type: integer
+          minimum: 0
+          description: Number of direct answer patterns detected
+        improvements:
+          type: array
+          items:
+            type: string
+          description: Suggested improvements
+    VoiceSearchReadiness:
+      type: object
+      required:
+        - score
+        - featured_snippet_potential
+        - concise_answers
+        - improvements
+      properties:
+        score:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: Voice search readiness score
+        featured_snippet_potential:
+          type: boolean
+          description: Has potential for featured snippets
+        concise_answers:
+          type: integer
+          minimum: 0
+          description: Number of concise answers (40-300 chars)
+        improvements:
+          type: array
+          items:
+            type: string
+          description: Suggested improvements
+    ConversationalQueryAnalysis:
+      type: object
+      required:
+        - score
+        - question_answer_pairs
+        - faq_detected
+        - natural_language_optimization
+        - voice_search_readiness
+        - missing_questions
+      description: Conversational query and voice search optimization analysis
+      properties:
+        score:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: Overall conversational optimization score
+        question_answer_pairs:
+          type: array
+          items:
+            $ref: '#/components/schemas/QuestionAnswerPair'
+          description: Detected question/answer pairs
+        faq_detected:
+          type: boolean
+          description: FAQ section detected
+        natural_language_optimization:
+          $ref: '#/components/schemas/NaturalLanguageOptimization'
+        voice_search_readiness:
+          $ref: '#/components/schemas/VoiceSearchReadiness'
+        missing_questions:
+          type: array
+          items:
+            type: string
+          description: Suggested questions to add
+    TopicalAuthority:
+      type: object
+      required:
+        - score
+        - main_topics
+        - subtopic_coverage
+        - depth
+        - improvements
+      properties:
+        score:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: Topical authority score
+        main_topics:
+          type: array
+          items:
+            type: string
+          description: Main topics covered (from H1, H2)
+        subtopic_coverage:
+          type: array
+          items:
+            type: string
+          description: Subtopics covered (from H3, H4)
+        depth:
+          type: string
+          enum:
+            - comprehensive
+            - moderate
+            - shallow
+          description: Topic coverage depth
+        improvements:
+          type: array
+          items:
+            type: string
+          description: Suggested improvements
+    SemanticKeywords:
+      type: object
+      required:
+        - score
+        - primary_keywords
+        - related_terms
+        - semantic_gaps
+      properties:
+        score:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: Semantic keyword score
+        primary_keywords:
+          type: array
+          items:
+            type: string
+          description: Top primary keywords detected
+        related_terms:
+          type: array
+          items:
+            type: string
+          description: Related terms and synonyms
+        semantic_gaps:
+          type: array
+          items:
+            type: string
+          description: Missing semantic elements
+    ContentDepth:
+      type: object
+      required:
+        - score
+        - word_count
+        - reading_level
+        - technical_depth
+        - improvements
+      properties:
+        score:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: Content depth score
+        word_count:
+          type: integer
+          minimum: 0
+          description: Total word count
+        reading_level:
+          type: string
+          enum:
+            - Graduate
+            - College
+            - High School
+          description: Estimated reading level
+        technical_depth:
+          type: string
+          enum:
+            - expert
+            - intermediate
+            - beginner
+          description: Technical depth level
+        improvements:
+          type: array
+          items:
+            type: string
+          description: Suggested improvements
+    EntityCoverage:
+      type: object
+      required:
+        - score
+        - entities
+        - relationships
+        - missing
+      properties:
+        score:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: Entity coverage score
+        entities:
+          type: array
+          items:
+            type: string
+          description: Detected entities (proper nouns, brands, etc.)
+        relationships:
+          type: array
+          items:
+            type: string
+          description: Detected entity relationships
+        missing:
+          type: array
+          items:
+            type: string
+          description: Missing entity elements
+    SemanticRichnessAnalysis:
+      type: object
+      required:
+        - score
+        - topical_authority
+        - semantic_keywords
+        - content_depth
+        - entity_coverage
+      description: Semantic richness and topical authority analysis
+      properties:
+        score:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: Overall semantic richness score (average of all components)
+        topical_authority:
+          $ref: '#/components/schemas/TopicalAuthority'
+        semantic_keywords:
+          $ref: '#/components/schemas/SemanticKeywords'
+        content_depth:
+          $ref: '#/components/schemas/ContentDepth'
+        entity_coverage:
+          $ref: '#/components/schemas/EntityCoverage'
+    Opportunity:
+      type: object
+      required:
+        - title
+        - description
+        - impact
+        - effort
+        - priority
+      properties:
+        title:
+          type: string
+          description: Opportunity title
+          example: Add Schema.org markup
+        description:
+          type: string
+          description: Detailed description of the opportunity
+          example: Quick win to improve AI comprehension
+        impact:
+          type: string
+          enum:
+            - high
+            - medium
+            - low
+          description: Impact level
+        effort:
+          type: string
+          enum:
+            - easy
+            - moderate
+            - hard
+          description: Effort required
+        priority:
+          type: integer
+          minimum: 1
+          maximum: 10
+          description: Calculated priority score (1-10)
+    CompetitorInsights:
+      type: object
+      required:
+        - strength_areas
+        - weak_areas
+        - opportunities
+        - summary
+      properties:
+        strength_areas:
+          type: array
+          items:
+            type: string
+          description: What competitor does well
+          example:
+            - Well-structured content with clear headings
+            - Comprehensive FAQ section
+        weak_areas:
+          type: array
+          items:
+            type: string
+          description: What competitor does poorly
+          example:
+            - Title is too generic
+            - Missing structured data
+        opportunities:
+          type: array
+          items:
+            $ref: '#/components/schemas/Opportunity'
+          description: Strategic opportunities
+        summary:
+          type: string
+          description: Overall competitive assessment
+          example: Competitor has strong content structure but lacks technical SEO elements
+    ComparisonResult:
+      type: object
+      required:
+        - id
+        - name
+        - score
+        - insights
+      properties:
+        id:
+          $ref: '#/components/schemas/UUID'
+        name:
+          type: string
+          description: Name of the comparison
+          example: Competitor Inc
+        source:
+          type: string
+          description: Source URL or content snippet
+        score:
+          $ref: '#/components/schemas/AEOScore'
+        insights:
+          $ref: '#/components/schemas/CompetitorInsights'
+          description: AI-powered competitive intelligence
+    AnalysisReport:
+      type: object
+      required:
+        - id
+        - score
+        - summary
+        - suggestions
+        - metadata
+      properties:
+        id:
+          $ref: '#/components/schemas/UUID'
+        score:
+          $ref: '#/components/schemas/AEOScore'
+        summary:
+          $ref: '#/components/schemas/ReportSummary'
+        suggestions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Suggestion'
+        metadata:
+          $ref: '#/components/schemas/AnalysisMetadata'
+        created_at:
+          $ref: '#/components/schemas/Timestamp'
+        eeat:
+          $ref: '#/components/schemas/EEATAnalysis'
+          nullable: true
+          description: E-E-A-T (Experience, Expertise, Authoritativeness, Trustworthiness) analysis
+        conversational_query:
+          $ref: '#/components/schemas/ConversationalQueryAnalysis'
+          nullable: true
+          description: Conversational query and voice search optimization analysis
+        semantic_richness:
+          $ref: '#/components/schemas/SemanticRichnessAnalysis'
+          nullable: true
+          description: Semantic richness and topical authority analysis
+        comparisons:
+          type: array
+          nullable: true
+          description: Analysis results for comparison inputs
+          items:
+            $ref: '#/components/schemas/ComparisonResult'
+    QueryResult:
+      type: object
+      required:
+        - query
+        - found
+      properties:
+        query:
+          type: string
+          description: The search query that was tested
+        found:
+          type: boolean
+          description: Whether content was found for this query
+        position:
+          type: integer
+          nullable: true
+          description: Position in search results (1-indexed)
+        relevance_score:
+          type: number
+          format: float
+          nullable: true
+          description: Relevance score (0.0-1.0)
+        snippet:
+          type: string
+          nullable: true
+          description: Relevant snippet from the content
+    VisibilityTestResult:
+      type: object
+      required:
+        - id
+        - overall_score
+        - queries
+        - tested_at
+      properties:
+        id:
+          $ref: '#/components/schemas/UUID'
+        url:
+          type: string
+          nullable: true
+          description: URL that was tested
+        overall_score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+          description: Overall visibility score across all queries
+        queries:
+          type: array
+          description: Results for each query tested
+          items:
+            $ref: '#/components/schemas/QueryResult'
+        recommendations:
+          type: array
+          nullable: true
+          description: AI-generated recommendations to improve visibility
+          items:
+            type: string
+        tested_at:
+          $ref: '#/components/schemas/Timestamp'
+    AEOAnalysisProvider:
+      type: string
+      enum:
+        - gemini
+        - gemma
+      description: AI provider for AEO analysis and visibility testing
+    ComparisonInput:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: Name of the comparison (e.g., competitor name)
+          example: Competitor Inc
+        url:
+          type: string
+          format: uri
+          nullable: true
+          description: URL to fetch and analyze (either url or content required)
+          example: https://competitor.com/product
+        content:
+          type: string
+          nullable: true
+          description: Raw content to analyze (either url or content required)
+        content_type:
+          $ref: '#/components/schemas/ContentType'
+          nullable: true
+          description: Content type (defaults to html if not specified)
+    AnalysisRequest:
+      type: object
+      required:
+        - source
+        - content_type
+      properties:
+        source:
+          type: string
+          description: URL or content to analyze
+          example: https://example.com/blog/post
+        content_type:
+          $ref: '#/components/schemas/ContentType'
+        provider:
+          $ref: '#/components/schemas/AEOAnalysisProvider'
+          nullable: true
+          description: AI provider to use (optional, uses configured default if omitted)
+        comparisons:
+          type: array
+          nullable: true
+          description: Optional list of comparisons to analyze alongside main content
+          items:
+            $ref: '#/components/schemas/ComparisonInput'
+    VisibilityTestRequest:
+      type: object
+      required:
+        - queries
+      properties:
+        queries:
+          type: array
+          description: Search queries to test against the content
+          items:
+            type: string
+          example:
+            - What is AEO?
+            - How to optimize for AI search?
+        url:
+          type: string
+          format: uri
+          nullable: true
+          description: URL to fetch and test for visibility (either url or content required)
+        content:
+          type: string
+          nullable: true
+          description: Raw content to test for visibility (either url or content required)
   responses:
     BadRequest:
       description: Bad request
@@ -1802,6 +3938,12 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
   securitySchemes:
     BearerAuth:
       type: http
@@ -1813,6 +3955,15 @@ components:
       in: header
       name: X-API-Key
       description: Project-specific API key
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    shopifySessionToken:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Shopify App Bridge session token (contains shop domain in 'dest' claim)
   parameters:
     OrgId:
       name: org_id
@@ -1842,6 +3993,13 @@ components:
       schema:
         $ref: '#/components/schemas/UUID'
       description: API Key ID
+    TableId:
+      name: table_id
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/UUID'
+      description: Table ID
     Offset:
       name: offset
       in: query
@@ -1873,3 +4031,11 @@ x-tagGroups:
       - Subscriptions
       - Usage
       - Webhooks
+  - name: SearchAF Shopify Integration API
+    tags:
+      - Shopify
+      - Shopify AEO
+  - name: SearchAF AEO Analyzer API
+    tags:
+      - AEO Analysis
+      - AEO Visibility

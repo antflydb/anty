@@ -25,12 +25,12 @@ Redirects to OAuth provider login page
 <CodeTabs samples={[
   {
     language: "cURL",
-    code: `curl -X GET "https://searchaf-api.antfly.io/api/v1/auth/oauth/{provider}/login?redirect_uri=value" \\\\
+    code: `curl -X GET "https://searchaf.antfly.io/api/v1/auth/oauth/{provider}/login?redirect_uri=value" \\\\
     -H "Authorization: Bearer YOUR_API_KEY"`
   },
   {
     language: "TypeScript",
-    code: `const response = await fetch('https://searchaf-api.antfly.io/api/v1/auth/oauth/{provider}/login?redirect_uri=value', {
+    code: `const response = await fetch('https://searchaf.antfly.io/api/v1/auth/oauth/{provider}/login?redirect_uri=value', {
     method: 'GET',
     headers: {
         'Authorization': 'Bearer YOUR_API_KEY'
@@ -41,7 +41,7 @@ const data = await response.json();`
   },
   {
     language: "JavaScript",
-    code: `fetch('https://searchaf-api.antfly.io/api/v1/auth/oauth/{provider}/login?redirect_uri=value', {
+    code: `fetch('https://searchaf.antfly.io/api/v1/auth/oauth/{provider}/login?redirect_uri=value', {
     method: 'GET',
     headers: {
         'Authorization': 'Bearer YOUR_API_KEY'
@@ -58,7 +58,7 @@ headers = {
     'Authorization': 'Bearer YOUR_API_KEY'
 }
 
-response = requests.get('https://searchaf-api.antfly.io/api/v1/auth/oauth/{provider}/login?redirect_uri=value', headers=headers)
+response = requests.get('https://searchaf.antfly.io/api/v1/auth/oauth/{provider}/login?redirect_uri=value', headers=headers)
 
 data = response.json()`
   },
@@ -73,7 +73,7 @@ import (
 )
 
 func main() {
-    req, _ := http.NewRequest("GET", "https://searchaf-api.antfly.io/api/v1/auth/oauth/{provider}/login?redirect_uri=value", nil)
+    req, _ := http.NewRequest("GET", "https://searchaf.antfly.io/api/v1/auth/oauth/{provider}/login?redirect_uri=value", nil)
     req.Header.Set("Authorization", "Bearer YOUR_API_KEY")
 
     client := &http.Client{}
@@ -86,6 +86,13 @@ func main() {
 ### Responses
 
 <ResponseTabs responses={[
+  {
+    statusCode: "200",
+    description: "OAuth provider redirect URL (alternative to 302 redirect)",
+    body: `{
+  "redirect_url": "https://example.com"
+}`
+  },
   {
     statusCode: "302",
     description: "Redirect to OAuth provider",
@@ -118,12 +125,12 @@ Handles OAuth provider callback and generates JWT
 <CodeTabs samples={[
   {
     language: "cURL",
-    code: `curl -X GET "https://searchaf-api.antfly.io/api/v1/auth/oauth/{provider}/callback?code=value&state=value" \\\\
+    code: `curl -X GET "https://searchaf.antfly.io/api/v1/auth/oauth/{provider}/callback?code=value&state=value" \\\\
     -H "Authorization: Bearer YOUR_API_KEY"`
   },
   {
     language: "TypeScript",
-    code: `const response = await fetch('https://searchaf-api.antfly.io/api/v1/auth/oauth/{provider}/callback?code=value&state=value', {
+    code: `const response = await fetch('https://searchaf.antfly.io/api/v1/auth/oauth/{provider}/callback?code=value&state=value', {
     method: 'GET',
     headers: {
         'Authorization': 'Bearer YOUR_API_KEY'
@@ -134,7 +141,7 @@ const data = await response.json();`
   },
   {
     language: "JavaScript",
-    code: `fetch('https://searchaf-api.antfly.io/api/v1/auth/oauth/{provider}/callback?code=value&state=value', {
+    code: `fetch('https://searchaf.antfly.io/api/v1/auth/oauth/{provider}/callback?code=value&state=value', {
     method: 'GET',
     headers: {
         'Authorization': 'Bearer YOUR_API_KEY'
@@ -151,7 +158,7 @@ headers = {
     'Authorization': 'Bearer YOUR_API_KEY'
 }
 
-response = requests.get('https://searchaf-api.antfly.io/api/v1/auth/oauth/{provider}/callback?code=value&state=value', headers=headers)
+response = requests.get('https://searchaf.antfly.io/api/v1/auth/oauth/{provider}/callback?code=value&state=value', headers=headers)
 
 data = response.json()`
   },
@@ -166,7 +173,7 @@ import (
 )
 
 func main() {
-    req, _ := http.NewRequest("GET", "https://searchaf-api.antfly.io/api/v1/auth/oauth/{provider}/callback?code=value&state=value", nil)
+    req, _ := http.NewRequest("GET", "https://searchaf.antfly.io/api/v1/auth/oauth/{provider}/callback?code=value&state=value", nil)
     req.Header.Set("Authorization", "Bearer YOUR_API_KEY")
 
     client := &http.Client{}
@@ -213,6 +220,119 @@ func main() {
 
 ---
 
+## Link OAuth provider to account
+
+<MethodBadge method="GET" path="/auth/oauth/{provider}/link" />
+
+Initiate OAuth flow to link provider to authenticated user account
+
+### Security
+
+Provide your bearer token in the Authorization header when making requests to protected resources.
+
+Example: `Authorization: Bearer YOUR_API_KEY`
+
+### Parameters
+
+| Name | Type | Location | Required | Description |
+|------|------|----------|----------|-------------|
+| `provider` | string (google, github, shopify) | path | Yes |  |
+| `redirect_uri` | string | query | No | Post-link redirect URL |
+
+### Code Examples
+
+<CodeTabs samples={[
+  {
+    language: "cURL",
+    code: `curl -X GET "https://searchaf.antfly.io/api/v1/auth/oauth/{provider}/link?redirect_uri=value" \\\\
+    -H "Authorization: Bearer YOUR_API_KEY"`
+  },
+  {
+    language: "TypeScript",
+    code: `const response = await fetch('https://searchaf.antfly.io/api/v1/auth/oauth/{provider}/link?redirect_uri=value', {
+    method: 'GET',
+    headers: {
+        'Authorization': 'Bearer YOUR_API_KEY'
+    }
+});
+
+const data = await response.json();`
+  },
+  {
+    language: "JavaScript",
+    code: `fetch('https://searchaf.antfly.io/api/v1/auth/oauth/{provider}/link?redirect_uri=value', {
+    method: 'GET',
+    headers: {
+        'Authorization': 'Bearer YOUR_API_KEY'
+    }
+})
+    .then(response => response.json())
+    .then(data => console.log(data));`
+  },
+  {
+    language: "Python",
+    code: `import requests
+
+headers = {
+    'Authorization': 'Bearer YOUR_API_KEY'
+}
+
+response = requests.get('https://searchaf.antfly.io/api/v1/auth/oauth/{provider}/link?redirect_uri=value', headers=headers)
+
+data = response.json()`
+  },
+  {
+    language: "Go",
+    code: `package main
+
+import (
+    "bytes"
+    "encoding/json"
+    "net/http"
+)
+
+func main() {
+    req, _ := http.NewRequest("GET", "https://searchaf.antfly.io/api/v1/auth/oauth/{provider}/link?redirect_uri=value", nil)
+    req.Header.Set("Authorization", "Bearer YOUR_API_KEY")
+
+    client := &http.Client{}
+    resp, _ := client.Do(req)
+    defer resp.Body.Close()
+}`
+  }
+]} />
+
+### Responses
+
+<ResponseTabs responses={[
+  {
+    statusCode: "200",
+    description: "OAuth provider redirect URL (alternative to 302 redirect)",
+    body: `{
+  "redirect_url": "https://example.com"
+}`
+  },
+  {
+    statusCode: "302",
+    description: "Redirect to OAuth provider",
+  },
+  {
+    statusCode: "400",
+    description: "Bad Request",
+  },
+  {
+    statusCode: "401",
+    description: "Unauthorized",
+  },
+  {
+    statusCode: "409",
+    description: "Response",
+  }
+]} />
+
+
+---
+
 ## Refresh JWT token
 
 <MethodBadge method="POST" path="/auth/refresh" />
@@ -228,12 +348,12 @@ Generate new JWT from refresh token
 <CodeTabs samples={[
   {
     language: "cURL",
-    code: `curl -X POST "https://searchaf-api.antfly.io/api/v1/auth/refresh" \\\\
+    code: `curl -X POST "https://searchaf.antfly.io/api/v1/auth/refresh" \\\\
     -H "Authorization: Bearer YOUR_API_KEY"`
   },
   {
     language: "TypeScript",
-    code: `const response = await fetch('https://searchaf-api.antfly.io/api/v1/auth/refresh', {
+    code: `const response = await fetch('https://searchaf.antfly.io/api/v1/auth/refresh', {
     method: 'POST',
     headers: {
         'Authorization': 'Bearer YOUR_API_KEY'
@@ -244,7 +364,7 @@ const data = await response.json();`
   },
   {
     language: "JavaScript",
-    code: `fetch('https://searchaf-api.antfly.io/api/v1/auth/refresh', {
+    code: `fetch('https://searchaf.antfly.io/api/v1/auth/refresh', {
     method: 'POST',
     headers: {
         'Authorization': 'Bearer YOUR_API_KEY'
@@ -261,7 +381,7 @@ headers = {
     'Authorization': 'Bearer YOUR_API_KEY'
 }
 
-response = requests.post('https://searchaf-api.antfly.io/api/v1/auth/refresh', headers=headers)
+response = requests.post('https://searchaf.antfly.io/api/v1/auth/refresh', headers=headers)
 
 data = response.json()`
   },
@@ -276,7 +396,7 @@ import (
 )
 
 func main() {
-    req, _ := http.NewRequest("POST", "https://searchaf-api.antfly.io/api/v1/auth/refresh", nil)
+    req, _ := http.NewRequest("POST", "https://searchaf.antfly.io/api/v1/auth/refresh", nil)
     req.Header.Set("Authorization", "Bearer YOUR_API_KEY")
 
     client := &http.Client{}
@@ -313,6 +433,214 @@ func main() {
   {
     statusCode: "401",
     description: "Unauthorized",
+  }
+]} />
+
+
+---
+
+## Sign out user
+
+<MethodBadge method="POST" path="/auth/signout" />
+
+Clears authentication cookies (access_token and refresh_token)
+
+### Code Examples
+
+<CodeTabs samples={[
+  {
+    language: "cURL",
+    code: `curl -X POST "https://searchaf.antfly.io/api/v1/auth/signout" \\\\
+    -H "Authorization: Bearer YOUR_API_KEY"`
+  },
+  {
+    language: "TypeScript",
+    code: `const response = await fetch('https://searchaf.antfly.io/api/v1/auth/signout', {
+    method: 'POST',
+    headers: {
+        'Authorization': 'Bearer YOUR_API_KEY'
+    }
+});
+
+const data = await response.json();`
+  },
+  {
+    language: "JavaScript",
+    code: `fetch('https://searchaf.antfly.io/api/v1/auth/signout', {
+    method: 'POST',
+    headers: {
+        'Authorization': 'Bearer YOUR_API_KEY'
+    }
+})
+    .then(response => response.json())
+    .then(data => console.log(data));`
+  },
+  {
+    language: "Python",
+    code: `import requests
+
+headers = {
+    'Authorization': 'Bearer YOUR_API_KEY'
+}
+
+response = requests.post('https://searchaf.antfly.io/api/v1/auth/signout', headers=headers)
+
+data = response.json()`
+  },
+  {
+    language: "Go",
+    code: `package main
+
+import (
+    "bytes"
+    "encoding/json"
+    "net/http"
+)
+
+func main() {
+    req, _ := http.NewRequest("POST", "https://searchaf.antfly.io/api/v1/auth/signout", nil)
+    req.Header.Set("Authorization", "Bearer YOUR_API_KEY")
+
+    client := &http.Client{}
+    resp, _ := client.Do(req)
+    defer resp.Body.Close()
+}`
+  }
+]} />
+
+### Responses
+
+<ResponseTabs responses={[
+  {
+    statusCode: "200",
+    description: "Successfully signed out",
+    body: `{
+  "success": true
+}`
+  },
+  {
+    statusCode: "204",
+    description: "Successfully signed out, cookies cleared",
+  },
+  {
+    statusCode: "400",
+    description: "Bad Request",
+  }
+]} />
+
+
+---
+
+## Exchange API key for JWT
+
+<MethodBadge method="POST" path="/auth/apikey/exchange" />
+
+Exchange a long-lived API key for a short-lived JWT token.
+The JWT can then be used to authenticate subsequent search and batch requests.
+
+
+### Request Body
+
+**Content-Type:** `application/json`
+
+### Code Examples
+
+<CodeTabs samples={[
+  {
+    language: "cURL",
+    code: `curl -X POST "https://searchaf.antfly.io/api/v1/auth/apikey/exchange" \\\\
+    -H "Authorization: Bearer YOUR_API_KEY"`
+  },
+  {
+    language: "TypeScript",
+    code: `const response = await fetch('https://searchaf.antfly.io/api/v1/auth/apikey/exchange', {
+    method: 'POST',
+    headers: {
+        'Authorization': 'Bearer YOUR_API_KEY'
+    }
+});
+
+const data = await response.json();`
+  },
+  {
+    language: "JavaScript",
+    code: `fetch('https://searchaf.antfly.io/api/v1/auth/apikey/exchange', {
+    method: 'POST',
+    headers: {
+        'Authorization': 'Bearer YOUR_API_KEY'
+    }
+})
+    .then(response => response.json())
+    .then(data => console.log(data));`
+  },
+  {
+    language: "Python",
+    code: `import requests
+
+headers = {
+    'Authorization': 'Bearer YOUR_API_KEY'
+}
+
+response = requests.post('https://searchaf.antfly.io/api/v1/auth/apikey/exchange', headers=headers)
+
+data = response.json()`
+  },
+  {
+    language: "Go",
+    code: `package main
+
+import (
+    "bytes"
+    "encoding/json"
+    "net/http"
+)
+
+func main() {
+    req, _ := http.NewRequest("POST", "https://searchaf.antfly.io/api/v1/auth/apikey/exchange", nil)
+    req.Header.Set("Authorization", "Bearer YOUR_API_KEY")
+
+    client := &http.Client{}
+    resp, _ := client.Do(req)
+    defer resp.Body.Close()
+}`
+  }
+]} />
+
+### Responses
+
+<ResponseTabs responses={[
+  {
+    statusCode: "200",
+    description: "JWT token generated successfully",
+    body: `{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "expires_in": 1800
+}`
+  },
+  {
+    statusCode: "400",
+    description: "Bad Request",
+  },
+  {
+    statusCode: "401",
+    description: "Unauthorized",
+  },
+  {
+    statusCode: "500",
+    description: "Internal server error",
+    body: `{
+  "type": "https://searchaf.antfly.io/errors/validation-error",
+  "title": "Validation Error",
+  "status": 400,
+  "detail": "Email address is required",
+  "instance": "https://searchaf.antfly.io/api/v1/users/550e8400-e29b-41d4-a716-446655440000",
+  "errors": [
+    {
+      "field": "string",
+      "message": "string"
+    }
+  ]
+}`
   }
 ]} />
 

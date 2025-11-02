@@ -1,0 +1,605 @@
+---
+title: "AEO Analysis"
+description: "Content analysis and scoring"
+---
+
+# AEO Analysis
+
+Content analysis and scoring
+
+## Analyze content for AEO score
+
+<MethodBadge method="POST" path="/organizations/{org_id}/aeo/analyze" />
+
+Analyze HTML, Markdown, or URL content for Answer Engine Optimization.
+Requires organization membership for the specified organization.
+
+
+### Security
+
+Provide your bearer token in the Authorization header when making requests to protected resources.
+
+Example: `Authorization: Bearer YOUR_API_KEY`
+
+### Parameters
+
+| Name | Type | Location | Required | Description |
+|------|------|----------|----------|-------------|
+| `org_id` | string | path | Yes | Organization ID |
+
+### Request Body
+
+**Content-Type:** `application/json`
+
+Schema: `AnalysisRequest`
+
+### Code Examples
+
+<CodeTabs samples={[
+  {
+    language: "cURL",
+    code: `curl -X POST "https://searchaf.antfly.io/api/v1/organizations/{org_id}/aeo/analyze" \\\\
+    -H "Authorization: Bearer YOUR_API_KEY"`
+  },
+  {
+    language: "TypeScript",
+    code: `const response = await fetch('https://searchaf.antfly.io/api/v1/organizations/{org_id}/aeo/analyze', {
+    method: 'POST',
+    headers: {
+        'Authorization': 'Bearer YOUR_API_KEY'
+    }
+});
+
+const data = await response.json();`
+  },
+  {
+    language: "JavaScript",
+    code: `fetch('https://searchaf.antfly.io/api/v1/organizations/{org_id}/aeo/analyze', {
+    method: 'POST',
+    headers: {
+        'Authorization': 'Bearer YOUR_API_KEY'
+    }
+})
+    .then(response => response.json())
+    .then(data => console.log(data));`
+  },
+  {
+    language: "Python",
+    code: `import requests
+
+headers = {
+    'Authorization': 'Bearer YOUR_API_KEY'
+}
+
+response = requests.post('https://searchaf.antfly.io/api/v1/organizations/{org_id}/aeo/analyze', headers=headers)
+
+data = response.json()`
+  },
+  {
+    language: "Go",
+    code: `package main
+
+import (
+    "bytes"
+    "encoding/json"
+    "net/http"
+)
+
+func main() {
+    req, _ := http.NewRequest("POST", "https://searchaf.antfly.io/api/v1/organizations/{org_id}/aeo/analyze", nil)
+    req.Header.Set("Authorization", "Bearer YOUR_API_KEY")
+
+    client := &http.Client{}
+    resp, _ := client.Do(req)
+    defer resp.Body.Close()
+}`
+  }
+]} />
+
+### Responses
+
+<ResponseTabs responses={[
+  {
+    statusCode: "200",
+    description: "Analysis complete",
+    body: `{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "score": {
+    "value": 75,
+    "grade": "excellent"
+  },
+  "summary": {
+    "total_issues": 0,
+    "critical_count": 0,
+    "warning_count": 0,
+    "info_count": 0
+  },
+  "suggestions": [
+    {
+      "id": "STR-001",
+      "category": "structure",
+      "priority": "critical",
+      "title": "Missing H1 Heading",
+      "description": "Add a clear H1 heading that describes the main topic of the page.",
+      "example": "string",
+      "impact": "high"
+    }
+  ],
+  "metadata": {
+    "source": "string",
+    "content_type": "html",
+    "analyzed_at": "2025-10-02T15:30:00Z",
+    "processing_time": 0,
+    "content_length": 0,
+    "additional_fields": {}
+  },
+  "created_at": "2025-10-02T15:30:00Z",
+  "eeat": {
+    "experience": {
+      "score": 0,
+      "signals": [
+        "string"
+      ],
+      "missing": [
+        "string"
+      ]
+    },
+    "expertise": {
+      "score": 0,
+      "author_info": true,
+      "credentials": [
+        "string"
+      ],
+      "expert_quotes": 0,
+      "missing": [
+        "string"
+      ]
+    },
+    "authoritativeness": {
+      "score": 0,
+      "citations": 0,
+      "external_links": 0,
+      "source_quality": "high",
+      "missing": [
+        "string"
+      ]
+    },
+    "trustworthiness": {
+      "score": 0,
+      "contact_info": true,
+      "about_page": true,
+      "transparency_signals": [
+        "string"
+      ],
+      "missing": [
+        "string"
+      ]
+    },
+    "overall_score": 0
+  },
+  "conversational_query": {
+    "score": 0,
+    "question_answer_pairs": [
+      {
+        "question": "string",
+        "answer": "string",
+        "quality": "high"
+      }
+    ],
+    "faq_detected": true,
+    "natural_language_optimization": {
+      "score": 0,
+      "conversational_tone": true,
+      "direct_answers": 0,
+      "improvements": [
+        "string"
+      ]
+    },
+    "voice_search_readiness": {
+      "score": 0,
+      "featured_snippet_potential": true,
+      "concise_answers": 0,
+      "improvements": [
+        "string"
+      ]
+    },
+    "missing_questions": [
+      "string"
+    ]
+  },
+  "semantic_richness": {
+    "score": 0,
+    "topical_authority": {
+      "score": 0,
+      "main_topics": [
+        "string"
+      ],
+      "subtopic_coverage": [
+        "string"
+      ],
+      "depth": "comprehensive",
+      "improvements": [
+        "string"
+      ]
+    },
+    "semantic_keywords": {
+      "score": 0,
+      "primary_keywords": [
+        "string"
+      ],
+      "related_terms": [
+        "string"
+      ],
+      "semantic_gaps": [
+        "string"
+      ]
+    },
+    "content_depth": {
+      "score": 0,
+      "word_count": 0,
+      "reading_level": "Graduate",
+      "technical_depth": "expert",
+      "improvements": [
+        "string"
+      ]
+    },
+    "entity_coverage": {
+      "score": 0,
+      "entities": [
+        "string"
+      ],
+      "relationships": [
+        "string"
+      ],
+      "missing": [
+        "string"
+      ]
+    }
+  },
+  "comparisons": [
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "name": "Competitor Inc",
+      "source": "string",
+      "score": {
+        "value": 75,
+        "grade": "excellent"
+      },
+      "insights": {
+        "strength_areas": [
+          "Well-structured content with clear headings",
+          "Comprehensive FAQ section"
+        ],
+        "weak_areas": [
+          "Title is too generic",
+          "Missing structured data"
+        ],
+        "opportunities": [
+          {
+            "title": "Add Schema.org markup",
+            "description": "Quick win to improve AI comprehension",
+            "impact": "high",
+            "effort": "easy",
+            "priority": 1
+          }
+        ],
+        "summary": "Competitor has strong content structure but lacks technical SEO elements"
+      }
+    }
+  ]
+}`
+  },
+  {
+    statusCode: "400",
+    description: "Bad Request",
+  },
+  {
+    statusCode: "401",
+    description: "Unauthorized",
+  },
+  {
+    statusCode: "403",
+    description: "Forbidden",
+  },
+  {
+    statusCode: "500",
+    description: "Internal Server Error",
+  }
+]} />
+
+
+---
+
+## Get full history of analyses
+
+<MethodBadge method="GET" path="/organizations/{org_id}/aeo/analyze" />
+
+Retrieve all analyses for the specified organization.
+Requires organization membership.
+
+
+### Security
+
+Provide your bearer token in the Authorization header when making requests to protected resources.
+
+Example: `Authorization: Bearer YOUR_API_KEY`
+
+### Parameters
+
+| Name | Type | Location | Required | Description |
+|------|------|----------|----------|-------------|
+| `org_id` | string | path | Yes | Organization ID |
+
+### Code Examples
+
+<CodeTabs samples={[
+  {
+    language: "cURL",
+    code: `curl -X GET "https://searchaf.antfly.io/api/v1/organizations/{org_id}/aeo/analyze" \\\\
+    -H "Authorization: Bearer YOUR_API_KEY"`
+  },
+  {
+    language: "TypeScript",
+    code: `const response = await fetch('https://searchaf.antfly.io/api/v1/organizations/{org_id}/aeo/analyze', {
+    method: 'GET',
+    headers: {
+        'Authorization': 'Bearer YOUR_API_KEY'
+    }
+});
+
+const data = await response.json();`
+  },
+  {
+    language: "JavaScript",
+    code: `fetch('https://searchaf.antfly.io/api/v1/organizations/{org_id}/aeo/analyze', {
+    method: 'GET',
+    headers: {
+        'Authorization': 'Bearer YOUR_API_KEY'
+    }
+})
+    .then(response => response.json())
+    .then(data => console.log(data));`
+  },
+  {
+    language: "Python",
+    code: `import requests
+
+headers = {
+    'Authorization': 'Bearer YOUR_API_KEY'
+}
+
+response = requests.get('https://searchaf.antfly.io/api/v1/organizations/{org_id}/aeo/analyze', headers=headers)
+
+data = response.json()`
+  },
+  {
+    language: "Go",
+    code: `package main
+
+import (
+    "bytes"
+    "encoding/json"
+    "net/http"
+)
+
+func main() {
+    req, _ := http.NewRequest("GET", "https://searchaf.antfly.io/api/v1/organizations/{org_id}/aeo/analyze", nil)
+    req.Header.Set("Authorization", "Bearer YOUR_API_KEY")
+
+    client := &http.Client{}
+    resp, _ := client.Do(req)
+    defer resp.Body.Close()
+}`
+  }
+]} />
+
+### Responses
+
+<ResponseTabs responses={[
+  {
+    statusCode: "200",
+    description: "List of all analyses",
+    body: `[
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "score": {
+      "value": 75,
+      "grade": "excellent"
+    },
+    "summary": {
+      "total_issues": 0,
+      "critical_count": 0,
+      "warning_count": 0,
+      "info_count": 0
+    },
+    "suggestions": [
+      {
+        "id": "STR-001",
+        "category": "structure",
+        "priority": "critical",
+        "title": "Missing H1 Heading",
+        "description": "Add a clear H1 heading that describes the main topic of the page.",
+        "example": "string",
+        "impact": "high"
+      }
+    ],
+    "metadata": {
+      "source": "string",
+      "content_type": "html",
+      "analyzed_at": "2025-10-02T15:30:00Z",
+      "processing_time": 0,
+      "content_length": 0,
+      "additional_fields": {}
+    },
+    "created_at": "2025-10-02T15:30:00Z",
+    "eeat": {
+      "experience": {
+        "score": 0,
+        "signals": [
+          "string"
+        ],
+        "missing": [
+          "string"
+        ]
+      },
+      "expertise": {
+        "score": 0,
+        "author_info": true,
+        "credentials": [
+          "string"
+        ],
+        "expert_quotes": 0,
+        "missing": [
+          "string"
+        ]
+      },
+      "authoritativeness": {
+        "score": 0,
+        "citations": 0,
+        "external_links": 0,
+        "source_quality": "high",
+        "missing": [
+          "string"
+        ]
+      },
+      "trustworthiness": {
+        "score": 0,
+        "contact_info": true,
+        "about_page": true,
+        "transparency_signals": [
+          "string"
+        ],
+        "missing": [
+          "string"
+        ]
+      },
+      "overall_score": 0
+    },
+    "conversational_query": {
+      "score": 0,
+      "question_answer_pairs": [
+        {
+          "question": "string",
+          "answer": "string",
+          "quality": "high"
+        }
+      ],
+      "faq_detected": true,
+      "natural_language_optimization": {
+        "score": 0,
+        "conversational_tone": true,
+        "direct_answers": 0,
+        "improvements": [
+          "string"
+        ]
+      },
+      "voice_search_readiness": {
+        "score": 0,
+        "featured_snippet_potential": true,
+        "concise_answers": 0,
+        "improvements": [
+          "string"
+        ]
+      },
+      "missing_questions": [
+        "string"
+      ]
+    },
+    "semantic_richness": {
+      "score": 0,
+      "topical_authority": {
+        "score": 0,
+        "main_topics": [
+          "string"
+        ],
+        "subtopic_coverage": [
+          "string"
+        ],
+        "depth": "comprehensive",
+        "improvements": [
+          "string"
+        ]
+      },
+      "semantic_keywords": {
+        "score": 0,
+        "primary_keywords": [
+          "string"
+        ],
+        "related_terms": [
+          "string"
+        ],
+        "semantic_gaps": [
+          "string"
+        ]
+      },
+      "content_depth": {
+        "score": 0,
+        "word_count": 0,
+        "reading_level": "Graduate",
+        "technical_depth": "expert",
+        "improvements": [
+          "string"
+        ]
+      },
+      "entity_coverage": {
+        "score": 0,
+        "entities": [
+          "string"
+        ],
+        "relationships": [
+          "string"
+        ],
+        "missing": [
+          "string"
+        ]
+      }
+    },
+    "comparisons": [
+      {
+        "id": "550e8400-e29b-41d4-a716-446655440000",
+        "name": "Competitor Inc",
+        "source": "string",
+        "score": {
+          "value": 75,
+          "grade": "excellent"
+        },
+        "insights": {
+          "strength_areas": [
+            "Well-structured content with clear headings",
+            "Comprehensive FAQ section"
+          ],
+          "weak_areas": [
+            "Title is too generic",
+            "Missing structured data"
+          ],
+          "opportunities": [
+            {
+              "title": "Add Schema.org markup",
+              "description": "Quick win to improve AI comprehension",
+              "impact": "high",
+              "effort": "easy",
+              "priority": 1
+            }
+          ],
+          "summary": "Competitor has strong content structure but lacks technical SEO elements"
+        }
+      }
+    ]
+  }
+]`
+  },
+  {
+    statusCode: "400",
+    description: "Bad Request",
+  },
+  {
+    statusCode: "401",
+    description: "Unauthorized",
+  },
+  {
+    statusCode: "403",
+    description: "Forbidden",
+  }
+]} />
+
+

@@ -35,12 +35,12 @@ Example: `Authorization: Bearer YOUR_API_KEY`
 <CodeTabs samples={[
   {
     language: "cURL",
-    code: `curl -X GET "https://searchaf-api.antfly.io/api/v1/organizations/{org_id}/audit-logs?offset=value&limit=value&entity_type=value&entity_id=value&action=value" \\\\
+    code: `curl -X GET "https://searchaf.antfly.io/api/v1/organizations/{org_id}/audit-logs?offset=value&limit=value&entity_type=value&entity_id=value&action=value" \\\\
     -H "Authorization: Bearer YOUR_API_KEY"`
   },
   {
     language: "TypeScript",
-    code: `const response = await fetch('https://searchaf-api.antfly.io/api/v1/organizations/{org_id}/audit-logs?offset=value&limit=value&entity_type=value&entity_id=value&action=value', {
+    code: `const response = await fetch('https://searchaf.antfly.io/api/v1/organizations/{org_id}/audit-logs?offset=value&limit=value&entity_type=value&entity_id=value&action=value', {
     method: 'GET',
     headers: {
         'Authorization': 'Bearer YOUR_API_KEY'
@@ -51,7 +51,7 @@ const data = await response.json();`
   },
   {
     language: "JavaScript",
-    code: `fetch('https://searchaf-api.antfly.io/api/v1/organizations/{org_id}/audit-logs?offset=value&limit=value&entity_type=value&entity_id=value&action=value', {
+    code: `fetch('https://searchaf.antfly.io/api/v1/organizations/{org_id}/audit-logs?offset=value&limit=value&entity_type=value&entity_id=value&action=value', {
     method: 'GET',
     headers: {
         'Authorization': 'Bearer YOUR_API_KEY'
@@ -68,7 +68,7 @@ headers = {
     'Authorization': 'Bearer YOUR_API_KEY'
 }
 
-response = requests.get('https://searchaf-api.antfly.io/api/v1/organizations/{org_id}/audit-logs?offset=value&limit=value&entity_type=value&entity_id=value&action=value', headers=headers)
+response = requests.get('https://searchaf.antfly.io/api/v1/organizations/{org_id}/audit-logs?offset=value&limit=value&entity_type=value&entity_id=value&action=value', headers=headers)
 
 data = response.json()`
   },
@@ -83,7 +83,7 @@ import (
 )
 
 func main() {
-    req, _ := http.NewRequest("GET", "https://searchaf-api.antfly.io/api/v1/organizations/{org_id}/audit-logs?offset=value&limit=value&entity_type=value&entity_id=value&action=value", nil)
+    req, _ := http.NewRequest("GET", "https://searchaf.antfly.io/api/v1/organizations/{org_id}/audit-logs?offset=value&limit=value&entity_type=value&entity_id=value&action=value", nil)
     req.Header.Set("Authorization", "Bearer YOUR_API_KEY")
 
     client := &http.Client{}

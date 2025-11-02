@@ -32,12 +32,12 @@ Example: `Authorization: Bearer YOUR_API_KEY`
 <CodeTabs samples={[
   {
     language: "cURL",
-    code: `curl -X GET "https://searchaf-api.antfly.io/api/v1/organizations/{org_id}/projects?offset=value&limit=value" \\\\
+    code: `curl -X GET "https://searchaf.antfly.io/api/v1/organizations/{org_id}/projects?offset=value&limit=value" \\\\
     -H "Authorization: Bearer YOUR_API_KEY"`
   },
   {
     language: "TypeScript",
-    code: `const response = await fetch('https://searchaf-api.antfly.io/api/v1/organizations/{org_id}/projects?offset=value&limit=value', {
+    code: `const response = await fetch('https://searchaf.antfly.io/api/v1/organizations/{org_id}/projects?offset=value&limit=value', {
     method: 'GET',
     headers: {
         'Authorization': 'Bearer YOUR_API_KEY'
@@ -48,7 +48,7 @@ const data = await response.json();`
   },
   {
     language: "JavaScript",
-    code: `fetch('https://searchaf-api.antfly.io/api/v1/organizations/{org_id}/projects?offset=value&limit=value', {
+    code: `fetch('https://searchaf.antfly.io/api/v1/organizations/{org_id}/projects?offset=value&limit=value', {
     method: 'GET',
     headers: {
         'Authorization': 'Bearer YOUR_API_KEY'
@@ -65,7 +65,7 @@ headers = {
     'Authorization': 'Bearer YOUR_API_KEY'
 }
 
-response = requests.get('https://searchaf-api.antfly.io/api/v1/organizations/{org_id}/projects?offset=value&limit=value', headers=headers)
+response = requests.get('https://searchaf.antfly.io/api/v1/organizations/{org_id}/projects?offset=value&limit=value', headers=headers)
 
 data = response.json()`
   },
@@ -80,7 +80,7 @@ import (
 )
 
 func main() {
-    req, _ := http.NewRequest("GET", "https://searchaf-api.antfly.io/api/v1/organizations/{org_id}/projects?offset=value&limit=value", nil)
+    req, _ := http.NewRequest("GET", "https://searchaf.antfly.io/api/v1/organizations/{org_id}/projects?offset=value&limit=value", nil)
     req.Header.Set("Authorization", "Bearer YOUR_API_KEY")
 
     client := &http.Client{}
@@ -104,7 +104,18 @@ func main() {
       "name": "My Store",
       "slug": "my-store",
       "project_type": "woocommerce",
+      "antfly_cluster_id": "string",
       "integration_config": {},
+      "tables": [
+        {
+          "id": "550e8400-e29b-41d4-a716-446655440000",
+          "project_id": "550e8400-e29b-41d4-a716-446655440000",
+          "slug": "products",
+          "is_default": true,
+          "created_at": "2025-10-02T15:30:00Z",
+          "updated_at": "2025-10-02T15:30:00Z"
+        }
+      ],
       "status": "active",
       "created_at": "2025-10-02T15:30:00Z",
       "updated_at": "2025-10-02T15:30:00Z",
@@ -162,12 +173,12 @@ Example: `Authorization: Bearer YOUR_API_KEY`
 <CodeTabs samples={[
   {
     language: "cURL",
-    code: `curl -X POST "https://searchaf-api.antfly.io/api/v1/organizations/{org_id}/projects" \\\\
+    code: `curl -X POST "https://searchaf.antfly.io/api/v1/organizations/{org_id}/projects" \\\\
     -H "Authorization: Bearer YOUR_API_KEY"`
   },
   {
     language: "TypeScript",
-    code: `const response = await fetch('https://searchaf-api.antfly.io/api/v1/organizations/{org_id}/projects', {
+    code: `const response = await fetch('https://searchaf.antfly.io/api/v1/organizations/{org_id}/projects', {
     method: 'POST',
     headers: {
         'Authorization': 'Bearer YOUR_API_KEY'
@@ -178,7 +189,7 @@ const data = await response.json();`
   },
   {
     language: "JavaScript",
-    code: `fetch('https://searchaf-api.antfly.io/api/v1/organizations/{org_id}/projects', {
+    code: `fetch('https://searchaf.antfly.io/api/v1/organizations/{org_id}/projects', {
     method: 'POST',
     headers: {
         'Authorization': 'Bearer YOUR_API_KEY'
@@ -195,7 +206,7 @@ headers = {
     'Authorization': 'Bearer YOUR_API_KEY'
 }
 
-response = requests.post('https://searchaf-api.antfly.io/api/v1/organizations/{org_id}/projects', headers=headers)
+response = requests.post('https://searchaf.antfly.io/api/v1/organizations/{org_id}/projects', headers=headers)
 
 data = response.json()`
   },
@@ -210,7 +221,7 @@ import (
 )
 
 func main() {
-    req, _ := http.NewRequest("POST", "https://searchaf-api.antfly.io/api/v1/organizations/{org_id}/projects", nil)
+    req, _ := http.NewRequest("POST", "https://searchaf.antfly.io/api/v1/organizations/{org_id}/projects", nil)
     req.Header.Set("Authorization", "Bearer YOUR_API_KEY")
 
     client := &http.Client{}
@@ -232,7 +243,18 @@ func main() {
   "name": "My Store",
   "slug": "my-store",
   "project_type": "woocommerce",
+  "antfly_cluster_id": "string",
   "integration_config": {},
+  "tables": [
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "project_id": "550e8400-e29b-41d4-a716-446655440000",
+      "slug": "products",
+      "is_default": true,
+      "created_at": "2025-10-02T15:30:00Z",
+      "updated_at": "2025-10-02T15:30:00Z"
+    }
+  ],
   "status": "active",
   "created_at": "2025-10-02T15:30:00Z",
   "updated_at": "2025-10-02T15:30:00Z",
@@ -291,12 +313,12 @@ Example: `Authorization: Bearer YOUR_API_KEY`
 <CodeTabs samples={[
   {
     language: "cURL",
-    code: `curl -X GET "https://searchaf-api.antfly.io/api/v1/projects/{project_id}" \\\\
+    code: `curl -X GET "https://searchaf.antfly.io/api/v1/projects/{project_id}" \\\\
     -H "Authorization: Bearer YOUR_API_KEY"`
   },
   {
     language: "TypeScript",
-    code: `const response = await fetch('https://searchaf-api.antfly.io/api/v1/projects/{project_id}', {
+    code: `const response = await fetch('https://searchaf.antfly.io/api/v1/projects/{project_id}', {
     method: 'GET',
     headers: {
         'Authorization': 'Bearer YOUR_API_KEY'
@@ -307,7 +329,7 @@ const data = await response.json();`
   },
   {
     language: "JavaScript",
-    code: `fetch('https://searchaf-api.antfly.io/api/v1/projects/{project_id}', {
+    code: `fetch('https://searchaf.antfly.io/api/v1/projects/{project_id}', {
     method: 'GET',
     headers: {
         'Authorization': 'Bearer YOUR_API_KEY'
@@ -324,7 +346,7 @@ headers = {
     'Authorization': 'Bearer YOUR_API_KEY'
 }
 
-response = requests.get('https://searchaf-api.antfly.io/api/v1/projects/{project_id}', headers=headers)
+response = requests.get('https://searchaf.antfly.io/api/v1/projects/{project_id}', headers=headers)
 
 data = response.json()`
   },
@@ -339,7 +361,7 @@ import (
 )
 
 func main() {
-    req, _ := http.NewRequest("GET", "https://searchaf-api.antfly.io/api/v1/projects/{project_id}", nil)
+    req, _ := http.NewRequest("GET", "https://searchaf.antfly.io/api/v1/projects/{project_id}", nil)
     req.Header.Set("Authorization", "Bearer YOUR_API_KEY")
 
     client := &http.Client{}
@@ -361,7 +383,18 @@ func main() {
   "name": "My Store",
   "slug": "my-store",
   "project_type": "woocommerce",
+  "antfly_cluster_id": "string",
   "integration_config": {},
+  "tables": [
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "project_id": "550e8400-e29b-41d4-a716-446655440000",
+      "slug": "products",
+      "is_default": true,
+      "created_at": "2025-10-02T15:30:00Z",
+      "updated_at": "2025-10-02T15:30:00Z"
+    }
+  ],
   "status": "active",
   "created_at": "2025-10-02T15:30:00Z",
   "updated_at": "2025-10-02T15:30:00Z",
@@ -412,12 +445,12 @@ Example: `Authorization: Bearer YOUR_API_KEY`
 <CodeTabs samples={[
   {
     language: "cURL",
-    code: `curl -X PATCH "https://searchaf-api.antfly.io/api/v1/projects/{project_id}" \\\\
+    code: `curl -X PATCH "https://searchaf.antfly.io/api/v1/projects/{project_id}" \\\\
     -H "Authorization: Bearer YOUR_API_KEY"`
   },
   {
     language: "TypeScript",
-    code: `const response = await fetch('https://searchaf-api.antfly.io/api/v1/projects/{project_id}', {
+    code: `const response = await fetch('https://searchaf.antfly.io/api/v1/projects/{project_id}', {
     method: 'PATCH',
     headers: {
         'Authorization': 'Bearer YOUR_API_KEY'
@@ -428,7 +461,7 @@ const data = await response.json();`
   },
   {
     language: "JavaScript",
-    code: `fetch('https://searchaf-api.antfly.io/api/v1/projects/{project_id}', {
+    code: `fetch('https://searchaf.antfly.io/api/v1/projects/{project_id}', {
     method: 'PATCH',
     headers: {
         'Authorization': 'Bearer YOUR_API_KEY'
@@ -445,7 +478,7 @@ headers = {
     'Authorization': 'Bearer YOUR_API_KEY'
 }
 
-response = requests.patch('https://searchaf-api.antfly.io/api/v1/projects/{project_id}', headers=headers)
+response = requests.patch('https://searchaf.antfly.io/api/v1/projects/{project_id}', headers=headers)
 
 data = response.json()`
   },
@@ -460,7 +493,7 @@ import (
 )
 
 func main() {
-    req, _ := http.NewRequest("PATCH", "https://searchaf-api.antfly.io/api/v1/projects/{project_id}", nil)
+    req, _ := http.NewRequest("PATCH", "https://searchaf.antfly.io/api/v1/projects/{project_id}", nil)
     req.Header.Set("Authorization", "Bearer YOUR_API_KEY")
 
     client := &http.Client{}
@@ -482,7 +515,18 @@ func main() {
   "name": "My Store",
   "slug": "my-store",
   "project_type": "woocommerce",
+  "antfly_cluster_id": "string",
   "integration_config": {},
+  "tables": [
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "project_id": "550e8400-e29b-41d4-a716-446655440000",
+      "slug": "products",
+      "is_default": true,
+      "created_at": "2025-10-02T15:30:00Z",
+      "updated_at": "2025-10-02T15:30:00Z"
+    }
+  ],
   "status": "active",
   "created_at": "2025-10-02T15:30:00Z",
   "updated_at": "2025-10-02T15:30:00Z",
@@ -537,12 +581,12 @@ Example: `Authorization: Bearer YOUR_API_KEY`
 <CodeTabs samples={[
   {
     language: "cURL",
-    code: `curl -X DELETE "https://searchaf-api.antfly.io/api/v1/projects/{project_id}" \\\\
+    code: `curl -X DELETE "https://searchaf.antfly.io/api/v1/projects/{project_id}" \\\\
     -H "Authorization: Bearer YOUR_API_KEY"`
   },
   {
     language: "TypeScript",
-    code: `const response = await fetch('https://searchaf-api.antfly.io/api/v1/projects/{project_id}', {
+    code: `const response = await fetch('https://searchaf.antfly.io/api/v1/projects/{project_id}', {
     method: 'DELETE',
     headers: {
         'Authorization': 'Bearer YOUR_API_KEY'
@@ -553,7 +597,7 @@ const data = await response.json();`
   },
   {
     language: "JavaScript",
-    code: `fetch('https://searchaf-api.antfly.io/api/v1/projects/{project_id}', {
+    code: `fetch('https://searchaf.antfly.io/api/v1/projects/{project_id}', {
     method: 'DELETE',
     headers: {
         'Authorization': 'Bearer YOUR_API_KEY'
@@ -570,7 +614,7 @@ headers = {
     'Authorization': 'Bearer YOUR_API_KEY'
 }
 
-response = requests.delete('https://searchaf-api.antfly.io/api/v1/projects/{project_id}', headers=headers)
+response = requests.delete('https://searchaf.antfly.io/api/v1/projects/{project_id}', headers=headers)
 
 data = response.json()`
   },
@@ -585,7 +629,7 @@ import (
 )
 
 func main() {
-    req, _ := http.NewRequest("DELETE", "https://searchaf-api.antfly.io/api/v1/projects/{project_id}", nil)
+    req, _ := http.NewRequest("DELETE", "https://searchaf.antfly.io/api/v1/projects/{project_id}", nil)
     req.Header.Set("Authorization", "Bearer YOUR_API_KEY")
 
     client := &http.Client{}
@@ -613,6 +657,728 @@ func main() {
   {
     statusCode: "404",
     description: "Not Found",
+  }
+]} />
+
+
+---
+
+## List all tables for a project
+
+<MethodBadge method="GET" path="/projects/{project_id}/tables" />
+
+List all AntflyDB tables associated with a project
+
+### Security
+
+Provide your bearer token in the Authorization header when making requests to protected resources.
+
+Example: `Authorization: Bearer YOUR_API_KEY`
+
+### Parameters
+
+| Name | Type | Location | Required | Description |
+|------|------|----------|----------|-------------|
+| `project_id` | string | path | Yes | Project ID |
+
+### Code Examples
+
+<CodeTabs samples={[
+  {
+    language: "cURL",
+    code: `curl -X GET "https://searchaf.antfly.io/api/v1/projects/{project_id}/tables" \\\\
+    -H "Authorization: Bearer YOUR_API_KEY"`
+  },
+  {
+    language: "TypeScript",
+    code: `const response = await fetch('https://searchaf.antfly.io/api/v1/projects/{project_id}/tables', {
+    method: 'GET',
+    headers: {
+        'Authorization': 'Bearer YOUR_API_KEY'
+    }
+});
+
+const data = await response.json();`
+  },
+  {
+    language: "JavaScript",
+    code: `fetch('https://searchaf.antfly.io/api/v1/projects/{project_id}/tables', {
+    method: 'GET',
+    headers: {
+        'Authorization': 'Bearer YOUR_API_KEY'
+    }
+})
+    .then(response => response.json())
+    .then(data => console.log(data));`
+  },
+  {
+    language: "Python",
+    code: `import requests
+
+headers = {
+    'Authorization': 'Bearer YOUR_API_KEY'
+}
+
+response = requests.get('https://searchaf.antfly.io/api/v1/projects/{project_id}/tables', headers=headers)
+
+data = response.json()`
+  },
+  {
+    language: "Go",
+    code: `package main
+
+import (
+    "bytes"
+    "encoding/json"
+    "net/http"
+)
+
+func main() {
+    req, _ := http.NewRequest("GET", "https://searchaf.antfly.io/api/v1/projects/{project_id}/tables", nil)
+    req.Header.Set("Authorization", "Bearer YOUR_API_KEY")
+
+    client := &http.Client{}
+    resp, _ := client.Do(req)
+    defer resp.Body.Close()
+}`
+  }
+]} />
+
+### Responses
+
+<ResponseTabs responses={[
+  {
+    statusCode: "200",
+    description: "List of project tables",
+    body: `{
+  "data": [
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "project_id": "550e8400-e29b-41d4-a716-446655440000",
+      "slug": "products",
+      "is_default": true,
+      "created_at": "2025-10-02T15:30:00Z",
+      "updated_at": "2025-10-02T15:30:00Z"
+    }
+  ]
+}`
+  },
+  {
+    statusCode: "401",
+    description: "Unauthorized",
+  },
+  {
+    statusCode: "403",
+    description: "Forbidden",
+  },
+  {
+    statusCode: "404",
+    description: "Not Found",
+  }
+]} />
+
+
+---
+
+## Create a new table for a project
+
+<MethodBadge method="POST" path="/projects/{project_id}/tables" />
+
+Create a new AntflyDB table for a project (requires developer+ role)
+
+### Security
+
+Provide your bearer token in the Authorization header when making requests to protected resources.
+
+Example: `Authorization: Bearer YOUR_API_KEY`
+
+### Parameters
+
+| Name | Type | Location | Required | Description |
+|------|------|----------|----------|-------------|
+| `project_id` | string | path | Yes | Project ID |
+
+### Request Body
+
+**Content-Type:** `application/json`
+
+Schema: `ProjectTableCreate`
+
+### Code Examples
+
+<CodeTabs samples={[
+  {
+    language: "cURL",
+    code: `curl -X POST "https://searchaf.antfly.io/api/v1/projects/{project_id}/tables" \\\\
+    -H "Authorization: Bearer YOUR_API_KEY"`
+  },
+  {
+    language: "TypeScript",
+    code: `const response = await fetch('https://searchaf.antfly.io/api/v1/projects/{project_id}/tables', {
+    method: 'POST',
+    headers: {
+        'Authorization': 'Bearer YOUR_API_KEY'
+    }
+});
+
+const data = await response.json();`
+  },
+  {
+    language: "JavaScript",
+    code: `fetch('https://searchaf.antfly.io/api/v1/projects/{project_id}/tables', {
+    method: 'POST',
+    headers: {
+        'Authorization': 'Bearer YOUR_API_KEY'
+    }
+})
+    .then(response => response.json())
+    .then(data => console.log(data));`
+  },
+  {
+    language: "Python",
+    code: `import requests
+
+headers = {
+    'Authorization': 'Bearer YOUR_API_KEY'
+}
+
+response = requests.post('https://searchaf.antfly.io/api/v1/projects/{project_id}/tables', headers=headers)
+
+data = response.json()`
+  },
+  {
+    language: "Go",
+    code: `package main
+
+import (
+    "bytes"
+    "encoding/json"
+    "net/http"
+)
+
+func main() {
+    req, _ := http.NewRequest("POST", "https://searchaf.antfly.io/api/v1/projects/{project_id}/tables", nil)
+    req.Header.Set("Authorization", "Bearer YOUR_API_KEY")
+
+    client := &http.Client{}
+    resp, _ := client.Do(req)
+    defer resp.Body.Close()
+}`
+  }
+]} />
+
+### Responses
+
+<ResponseTabs responses={[
+  {
+    statusCode: "201",
+    description: "Table created successfully",
+    body: `{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "project_id": "550e8400-e29b-41d4-a716-446655440000",
+  "slug": "products",
+  "is_default": true,
+  "created_at": "2025-10-02T15:30:00Z",
+  "updated_at": "2025-10-02T15:30:00Z"
+}`
+  },
+  {
+    statusCode: "400",
+    description: "Bad Request",
+  },
+  {
+    statusCode: "401",
+    description: "Unauthorized",
+  },
+  {
+    statusCode: "403",
+    description: "Forbidden",
+  },
+  {
+    statusCode: "404",
+    description: "Not Found",
+  },
+  {
+    statusCode: "409",
+    description: "Response",
+  }
+]} />
+
+
+---
+
+## Get a specific table
+
+<MethodBadge method="GET" path="/projects/{project_id}/tables/{table_id}" />
+
+Get details of a specific project table
+
+### Security
+
+Provide your bearer token in the Authorization header when making requests to protected resources.
+
+Example: `Authorization: Bearer YOUR_API_KEY`
+
+### Parameters
+
+| Name | Type | Location | Required | Description |
+|------|------|----------|----------|-------------|
+| `project_id` | string | path | Yes | Project ID |
+| `table_id` | string | path | Yes | Table ID |
+
+### Code Examples
+
+<CodeTabs samples={[
+  {
+    language: "cURL",
+    code: `curl -X GET "https://searchaf.antfly.io/api/v1/projects/{project_id}/tables/{table_id}" \\\\
+    -H "Authorization: Bearer YOUR_API_KEY"`
+  },
+  {
+    language: "TypeScript",
+    code: `const response = await fetch('https://searchaf.antfly.io/api/v1/projects/{project_id}/tables/{table_id}', {
+    method: 'GET',
+    headers: {
+        'Authorization': 'Bearer YOUR_API_KEY'
+    }
+});
+
+const data = await response.json();`
+  },
+  {
+    language: "JavaScript",
+    code: `fetch('https://searchaf.antfly.io/api/v1/projects/{project_id}/tables/{table_id}', {
+    method: 'GET',
+    headers: {
+        'Authorization': 'Bearer YOUR_API_KEY'
+    }
+})
+    .then(response => response.json())
+    .then(data => console.log(data));`
+  },
+  {
+    language: "Python",
+    code: `import requests
+
+headers = {
+    'Authorization': 'Bearer YOUR_API_KEY'
+}
+
+response = requests.get('https://searchaf.antfly.io/api/v1/projects/{project_id}/tables/{table_id}', headers=headers)
+
+data = response.json()`
+  },
+  {
+    language: "Go",
+    code: `package main
+
+import (
+    "bytes"
+    "encoding/json"
+    "net/http"
+)
+
+func main() {
+    req, _ := http.NewRequest("GET", "https://searchaf.antfly.io/api/v1/projects/{project_id}/tables/{table_id}", nil)
+    req.Header.Set("Authorization", "Bearer YOUR_API_KEY")
+
+    client := &http.Client{}
+    resp, _ := client.Do(req)
+    defer resp.Body.Close()
+}`
+  }
+]} />
+
+### Responses
+
+<ResponseTabs responses={[
+  {
+    statusCode: "200",
+    description: "Table details",
+    body: `{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "project_id": "550e8400-e29b-41d4-a716-446655440000",
+  "slug": "products",
+  "is_default": true,
+  "created_at": "2025-10-02T15:30:00Z",
+  "updated_at": "2025-10-02T15:30:00Z"
+}`
+  },
+  {
+    statusCode: "401",
+    description: "Unauthorized",
+  },
+  {
+    statusCode: "403",
+    description: "Forbidden",
+  },
+  {
+    statusCode: "404",
+    description: "Not Found",
+  }
+]} />
+
+
+---
+
+## Update a table
+
+<MethodBadge method="PUT" path="/projects/{project_id}/tables/{table_id}" />
+
+Update a project table (requires developer+ role)
+
+### Security
+
+Provide your bearer token in the Authorization header when making requests to protected resources.
+
+Example: `Authorization: Bearer YOUR_API_KEY`
+
+### Parameters
+
+| Name | Type | Location | Required | Description |
+|------|------|----------|----------|-------------|
+| `project_id` | string | path | Yes | Project ID |
+| `table_id` | string | path | Yes | Table ID |
+
+### Request Body
+
+**Content-Type:** `application/json`
+
+Schema: `ProjectTableUpdate`
+
+### Code Examples
+
+<CodeTabs samples={[
+  {
+    language: "cURL",
+    code: `curl -X PUT "https://searchaf.antfly.io/api/v1/projects/{project_id}/tables/{table_id}" \\\\
+    -H "Authorization: Bearer YOUR_API_KEY"`
+  },
+  {
+    language: "TypeScript",
+    code: `const response = await fetch('https://searchaf.antfly.io/api/v1/projects/{project_id}/tables/{table_id}', {
+    method: 'PUT',
+    headers: {
+        'Authorization': 'Bearer YOUR_API_KEY'
+    }
+});
+
+const data = await response.json();`
+  },
+  {
+    language: "JavaScript",
+    code: `fetch('https://searchaf.antfly.io/api/v1/projects/{project_id}/tables/{table_id}', {
+    method: 'PUT',
+    headers: {
+        'Authorization': 'Bearer YOUR_API_KEY'
+    }
+})
+    .then(response => response.json())
+    .then(data => console.log(data));`
+  },
+  {
+    language: "Python",
+    code: `import requests
+
+headers = {
+    'Authorization': 'Bearer YOUR_API_KEY'
+}
+
+response = requests.put('https://searchaf.antfly.io/api/v1/projects/{project_id}/tables/{table_id}', headers=headers)
+
+data = response.json()`
+  },
+  {
+    language: "Go",
+    code: `package main
+
+import (
+    "bytes"
+    "encoding/json"
+    "net/http"
+)
+
+func main() {
+    req, _ := http.NewRequest("PUT", "https://searchaf.antfly.io/api/v1/projects/{project_id}/tables/{table_id}", nil)
+    req.Header.Set("Authorization", "Bearer YOUR_API_KEY")
+
+    client := &http.Client{}
+    resp, _ := client.Do(req)
+    defer resp.Body.Close()
+}`
+  }
+]} />
+
+### Responses
+
+<ResponseTabs responses={[
+  {
+    statusCode: "200",
+    description: "Table updated successfully",
+    body: `{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "project_id": "550e8400-e29b-41d4-a716-446655440000",
+  "slug": "products",
+  "is_default": true,
+  "created_at": "2025-10-02T15:30:00Z",
+  "updated_at": "2025-10-02T15:30:00Z"
+}`
+  },
+  {
+    statusCode: "400",
+    description: "Bad Request",
+  },
+  {
+    statusCode: "401",
+    description: "Unauthorized",
+  },
+  {
+    statusCode: "403",
+    description: "Forbidden",
+  },
+  {
+    statusCode: "404",
+    description: "Not Found",
+  },
+  {
+    statusCode: "409",
+    description: "Response",
+  }
+]} />
+
+
+---
+
+## Delete a table
+
+<MethodBadge method="DELETE" path="/projects/{project_id}/tables/{table_id}" />
+
+Delete a project table (requires project_admin role)
+
+### Security
+
+Provide your bearer token in the Authorization header when making requests to protected resources.
+
+Example: `Authorization: Bearer YOUR_API_KEY`
+
+### Parameters
+
+| Name | Type | Location | Required | Description |
+|------|------|----------|----------|-------------|
+| `project_id` | string | path | Yes | Project ID |
+| `table_id` | string | path | Yes | Table ID |
+
+### Code Examples
+
+<CodeTabs samples={[
+  {
+    language: "cURL",
+    code: `curl -X DELETE "https://searchaf.antfly.io/api/v1/projects/{project_id}/tables/{table_id}" \\\\
+    -H "Authorization: Bearer YOUR_API_KEY"`
+  },
+  {
+    language: "TypeScript",
+    code: `const response = await fetch('https://searchaf.antfly.io/api/v1/projects/{project_id}/tables/{table_id}', {
+    method: 'DELETE',
+    headers: {
+        'Authorization': 'Bearer YOUR_API_KEY'
+    }
+});
+
+const data = await response.json();`
+  },
+  {
+    language: "JavaScript",
+    code: `fetch('https://searchaf.antfly.io/api/v1/projects/{project_id}/tables/{table_id}', {
+    method: 'DELETE',
+    headers: {
+        'Authorization': 'Bearer YOUR_API_KEY'
+    }
+})
+    .then(response => response.json())
+    .then(data => console.log(data));`
+  },
+  {
+    language: "Python",
+    code: `import requests
+
+headers = {
+    'Authorization': 'Bearer YOUR_API_KEY'
+}
+
+response = requests.delete('https://searchaf.antfly.io/api/v1/projects/{project_id}/tables/{table_id}', headers=headers)
+
+data = response.json()`
+  },
+  {
+    language: "Go",
+    code: `package main
+
+import (
+    "bytes"
+    "encoding/json"
+    "net/http"
+)
+
+func main() {
+    req, _ := http.NewRequest("DELETE", "https://searchaf.antfly.io/api/v1/projects/{project_id}/tables/{table_id}", nil)
+    req.Header.Set("Authorization", "Bearer YOUR_API_KEY")
+
+    client := &http.Client{}
+    resp, _ := client.Do(req)
+    defer resp.Body.Close()
+}`
+  }
+]} />
+
+### Responses
+
+<ResponseTabs responses={[
+  {
+    statusCode: "204",
+    description: "Table deleted successfully",
+  },
+  {
+    statusCode: "401",
+    description: "Unauthorized",
+  },
+  {
+    statusCode: "403",
+    description: "Forbidden",
+  },
+  {
+    statusCode: "404",
+    description: "Not Found",
+  }
+]} />
+
+
+---
+
+## Get project statistics
+
+<MethodBadge method="GET" path="/projects/{project_id}/stats" />
+
+Get statistics for a project including indexed item counts across all tables and integration-specific metadata
+
+### Security
+
+Provide your bearer token in the Authorization header when making requests to protected resources.
+
+Example: `Authorization: Bearer YOUR_API_KEY`
+
+### Parameters
+
+| Name | Type | Location | Required | Description |
+|------|------|----------|----------|-------------|
+| `project_id` | string | path | Yes | Project ID |
+
+### Code Examples
+
+<CodeTabs samples={[
+  {
+    language: "cURL",
+    code: `curl -X GET "https://searchaf.antfly.io/api/v1/projects/{project_id}/stats" \\\\
+    -H "Authorization: Bearer YOUR_API_KEY"`
+  },
+  {
+    language: "TypeScript",
+    code: `const response = await fetch('https://searchaf.antfly.io/api/v1/projects/{project_id}/stats', {
+    method: 'GET',
+    headers: {
+        'Authorization': 'Bearer YOUR_API_KEY'
+    }
+});
+
+const data = await response.json();`
+  },
+  {
+    language: "JavaScript",
+    code: `fetch('https://searchaf.antfly.io/api/v1/projects/{project_id}/stats', {
+    method: 'GET',
+    headers: {
+        'Authorization': 'Bearer YOUR_API_KEY'
+    }
+})
+    .then(response => response.json())
+    .then(data => console.log(data));`
+  },
+  {
+    language: "Python",
+    code: `import requests
+
+headers = {
+    'Authorization': 'Bearer YOUR_API_KEY'
+}
+
+response = requests.get('https://searchaf.antfly.io/api/v1/projects/{project_id}/stats', headers=headers)
+
+data = response.json()`
+  },
+  {
+    language: "Go",
+    code: `package main
+
+import (
+    "bytes"
+    "encoding/json"
+    "net/http"
+)
+
+func main() {
+    req, _ := http.NewRequest("GET", "https://searchaf.antfly.io/api/v1/projects/{project_id}/stats", nil)
+    req.Header.Set("Authorization", "Bearer YOUR_API_KEY")
+
+    client := &http.Client{}
+    resp, _ := client.Do(req)
+    defer resp.Body.Close()
+}`
+  }
+]} />
+
+### Responses
+
+<ResponseTabs responses={[
+  {
+    statusCode: "200",
+    description: "Project statistics",
+    body: `{
+  "project_id": "550e8400-e29b-41d4-a716-446655440000",
+  "total_indexed_items": 15234,
+  "tables": [
+    {
+      "table_id": "550e8400-e29b-41d4-a716-446655440000",
+      "slug": "products",
+      "indexed_items": 15234,
+      "is_default": true
+    }
+  ],
+  "integration_metadata": {
+    "shopify": {
+      "shop_name": "Acme Store",
+      "shop_domain": "acme-store.myshopify.com",
+      "last_sync_completed_at": "2025-10-02T15:30:00Z",
+      "last_sync_status": "pending",
+      "sync_in_progress": false
+    }
+  }
+}`
+  },
+  {
+    statusCode: "401",
+    description: "Unauthorized",
+  },
+  {
+    statusCode: "403",
+    description: "Forbidden",
+  },
+  {
+    statusCode: "404",
+    description: "Not Found",
+  },
+  {
+    statusCode: "500",
+    description: "Internal Server Error",
   }
 ]} />
 

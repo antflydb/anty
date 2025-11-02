@@ -30,12 +30,12 @@ Example: `Authorization: Bearer YOUR_API_KEY`
 <CodeTabs samples={[
   {
     language: "cURL",
-    code: `curl -X GET "https://searchaf-api.antfly.io/api/v1/organizations/{org_id}/subscription" \\\\
+    code: `curl -X GET "https://searchaf.antfly.io/api/v1/organizations/{org_id}/subscription" \\\\
     -H "Authorization: Bearer YOUR_API_KEY"`
   },
   {
     language: "TypeScript",
-    code: `const response = await fetch('https://searchaf-api.antfly.io/api/v1/organizations/{org_id}/subscription', {
+    code: `const response = await fetch('https://searchaf.antfly.io/api/v1/organizations/{org_id}/subscription', {
     method: 'GET',
     headers: {
         'Authorization': 'Bearer YOUR_API_KEY'
@@ -46,7 +46,7 @@ const data = await response.json();`
   },
   {
     language: "JavaScript",
-    code: `fetch('https://searchaf-api.antfly.io/api/v1/organizations/{org_id}/subscription', {
+    code: `fetch('https://searchaf.antfly.io/api/v1/organizations/{org_id}/subscription', {
     method: 'GET',
     headers: {
         'Authorization': 'Bearer YOUR_API_KEY'
@@ -63,7 +63,7 @@ headers = {
     'Authorization': 'Bearer YOUR_API_KEY'
 }
 
-response = requests.get('https://searchaf-api.antfly.io/api/v1/organizations/{org_id}/subscription', headers=headers)
+response = requests.get('https://searchaf.antfly.io/api/v1/organizations/{org_id}/subscription', headers=headers)
 
 data = response.json()`
   },
@@ -78,7 +78,7 @@ import (
 )
 
 func main() {
-    req, _ := http.NewRequest("GET", "https://searchaf-api.antfly.io/api/v1/organizations/{org_id}/subscription", nil)
+    req, _ := http.NewRequest("GET", "https://searchaf.antfly.io/api/v1/organizations/{org_id}/subscription", nil)
     req.Header.Set("Authorization", "Bearer YOUR_API_KEY")
 
     client := &http.Client{}
@@ -151,12 +151,12 @@ Example: `Authorization: Bearer YOUR_API_KEY`
 <CodeTabs samples={[
   {
     language: "cURL",
-    code: `curl -X POST "https://searchaf-api.antfly.io/api/v1/organizations/{org_id}/subscription" \\\\
+    code: `curl -X POST "https://searchaf.antfly.io/api/v1/organizations/{org_id}/subscription" \\\\
     -H "Authorization: Bearer YOUR_API_KEY"`
   },
   {
     language: "TypeScript",
-    code: `const response = await fetch('https://searchaf-api.antfly.io/api/v1/organizations/{org_id}/subscription', {
+    code: `const response = await fetch('https://searchaf.antfly.io/api/v1/organizations/{org_id}/subscription', {
     method: 'POST',
     headers: {
         'Authorization': 'Bearer YOUR_API_KEY'
@@ -167,7 +167,7 @@ const data = await response.json();`
   },
   {
     language: "JavaScript",
-    code: `fetch('https://searchaf-api.antfly.io/api/v1/organizations/{org_id}/subscription', {
+    code: `fetch('https://searchaf.antfly.io/api/v1/organizations/{org_id}/subscription', {
     method: 'POST',
     headers: {
         'Authorization': 'Bearer YOUR_API_KEY'
@@ -184,7 +184,7 @@ headers = {
     'Authorization': 'Bearer YOUR_API_KEY'
 }
 
-response = requests.post('https://searchaf-api.antfly.io/api/v1/organizations/{org_id}/subscription', headers=headers)
+response = requests.post('https://searchaf.antfly.io/api/v1/organizations/{org_id}/subscription', headers=headers)
 
 data = response.json()`
   },
@@ -199,7 +199,7 @@ import (
 )
 
 func main() {
-    req, _ := http.NewRequest("POST", "https://searchaf-api.antfly.io/api/v1/organizations/{org_id}/subscription", nil)
+    req, _ := http.NewRequest("POST", "https://searchaf.antfly.io/api/v1/organizations/{org_id}/subscription", nil)
     req.Header.Set("Authorization", "Bearer YOUR_API_KEY")
 
     client := &http.Client{}
@@ -280,12 +280,12 @@ Example: `Authorization: Bearer YOUR_API_KEY`
 <CodeTabs samples={[
   {
     language: "cURL",
-    code: `curl -X PATCH "https://searchaf-api.antfly.io/api/v1/organizations/{org_id}/subscription" \\\\
+    code: `curl -X PATCH "https://searchaf.antfly.io/api/v1/organizations/{org_id}/subscription" \\\\
     -H "Authorization: Bearer YOUR_API_KEY"`
   },
   {
     language: "TypeScript",
-    code: `const response = await fetch('https://searchaf-api.antfly.io/api/v1/organizations/{org_id}/subscription', {
+    code: `const response = await fetch('https://searchaf.antfly.io/api/v1/organizations/{org_id}/subscription', {
     method: 'PATCH',
     headers: {
         'Authorization': 'Bearer YOUR_API_KEY'
@@ -296,7 +296,7 @@ const data = await response.json();`
   },
   {
     language: "JavaScript",
-    code: `fetch('https://searchaf-api.antfly.io/api/v1/organizations/{org_id}/subscription', {
+    code: `fetch('https://searchaf.antfly.io/api/v1/organizations/{org_id}/subscription', {
     method: 'PATCH',
     headers: {
         'Authorization': 'Bearer YOUR_API_KEY'
@@ -313,7 +313,7 @@ headers = {
     'Authorization': 'Bearer YOUR_API_KEY'
 }
 
-response = requests.patch('https://searchaf-api.antfly.io/api/v1/organizations/{org_id}/subscription', headers=headers)
+response = requests.patch('https://searchaf.antfly.io/api/v1/organizations/{org_id}/subscription', headers=headers)
 
 data = response.json()`
   },
@@ -328,7 +328,7 @@ import (
 )
 
 func main() {
-    req, _ := http.NewRequest("PATCH", "https://searchaf-api.antfly.io/api/v1/organizations/{org_id}/subscription", nil)
+    req, _ := http.NewRequest("PATCH", "https://searchaf.antfly.io/api/v1/organizations/{org_id}/subscription", nil)
     req.Header.Set("Authorization", "Bearer YOUR_API_KEY")
 
     client := &http.Client{}
@@ -401,12 +401,12 @@ Example: `Authorization: Bearer YOUR_API_KEY`
 <CodeTabs samples={[
   {
     language: "cURL",
-    code: `curl -X DELETE "https://searchaf-api.antfly.io/api/v1/organizations/{org_id}/subscription" \\\\
+    code: `curl -X DELETE "https://searchaf.antfly.io/api/v1/organizations/{org_id}/subscription" \\\\
     -H "Authorization: Bearer YOUR_API_KEY"`
   },
   {
     language: "TypeScript",
-    code: `const response = await fetch('https://searchaf-api.antfly.io/api/v1/organizations/{org_id}/subscription', {
+    code: `const response = await fetch('https://searchaf.antfly.io/api/v1/organizations/{org_id}/subscription', {
     method: 'DELETE',
     headers: {
         'Authorization': 'Bearer YOUR_API_KEY'
@@ -417,7 +417,7 @@ const data = await response.json();`
   },
   {
     language: "JavaScript",
-    code: `fetch('https://searchaf-api.antfly.io/api/v1/organizations/{org_id}/subscription', {
+    code: `fetch('https://searchaf.antfly.io/api/v1/organizations/{org_id}/subscription', {
     method: 'DELETE',
     headers: {
         'Authorization': 'Bearer YOUR_API_KEY'
@@ -434,7 +434,7 @@ headers = {
     'Authorization': 'Bearer YOUR_API_KEY'
 }
 
-response = requests.delete('https://searchaf-api.antfly.io/api/v1/organizations/{org_id}/subscription', headers=headers)
+response = requests.delete('https://searchaf.antfly.io/api/v1/organizations/{org_id}/subscription', headers=headers)
 
 data = response.json()`
   },
@@ -449,7 +449,7 @@ import (
 )
 
 func main() {
-    req, _ := http.NewRequest("DELETE", "https://searchaf-api.antfly.io/api/v1/organizations/{org_id}/subscription", nil)
+    req, _ := http.NewRequest("DELETE", "https://searchaf.antfly.io/api/v1/organizations/{org_id}/subscription", nil)
     req.Header.Set("Authorization", "Bearer YOUR_API_KEY")
 
     client := &http.Client{}
@@ -483,11 +483,16 @@ func main() {
 
 ---
 
-## Create billing portal session
+## Create billing/checkout session
 
 <MethodBadge method="POST" path="/organizations/{org_id}/subscription/portal" />
 
-Create Stripe billing portal session URL (requires admin+ role)
+Smart billing endpoint that automatically routes users based on their subscription status:
+- **Paid plan users** → Redirected to Stripe Billing Portal (manage payment, view invoices, cancel)
+- **Free plan users** → Redirected to Stripe Checkout (upgrade to paid plan)
+
+The response includes a `type` field indicating which flow was used.
+
 
 ### Security
 
@@ -510,12 +515,12 @@ Example: `Authorization: Bearer YOUR_API_KEY`
 <CodeTabs samples={[
   {
     language: "cURL",
-    code: `curl -X POST "https://searchaf-api.antfly.io/api/v1/organizations/{org_id}/subscription/portal" \\\\
+    code: `curl -X POST "https://searchaf.antfly.io/api/v1/organizations/{org_id}/subscription/portal" \\\\
     -H "Authorization: Bearer YOUR_API_KEY"`
   },
   {
     language: "TypeScript",
-    code: `const response = await fetch('https://searchaf-api.antfly.io/api/v1/organizations/{org_id}/subscription/portal', {
+    code: `const response = await fetch('https://searchaf.antfly.io/api/v1/organizations/{org_id}/subscription/portal', {
     method: 'POST',
     headers: {
         'Authorization': 'Bearer YOUR_API_KEY'
@@ -526,7 +531,7 @@ const data = await response.json();`
   },
   {
     language: "JavaScript",
-    code: `fetch('https://searchaf-api.antfly.io/api/v1/organizations/{org_id}/subscription/portal', {
+    code: `fetch('https://searchaf.antfly.io/api/v1/organizations/{org_id}/subscription/portal', {
     method: 'POST',
     headers: {
         'Authorization': 'Bearer YOUR_API_KEY'
@@ -543,7 +548,7 @@ headers = {
     'Authorization': 'Bearer YOUR_API_KEY'
 }
 
-response = requests.post('https://searchaf-api.antfly.io/api/v1/organizations/{org_id}/subscription/portal', headers=headers)
+response = requests.post('https://searchaf.antfly.io/api/v1/organizations/{org_id}/subscription/portal', headers=headers)
 
 data = response.json()`
   },
@@ -558,7 +563,7 @@ import (
 )
 
 func main() {
-    req, _ := http.NewRequest("POST", "https://searchaf-api.antfly.io/api/v1/organizations/{org_id}/subscription/portal", nil)
+    req, _ := http.NewRequest("POST", "https://searchaf.antfly.io/api/v1/organizations/{org_id}/subscription/portal", nil)
     req.Header.Set("Authorization", "Bearer YOUR_API_KEY")
 
     client := &http.Client{}
@@ -573,9 +578,10 @@ func main() {
 <ResponseTabs responses={[
   {
     statusCode: "200",
-    description: "Portal session created",
+    description: "Session created successfully",
     body: `{
-  "url": "https://billing.stripe.com/session/..."
+  "url": "https://checkout.stripe.com/c/pay/cs_test_...",
+  "type": "checkout"
 }`
   },
   {

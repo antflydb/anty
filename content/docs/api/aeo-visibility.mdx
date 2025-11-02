@@ -1,0 +1,265 @@
+---
+title: "AEO Visibility"
+description: "AI engine visibility testing"
+---
+
+# AEO Visibility
+
+AI engine visibility testing
+
+## Run a new visibility test across AI engines
+
+<MethodBadge method="POST" path="/organizations/{org_id}/aeo/visibility" />
+
+Test content visibility in AI engines (Gemini, Gemma, etc.).
+Requires organization membership for the specified organization.
+
+
+### Security
+
+Provide your bearer token in the Authorization header when making requests to protected resources.
+
+Example: `Authorization: Bearer YOUR_API_KEY`
+
+### Parameters
+
+| Name | Type | Location | Required | Description |
+|------|------|----------|----------|-------------|
+| `org_id` | string | path | Yes | Organization ID |
+
+### Request Body
+
+**Content-Type:** `application/json`
+
+Schema: `VisibilityTestRequest`
+
+### Code Examples
+
+<CodeTabs samples={[
+  {
+    language: "cURL",
+    code: `curl -X POST "https://searchaf.antfly.io/api/v1/organizations/{org_id}/aeo/visibility" \\\\
+    -H "Authorization: Bearer YOUR_API_KEY"`
+  },
+  {
+    language: "TypeScript",
+    code: `const response = await fetch('https://searchaf.antfly.io/api/v1/organizations/{org_id}/aeo/visibility', {
+    method: 'POST',
+    headers: {
+        'Authorization': 'Bearer YOUR_API_KEY'
+    }
+});
+
+const data = await response.json();`
+  },
+  {
+    language: "JavaScript",
+    code: `fetch('https://searchaf.antfly.io/api/v1/organizations/{org_id}/aeo/visibility', {
+    method: 'POST',
+    headers: {
+        'Authorization': 'Bearer YOUR_API_KEY'
+    }
+})
+    .then(response => response.json())
+    .then(data => console.log(data));`
+  },
+  {
+    language: "Python",
+    code: `import requests
+
+headers = {
+    'Authorization': 'Bearer YOUR_API_KEY'
+}
+
+response = requests.post('https://searchaf.antfly.io/api/v1/organizations/{org_id}/aeo/visibility', headers=headers)
+
+data = response.json()`
+  },
+  {
+    language: "Go",
+    code: `package main
+
+import (
+    "bytes"
+    "encoding/json"
+    "net/http"
+)
+
+func main() {
+    req, _ := http.NewRequest("POST", "https://searchaf.antfly.io/api/v1/organizations/{org_id}/aeo/visibility", nil)
+    req.Header.Set("Authorization", "Bearer YOUR_API_KEY")
+
+    client := &http.Client{}
+    resp, _ := client.Do(req)
+    defer resp.Body.Close()
+}`
+  }
+]} />
+
+### Responses
+
+<ResponseTabs responses={[
+  {
+    statusCode: "200",
+    description: "Visibility test results",
+    body: `{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "url": "string",
+  "overall_score": 0,
+  "queries": [
+    {
+      "query": "string",
+      "found": true,
+      "position": 0,
+      "relevance_score": 0,
+      "snippet": "string"
+    }
+  ],
+  "recommendations": [
+    "string"
+  ],
+  "tested_at": "2025-10-02T15:30:00Z"
+}`
+  },
+  {
+    statusCode: "400",
+    description: "Bad Request",
+  },
+  {
+    statusCode: "401",
+    description: "Unauthorized",
+  },
+  {
+    statusCode: "403",
+    description: "Forbidden",
+  }
+]} />
+
+
+---
+
+## Get full history of visibility tests
+
+<MethodBadge method="GET" path="/organizations/{org_id}/aeo/visibility" />
+
+Retrieve all visibility test results for the specified organization.
+Requires organization membership.
+
+
+### Security
+
+Provide your bearer token in the Authorization header when making requests to protected resources.
+
+Example: `Authorization: Bearer YOUR_API_KEY`
+
+### Parameters
+
+| Name | Type | Location | Required | Description |
+|------|------|----------|----------|-------------|
+| `org_id` | string | path | Yes | Organization ID |
+
+### Code Examples
+
+<CodeTabs samples={[
+  {
+    language: "cURL",
+    code: `curl -X GET "https://searchaf.antfly.io/api/v1/organizations/{org_id}/aeo/visibility" \\\\
+    -H "Authorization: Bearer YOUR_API_KEY"`
+  },
+  {
+    language: "TypeScript",
+    code: `const response = await fetch('https://searchaf.antfly.io/api/v1/organizations/{org_id}/aeo/visibility', {
+    method: 'GET',
+    headers: {
+        'Authorization': 'Bearer YOUR_API_KEY'
+    }
+});
+
+const data = await response.json();`
+  },
+  {
+    language: "JavaScript",
+    code: `fetch('https://searchaf.antfly.io/api/v1/organizations/{org_id}/aeo/visibility', {
+    method: 'GET',
+    headers: {
+        'Authorization': 'Bearer YOUR_API_KEY'
+    }
+})
+    .then(response => response.json())
+    .then(data => console.log(data));`
+  },
+  {
+    language: "Python",
+    code: `import requests
+
+headers = {
+    'Authorization': 'Bearer YOUR_API_KEY'
+}
+
+response = requests.get('https://searchaf.antfly.io/api/v1/organizations/{org_id}/aeo/visibility', headers=headers)
+
+data = response.json()`
+  },
+  {
+    language: "Go",
+    code: `package main
+
+import (
+    "bytes"
+    "encoding/json"
+    "net/http"
+)
+
+func main() {
+    req, _ := http.NewRequest("GET", "https://searchaf.antfly.io/api/v1/organizations/{org_id}/aeo/visibility", nil)
+    req.Header.Set("Authorization", "Bearer YOUR_API_KEY")
+
+    client := &http.Client{}
+    resp, _ := client.Do(req)
+    defer resp.Body.Close()
+}`
+  }
+]} />
+
+### Responses
+
+<ResponseTabs responses={[
+  {
+    statusCode: "200",
+    description: "List of all visibility test results",
+    body: `[
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "url": "string",
+    "overall_score": 0,
+    "queries": [
+      {
+        "query": "string",
+        "found": true,
+        "position": 0,
+        "relevance_score": 0,
+        "snippet": "string"
+      }
+    ],
+    "recommendations": [
+      "string"
+    ],
+    "tested_at": "2025-10-02T15:30:00Z"
+  }
+]`
+  },
+  {
+    statusCode: "400",
+    description: "Bad Request",
+  },
+  {
+    statusCode: "401",
+    description: "Unauthorized",
+  },
+  {
+    statusCode: "403",
+    description: "Forbidden",
+  }
+]} />
+
+
