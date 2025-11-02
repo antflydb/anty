@@ -1,0 +1,360 @@
+---
+title: "API Keys"
+description: "Project API key management"
+---
+
+# API Keys
+
+Project API key management
+
+## List API keys
+
+<MethodBadge method="GET" path="/projects/{project_id}/api-keys" />
+
+List API keys for project
+
+### Security
+
+Provide your bearer token in the Authorization header when making requests to protected resources.
+
+Example: `Authorization: Bearer YOUR_API_KEY`
+
+### Parameters
+
+| Name | Type | Location | Required | Description |
+|------|------|----------|----------|-------------|
+| `project_id` | string | path | Yes | Project ID |
+
+### Code Examples
+
+<CodeTabs samples={[
+  {
+    language: "cURL",
+    code: `curl -X GET "https://searchaf-api.antfly.io/api/v1/projects/{project_id}/api-keys" \\\\
+    -H "Authorization: Bearer YOUR_API_KEY"`
+  },
+  {
+    language: "TypeScript",
+    code: `const response = await fetch('https://searchaf-api.antfly.io/api/v1/projects/{project_id}/api-keys', {
+    method: 'GET',
+    headers: {
+        'Authorization': 'Bearer YOUR_API_KEY'
+    }
+});
+
+const data = await response.json();`
+  },
+  {
+    language: "JavaScript",
+    code: `fetch('https://searchaf-api.antfly.io/api/v1/projects/{project_id}/api-keys', {
+    method: 'GET',
+    headers: {
+        'Authorization': 'Bearer YOUR_API_KEY'
+    }
+})
+    .then(response => response.json())
+    .then(data => console.log(data));`
+  },
+  {
+    language: "Python",
+    code: `import requests
+
+headers = {
+    'Authorization': 'Bearer YOUR_API_KEY'
+}
+
+response = requests.get('https://searchaf-api.antfly.io/api/v1/projects/{project_id}/api-keys', headers=headers)
+
+data = response.json()`
+  },
+  {
+    language: "Go",
+    code: `package main
+
+import (
+    "bytes"
+    "encoding/json"
+    "net/http"
+)
+
+func main() {
+    req, _ := http.NewRequest("GET", "https://searchaf-api.antfly.io/api/v1/projects/{project_id}/api-keys", nil)
+    req.Header.Set("Authorization", "Bearer YOUR_API_KEY")
+
+    client := &http.Client{}
+    resp, _ := client.Do(req)
+    defer resp.Body.Close()
+}`
+  }
+]} />
+
+### Responses
+
+<ResponseTabs responses={[
+  {
+    statusCode: "200",
+    description: "API keys list",
+    body: `{
+  "data": [
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "project_id": "550e8400-e29b-41d4-a716-446655440000",
+      "key_type": "read_only",
+      "key_prefix": "sk_live_",
+      "name": "Production API Key",
+      "created_at": "2025-10-02T15:30:00Z",
+      "last_used_at": "2025-10-02T15:30:00Z",
+      "expires_at": "2025-10-02T15:30:00Z",
+      "status": "active"
+    }
+  ]
+}`
+  },
+  {
+    statusCode: "401",
+    description: "Unauthorized",
+  },
+  {
+    statusCode: "403",
+    description: "Forbidden",
+  },
+  {
+    statusCode: "404",
+    description: "Not Found",
+  }
+]} />
+
+
+---
+
+## Create API key
+
+<MethodBadge method="POST" path="/projects/{project_id}/api-keys" />
+
+Create new API key for project (requires project_admin role)
+
+### Security
+
+Provide your bearer token in the Authorization header when making requests to protected resources.
+
+Example: `Authorization: Bearer YOUR_API_KEY`
+
+### Parameters
+
+| Name | Type | Location | Required | Description |
+|------|------|----------|----------|-------------|
+| `project_id` | string | path | Yes | Project ID |
+
+### Request Body
+
+**Content-Type:** `application/json`
+
+### Code Examples
+
+<CodeTabs samples={[
+  {
+    language: "cURL",
+    code: `curl -X POST "https://searchaf-api.antfly.io/api/v1/projects/{project_id}/api-keys" \\\\
+    -H "Authorization: Bearer YOUR_API_KEY"`
+  },
+  {
+    language: "TypeScript",
+    code: `const response = await fetch('https://searchaf-api.antfly.io/api/v1/projects/{project_id}/api-keys', {
+    method: 'POST',
+    headers: {
+        'Authorization': 'Bearer YOUR_API_KEY'
+    }
+});
+
+const data = await response.json();`
+  },
+  {
+    language: "JavaScript",
+    code: `fetch('https://searchaf-api.antfly.io/api/v1/projects/{project_id}/api-keys', {
+    method: 'POST',
+    headers: {
+        'Authorization': 'Bearer YOUR_API_KEY'
+    }
+})
+    .then(response => response.json())
+    .then(data => console.log(data));`
+  },
+  {
+    language: "Python",
+    code: `import requests
+
+headers = {
+    'Authorization': 'Bearer YOUR_API_KEY'
+}
+
+response = requests.post('https://searchaf-api.antfly.io/api/v1/projects/{project_id}/api-keys', headers=headers)
+
+data = response.json()`
+  },
+  {
+    language: "Go",
+    code: `package main
+
+import (
+    "bytes"
+    "encoding/json"
+    "net/http"
+)
+
+func main() {
+    req, _ := http.NewRequest("POST", "https://searchaf-api.antfly.io/api/v1/projects/{project_id}/api-keys", nil)
+    req.Header.Set("Authorization", "Bearer YOUR_API_KEY")
+
+    client := &http.Client{}
+    resp, _ := client.Do(req)
+    defer resp.Body.Close()
+}`
+  }
+]} />
+
+### Responses
+
+<ResponseTabs responses={[
+  {
+    statusCode: "201",
+    description: "API key created",
+    body: `{
+  "api_key": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "project_id": "550e8400-e29b-41d4-a716-446655440000",
+    "key_type": "read_only",
+    "key_prefix": "sk_live_",
+    "name": "Production API Key",
+    "created_at": "2025-10-02T15:30:00Z",
+    "last_used_at": "2025-10-02T15:30:00Z",
+    "expires_at": "2025-10-02T15:30:00Z",
+    "status": "active"
+  },
+  "key": "sk_live_abcdef123456..."
+}`
+  },
+  {
+    statusCode: "400",
+    description: "Bad Request",
+  },
+  {
+    statusCode: "401",
+    description: "Unauthorized",
+  },
+  {
+    statusCode: "403",
+    description: "Forbidden",
+  },
+  {
+    statusCode: "404",
+    description: "Not Found",
+  }
+]} />
+
+
+---
+
+## Revoke API key
+
+<MethodBadge method="DELETE" path="/projects/{project_id}/api-keys/{key_id}" />
+
+Revoke API key (requires project_admin role)
+
+### Security
+
+Provide your bearer token in the Authorization header when making requests to protected resources.
+
+Example: `Authorization: Bearer YOUR_API_KEY`
+
+### Parameters
+
+| Name | Type | Location | Required | Description |
+|------|------|----------|----------|-------------|
+| `project_id` | string | path | Yes | Project ID |
+| `key_id` | string | path | Yes | API Key ID |
+
+### Code Examples
+
+<CodeTabs samples={[
+  {
+    language: "cURL",
+    code: `curl -X DELETE "https://searchaf-api.antfly.io/api/v1/projects/{project_id}/api-keys/{key_id}" \\\\
+    -H "Authorization: Bearer YOUR_API_KEY"`
+  },
+  {
+    language: "TypeScript",
+    code: `const response = await fetch('https://searchaf-api.antfly.io/api/v1/projects/{project_id}/api-keys/{key_id}', {
+    method: 'DELETE',
+    headers: {
+        'Authorization': 'Bearer YOUR_API_KEY'
+    }
+});
+
+const data = await response.json();`
+  },
+  {
+    language: "JavaScript",
+    code: `fetch('https://searchaf-api.antfly.io/api/v1/projects/{project_id}/api-keys/{key_id}', {
+    method: 'DELETE',
+    headers: {
+        'Authorization': 'Bearer YOUR_API_KEY'
+    }
+})
+    .then(response => response.json())
+    .then(data => console.log(data));`
+  },
+  {
+    language: "Python",
+    code: `import requests
+
+headers = {
+    'Authorization': 'Bearer YOUR_API_KEY'
+}
+
+response = requests.delete('https://searchaf-api.antfly.io/api/v1/projects/{project_id}/api-keys/{key_id}', headers=headers)
+
+data = response.json()`
+  },
+  {
+    language: "Go",
+    code: `package main
+
+import (
+    "bytes"
+    "encoding/json"
+    "net/http"
+)
+
+func main() {
+    req, _ := http.NewRequest("DELETE", "https://searchaf-api.antfly.io/api/v1/projects/{project_id}/api-keys/{key_id}", nil)
+    req.Header.Set("Authorization", "Bearer YOUR_API_KEY")
+
+    client := &http.Client{}
+    resp, _ := client.Do(req)
+    defer resp.Body.Close()
+}`
+  }
+]} />
+
+### Responses
+
+<ResponseTabs responses={[
+  {
+    statusCode: "204",
+    description: "API key revoked",
+  },
+  {
+    statusCode: "401",
+    description: "Unauthorized",
+  },
+  {
+    statusCode: "403",
+    description: "Forbidden",
+  },
+  {
+    statusCode: "404",
+    description: "Not Found",
+  }
+]} />
+
+

@@ -4,6 +4,9 @@ import fs from 'fs'
 import { Metadata } from 'next'
 import { compileMDX } from 'next-mdx-remote/rsc'
 import remarkGfm from 'remark-gfm'
+import { CodeTabs } from '@/components/docs/code-tabs'
+import { ResponseTabs } from '@/components/docs/response-tabs'
+import { MethodBadge } from '@/components/docs/method-badge'
 
 interface PageProps {
   params: Promise<{
@@ -33,6 +36,11 @@ async function getMdxContent(slug: string[]) {
     // Compile the MDX
     const { content } = await compileMDX({
       source,
+      components: {
+        CodeTabs,
+        ResponseTabs,
+        MethodBadge,
+      },
       options: {
         parseFrontmatter: true,
         mdxOptions: {

@@ -51,21 +51,41 @@ export const docsNavigation: NavSection[] = [
         title: 'API Documentation',
         items: [
           {
-            title: 'API Overview',
-            href: '/docs/api/overview',
-          },
-          {
             title: 'Authentication',
             href: '/docs/api/authentication',
           },
           {
-            title: 'Endpoints',
-            href: '/docs/api/endpoints',
+            title: 'Users',
+            href: '/docs/api/users',
           },
           {
-            title: 'Search API',
-            href: '/docs/api/search',
+            title: 'Organizations',
+            href: '/docs/api/organizations',
           },
+          {
+            title: 'Projects',
+            href: '/docs/api/projects',
+          },
+          {
+            title: 'API Keys',
+            href: '/docs/api/api-keys',
+          },
+          {
+            title: 'Audit',
+            href: '/docs/api/audit',
+          },
+          {
+            title: 'Subscriptions',
+            href: '/docs/api/subscriptions',
+          },
+          {
+            title: 'Usage',
+            href: '/docs/api/usage',
+          },
+          {
+            title: 'Webhooks',
+            href: '/docs/api/webhooks',
+          }
         ],
       },
     ],

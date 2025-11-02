@@ -1,0 +1,619 @@
+---
+title: "Projects"
+description: "Project management"
+---
+
+# Projects
+
+Project management
+
+## List projects
+
+<MethodBadge method="GET" path="/organizations/{org_id}/projects" />
+
+List projects in organization
+
+### Security
+
+Provide your bearer token in the Authorization header when making requests to protected resources.
+
+Example: `Authorization: Bearer YOUR_API_KEY`
+
+### Parameters
+
+| Name | Type | Location | Required | Description |
+|------|------|----------|----------|-------------|
+| `org_id` | string | path | Yes | Organization ID |
+| `offset` | integer | query | No | Number of items to skip |
+| `limit` | integer | query | No | Maximum number of items to return |
+
+### Code Examples
+
+<CodeTabs samples={[
+  {
+    language: "cURL",
+    code: `curl -X GET "https://searchaf-api.antfly.io/api/v1/organizations/{org_id}/projects?offset=value&limit=value" \\\\
+    -H "Authorization: Bearer YOUR_API_KEY"`
+  },
+  {
+    language: "TypeScript",
+    code: `const response = await fetch('https://searchaf-api.antfly.io/api/v1/organizations/{org_id}/projects?offset=value&limit=value', {
+    method: 'GET',
+    headers: {
+        'Authorization': 'Bearer YOUR_API_KEY'
+    }
+});
+
+const data = await response.json();`
+  },
+  {
+    language: "JavaScript",
+    code: `fetch('https://searchaf-api.antfly.io/api/v1/organizations/{org_id}/projects?offset=value&limit=value', {
+    method: 'GET',
+    headers: {
+        'Authorization': 'Bearer YOUR_API_KEY'
+    }
+})
+    .then(response => response.json())
+    .then(data => console.log(data));`
+  },
+  {
+    language: "Python",
+    code: `import requests
+
+headers = {
+    'Authorization': 'Bearer YOUR_API_KEY'
+}
+
+response = requests.get('https://searchaf-api.antfly.io/api/v1/organizations/{org_id}/projects?offset=value&limit=value', headers=headers)
+
+data = response.json()`
+  },
+  {
+    language: "Go",
+    code: `package main
+
+import (
+    "bytes"
+    "encoding/json"
+    "net/http"
+)
+
+func main() {
+    req, _ := http.NewRequest("GET", "https://searchaf-api.antfly.io/api/v1/organizations/{org_id}/projects?offset=value&limit=value", nil)
+    req.Header.Set("Authorization", "Bearer YOUR_API_KEY")
+
+    client := &http.Client{}
+    resp, _ := client.Do(req)
+    defer resp.Body.Close()
+}`
+  }
+]} />
+
+### Responses
+
+<ResponseTabs responses={[
+  {
+    statusCode: "200",
+    description: "Projects list",
+    body: `{
+  "data": [
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "organization_id": "550e8400-e29b-41d4-a716-446655440000",
+      "name": "My Store",
+      "slug": "my-store",
+      "project_type": "woocommerce",
+      "integration_config": {},
+      "status": "active",
+      "created_at": "2025-10-02T15:30:00Z",
+      "updated_at": "2025-10-02T15:30:00Z",
+      "settings": {}
+    }
+  ],
+  "meta": {
+    "offset": 0,
+    "limit": 1,
+    "total": 0
+  }
+}`
+  },
+  {
+    statusCode: "401",
+    description: "Unauthorized",
+  },
+  {
+    statusCode: "403",
+    description: "Forbidden",
+  },
+  {
+    statusCode: "404",
+    description: "Not Found",
+  }
+]} />
+
+
+---
+
+## Create project
+
+<MethodBadge method="POST" path="/organizations/{org_id}/projects" />
+
+Create new project in organization
+
+### Security
+
+Provide your bearer token in the Authorization header when making requests to protected resources.
+
+Example: `Authorization: Bearer YOUR_API_KEY`
+
+### Parameters
+
+| Name | Type | Location | Required | Description |
+|------|------|----------|----------|-------------|
+| `org_id` | string | path | Yes | Organization ID |
+
+### Request Body
+
+**Content-Type:** `application/json`
+
+### Code Examples
+
+<CodeTabs samples={[
+  {
+    language: "cURL",
+    code: `curl -X POST "https://searchaf-api.antfly.io/api/v1/organizations/{org_id}/projects" \\\\
+    -H "Authorization: Bearer YOUR_API_KEY"`
+  },
+  {
+    language: "TypeScript",
+    code: `const response = await fetch('https://searchaf-api.antfly.io/api/v1/organizations/{org_id}/projects', {
+    method: 'POST',
+    headers: {
+        'Authorization': 'Bearer YOUR_API_KEY'
+    }
+});
+
+const data = await response.json();`
+  },
+  {
+    language: "JavaScript",
+    code: `fetch('https://searchaf-api.antfly.io/api/v1/organizations/{org_id}/projects', {
+    method: 'POST',
+    headers: {
+        'Authorization': 'Bearer YOUR_API_KEY'
+    }
+})
+    .then(response => response.json())
+    .then(data => console.log(data));`
+  },
+  {
+    language: "Python",
+    code: `import requests
+
+headers = {
+    'Authorization': 'Bearer YOUR_API_KEY'
+}
+
+response = requests.post('https://searchaf-api.antfly.io/api/v1/organizations/{org_id}/projects', headers=headers)
+
+data = response.json()`
+  },
+  {
+    language: "Go",
+    code: `package main
+
+import (
+    "bytes"
+    "encoding/json"
+    "net/http"
+)
+
+func main() {
+    req, _ := http.NewRequest("POST", "https://searchaf-api.antfly.io/api/v1/organizations/{org_id}/projects", nil)
+    req.Header.Set("Authorization", "Bearer YOUR_API_KEY")
+
+    client := &http.Client{}
+    resp, _ := client.Do(req)
+    defer resp.Body.Close()
+}`
+  }
+]} />
+
+### Responses
+
+<ResponseTabs responses={[
+  {
+    statusCode: "201",
+    description: "Project created",
+    body: `{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "organization_id": "550e8400-e29b-41d4-a716-446655440000",
+  "name": "My Store",
+  "slug": "my-store",
+  "project_type": "woocommerce",
+  "integration_config": {},
+  "status": "active",
+  "created_at": "2025-10-02T15:30:00Z",
+  "updated_at": "2025-10-02T15:30:00Z",
+  "settings": {}
+}`
+  },
+  {
+    statusCode: "400",
+    description: "Bad Request",
+  },
+  {
+    statusCode: "401",
+    description: "Unauthorized",
+  },
+  {
+    statusCode: "402",
+    description: "Response",
+  },
+  {
+    statusCode: "403",
+    description: "Forbidden",
+  },
+  {
+    statusCode: "404",
+    description: "Not Found",
+  },
+  {
+    statusCode: "409",
+    description: "Response",
+  }
+]} />
+
+
+---
+
+## Get project
+
+<MethodBadge method="GET" path="/projects/{project_id}" />
+
+Get project details
+
+### Security
+
+Provide your bearer token in the Authorization header when making requests to protected resources.
+
+Example: `Authorization: Bearer YOUR_API_KEY`
+
+### Parameters
+
+| Name | Type | Location | Required | Description |
+|------|------|----------|----------|-------------|
+| `project_id` | string | path | Yes | Project ID |
+
+### Code Examples
+
+<CodeTabs samples={[
+  {
+    language: "cURL",
+    code: `curl -X GET "https://searchaf-api.antfly.io/api/v1/projects/{project_id}" \\\\
+    -H "Authorization: Bearer YOUR_API_KEY"`
+  },
+  {
+    language: "TypeScript",
+    code: `const response = await fetch('https://searchaf-api.antfly.io/api/v1/projects/{project_id}', {
+    method: 'GET',
+    headers: {
+        'Authorization': 'Bearer YOUR_API_KEY'
+    }
+});
+
+const data = await response.json();`
+  },
+  {
+    language: "JavaScript",
+    code: `fetch('https://searchaf-api.antfly.io/api/v1/projects/{project_id}', {
+    method: 'GET',
+    headers: {
+        'Authorization': 'Bearer YOUR_API_KEY'
+    }
+})
+    .then(response => response.json())
+    .then(data => console.log(data));`
+  },
+  {
+    language: "Python",
+    code: `import requests
+
+headers = {
+    'Authorization': 'Bearer YOUR_API_KEY'
+}
+
+response = requests.get('https://searchaf-api.antfly.io/api/v1/projects/{project_id}', headers=headers)
+
+data = response.json()`
+  },
+  {
+    language: "Go",
+    code: `package main
+
+import (
+    "bytes"
+    "encoding/json"
+    "net/http"
+)
+
+func main() {
+    req, _ := http.NewRequest("GET", "https://searchaf-api.antfly.io/api/v1/projects/{project_id}", nil)
+    req.Header.Set("Authorization", "Bearer YOUR_API_KEY")
+
+    client := &http.Client{}
+    resp, _ := client.Do(req)
+    defer resp.Body.Close()
+}`
+  }
+]} />
+
+### Responses
+
+<ResponseTabs responses={[
+  {
+    statusCode: "200",
+    description: "Project details",
+    body: `{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "organization_id": "550e8400-e29b-41d4-a716-446655440000",
+  "name": "My Store",
+  "slug": "my-store",
+  "project_type": "woocommerce",
+  "integration_config": {},
+  "status": "active",
+  "created_at": "2025-10-02T15:30:00Z",
+  "updated_at": "2025-10-02T15:30:00Z",
+  "settings": {}
+}`
+  },
+  {
+    statusCode: "401",
+    description: "Unauthorized",
+  },
+  {
+    statusCode: "403",
+    description: "Forbidden",
+  },
+  {
+    statusCode: "404",
+    description: "Not Found",
+  }
+]} />
+
+
+---
+
+## Update project
+
+<MethodBadge method="PATCH" path="/projects/{project_id}" />
+
+Update project (requires developer+ role)
+
+### Security
+
+Provide your bearer token in the Authorization header when making requests to protected resources.
+
+Example: `Authorization: Bearer YOUR_API_KEY`
+
+### Parameters
+
+| Name | Type | Location | Required | Description |
+|------|------|----------|----------|-------------|
+| `project_id` | string | path | Yes | Project ID |
+
+### Request Body
+
+**Content-Type:** `application/json`
+
+### Code Examples
+
+<CodeTabs samples={[
+  {
+    language: "cURL",
+    code: `curl -X PATCH "https://searchaf-api.antfly.io/api/v1/projects/{project_id}" \\\\
+    -H "Authorization: Bearer YOUR_API_KEY"`
+  },
+  {
+    language: "TypeScript",
+    code: `const response = await fetch('https://searchaf-api.antfly.io/api/v1/projects/{project_id}', {
+    method: 'PATCH',
+    headers: {
+        'Authorization': 'Bearer YOUR_API_KEY'
+    }
+});
+
+const data = await response.json();`
+  },
+  {
+    language: "JavaScript",
+    code: `fetch('https://searchaf-api.antfly.io/api/v1/projects/{project_id}', {
+    method: 'PATCH',
+    headers: {
+        'Authorization': 'Bearer YOUR_API_KEY'
+    }
+})
+    .then(response => response.json())
+    .then(data => console.log(data));`
+  },
+  {
+    language: "Python",
+    code: `import requests
+
+headers = {
+    'Authorization': 'Bearer YOUR_API_KEY'
+}
+
+response = requests.patch('https://searchaf-api.antfly.io/api/v1/projects/{project_id}', headers=headers)
+
+data = response.json()`
+  },
+  {
+    language: "Go",
+    code: `package main
+
+import (
+    "bytes"
+    "encoding/json"
+    "net/http"
+)
+
+func main() {
+    req, _ := http.NewRequest("PATCH", "https://searchaf-api.antfly.io/api/v1/projects/{project_id}", nil)
+    req.Header.Set("Authorization", "Bearer YOUR_API_KEY")
+
+    client := &http.Client{}
+    resp, _ := client.Do(req)
+    defer resp.Body.Close()
+}`
+  }
+]} />
+
+### Responses
+
+<ResponseTabs responses={[
+  {
+    statusCode: "200",
+    description: "Project updated",
+    body: `{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "organization_id": "550e8400-e29b-41d4-a716-446655440000",
+  "name": "My Store",
+  "slug": "my-store",
+  "project_type": "woocommerce",
+  "integration_config": {},
+  "status": "active",
+  "created_at": "2025-10-02T15:30:00Z",
+  "updated_at": "2025-10-02T15:30:00Z",
+  "settings": {}
+}`
+  },
+  {
+    statusCode: "400",
+    description: "Bad Request",
+  },
+  {
+    statusCode: "401",
+    description: "Unauthorized",
+  },
+  {
+    statusCode: "402",
+    description: "Response",
+  },
+  {
+    statusCode: "403",
+    description: "Forbidden",
+  },
+  {
+    statusCode: "404",
+    description: "Not Found",
+  }
+]} />
+
+
+---
+
+## Delete project
+
+<MethodBadge method="DELETE" path="/projects/{project_id}" />
+
+Delete project (requires project_admin role)
+
+### Security
+
+Provide your bearer token in the Authorization header when making requests to protected resources.
+
+Example: `Authorization: Bearer YOUR_API_KEY`
+
+### Parameters
+
+| Name | Type | Location | Required | Description |
+|------|------|----------|----------|-------------|
+| `project_id` | string | path | Yes | Project ID |
+
+### Code Examples
+
+<CodeTabs samples={[
+  {
+    language: "cURL",
+    code: `curl -X DELETE "https://searchaf-api.antfly.io/api/v1/projects/{project_id}" \\\\
+    -H "Authorization: Bearer YOUR_API_KEY"`
+  },
+  {
+    language: "TypeScript",
+    code: `const response = await fetch('https://searchaf-api.antfly.io/api/v1/projects/{project_id}', {
+    method: 'DELETE',
+    headers: {
+        'Authorization': 'Bearer YOUR_API_KEY'
+    }
+});
+
+const data = await response.json();`
+  },
+  {
+    language: "JavaScript",
+    code: `fetch('https://searchaf-api.antfly.io/api/v1/projects/{project_id}', {
+    method: 'DELETE',
+    headers: {
+        'Authorization': 'Bearer YOUR_API_KEY'
+    }
+})
+    .then(response => response.json())
+    .then(data => console.log(data));`
+  },
+  {
+    language: "Python",
+    code: `import requests
+
+headers = {
+    'Authorization': 'Bearer YOUR_API_KEY'
+}
+
+response = requests.delete('https://searchaf-api.antfly.io/api/v1/projects/{project_id}', headers=headers)
+
+data = response.json()`
+  },
+  {
+    language: "Go",
+    code: `package main
+
+import (
+    "bytes"
+    "encoding/json"
+    "net/http"
+)
+
+func main() {
+    req, _ := http.NewRequest("DELETE", "https://searchaf-api.antfly.io/api/v1/projects/{project_id}", nil)
+    req.Header.Set("Authorization", "Bearer YOUR_API_KEY")
+
+    client := &http.Client{}
+    resp, _ := client.Do(req)
+    defer resp.Body.Close()
+}`
+  }
+]} />
+
+### Responses
+
+<ResponseTabs responses={[
+  {
+    statusCode: "204",
+    description: "Project deleted",
+  },
+  {
+    statusCode: "401",
+    description: "Unauthorized",
+  },
+  {
+    statusCode: "403",
+    description: "Forbidden",
+  },
+  {
+    statusCode: "404",
+    description: "Not Found",
+  }
+]} />
+
+

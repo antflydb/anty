@@ -1,334 +1,319 @@
-# API Authentication
+---
+title: "Authentication"
+description: "OAuth and JWT authentication"
+---
 
-Detailed guide to authenticating with the SearchAF API using OAuth tokens and API keys.
+# Authentication
 
-## Authentication Methods
+OAuth and JWT authentication
 
-SearchAF supports two authentication methods:
+## Initiate OAuth login
 
-1. **OAuth 2.0 with JWT tokens** - For user-authenticated requests
-2. **API Keys** - For programmatic, project-specific access
+<MethodBadge method="GET" path="/auth/oauth/{provider}/login" />
 
-## OAuth 2.0 Authentication
+Redirects to OAuth provider login page
 
-### Supported Providers
+### Parameters
 
-SearchAF integrates with popular OAuth providers:
+| Name | Type | Location | Required | Description |
+|------|------|----------|----------|-------------|
+| `provider` | string (google, github, shopify) | path | Yes |  |
+| `redirect_uri` | string | query | No | Post-login redirect URL |
 
-- **Google** - Gmail and Google Workspace accounts
-- **GitHub** - Developer accounts
-- **Shopify** - Store owner accounts
+### Code Examples
 
-### OAuth Flow
+<CodeTabs samples={[
+  {
+    language: "cURL",
+    code: `curl -X GET "https://searchaf-api.antfly.io/api/v1/auth/oauth/{provider}/login?redirect_uri=value" \\\\
+    -H "Authorization: Bearer YOUR_API_KEY"`
+  },
+  {
+    language: "TypeScript",
+    code: `const response = await fetch('https://searchaf-api.antfly.io/api/v1/auth/oauth/{provider}/login?redirect_uri=value', {
+    method: 'GET',
+    headers: {
+        'Authorization': 'Bearer YOUR_API_KEY'
+    }
+});
 
-#### Step 1: Initiate Login
+const data = await response.json();`
+  },
+  {
+    language: "JavaScript",
+    code: `fetch('https://searchaf-api.antfly.io/api/v1/auth/oauth/{provider}/login?redirect_uri=value', {
+    method: 'GET',
+    headers: {
+        'Authorization': 'Bearer YOUR_API_KEY'
+    }
+})
+    .then(response => response.json())
+    .then(data => console.log(data));`
+  },
+  {
+    language: "Python",
+    code: `import requests
 
-Redirect users to the OAuth login endpoint:
+headers = {
+    'Authorization': 'Bearer YOUR_API_KEY'
+}
 
-```
-GET /auth/oauth/{provider}/login?redirect_uri={your_callback_url}
-```
+response = requests.get('https://searchaf-api.antfly.io/api/v1/auth/oauth/{provider}/login?redirect_uri=value', headers=headers)
 
-**Parameters:**
+data = response.json()`
+  },
+  {
+    language: "Go",
+    code: `package main
 
-- `provider` - One of: `google`, `github`, `shopify`
-- `redirect_uri` - Your application callback URL
+import (
+    "bytes"
+    "encoding/json"
+    "net/http"
+)
 
-**Example:**
+func main() {
+    req, _ := http.NewRequest("GET", "https://searchaf-api.antfly.io/api/v1/auth/oauth/{provider}/login?redirect_uri=value", nil)
+    req.Header.Set("Authorization", "Bearer YOUR_API_KEY")
 
-```javascript
-const provider = 'google';
-const redirectUri = encodeURIComponent('https://myapp.com/auth/callback');
-const loginUrl = `https://searchaf-api.antfly.io/auth/oauth/${provider}/login?redirect_uri=${redirectUri}`;
+    client := &http.Client{}
+    resp, _ := client.Do(req)
+    defer resp.Body.Close()
+}`
+  }
+]} />
 
-// Redirect user to loginUrl
-window.location.href = loginUrl;
-```
+### Responses
 
-#### Step 2: User Authorizes
+<ResponseTabs responses={[
+  {
+    statusCode: "302",
+    description: "Redirect to OAuth provider",
+  },
+  {
+    statusCode: "400",
+    description: "Bad Request",
+  }
+]} />
 
-The user authenticates with the OAuth provider and grants permissions.
 
-#### Step 3: Handle Callback
+---
 
-SearchAF redirects back to your application with an authorization code:
+## OAuth callback handler
 
-```
-GET https://myapp.com/auth/callback?code={auth_code}&state={state}
-```
+<MethodBadge method="GET" path="/auth/oauth/{provider}/callback" />
 
-#### Step 4: Exchange Code for Tokens
+Handles OAuth provider callback and generates JWT
 
-The callback endpoint automatically exchanges the code for JWT tokens and redirects with the tokens.
+### Parameters
 
-**Token Response:**
+| Name | Type | Location | Required | Description |
+|------|------|----------|----------|-------------|
+| `provider` | string (google, github, shopify) | path | Yes |  |
+| `code` | string | query | Yes | OAuth authorization code |
+| `state` | string | query | Yes | CSRF protection state |
 
-```json
-{
-  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+### Code Examples
+
+<CodeTabs samples={[
+  {
+    language: "cURL",
+    code: `curl -X GET "https://searchaf-api.antfly.io/api/v1/auth/oauth/{provider}/callback?code=value&state=value" \\\\
+    -H "Authorization: Bearer YOUR_API_KEY"`
+  },
+  {
+    language: "TypeScript",
+    code: `const response = await fetch('https://searchaf-api.antfly.io/api/v1/auth/oauth/{provider}/callback?code=value&state=value', {
+    method: 'GET',
+    headers: {
+        'Authorization': 'Bearer YOUR_API_KEY'
+    }
+});
+
+const data = await response.json();`
+  },
+  {
+    language: "JavaScript",
+    code: `fetch('https://searchaf-api.antfly.io/api/v1/auth/oauth/{provider}/callback?code=value&state=value', {
+    method: 'GET',
+    headers: {
+        'Authorization': 'Bearer YOUR_API_KEY'
+    }
+})
+    .then(response => response.json())
+    .then(data => console.log(data));`
+  },
+  {
+    language: "Python",
+    code: `import requests
+
+headers = {
+    'Authorization': 'Bearer YOUR_API_KEY'
+}
+
+response = requests.get('https://searchaf-api.antfly.io/api/v1/auth/oauth/{provider}/callback?code=value&state=value', headers=headers)
+
+data = response.json()`
+  },
+  {
+    language: "Go",
+    code: `package main
+
+import (
+    "bytes"
+    "encoding/json"
+    "net/http"
+)
+
+func main() {
+    req, _ := http.NewRequest("GET", "https://searchaf-api.antfly.io/api/v1/auth/oauth/{provider}/callback?code=value&state=value", nil)
+    req.Header.Set("Authorization", "Bearer YOUR_API_KEY")
+
+    client := &http.Client{}
+    resp, _ := client.Do(req)
+    defer resp.Body.Close()
+}`
+  }
+]} />
+
+### Responses
+
+<ResponseTabs responses={[
+  {
+    statusCode: "200",
+    description: "Authentication successful",
+    body: `{
+  "access_token": "string",
+  "refresh_token": "string",
   "token_type": "Bearer",
   "expires_in": 3600,
   "user": {
-    "id": "usr_abc123",
+    "id": "550e8400-e29b-41d4-a716-446655440000",
     "email": "user@example.com",
-    "display_name": "John Doe"
+    "display_name": "John Doe",
+    "avatar_url": "https://example.com/avatar.jpg",
+    "created_at": "2025-10-02T15:30:00Z",
+    "updated_at": "2025-10-02T15:30:00Z",
+    "last_login_at": "2025-10-02T15:30:00Z",
+    "status": "active",
+    "settings": {}
   }
-}
-```
-
-### Using JWT Tokens
-
-Include the access token in the Authorization header:
-
-```bash
-curl https://searchaf-api.antfly.io/api/v1/users/me \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-```
-
-### Token Expiration
-
-Access tokens expire after 1 hour (3600 seconds). Use the refresh token to obtain a new access token.
-
-### Refreshing Tokens
-
-When your access token expires:
-
-```bash
-POST /auth/refresh
-Content-Type: application/json
-
-{
-  "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-}
-```
-
-**Response:**
-
-```json
-{
-  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "token_type": "Bearer",
-  "expires_in": 3600
-}
-```
-
-### Token Storage
-
-**Best Practices:**
-
-- Store tokens securely (encrypted storage, secure cookies)
-- Never expose tokens in URLs or logs
-- Implement token rotation on refresh
-- Clear tokens on logout
-
-## API Key Authentication
-
-API keys provide project-specific authentication for programmatic access.
-
-### Key Types
-
-- **Read-Only** - Query and search operations only
-- **Read-Write** - Full CRUD operations
-
-### Creating an API Key
-
-1. Navigate to your project settings
-2. Click "Create API Key"
-3. Configure the key:
-
-```bash
-POST /api/v1/projects/{project_id}/api-keys
-Content-Type: application/json
-Authorization: Bearer {jwt_token}
-
-{
-  "name": "Production Key",
-  "type": "read_write",
-  "expires_at": "2025-12-31T23:59:59Z"
-}
-```
-
-**Response:**
-
-```json
-{
-  "id": "key_abc123",
-  "key": "sk_live_abc123def456...",
-  "name": "Production Key",
-  "type": "read_write",
-  "created_at": "2025-01-15T10:30:00Z",
-  "expires_at": "2025-12-31T23:59:59Z"
-}
-```
-
-**Important:** The `key` value is only shown once. Store it securely.
-
-### Using API Keys
-
-Include the API key in the `X-API-Key` header:
-
-```bash
-curl https://searchaf-api.antfly.io/api/v1/projects/{project_id}/search \
-  -H "X-API-Key: sk_live_abc123def456..." \
-  -H "Content-Type: application/json" \
-  -d '{"query": "blue shoes"}'
-```
-
-### Key Management
-
-#### List Keys
-
-```bash
-GET /api/v1/projects/{project_id}/api-keys
-Authorization: Bearer {jwt_token}
-```
-
-#### Revoke Key
-
-```bash
-DELETE /api/v1/projects/{project_id}/api-keys/{key_id}
-Authorization: Bearer {jwt_token}
-```
-
-### Key Security
-
-**Best Practices:**
-
-- Use read-only keys when write access isn't needed
-- Set expiration dates on all keys
-- Rotate keys regularly
-- Never commit keys to version control
-- Use environment variables for key storage
-- Implement key rotation before expiration
-
-## Security Considerations
-
-### HTTPS Only
-
-All API requests must use HTTPS. HTTP requests will be rejected.
-
-### Rate Limiting
-
-Both authentication methods are subject to rate limiting:
-
-- OAuth: 10 requests per minute per IP
-- API Keys: Based on subscription tier
-
-### IP Whitelisting
-
-Enterprise plans can restrict API key usage to specific IP addresses.
-
-### Scope and Permissions
-
-- OAuth tokens inherit user permissions
-- API keys are scoped to specific projects
-- Both respect RBAC rules
-
-## Error Responses
-
-### Invalid Token
-
-```json
-{
-  "type": "https://searchaf-api.antfly.io/errors/unauthorized",
-  "title": "Unauthorized",
-  "status": 401,
-  "detail": "Invalid or expired access token"
-}
-```
-
-### Invalid API Key
-
-```json
-{
-  "type": "https://searchaf-api.antfly.io/errors/unauthorized",
-  "title": "Unauthorized",
-  "status": 401,
-  "detail": "Invalid API key"
-}
-```
-
-### Insufficient Permissions
-
-```json
-{
-  "type": "https://searchaf-api.antfly.io/errors/forbidden",
-  "title": "Forbidden",
-  "status": 403,
-  "detail": "Insufficient permissions for this operation"
-}
-```
-
-## Example Implementations
-
-### JavaScript/TypeScript
-
-```typescript
-class SearchAFClient {
-  private apiKey: string;
-  private baseUrl = 'https://searchaf-api.antfly.io/api/v1';
-
-  constructor(apiKey: string) {
-    this.apiKey = apiKey;
+}`
+  },
+  {
+    statusCode: "400",
+    description: "Bad Request",
+  },
+  {
+    statusCode: "401",
+    description: "Unauthorized",
   }
+]} />
 
-  async search(projectId: string, query: string) {
-    const response = await fetch(
-      `${this.baseUrl}/projects/${projectId}/search`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-API-Key': this.apiKey,
-        },
-        body: JSON.stringify({ query }),
-      }
-    );
 
-    if (!response.ok) {
-      throw new Error(`API error: ${response.statusText}`);
+---
+
+## Refresh JWT token
+
+<MethodBadge method="POST" path="/auth/refresh" />
+
+Generate new JWT from refresh token
+
+### Request Body
+
+**Content-Type:** `application/json`
+
+### Code Examples
+
+<CodeTabs samples={[
+  {
+    language: "cURL",
+    code: `curl -X POST "https://searchaf-api.antfly.io/api/v1/auth/refresh" \\\\
+    -H "Authorization: Bearer YOUR_API_KEY"`
+  },
+  {
+    language: "TypeScript",
+    code: `const response = await fetch('https://searchaf-api.antfly.io/api/v1/auth/refresh', {
+    method: 'POST',
+    headers: {
+        'Authorization': 'Bearer YOUR_API_KEY'
     }
+});
 
-    return response.json();
-  }
+const data = await response.json();`
+  },
+  {
+    language: "JavaScript",
+    code: `fetch('https://searchaf-api.antfly.io/api/v1/auth/refresh', {
+    method: 'POST',
+    headers: {
+        'Authorization': 'Bearer YOUR_API_KEY'
+    }
+})
+    .then(response => response.json())
+    .then(data => console.log(data));`
+  },
+  {
+    language: "Python",
+    code: `import requests
+
+headers = {
+    'Authorization': 'Bearer YOUR_API_KEY'
 }
 
-// Usage
-const client = new SearchAFClient('sk_live_...');
-const results = await client.search('proj_123', 'blue shoes');
-```
+response = requests.post('https://searchaf-api.antfly.io/api/v1/auth/refresh', headers=headers)
 
-### Python
+data = response.json()`
+  },
+  {
+    language: "Go",
+    code: `package main
 
-```python
-import requests
+import (
+    "bytes"
+    "encoding/json"
+    "net/http"
+)
 
-class SearchAFClient:
-    def __init__(self, api_key):
-        self.api_key = api_key
-        self.base_url = 'https://searchaf-api.antfly.io/api/v1'
+func main() {
+    req, _ := http.NewRequest("POST", "https://searchaf-api.antfly.io/api/v1/auth/refresh", nil)
+    req.Header.Set("Authorization", "Bearer YOUR_API_KEY")
 
-    def search(self, project_id, query):
-        url = f'{self.base_url}/projects/{project_id}/search'
-        headers = {
-            'Content-Type': 'application/json',
-            'X-API-Key': self.api_key,
-        }
-        data = {'query': query}
+    client := &http.Client{}
+    resp, _ := client.Do(req)
+    defer resp.Body.Close()
+}`
+  }
+]} />
 
-        response = requests.post(url, json=data, headers=headers)
-        response.raise_for_status()
-        return response.json()
+### Responses
 
-# Usage
-client = SearchAFClient('sk_live_...')
-results = client.search('proj_123', 'blue shoes')
-```
+<ResponseTabs responses={[
+  {
+    statusCode: "200",
+    description: "Token refreshed",
+    body: `{
+  "access_token": "string",
+  "refresh_token": "string",
+  "token_type": "Bearer",
+  "expires_in": 3600,
+  "user": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "email": "user@example.com",
+    "display_name": "John Doe",
+    "avatar_url": "https://example.com/avatar.jpg",
+    "created_at": "2025-10-02T15:30:00Z",
+    "updated_at": "2025-10-02T15:30:00Z",
+    "last_login_at": "2025-10-02T15:30:00Z",
+    "status": "active",
+    "settings": {}
+  }
+}`
+  },
+  {
+    statusCode: "401",
+    description: "Unauthorized",
+  }
+]} />
 
-## Next Steps
 
-- [API Endpoints](/docs/api/endpoints) - Explore all available endpoints
-- [Projects](/docs/projects) - Create your first project
-- [Usage & Analytics](/docs/usage) - Monitor API usage

@@ -6,7 +6,6 @@ We are SearchAF, a SaaS product that delivers an answer engine with an answer ba
 
 We need a website that meets the following requirements:
 - Delivers a hyper-polished website that feels modern, sleek, and enterprise-grade.
-- Utilizes Nextra for documentation to be served at the `/docs` route.
 - Creates a static website that can be deployed/hosted through GitHub pages.
 - Has a guides section, where new guides can be created with just markdown files.
 - Has a blog, where posts are just created with markdown files.
