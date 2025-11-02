@@ -1,4 +1,5 @@
 import { Sidebar } from '@/components/docs/sidebar'
+import { ThemeToggle } from '@/components/ui/theme-toggle'
 import Link from 'next/link'
 import Image from 'next/image'
 
@@ -44,6 +45,7 @@ export default function DocsLayout({
             >
               Blog
             </Link>
+            <ThemeToggle />
           </nav>
         </div>
       </header>

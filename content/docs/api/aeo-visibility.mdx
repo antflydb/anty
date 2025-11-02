@@ -29,9 +29,18 @@ Example: `Authorization: Bearer YOUR_API_KEY`
 
 ### Request Body
 
-**Content-Type:** `application/json`
+**Example:**
 
-Schema: `VisibilityTestRequest`
+```json
+{
+    "queries": [
+        "What is AEO?",
+        "How to optimize for AI search?"
+    ],
+    "url": "https://example.com",
+    "content": "string"
+}
+```
 
 ### Code Examples
 
@@ -39,15 +48,33 @@ Schema: `VisibilityTestRequest`
   {
     language: "cURL",
     code: `curl -X POST "https://searchaf.antfly.io/api/v1/organizations/{org_id}/aeo/visibility" \\\\
-    -H "Authorization: Bearer YOUR_API_KEY"`
+    -H "Authorization: Bearer YOUR_API_KEY" \\\\
+    -H "Content-Type: application/json" \\\\
+    -d '{
+    "queries": [
+        "What is AEO?",
+        "How to optimize for AI search?"
+    ],
+    "url": "https://example.com",
+    "content": "string"
+}'`
   },
   {
     language: "TypeScript",
     code: `const response = await fetch('https://searchaf.antfly.io/api/v1/organizations/{org_id}/aeo/visibility', {
     method: 'POST',
     headers: {
-        'Authorization': 'Bearer YOUR_API_KEY'
-    }
+        'Authorization': 'Bearer YOUR_API_KEY',
+        'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+        "queries": [
+            "What is AEO?",
+            "How to optimize for AI search?"
+        ],
+        "url": "https://example.com",
+        "content": "string"
+    })
 });
 
 const data = await response.json();`
@@ -57,8 +84,17 @@ const data = await response.json();`
     code: `fetch('https://searchaf.antfly.io/api/v1/organizations/{org_id}/aeo/visibility', {
     method: 'POST',
     headers: {
-        'Authorization': 'Bearer YOUR_API_KEY'
-    }
+        'Authorization': 'Bearer YOUR_API_KEY',
+        'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+        "queries": [
+            "What is AEO?",
+            "How to optimize for AI search?"
+        ],
+        "url": "https://example.com",
+        "content": "string"
+    })
 })
     .then(response => response.json())
     .then(data => console.log(data));`
@@ -71,7 +107,18 @@ headers = {
     'Authorization': 'Bearer YOUR_API_KEY'
 }
 
-response = requests.post('https://searchaf.antfly.io/api/v1/organizations/{org_id}/aeo/visibility', headers=headers)
+response = requests.post(
+    'https://searchaf.antfly.io/api/v1/organizations/{org_id}/aeo/visibility',
+    headers=headers,
+    json={
+        "queries": [
+            "What is AEO?",
+            "How to optimize for AI search?"
+        ],
+        "url": "https://example.com",
+        "content": "string"
+    }
+)
 
 data = response.json()`
   },
@@ -86,8 +133,17 @@ import (
 )
 
 func main() {
-    req, _ := http.NewRequest("POST", "https://searchaf.antfly.io/api/v1/organizations/{org_id}/aeo/visibility", nil)
+    body := []byte(\`{
+    "queries": [
+        "What is AEO?",
+        "How to optimize for AI search?"
+    ],
+    "url": "https://example.com",
+    "content": "string"
+}\`)
+    req, _ := http.NewRequest("POST", "https://searchaf.antfly.io/api/v1/organizations/{org_id}/aeo/visibility", bytes.NewBuffer(body))
     req.Header.Set("Authorization", "Bearer YOUR_API_KEY")
+    req.Header.Set("Content-Type", "application/json")
 
     client := &http.Client{}
     resp, _ := client.Do(req)
@@ -103,22 +159,22 @@ func main() {
     statusCode: "200",
     description: "Visibility test results",
     body: `{
-  "id": "550e8400-e29b-41d4-a716-446655440000",
-  "url": "string",
-  "overall_score": 0,
-  "queries": [
-    {
-      "query": "string",
-      "found": true,
-      "position": 0,
-      "relevance_score": 0,
-      "snippet": "string"
-    }
-  ],
-  "recommendations": [
-    "string"
-  ],
-  "tested_at": "2025-10-02T15:30:00Z"
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "url": "string",
+    "overall_score": 0,
+    "queries": [
+        {
+            "query": "string",
+            "found": true,
+            "position": 0,
+            "relevance_score": 0,
+            "snippet": "string"
+        }
+    ],
+    "recommendations": [
+        "string"
+    ],
+    "tested_at": "2025-10-02T15:30:00Z"
 }`
   },
   {
@@ -228,24 +284,24 @@ func main() {
     statusCode: "200",
     description: "List of all visibility test results",
     body: `[
-  {
-    "id": "550e8400-e29b-41d4-a716-446655440000",
-    "url": "string",
-    "overall_score": 0,
-    "queries": [
-      {
-        "query": "string",
-        "found": true,
-        "position": 0,
-        "relevance_score": 0,
-        "snippet": "string"
-      }
-    ],
-    "recommendations": [
-      "string"
-    ],
-    "tested_at": "2025-10-02T15:30:00Z"
-  }
+    {
+        "id": "550e8400-e29b-41d4-a716-446655440000",
+        "url": "string",
+        "overall_score": 0,
+        "queries": [
+            {
+                "query": "string",
+                "found": true,
+                "position": 0,
+                "relevance_score": 0,
+                "snippet": "string"
+            }
+        ],
+        "recommendations": [
+            "string"
+        ],
+        "tested_at": "2025-10-02T15:30:00Z"
+    }
 ]`
   },
   {

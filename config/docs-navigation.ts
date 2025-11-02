@@ -3,6 +3,7 @@
 export interface NavItem {
   title: string
   href?: string
+  method?: string
   items?: NavItem[]
 }
 
@@ -51,54 +52,365 @@ export const docsNavigation: NavSection[] = [
           {
             title: 'Authentication',
             href: '/docs/api/authentication',
+            items: [
+              {
+                title: 'Initiate OAuth login',
+                href: '/docs/api/authentication#initiate-oauth-login',
+                method: 'GET',
+              },
+              {
+                title: 'OAuth callback handler',
+                href: '/docs/api/authentication#oauth-callback-handler',
+                method: 'GET',
+              },
+              {
+                title: 'Link OAuth provider to account',
+                href: '/docs/api/authentication#link-oauth-provider-to-account',
+                method: 'GET',
+              },
+              {
+                title: 'Refresh JWT token',
+                href: '/docs/api/authentication#refresh-jwt-token',
+                method: 'POST',
+              },
+              {
+                title: 'Sign out user',
+                href: '/docs/api/authentication#sign-out-user',
+                method: 'POST',
+              },
+              {
+                title: 'Exchange API key for JWT',
+                href: '/docs/api/authentication#exchange-api-key-for-jwt',
+                method: 'POST',
+              }
+            ],
           },
           {
             title: 'Users',
             href: '/docs/api/users',
+            items: [
+              {
+                title: 'Get current user',
+                href: '/docs/api/users#get-current-user',
+                method: 'GET',
+              },
+              {
+                title: 'Update current user',
+                href: '/docs/api/users#update-current-user',
+                method: 'PATCH',
+              },
+              {
+                title: 'List OAuth providers',
+                href: '/docs/api/users#list-oauth-providers',
+                method: 'GET',
+              }
+            ],
           },
           {
             title: 'Organizations',
             href: '/docs/api/organizations',
+            items: [
+              {
+                title: 'List organizations',
+                href: '/docs/api/organizations#list-organizations',
+                method: 'GET',
+              },
+              {
+                title: 'Create organization',
+                href: '/docs/api/organizations#create-organization',
+                method: 'POST',
+              },
+              {
+                title: 'Get organization',
+                href: '/docs/api/organizations#get-organization',
+                method: 'GET',
+              },
+              {
+                title: 'Update organization',
+                href: '/docs/api/organizations#update-organization',
+                method: 'PATCH',
+              },
+              {
+                title: 'Delete organization',
+                href: '/docs/api/organizations#delete-organization',
+                method: 'DELETE',
+              },
+              {
+                title: 'List organization members',
+                href: '/docs/api/organizations#list-organization-members',
+                method: 'GET',
+              },
+              {
+                title: 'Invite member',
+                href: '/docs/api/organizations#invite-member',
+                method: 'POST',
+              },
+              {
+                title: 'Remove member',
+                href: '/docs/api/organizations#remove-member',
+                method: 'DELETE',
+              }
+            ],
           },
           {
             title: 'Projects',
             href: '/docs/api/projects',
+            items: [
+              {
+                title: 'List projects',
+                href: '/docs/api/projects#list-projects',
+                method: 'GET',
+              },
+              {
+                title: 'Create project',
+                href: '/docs/api/projects#create-project',
+                method: 'POST',
+              },
+              {
+                title: 'Get project',
+                href: '/docs/api/projects#get-project',
+                method: 'GET',
+              },
+              {
+                title: 'Update project',
+                href: '/docs/api/projects#update-project',
+                method: 'PATCH',
+              },
+              {
+                title: 'Delete project',
+                href: '/docs/api/projects#delete-project',
+                method: 'DELETE',
+              },
+              {
+                title: 'List all tables for a project',
+                href: '/docs/api/projects#list-all-tables-for-a-project',
+                method: 'GET',
+              },
+              {
+                title: 'Create a new table for a project',
+                href: '/docs/api/projects#create-a-new-table-for-a-project',
+                method: 'POST',
+              },
+              {
+                title: 'Get a specific table',
+                href: '/docs/api/projects#get-a-specific-table',
+                method: 'GET',
+              },
+              {
+                title: 'Update a table',
+                href: '/docs/api/projects#update-a-table',
+                method: 'PUT',
+              },
+              {
+                title: 'Delete a table',
+                href: '/docs/api/projects#delete-a-table',
+                method: 'DELETE',
+              },
+              {
+                title: 'Get project statistics',
+                href: '/docs/api/projects#get-project-statistics',
+                method: 'GET',
+              }
+            ],
           },
           {
             title: 'API Keys',
             href: '/docs/api/api-keys',
+            items: [
+              {
+                title: 'List API keys',
+                href: '/docs/api/api-keys#list-api-keys',
+                method: 'GET',
+              },
+              {
+                title: 'Create API key',
+                href: '/docs/api/api-keys#create-api-key',
+                method: 'POST',
+              },
+              {
+                title: 'Revoke API key',
+                href: '/docs/api/api-keys#revoke-api-key',
+                method: 'DELETE',
+              },
+              {
+                title: 'Rotate API key',
+                href: '/docs/api/api-keys#rotate-api-key',
+                method: 'POST',
+              },
+              {
+                title: 'Decrypt API key',
+                href: '/docs/api/api-keys#decrypt-api-key',
+                method: 'GET',
+              }
+            ],
           },
           {
             title: 'Audit',
             href: '/docs/api/audit',
+            items: [
+              {
+                title: 'List audit logs',
+                href: '/docs/api/audit#list-audit-logs',
+                method: 'GET',
+              }
+            ],
           },
           {
             title: 'Subscriptions',
             href: '/docs/api/subscriptions',
+            items: [
+              {
+                title: 'Get subscription',
+                href: '/docs/api/subscriptions#get-subscription',
+                method: 'GET',
+              },
+              {
+                title: 'Create subscription',
+                href: '/docs/api/subscriptions#create-subscription',
+                method: 'POST',
+              },
+              {
+                title: 'Update subscription',
+                href: '/docs/api/subscriptions#update-subscription',
+                method: 'PATCH',
+              },
+              {
+                title: 'Cancel subscription',
+                href: '/docs/api/subscriptions#cancel-subscription',
+                method: 'DELETE',
+              },
+              {
+                title: 'Create billing/checkout session',
+                href: '/docs/api/subscriptions#create-billing-checkout-session',
+                method: 'POST',
+              }
+            ],
           },
           {
             title: 'Usage',
             href: '/docs/api/usage',
+            items: [
+              {
+                title: 'Get current usage',
+                href: '/docs/api/usage#get-current-usage',
+                method: 'GET',
+              },
+              {
+                title: 'Get usage history',
+                href: '/docs/api/usage#get-usage-history',
+                method: 'GET',
+              },
+              {
+                title: 'Get project usage',
+                href: '/docs/api/usage#get-project-usage',
+                method: 'GET',
+              }
+            ],
           },
           {
             title: 'Webhooks',
             href: '/docs/api/webhooks',
+            items: [
+              {
+                title: 'Stripe webhook',
+                href: '/docs/api/webhooks#stripe-webhook',
+                method: 'POST',
+              }
+            ],
           },
           {
             title: 'Shopify',
             href: '/docs/api/shopify',
+            items: [
+              {
+                title: 'Get shop configuration status',
+                href: '/docs/api/shopify#get-shop-configuration-status',
+                method: 'GET',
+              },
+              {
+                title: 'Get widget configuration for shop',
+                href: '/docs/api/shopify#get-widget-configuration-for-shop',
+                method: 'GET',
+              },
+              {
+                title: 'Create a Shopify project',
+                href: '/docs/api/shopify#create-a-shopify-project',
+                method: 'POST',
+              },
+              {
+                title: 'Get sync job status',
+                href: '/docs/api/shopify#get-sync-job-status',
+                method: 'GET',
+              },
+              {
+                title: 'Shopify webhook',
+                href: '/docs/api/shopify#shopify-webhook',
+                method: 'POST',
+              }
+            ],
           },
           {
             title: 'Shopify AEO',
             href: '/docs/api/shopify-aeo',
+            items: [
+              {
+                title: 'Analyze Shopify resource(s) for AEO',
+                href: '/docs/api/shopify-aeo#analyze-shopify-resource-s-for-aeo',
+                method: 'POST',
+              },
+              {
+                title: 'Get AEO analysis history',
+                href: '/docs/api/shopify-aeo#get-aeo-analysis-history',
+                method: 'GET',
+              },
+              {
+                title: 'Test resource visibility in AI search',
+                href: '/docs/api/shopify-aeo#test-resource-visibility-in-ai-search',
+                method: 'POST',
+              },
+              {
+                title: 'Get visibility test history',
+                href: '/docs/api/shopify-aeo#get-visibility-test-history',
+                method: 'GET',
+              },
+              {
+                title: 'Publish AEO optimizations to Shopify',
+                href: '/docs/api/shopify-aeo#publish-aeo-optimizations-to-shopify',
+                method: 'POST',
+              }
+            ],
           },
           {
             title: 'AEO Analysis',
             href: '/docs/api/aeo-analysis',
+            items: [
+              {
+                title: 'Analyze content for AEO score',
+                href: '/docs/api/aeo-analysis#analyze-content-for-aeo-score',
+                method: 'POST',
+              },
+              {
+                title: 'Get full history of analyses',
+                href: '/docs/api/aeo-analysis#get-full-history-of-analyses',
+                method: 'GET',
+              }
+            ],
           },
           {
             title: 'AEO Visibility',
             href: '/docs/api/aeo-visibility',
+            items: [
+              {
+                title: 'Run a new visibility test across AI engines',
+                href: '/docs/api/aeo-visibility#run-a-new-visibility-test-across-ai-engines',
+                method: 'POST',
+              },
+              {
+                title: 'Get full history of visibility tests',
+                href: '/docs/api/aeo-visibility#get-full-history-of-visibility-tests',
+                method: 'GET',
+              }
+            ],
           }
         ],
       },

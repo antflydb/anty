@@ -309,6 +309,61 @@ After running `npm run generate-api-docs`:
 - **Incremental generation:** Only regenerate changed endpoints
 - **Source mapping:** Link generated docs back to spec sections
 
+## Additional Components & Requirements
+
+### MethodBadge Component
+
+Create a custom MDX component to display HTTP methods as colored badges:
+- Located at `components/docs/method-badge.tsx`
+- Displays method (GET/POST/PUT/PATCH/DELETE) in color-coded badge
+- Shows endpoint path inline with the badge
+- Uses shadcn/ui Badge component with appropriate colors:
+  - GET: blue
+  - POST: green
+  - PUT/PATCH: amber
+  - DELETE: red
+
+### Schema Resolution
+
+Implement schema reference resolution for response bodies:
+- Create `generateExampleFromSchema()` function to recursively resolve `$ref` references
+- Generate realistic example JSON from schema definitions
+- Support all OpenAPI schema types (object, array, string, number, boolean)
+- Handle circular references with visited tracking
+- Support special formats (uuid, date-time, email, uri)
+- Use enum values when available
+- Handle allOf, anyOf, oneOf compositions
+
+### Code Formatting Standards
+
+**Code Examples:**
+- Use 4-space indentation for all code samples
+- Generate samples in: cURL, TypeScript, JavaScript, Python, Go
+- Include `Authorization: Bearer YOUR_API_KEY` header in all examples
+- Format embedded JSON with proper indentation
+
+**Response Bodies:**
+- Use 2-space indentation for JSON responses
+- Re-parse and re-format JSON in ResponseTabs component to ensure proper display
+- Apply syntax highlighting with VS Code Dark Plus theme
+
+### Security Documentation
+
+For endpoints requiring BearerAuth, display:
+```
+### Security
+
+Provide your bearer token in the Authorization header when making requests to protected resources.
+
+Example: `Authorization: Bearer YOUR_API_KEY`
+```
+
+### Navigation Updates
+
+- Script directly updates `config/docs-navigation.ts`
+- Generates "API Documentation" section with all endpoint groups
+- Maintains existing navigation sections (Getting Started, Core Concepts, Integrations)
+
 ## Success Criteria
 
 - ✅ Script successfully parses `openapi.yaml`
@@ -318,3 +373,7 @@ After running `npm run generate-api-docs`:
 - ✅ Formatting is consistent and professional
 - ✅ Can be run repeatedly without issues
 - ✅ Reduces manual documentation effort
+- ✅ Response schemas are fully resolved (no placeholder text)
+- ✅ Code examples use consistent 4-space indentation
+- ✅ Method badges display with appropriate colors
+- ✅ Security sections provide clear authentication instructions

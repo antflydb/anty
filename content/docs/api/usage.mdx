@@ -95,20 +95,20 @@ func main() {
     statusCode: "200",
     description: "Usage summary",
     body: `{
-  "organization_id": "550e8400-e29b-41d4-a716-446655440000",
-  "billing_cycle_start": "2025-10-02",
-  "billing_cycle_end": "2025-10-02",
-  "metrics": [
-    {
-      "metric_type": "search_query",
-      "current": 5000,
-      "limit": 10000,
-      "remaining": 5000,
-      "percentage": 50
-    }
-  ],
-  "is_frozen": true,
-  "frozen_reason": "Quota exceeded without billing configured"
+    "organization_id": "550e8400-e29b-41d4-a716-446655440000",
+    "billing_cycle_start": "2025-10-02",
+    "billing_cycle_end": "2025-10-02",
+    "metrics": [
+        {
+            "metric_type": "search_query",
+            "current": 5000,
+            "limit": 10000,
+            "remaining": 5000,
+            "percentage": 50
+        }
+    ],
+    "is_frozen": true,
+    "frozen_reason": "Quota exceeded without billing configured"
 }`
   },
   {
@@ -220,22 +220,22 @@ func main() {
     statusCode: "200",
     description: "Usage history",
     body: `{
-  "data": [
-    {
-      "billing_cycle": "2025-10-02",
-      "metrics": [
+    "data": [
         {
-          "metric_type": "search_query",
-          "total": 0
+            "billing_cycle": "2025-10-02",
+            "metrics": [
+                {
+                    "metric_type": "search_query",
+                    "total": 0
+                }
+            ]
         }
-      ]
+    ],
+    "meta": {
+        "offset": 0,
+        "limit": 1,
+        "total": 0
     }
-  ],
-  "meta": {
-    "offset": 0,
-    "limit": 1,
-    "total": 0
-  }
 }`
   },
   {
@@ -347,19 +347,19 @@ func main() {
     statusCode: "200",
     description: "Project usage",
     body: `{
-  "project_id": "550e8400-e29b-41d4-a716-446655440000",
-  "organization_id": "550e8400-e29b-41d4-a716-446655440000",
-  "billing_cycle_start": "2025-10-02",
-  "billing_cycle_end": "2025-10-02",
-  "metrics": [
-    {
-      "metric_type": "search_query",
-      "current": 5000,
-      "limit": 10000,
-      "remaining": 5000,
-      "percentage": 50
-    }
-  ]
+    "project_id": "550e8400-e29b-41d4-a716-446655440000",
+    "organization_id": "550e8400-e29b-41d4-a716-446655440000",
+    "billing_cycle_start": "2025-10-02",
+    "billing_cycle_end": "2025-10-02",
+    "metrics": [
+        {
+            "metric_type": "search_query",
+            "current": 5000,
+            "limit": 10000,
+            "remaining": 5000,
+            "percentage": 50
+        }
+    ]
 }`
   },
   {

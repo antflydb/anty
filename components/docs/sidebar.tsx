@@ -1,11 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { docsNavigation, type NavItem } from '@/config/docs-navigation'
 import { ChevronDown, ChevronRight, Menu, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Badge } from '@/components/ui/badge'
 
 interface SidebarProps {
   className?: string
@@ -14,13 +15,70 @@ interface SidebarProps {
 interface NavItemProps {
   item: NavItem
   level?: number
+  openApiGroupId?: string | null
+  onApiGroupToggle?: (groupId: string | null) => void
+  parentTitle?: string
 }
 
-function NavItemComponent({ item, level = 0 }: NavItemProps) {
+const methodColors: Record<string, string> = {
+  GET: 'bg-blue-500/10 text-blue-600 border-blue-500/20 dark:bg-blue-500/20 dark:text-blue-400 dark:border-blue-500/30',
+  POST: 'bg-green-500/10 text-green-600 border-green-500/20 dark:bg-green-500/20 dark:text-green-400 dark:border-green-500/30',
+  PUT: 'bg-amber-500/10 text-amber-600 border-amber-500/20 dark:bg-amber-500/20 dark:text-amber-400 dark:border-amber-500/30',
+  PATCH: 'bg-amber-500/10 text-amber-600 border-amber-500/20 dark:bg-amber-500/20 dark:text-amber-400 dark:border-amber-500/30',
+  DELETE: 'bg-red-500/10 text-red-600 border-red-500/20 dark:bg-red-500/20 dark:text-red-400 dark:border-red-500/30',
+}
+
+function MethodBadgeSmall({ method }: { method: string }) {
+  const colorClass = methodColors[method.toUpperCase()] || methodColors.GET
+  return (
+    <Badge className={cn('font-mono font-semibold text-[10px] px-1.5 py-0', colorClass)}>
+      {method.toUpperCase()}
+    </Badge>
+  )
+}
+
+function NavItemComponent({ item, level = 0, openApiGroupId, onApiGroupToggle, parentTitle }: NavItemProps) {
   const pathname = usePathname()
-  const [isOpen, setIsOpen] = useState(true)
+  const router = useRouter()
   const hasChildren = item.items && item.items.length > 0
   const isActive = item.href === pathname
+
+  // Check if this is an API tag group (has children with methods)
+  const isApiTagGroup = parentTitle === 'API Documentation' && hasChildren && item.items?.some(child => child.method)
+
+  // Determine if this group should be open
+  const shouldBeOpen = isApiTagGroup ? openApiGroupId === item.title : true
+  const [isOpen, setIsOpen] = useState(shouldBeOpen)
+
+  // Update isOpen when openApiGroupId changes
+  useEffect(() => {
+    if (isApiTagGroup) {
+      setIsOpen(openApiGroupId === item.title)
+    }
+  }, [openApiGroupId, isApiTagGroup, item.title])
+
+  // Handle click on API tag group
+  const handleApiTagClick = (e: React.MouseEvent) => {
+    if (isApiTagGroup && item.href) {
+      e.preventDefault()
+      // Toggle this group (or open it if it's closed)
+      const newOpenId = openApiGroupId === item.title ? null : item.title
+      onApiGroupToggle?.(newOpenId)
+      // Navigate to the tag page
+      router.push(item.href)
+    }
+  }
+
+  const handleToggle = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (isApiTagGroup) {
+      const newOpenId = isOpen ? null : item.title
+      onApiGroupToggle?.(newOpenId)
+    } else {
+      setIsOpen(!isOpen)
+    }
+  }
 
   if (hasChildren) {
     return (
@@ -28,6 +86,7 @@ function NavItemComponent({ item, level = 0 }: NavItemProps) {
         {item.href ? (
           <Link
             href={item.href}
+            onClick={handleApiTagClick}
             className={cn(
               'flex items-center justify-between rounded-md px-3 py-2 text-sm font-medium transition-colors',
               'hover:bg-slate-100 dark:hover:bg-slate-800',
@@ -37,24 +96,23 @@ function NavItemComponent({ item, level = 0 }: NavItemProps) {
             )}
           >
             <span>{item.title}</span>
-            <button
-              onClick={(e) => {
-                e.preventDefault()
-                setIsOpen(!isOpen)
-              }}
-              className="ml-2"
-              aria-label={isOpen ? 'Collapse' : 'Expand'}
-            >
-              {isOpen ? (
-                <ChevronDown className="h-4 w-4" />
-              ) : (
-                <ChevronRight className="h-4 w-4" />
-              )}
-            </button>
+            {!isApiTagGroup && (
+              <button
+                onClick={handleToggle}
+                className="ml-2"
+                aria-label={isOpen ? 'Collapse' : 'Expand'}
+              >
+                {isOpen ? (
+                  <ChevronDown className="h-4 w-4" />
+                ) : (
+                  <ChevronRight className="h-4 w-4" />
+                )}
+              </button>
+            )}
           </Link>
         ) : (
           <button
-            onClick={() => setIsOpen(!isOpen)}
+            onClick={handleToggle}
             className={cn(
               'flex w-full items-center justify-between rounded-md px-3 py-2 text-sm font-medium transition-colors',
               'hover:bg-slate-100 dark:hover:bg-slate-800',
@@ -74,7 +132,14 @@ function NavItemComponent({ item, level = 0 }: NavItemProps) {
         {isOpen && (
           <div className="mt-1 space-y-1">
             {item.items?.map((child, index) => (
-              <NavItemComponent key={index} item={child} level={level + 1} />
+              <NavItemComponent
+                key={index}
+                item={child}
+                level={level + 1}
+                openApiGroupId={openApiGroupId}
+                onApiGroupToggle={onApiGroupToggle}
+                parentTitle={item.title}
+              />
             ))}
           </div>
         )}
@@ -82,24 +147,27 @@ function NavItemComponent({ item, level = 0 }: NavItemProps) {
     )
   }
 
+  // Leaf item - show with method badge if it has a method
   return (
     <Link
       href={item.href || '#'}
       className={cn(
-        'block rounded-md px-3 py-2 text-sm transition-colors',
+        'flex items-center justify-between gap-2 rounded-md px-3 py-2 text-sm transition-colors',
         'hover:bg-slate-100 dark:hover:bg-slate-800',
         isActive && 'bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-50',
         !isActive && 'text-slate-700 dark:text-slate-300',
         level > 0 && 'ml-4'
       )}
     >
-      {item.title}
+      <span className="truncate">{item.title}</span>
+      {item.method && <MethodBadgeSmall method={item.method} />}
     </Link>
   )
 }
 
 export function Sidebar({ className }: SidebarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [openApiGroupId, setOpenApiGroupId] = useState<string | null>(null)
 
   const sidebarContent = (
     <nav className="space-y-6" aria-label="Documentation navigation">
@@ -110,7 +178,12 @@ export function Sidebar({ className }: SidebarProps) {
           </h3>
           <div className="space-y-1">
             {section.items.map((item, itemIndex) => (
-              <NavItemComponent key={itemIndex} item={item} />
+              <NavItemComponent
+                key={itemIndex}
+                item={item}
+                openApiGroupId={openApiGroupId}
+                onApiGroupToggle={setOpenApiGroupId}
+              />
             ))}
           </div>
         </div>
