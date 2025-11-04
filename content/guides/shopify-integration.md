@@ -21,10 +21,9 @@ The SearchAF Shopify app provides:
 
 ### Step 1: Install the Shopify App
 
-1. Visit the Shopify App Store
-2. Search for "SearchAF"
-3. Click "Add app"
-4. Review permissions and click "Install"
+1. Search for "SearchAF" on the [Shopify App Store](https://apps.shopify.com/), or visit the [SearchAF App Store Listing](https://apps.shopify.com/searchaf) directly.
+3. Click "Install".
+4. Review permissions and click "Install".
 
 ### Step 2: Connect to SearchAF
 
@@ -36,7 +35,6 @@ The SearchAF Shopify app provides:
 ### Step 3: Initial Sync
 
 The app will automatically begin syncing your products:
-
 - Product titles and descriptions
 - Images and variants
 - Pricing and inventory
