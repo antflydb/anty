@@ -51,7 +51,7 @@ export function CodeTabs({ samples }: CodeTabsProps) {
           <div className="flex items-center justify-between border-b border-slate-800 bg-slate-900 px-4 py-2">
             <TabsList className="h-auto gap-2 bg-transparent p-0">
               <Terminal className="mr-1.5 h-3 w-3" />
-              {samples.map((sample, index) => (
+              {samples.map((sample) => (
                 <TabsTrigger
                   key={sample.language}
                   value={sample.language}
