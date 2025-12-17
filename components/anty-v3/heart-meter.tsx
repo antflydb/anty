@@ -1,18 +1,28 @@
 'use client';
 
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
+
+export interface EarnedHeart {
+  index: number;
+  earnedAt: number; // timestamp
+  isPulsing?: boolean; // for the earning animation
+}
 
 interface HeartMeterProps {
   hearts: number; // 0-3
+  earnedHearts: EarnedHeart[]; // array of earned hearts with timestamps
 }
 
-export function HeartMeter({ hearts }: HeartMeterProps) {
+export function HeartMeter({ hearts, earnedHearts }: HeartMeterProps) {
   const maxHearts = 3;
 
   return (
     <div className="absolute top-8 right-8 flex gap-2.5">
       {Array.from({ length: maxHearts }).map((_, index) => {
         const isActive = index < hearts;
+        const earnedHeart = earnedHearts.find((h) => h.index === index);
+        const isEarned = !!earnedHeart;
+        const isPulsing = earnedHeart?.isPulsing || false;
 
         return (
           <motion.div
@@ -31,18 +41,35 @@ export function HeartMeter({ hearts }: HeartMeterProps) {
               src="/heart.svg"
               alt="heart"
               className="w-7 h-7"
+              style={{
+                filter: isEarned
+                  ? 'brightness(0) saturate(100%) invert(33%) sepia(88%) saturate(2567%) hue-rotate(256deg) brightness(91%) contrast(95%)'
+                  : 'grayscale(100%) brightness(0.6)',
+              }}
               animate={
-                isActive
+                isPulsing
+                  ? {
+                      opacity: [1, 0.4, 1, 0.4, 1],
+                      scale: [1, 1.15, 1, 1.15, 1],
+                    }
+                  : isActive
                   ? {
                       scale: [1, 1.1, 1],
                     }
                   : {}
               }
-              transition={{
-                duration: 0.5,
-                repeat: isActive ? Infinity : 0,
-                repeatDelay: 1.5,
-              }}
+              transition={
+                isPulsing
+                  ? {
+                      duration: 1.2,
+                      ease: 'easeInOut',
+                    }
+                  : {
+                      duration: 0.5,
+                      repeat: isActive ? Infinity : 0,
+                      repeatDelay: 1.5,
+                    }
+              }
             />
           </motion.div>
         );

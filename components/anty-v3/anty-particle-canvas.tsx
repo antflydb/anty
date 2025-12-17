@@ -96,8 +96,14 @@ export const AntyParticleCanvas = forwardRef<ParticleCanvasHandle, AntyParticleC
     return (
       <canvas
         ref={canvasRef}
-        className="absolute inset-0 pointer-events-none"
-        style={{ width, height }}
+        className="absolute pointer-events-none"
+        style={{
+          width,
+          height,
+          left: '50%',
+          top: '50%',
+          transform: 'translate(-50%, -50%)',
+        }}
       />
     );
   }
