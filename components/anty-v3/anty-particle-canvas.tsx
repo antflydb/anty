@@ -1,0 +1,241 @@
+'use client';
+
+import { useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
+import gsap from 'gsap';
+import { type Particle, type ParticleType, PARTICLE_CONFIGS } from '@/lib/anty-v3/animation-state';
+
+interface AntyParticleCanvasProps {
+  particles: Particle[];
+  width?: number;
+  height?: number;
+}
+
+export interface ParticleCanvasHandle {
+  spawnParticle: (type: ParticleType, x: number, y: number) => void;
+}
+
+/**
+ * Canvas-based particle system for Anty V3
+ * Uses GSAP ticker for 60fps rendering
+ */
+export const AntyParticleCanvas = forwardRef<ParticleCanvasHandle, AntyParticleCanvasProps>(
+  ({ particles, width = 400, height = 400 }, ref) => {
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const particlesRef = useRef<Particle[]>(particles);
+
+    // Update particles ref when prop changes
+    useEffect(() => {
+      particlesRef.current = particles;
+    }, [particles]);
+
+    // Expose spawn method to parent
+    useImperativeHandle(ref, () => ({
+      spawnParticle: (type: ParticleType, x: number, y: number) => {
+        const config = PARTICLE_CONFIGS[type];
+        const timestamp = Date.now();
+        const random = Math.random();
+        const newParticle: Particle = {
+          id: `${type}-${timestamp}-${random}`,
+          type,
+          x,
+          y,
+          vx: gsap.utils.random(config.initialVelocity.x.min, config.initialVelocity.x.max),
+          vy: gsap.utils.random(config.initialVelocity.y.min, config.initialVelocity.y.max),
+          scale: gsap.utils.random(config.initialScale.min, config.initialScale.max),
+          rotation: 0,
+          opacity: 1,
+          life: 1,
+          color: getParticleColor(type),
+        };
+
+        particlesRef.current = [...particlesRef.current, newParticle];
+      },
+    }));
+
+    // Setup canvas rendering with GSAP ticker
+    useEffect(() => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      // High DPI canvas setup
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      canvas.style.width = `${width}px`;
+      canvas.style.height = `${height}px`;
+      ctx.scale(dpr, dpr);
+
+      // Render loop using GSAP ticker
+      const updateParticles = (time: number, deltaTime: number) => {
+        // Clear canvas
+        ctx.clearRect(0, 0, width, height);
+
+        // Update and draw particles
+        const dt = deltaTime / 1000; // Convert to seconds
+        particlesRef.current = particlesRef.current
+          .map((particle) => updateParticle(particle, dt))
+          .filter((particle) => particle.life > 0);
+
+        // Draw all particles
+        particlesRef.current.forEach((particle) => {
+          drawParticle(ctx, particle);
+        });
+      };
+
+      // Add to GSAP ticker for 60fps updates
+      gsap.ticker.add(updateParticles);
+
+      return () => {
+        gsap.ticker.remove(updateParticles);
+      };
+    }, [width, height]);
+
+    return (
+      <canvas
+        ref={canvasRef}
+        className="absolute inset-0 pointer-events-none"
+        style={{ width, height }}
+      />
+    );
+  }
+);
+
+AntyParticleCanvas.displayName = 'AntyParticleCanvas';
+
+/**
+ * Update particle physics
+ */
+function updateParticle(particle: Particle, dt: number): Particle {
+  const config = PARTICLE_CONFIGS[particle.type];
+
+  // Update velocity with gravity
+  const newVy = particle.vy + config.gravity * dt;
+
+  // Update position
+  const newX = particle.x + particle.vx * dt;
+  const newY = particle.y + particle.vy * dt;
+
+  // Update rotation
+  const rotationSpeed = gsap.utils.random(
+    config.rotationSpeed.min,
+    config.rotationSpeed.max
+  );
+  const newRotation = particle.rotation + rotationSpeed * dt;
+
+  // Update life (decreases based on lifetime)
+  const lifeDecay = dt / config.lifetime;
+  const newLife = Math.max(0, particle.life - lifeDecay);
+
+  // Update opacity (fade out near end of life)
+  let newOpacity = particle.opacity;
+  if (newLife < config.fadeStart) {
+    newOpacity = newLife / config.fadeStart;
+  }
+
+  return {
+    ...particle,
+    x: newX,
+    y: newY,
+    vx: particle.vx,
+    vy: newVy,
+    rotation: newRotation,
+    opacity: newOpacity,
+    life: newLife,
+  };
+}
+
+/**
+ * Draw particle on canvas (placeholder shapes for now)
+ */
+function drawParticle(ctx: CanvasRenderingContext2D, particle: Particle) {
+  ctx.save();
+
+  // Apply transforms
+  ctx.translate(particle.x, particle.y);
+  ctx.rotate((particle.rotation * Math.PI) / 180);
+  ctx.scale(particle.scale, particle.scale);
+  ctx.globalAlpha = particle.opacity;
+
+  // Draw based on particle type (placeholder circles for now)
+  ctx.fillStyle = particle.color || '#ff0000';
+
+  switch (particle.type) {
+    case 'heart':
+      drawHeart(ctx);
+      break;
+    case 'sparkle':
+      drawSparkle(ctx);
+      break;
+    case 'sweat':
+      drawCircle(ctx, 8, '#87ceeb');
+      break;
+    case 'zzz':
+      drawZzz(ctx);
+      break;
+  }
+
+  ctx.restore();
+}
+
+/**
+ * Placeholder shape renderers (will be replaced with SVG assets later)
+ */
+function drawCircle(ctx: CanvasRenderingContext2D, radius: number, color: string) {
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.arc(0, 0, radius, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawHeart(ctx: CanvasRenderingContext2D) {
+  // Simple heart shape
+  ctx.fillStyle = '#ff69b4';
+  ctx.beginPath();
+  ctx.arc(-5, -5, 5, 0, Math.PI * 2);
+  ctx.arc(5, -5, 5, 0, Math.PI * 2);
+  ctx.lineTo(0, 8);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawSparkle(ctx: CanvasRenderingContext2D) {
+  // Star shape
+  ctx.fillStyle = '#ffd700';
+  ctx.beginPath();
+  for (let i = 0; i < 4; i++) {
+    const angle = (i * Math.PI) / 2;
+    const x = Math.cos(angle) * 8;
+    const y = Math.sin(angle) * 8;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawZzz(ctx: CanvasRenderingContext2D) {
+  // Simple Z letter
+  ctx.fillStyle = '#9370db';
+  ctx.font = 'bold 16px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('Z', 0, 0);
+}
+
+function getParticleColor(type: ParticleType): string {
+  switch (type) {
+    case 'heart':
+      return '#ff69b4';
+    case 'sparkle':
+      return '#ffd700';
+    case 'sweat':
+      return '#87ceeb';
+    case 'zzz':
+      return '#9370db';
+    default:
+      return '#ff0000';
+  }
+}

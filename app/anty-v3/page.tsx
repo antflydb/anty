@@ -1,67 +1,117 @@
 'use client';
 
-/**
- * Anty V3 - Using Actual Figma Assets
- */
-
-const img = "http://localhost:3845/assets/f61f5eee0a4c503b51eb2c596b246821745b99a8.svg";
-const img1 = "http://localhost:3845/assets/a14b6cd517de309621701f782bdf6c81889c4a43.svg";
-const img2 = "http://localhost:3845/assets/36dc1ef172b0d1bbf9cfbd7e399e8dbb0da0b3b4.svg";
+import { useState, useRef } from 'react';
+import gsap from 'gsap';
+import { AntyCharacterV3, ActionButtonsV3, HeartMeter, type ButtonName } from '@/components/anty-v3';
+import type { ExpressionName } from '@/lib/anty-v3/animation-state';
+import type { AntyStats } from '@/lib/anty/stat-system';
 
 export default function AntyV3() {
+  const [hearts, setHearts] = useState(3);
+  const [expression, setExpression] = useState<ExpressionName>('idle');
+  const [stats, setStats] = useState<AntyStats>({
+    energy: 100,
+    happiness: 100,
+    knowledge: 50,
+    indexHealth: 100,
+  });
+
+  const characterRef = useRef<HTMLDivElement>(null);
+
+  const handleButtonClick = (button: ButtonName) => {
+    const characterElement = characterRef.current;
+    if (!characterElement) return;
+
+    switch (button) {
+      case 'chat':
+        // Trigger tilt animation + thinking expression
+        gsap.to(characterElement, {
+          rotation: -5,
+          duration: 0.3,
+          ease: 'power2.out',
+          yoyo: true,
+          repeat: 1,
+        });
+        setExpression('thinking');
+        setStats((prev) => ({ ...prev, knowledge: Math.min(100, prev.knowledge + 10) }));
+        setTimeout(() => setExpression('idle'), 2000);
+        break;
+
+      case 'moods':
+        // Cycle through expressions rapidly
+        const expressions: ExpressionName[] = ['happy', 'excited', 'wink', 'thinking', 'curious'];
+        let index = 0;
+        const interval = setInterval(() => {
+          setExpression(expressions[index]);
+          index++;
+          if (index >= expressions.length) {
+            clearInterval(interval);
+            setTimeout(() => setExpression('idle'), 500);
+          }
+        }, 200);
+        break;
+
+      case 'play':
+        // Trigger wiggle animation + wink expression
+        gsap.to(characterElement, {
+          rotation: 10,
+          duration: 0.15,
+          ease: 'power1.inOut',
+          yoyo: true,
+          repeat: 5,
+        });
+        setExpression('wink');
+        setStats((prev) => ({
+          ...prev,
+          happiness: Math.min(100, prev.happiness + 15),
+          energy: Math.max(0, prev.energy - 10),
+        }));
+        setTimeout(() => setExpression('idle'), 1500);
+        break;
+
+      case 'feed':
+        // Trigger bounce animation + happy expression
+        gsap.to(characterElement, {
+          y: -30,
+          duration: 0.3,
+          ease: 'power2.out',
+          yoyo: true,
+          repeat: 1,
+        });
+        setExpression('excited');
+        setStats((prev) => ({
+          ...prev,
+          energy: Math.min(100, prev.energy + 20),
+          happiness: Math.min(100, prev.happiness + 10),
+        }));
+
+        // Update hearts based on energy
+        const newEnergy = Math.min(100, stats.energy + 20);
+        if (newEnergy >= 70) {
+          setHearts(3);
+        } else if (newEnergy >= 40) {
+          setHearts(2);
+        } else {
+          setHearts(1);
+        }
+
+        setTimeout(() => setExpression('happy'), 1000);
+        setTimeout(() => setExpression('idle'), 3000);
+        break;
+    }
+  };
+
   return (
     <div className="bg-white min-h-screen flex flex-col relative">
-      {/* Hearts - Top right */}
-      <div className="absolute top-8 right-8 flex gap-2.5">
-        <img src="/heart.svg" alt="heart" className="w-7 h-7" />
-        <img src="/heart.svg" alt="heart" className="w-7 h-7" />
-        <img src="/heart.svg" alt="heart" className="w-7 h-7" />
-      </div>
+      <HeartMeter hearts={hearts} />
 
-      {/* Character - Centered */}
       <div className="flex-1 flex items-center justify-center">
-        <div className="relative size-[160px]">
-          <div className="absolute inset-[13.46%_0_0_13.46%]">
-            <img alt="" className="block max-w-none size-full" src={img} />
-          </div>
-          <div className="absolute inset-[0_13.15%_13.15%_0]">
-            <img alt="" className="block max-w-none size-full" src={img1} />
-          </div>
-          <div className="absolute flex inset-[33.41%_31.63%_38.76%_56.72%] items-center justify-center">
-            <div className="flex-none scale-y-[-100%]" style={{ height: '44.52px', width: '18.63px' }}>
-              <div className="relative size-full">
-                <img alt="" className="block max-w-none size-full" src={img2} />
-              </div>
-            </div>
-          </div>
-          <div className="absolute flex inset-[33.41%_57.36%_38.76%_31%] items-center justify-center">
-            <div className="flex-none scale-y-[-100%]" style={{ height: '44.52px', width: '18.63px' }}>
-              <div className="relative size-full">
-                <img alt="" className="block max-w-none size-full" src={img2} />
-              </div>
-            </div>
-          </div>
+        <div ref={characterRef}>
+          <AntyCharacterV3 stats={stats} expression={expression} />
         </div>
       </div>
 
-      {/* Buttons - Bottom */}
-      <div className="flex gap-5 justify-center pb-8">
-        <button className="hover:scale-105 transition-transform">
-          <img src="/button-chat.svg" alt="Chat" className="w-[57.6px] h-[57.6px]" />
-        </button>
-
-        <button className="hover:scale-105 transition-transform">
-          <img src="/button-moods.svg" alt="Moods" className="w-[57.6px] h-[57.6px]" />
-        </button>
-
-        <button className="hover:scale-105 transition-transform">
-          <img src="/button-play.svg" alt="Play" className="w-[57.6px] h-[57.6px]" />
-        </button>
-
-        <button className="hover:scale-105 transition-transform">
-          <img src="/button-eat.svg" alt="Eat" className="w-[57.6px] h-[57.6px]" />
-        </button>
-      </div>
+      <ActionButtonsV3 onButtonClick={handleButtonClick} />
     </div>
   );
 }
