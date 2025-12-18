@@ -60,6 +60,7 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
   const [isWinking, setIsWinking] = useState(false);
   const [isHappy, setIsHappy] = useState(false);
   const [isShocked, setIsShocked] = useState(false);
+  const [isOff, setIsOff] = useState(false);
   const superGlowRef = useRef<HTMLDivElement>(null);
   const allowBlinkingRef = useRef<boolean>(true);
 
@@ -282,8 +283,8 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
   useEffect(() => {
     setCurrentExpression(expression);
 
-    // Update blinking permission based on expression
-    if (expression === 'idle') {
+    // Update blinking permission based on expression (never blink when OFF)
+    if (expression === 'idle' && !isOff) {
       // Delay re-enabling blinking to allow eye transitions to complete
       setTimeout(() => {
         allowBlinkingRef.current = true;
@@ -335,7 +336,14 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
         }
       }, 300); // Wait for CSS transition to complete
     }
-  }, [expression, performWink]);
+
+    // Set OFF state when expression changes to 'off'
+    if (expression === 'off') {
+      setIsOff(true);
+    } else {
+      setIsOff(false);
+    }
+  }, [expression, performWink, isOff]);
 
   // Super mode glow animation
   useEffect(() => {
@@ -430,12 +438,20 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
     });
   }, []);
 
-  // Setup idle animations using GSAP
+  // Setup idle animations using GSAP (disabled when OFF)
   useGSAP(
     () => {
       const character = characterRef.current;
       const shadow = document.getElementById('anty-shadow');
       if (!character || !shadow) return;
+
+      // Don't animate when OFF - kill any existing animations and reset to neutral
+      if (isOff) {
+        gsap.killTweensOf([character, shadow]);
+        gsap.set(character, { y: 0, rotation: 0, scale: 1 });
+        gsap.set(shadow, { scaleX: 0, scaleY: 0, opacity: 0 });
+        return;
+      }
 
       // Smooth continuous floating with rotation and breathing
       // Using a single coordinated timeline for smoothness
@@ -464,7 +480,7 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
         tl.kill();
       };
     },
-    { scope: containerRef }
+    { scope: containerRef, dependencies: [isOff] }
   );
 
   // Setup spontaneous behaviors (random blinking only)
@@ -506,6 +522,10 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
   // Happy expression assets
   const happyEyeLeft = "/anty-v3/eye-happy-left.svg"; // Happy left eye
   const happyEyeRight = "/anty-v3/eye-happy-right.svg"; // Happy right eye
+
+  // OFF state (logo) assets from Figma
+  const logoEyeLeft = "https://www.figma.com/api/mcp/asset/f2ae734b-bd8d-4902-88e3-9373c4da5424"; // Left triangle eye (EYE2)
+  const logoEyeRight = "https://www.figma.com/api/mcp/asset/7575032e-406f-4382-8837-0087a103ace2"; // Right triangle eye (EYE1)
 
   return (
     <div
@@ -553,7 +573,13 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
           <img alt="" className="block max-w-none size-full" src={img1} />
         </div>
         {/* Left eye - varies by expression */}
-        {isWinking ? (
+        {isOff ? (
+          <div className="absolute inset-[33.28%_30.48%_32.74%_52.47%]">
+            <div className="absolute inset-[8.5%_0.09%_8.41%_4.94%]">
+              <img alt="" className="block max-w-none size-full" src={logoEyeLeft} />
+            </div>
+          </div>
+        ) : isWinking ? (
           <div className="absolute inset-[36.13%_30.45%_45.8%_55.1%]">
             <img alt="" className="block max-w-none size-full" src={blinkLine} />
           </div>
@@ -584,7 +610,13 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
         )}
 
         {/* Right eye - varies by expression */}
-        {isWinking ? (
+        {isOff ? (
+          <div className="absolute inset-[33.59%_53.09%_32.99%_30.15%]">
+            <div className="absolute inset-[8.55%_5.03%_8.64%_0.09%]">
+              <img alt="" className="block max-w-none size-full" src={logoEyeRight} />
+            </div>
+          </div>
+        ) : isWinking ? (
           <div className="absolute inset-[46.07%_53.93%_45.8%_28%]">
             <img alt="" className="block max-w-none size-full" src={winkEye} />
           </div>

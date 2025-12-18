@@ -14,6 +14,7 @@ const EXPRESSIONS: { name: ExpressionName; emoji: string; label: string }[] = [
   { name: 'spin', emoji: '🌀', label: 'Spin' },
   { name: 'shocked', emoji: '😲', label: 'Shocked' },
   { name: 'wink', emoji: '😉', label: 'Wink' },
+  { name: 'off', emoji: '⏻', label: 'OFF' },
 ];
 
 export function ExpressionMenu({ onExpressionSelect }: ExpressionMenuProps) {

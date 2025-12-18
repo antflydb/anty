@@ -12,7 +12,8 @@ export type ExpressionName =
   | 'excited' // Smiling eyes with flip/jump animation and fireworks
   | 'spin'    // Happy eyes with Y-axis spin jump
   | 'shocked' // Wide eyes with brackets moving apart
-  | 'wink';   // Half-closed right eye + closed left eye
+  | 'wink'    // Half-closed right eye + closed left eye
+  | 'off';    // Logo state - triangle eyes, no animations
 
 // Button names for interactive responses
 export type ButtonName = 'feed' | 'play' | 'chat' | 'moods';

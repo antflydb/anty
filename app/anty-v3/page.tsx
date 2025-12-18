@@ -40,6 +40,7 @@ export default function AntyV3() {
   const superModeTimerRef = useRef<NodeJS.Timeout | null>(null);
   const superModeCooldownRef = useRef<boolean>(false);
   const [isSuperMode, setIsSuperMode] = useState(false);
+  const spinDescentTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Animate the glow with ghostly, randomized movement
   useEffect(() => {
@@ -90,6 +91,9 @@ export default function AntyV3() {
       heartTimersRef.current.clear();
       if (superModeTimerRef.current) {
         clearTimeout(superModeTimerRef.current);
+      }
+      if (spinDescentTimerRef.current) {
+        clearTimeout(spinDescentTimerRef.current);
       }
     };
   }, []);
@@ -213,6 +217,55 @@ export default function AntyV3() {
     const characterElement = characterRef.current;
     if (!characterElement) return;
 
+    // If coming from OFF state, leap to life first
+    if (expression === 'off') {
+      const innerGlow = document.querySelector('.inner-glow') as HTMLElement;
+      const outerGlow = glowRef.current;
+      const shadow = document.getElementById('anty-shadow');
+
+      // Kill any existing animations
+      gsap.killTweensOf([characterElement, innerGlow, outerGlow, shadow]);
+
+      // Leap to life animation
+      const leapTl = gsap.timeline();
+
+      // Quick bounce up
+      leapTl.to(characterElement, {
+        y: -25,
+        scale: 1.05,
+        duration: 0.25,
+        ease: 'power2.out',
+      });
+
+      // Settle back to normal
+      leapTl.to(characterElement, {
+        y: 0,
+        scale: 1,
+        duration: 0.35,
+        ease: 'elastic.out(1, 0.6)',
+      });
+
+      // Fade glows back in
+      if (innerGlow && outerGlow) {
+        gsap.to([innerGlow, outerGlow], {
+          opacity: 1,
+          duration: 0.5,
+          ease: 'power2.out',
+        });
+      }
+      // Shadow will be controlled by idle animation, just reset to base state
+      if (shadow) {
+        gsap.set(shadow, {
+          scaleX: 1,
+          scaleY: 1,
+          opacity: 0.7,
+        });
+      }
+
+      // Return to idle expression
+      setExpression('idle');
+    }
+
     switch (button) {
       case 'chat':
         // Trigger tilt animation
@@ -334,7 +387,7 @@ export default function AntyV3() {
         <div style={{ position: 'relative', width: '160px', height: '240px' }}>
           {/* Floating glow behind Anty - Layer 1 (inner, more saturated) */}
           <div
-            className="absolute left-1/2 -translate-x-1/2"
+            className="inner-glow absolute left-1/2 -translate-x-1/2"
             style={{
               top: '80px',
               width: '120px',
@@ -406,10 +459,101 @@ export default function AntyV3() {
 
       <ExpressionMenu
         onExpressionSelect={(expr) => {
+          // Handle OFF animation manually since we need to delay expression change
+          if (expr === 'off' && characterRef.current && glowRef.current) {
+            const character = characterRef.current;
+            const innerGlow = document.querySelector('.inner-glow') as HTMLElement;
+            const outerGlow = glowRef.current;
+
+            // Kill any existing animations
+            gsap.killTweensOf([character, innerGlow, outerGlow]);
+
+            // Create OFF animation timeline
+            const offTl = gsap.timeline();
+
+            // 1. Climb up (0.5s) - eyes stay as idle during this
+            offTl.to(character, {
+              y: -60,
+              duration: 0.5,
+              ease: 'power2.out',
+            });
+
+            // 2. SNAP down with shrink to 65% (35% smaller) - slow start, FAST end
+            offTl.to(character, {
+              y: 0,
+              scale: 0.65,
+              duration: 0.15,
+              ease: 'expo.in', // Exponential acceleration for dramatic snap
+            });
+
+            // Fade out background glows and shadow quickly near the very end
+            setTimeout(() => {
+              const shadow = document.getElementById('anty-shadow');
+              gsap.to([innerGlow, outerGlow, shadow], {
+                opacity: 0,
+                duration: 0.15,
+                ease: 'power2.in',
+              });
+            }, 550); // Start at 550ms, finish by 700ms
+
+            // Change expression during snap down
+            setTimeout(() => setExpression('off'), 500);
+            return; // Don't process further
+          }
+
+          // Handle returning from OFF with leap to life
+          if (expression === 'off' && expr !== 'off' && characterRef.current && glowRef.current) {
+            const character = characterRef.current;
+            const innerGlow = document.querySelector('.inner-glow') as HTMLElement;
+            const outerGlow = glowRef.current;
+            const shadow = document.getElementById('anty-shadow');
+
+            // Kill any existing animations
+            gsap.killTweensOf([character, innerGlow, outerGlow, shadow]);
+
+            // Leap to life animation
+            const leapTl = gsap.timeline();
+
+            // Quick bounce up
+            leapTl.to(character, {
+              y: -25,
+              scale: 1.05,
+              duration: 0.25,
+              ease: 'power2.out',
+            });
+
+            // Settle back to normal
+            leapTl.to(character, {
+              y: 0,
+              scale: 1,
+              duration: 0.35,
+              ease: 'elastic.out(1, 0.6)',
+            });
+
+            // Fade glows back in
+            gsap.to([innerGlow, outerGlow], {
+              opacity: 1,
+              duration: 0.5,
+              ease: 'power2.out',
+            });
+            // Shadow will be controlled by idle animation, just reset to base state
+            if (shadow) {
+              gsap.set(shadow, {
+                scaleX: 1,
+                scaleY: 1,
+                opacity: 0.7,
+              });
+            }
+          }
+
           setExpression(expr);
 
           // Trigger body wiggle animation for happy expression
           if (expr === 'happy' && characterRef.current) {
+            // Kill any existing animations and reset all transforms
+            gsap.killTweensOf(characterRef.current);
+            gsap.set(characterRef.current, { rotation: 0, y: 0, rotationY: 0, scale: 1 });
+
             gsap.to(characterRef.current, {
               rotation: 10,
               duration: 0.15,
@@ -421,6 +565,9 @@ export default function AntyV3() {
 
           // Trigger flip jump animation for excited expression
           if (expr === 'excited' && characterRef.current) {
+            // Ensure scale is reset to 1 (in case coming from OFF)
+            gsap.set(characterRef.current, { scale: 1 });
+
             const excitedTl = gsap.timeline({
               onComplete: () => {
                 // Reset rotation invisibly after animation completes
@@ -474,18 +621,16 @@ export default function AntyV3() {
               ease: 'power2.in',
             });
 
-            // FIREWORKS! Colorful blooming bursts - independent of character
+            // FIREWORKS! Colorful blooming bursts - optimized for performance
             const colors = ['#FF1493', '#00CED1', '#FFD700', '#FF69B4', '#7B68EE', '#00FF7F', '#FF6347', '#FF00FF', '#00FFFF'];
 
             // Trigger fireworks almost immediately (0.2s in)
             setTimeout(() => {
-              // Create 5 staggered firework bursts at different screen positions - higher up
+              // Create 3 staggered firework bursts (reduced from 5 for performance)
               const burstPositions = [
-                { x: window.innerWidth / 2 - 150, y: window.innerHeight / 2 - 200 },
-                { x: window.innerWidth / 2 + 150, y: window.innerHeight / 2 - 220 },
-                { x: window.innerWidth / 2, y: window.innerHeight / 2 - 280 },
-                { x: window.innerWidth / 2 - 100, y: window.innerHeight / 2 - 300 },
-                { x: window.innerWidth / 2 + 100, y: window.innerHeight / 2 - 160 }
+                { x: window.innerWidth / 2 - 120, y: window.innerHeight / 2 - 220 },
+                { x: window.innerWidth / 2 + 120, y: window.innerHeight / 2 - 200 },
+                { x: window.innerWidth / 2, y: window.innerHeight / 2 - 260 },
               ];
 
               burstPositions.forEach((pos, burstIndex) => {
@@ -493,103 +638,95 @@ export default function AntyV3() {
                   // Pick a random color for this burst
                   const burstColor = colors[Math.floor(Math.random() * colors.length)];
 
-                  // Create firework shell going up
-                  const shell = document.createElement('div');
-                  shell.textContent = '●';
-                  shell.style.position = 'fixed';
-                  shell.style.left = `${pos.x}px`;
-                  shell.style.top = `${pos.y + 100}px`;
-                  shell.style.fontSize = '12px';
-                  shell.style.color = burstColor;
-                  shell.style.pointerEvents = 'none';
-                  shell.style.zIndex = '0';
-                  shell.style.filter = `drop-shadow(0 0 3px ${burstColor})`;
-                  document.body.appendChild(shell);
+                  // Skip shell animation - go straight to burst for performance
+                  // Main burst - 12 sparkles (reduced from 20)
+                  for (let i = 0; i < 12; i++) {
+                    const angle = (i / 12) * Math.PI * 2;
+                    const radius = 100;
+                    const offsetX = Math.cos(angle) * radius;
+                    const offsetY = Math.sin(angle) * radius;
 
-                  // Animate shell going up with a short throw
-                  gsap.to(shell, {
-                    top: pos.y,
-                    duration: 0.3,
-                    ease: 'power2.out',
-                    onComplete: () => {
-                      document.body.removeChild(shell);
-                      // BURST at the top!
+                    const sparkle = document.createElement('div');
+                    sparkle.textContent = '✨';
+                    sparkle.style.cssText = `
+                      position: fixed;
+                      left: ${pos.x}px;
+                      top: ${pos.y}px;
+                      font-size: 40px;
+                      pointer-events: none;
+                      z-index: 0;
+                      filter: drop-shadow(0 0 4px ${burstColor});
+                      will-change: transform, opacity;
+                    `;
+                    document.body.appendChild(sparkle);
 
-                      // Main burst - 20 large sparkles radiating outward like star beams
-                      for (let i = 0; i < 20; i++) {
-                        const angle = (i / 20) * Math.PI * 2;
-                        const radius = 100;
-                        const offsetX = Math.cos(angle) * radius;
-                        const offsetY = Math.sin(angle) * radius;
+                    gsap.to(sparkle, {
+                      x: offsetX,
+                      y: offsetY,
+                      opacity: 0,
+                      duration: 1.2,
+                      ease: 'power2.out',
+                      onComplete: () => document.body.removeChild(sparkle),
+                    });
+                  }
 
-                        const sparkle = document.createElement('div');
-                        sparkle.textContent = '✨';
-                        sparkle.style.position = 'fixed';
-                        sparkle.style.left = `${pos.x}px`;
-                        sparkle.style.top = `${pos.y}px`;
-                        sparkle.style.fontSize = '40px';
-                        sparkle.style.pointerEvents = 'none';
-                        sparkle.style.zIndex = '0';
-                        sparkle.style.filter = `drop-shadow(0 0 5px ${burstColor})`;
-                        document.body.appendChild(sparkle);
+                  // Secondary smaller burst - 8 sparkles (reduced from 15)
+                  setTimeout(() => {
+                    for (let i = 0; i < 8; i++) {
+                      const angle = (i / 8) * Math.PI * 2 + 0.2;
+                      const radius = 60;
+                      const offsetX = Math.cos(angle) * radius;
+                      const offsetY = Math.sin(angle) * radius;
 
-                        gsap.to(sparkle, {
-                          x: offsetX,
-                          y: offsetY,
-                          opacity: 0,
-                          duration: 1.5,
-                          ease: 'power2.out',
-                          onComplete: () => document.body.removeChild(sparkle),
-                        });
-                      }
+                      const sparkle = document.createElement('div');
+                      sparkle.textContent = '✨';
+                      sparkle.style.cssText = `
+                        position: fixed;
+                        left: ${pos.x}px;
+                        top: ${pos.y}px;
+                        font-size: 24px;
+                        pointer-events: none;
+                        z-index: 0;
+                        filter: drop-shadow(0 0 3px ${burstColor});
+                        will-change: transform, opacity;
+                      `;
+                      document.body.appendChild(sparkle);
 
-                      // Secondary smaller burst - adds depth
-                      setTimeout(() => {
-                        for (let i = 0; i < 15; i++) {
-                          const angle = (i / 15) * Math.PI * 2 + 0.1;
-                          const radius = 60;
-                          const offsetX = Math.cos(angle) * radius;
-                          const offsetY = Math.sin(angle) * radius;
-
-                          const sparkle = document.createElement('div');
-                          sparkle.textContent = '✨';
-                          sparkle.style.position = 'fixed';
-                          sparkle.style.left = `${pos.x}px`;
-                          sparkle.style.top = `${pos.y}px`;
-                          sparkle.style.fontSize = '28px';
-                          sparkle.style.pointerEvents = 'none';
-                          sparkle.style.zIndex = '0';
-                          sparkle.style.filter = `drop-shadow(0 0 3px ${burstColor})`;
-                          document.body.appendChild(sparkle);
-
-                          gsap.to(sparkle, {
-                            x: offsetX,
-                            y: offsetY,
-                            opacity: 0,
-                            duration: 1.2,
-                            ease: 'power2.out',
-                            onComplete: () => document.body.removeChild(sparkle),
-                          });
-                        }
-                      }, 100);
-                    },
-                  });
-                }, burstIndex * 150);
+                      gsap.to(sparkle, {
+                        x: offsetX,
+                        y: offsetY,
+                        opacity: 0,
+                        duration: 1,
+                        ease: 'power2.out',
+                        onComplete: () => document.body.removeChild(sparkle),
+                      });
+                    }
+                  }, 80);
+                }, burstIndex * 120);
               });
             }, 200);
           }
 
           // Trigger shocked animation - MORE DRAMATIC!
           if (expr === 'shocked' && characterRef.current && antyRef.current) {
-            const leftBody = antyRef.current.leftBodyRef?.current;
-            const rightBody = antyRef.current.rightBodyRef?.current;
+            // Ensure scale is reset to 1 (in case coming from OFF)
+            gsap.set(characterRef.current, { scale: 1 });
 
-            // Character rises up HIGHER - more dramatic
-            gsap.to(characterRef.current, {
-              y: -30,
-              duration: 0.2,
-              ease: 'power2.out',
-            });
+            // Delay shocked animation if coming from OFF to let leap to life complete
+            const shockedDelay = expression === 'off' ? 700 : 0;
+
+            setTimeout(() => {
+              if (!characterRef.current || !antyRef.current) return;
+
+              const leftBody = antyRef.current.leftBodyRef?.current;
+              const rightBody = antyRef.current.rightBodyRef?.current;
+
+              // Character rises up HIGHER - more dramatic
+              gsap.to(characterRef.current, {
+                y: -30,
+                duration: 0.2,
+                ease: 'power2.out',
+              });
 
             // Brackets move apart MORE - wider separation for dramatic effect
             if (leftBody && rightBody) {
@@ -631,45 +768,86 @@ export default function AntyV3() {
               }, 1350);
             }
 
-            // Character comes back down smoothly after longer hold
-            setTimeout(() => {
-              gsap.to(characterRef.current, {
-                y: 0,
-                rotation: 0,
-                duration: 0.5,
-                ease: 'power1.inOut',
-              });
-            }, 1400);
+              // Character comes back down smoothly after longer hold
+              setTimeout(() => {
+                if (!characterRef.current) return;
+                gsap.to(characterRef.current, {
+                  y: 0,
+                  rotation: 0,
+                  duration: 0.5,
+                  ease: 'power1.inOut',
+                });
+              }, 1400);
+            }, shockedDelay);
           }
 
           // Trigger Y-axis spin jump animation for spin expression
           if (expr === 'spin' && characterRef.current) {
-            // Spin with natural easing and overshoot
+            // Clear any existing descent timer (for continuous spinning)
+            if (spinDescentTimerRef.current) {
+              clearTimeout(spinDescentTimerRef.current);
+              spinDescentTimerRef.current = null;
+            }
+
+            // Kill any existing spin animations to allow continuous spinning
+            gsap.killTweensOf(characterRef.current);
+
+            // Ensure scale is reset to 1 (in case coming from OFF)
+            gsap.set(characterRef.current, { scale: 1 });
+
+            // Get current rotation and position
+            const currentRotation = gsap.getProperty(characterRef.current, 'rotationY') as number;
+            const currentY = gsap.getProperty(characterRef.current, 'y') as number;
+
+            // Jump to top if not already there
+            if (Math.abs(currentY) < 60) {
+              gsap.to(characterRef.current, {
+                y: -70,
+                duration: 0.3,
+                ease: 'power2.out',
+              });
+            }
+
+            // Continue spinning from current rotation
             gsap.to(characterRef.current, {
-              rotationY: 720,
+              rotationY: currentRotation + 720,
               duration: 1.1,
-              ease: 'back.out(1.2)', // Natural easing with slight overshoot
+              ease: 'back.out(1.2)',
               onComplete: () => {
-                // Reset rotationY invisibly after animation completes
-                gsap.set(characterRef.current, { rotationY: 0 });
+                // Reset rotationY to keep it from getting too large
+                const finalRotation = gsap.getProperty(characterRef.current, 'rotationY') as number;
+                gsap.set(characterRef.current, { rotationY: finalRotation % 360 });
               }
             });
 
-            // Jump arc - separate from rotation for smooth motion
-            const jumpTl = gsap.timeline();
-            jumpTl.to(characterRef.current, {
-              y: -70,
-              duration: 0.5,
-              ease: 'power2.out',
-            });
-            jumpTl.to(characterRef.current, {
-              y: 0,
-              duration: 0.6,
-              ease: 'power2.in',
-            });
+            // Schedule descent - start right as spin finishes
+            spinDescentTimerRef.current = setTimeout(() => {
+              if (characterRef.current) {
+                // Make sure rotation is clean before descending
+                const finalRotation = gsap.getProperty(characterRef.current, 'rotationY') as number;
+                gsap.set(characterRef.current, { rotationY: finalRotation % 360 });
+
+                gsap.to(characterRef.current, {
+                  y: 0,
+                  duration: 0.35,
+                  ease: 'power2.in',
+                  onComplete: () => {
+                    gsap.set(characterRef.current, { rotationY: 0 });
+                  }
+                });
+              }
+            }, 1100);
           }
 
-          setTimeout(() => setExpression('idle'), 1350);
+          // Different timeout for spin - it doesn't auto-return to idle, handled by useEffect
+          // OFF state never auto-returns to idle - user must manually change
+          if (expr === 'off') {
+            // Don't auto-return to idle
+          } else if (expr === 'spin') {
+            setTimeout(() => setExpression('idle'), 1500);
+          } else {
+            setTimeout(() => setExpression('idle'), 1350);
+          }
         }}
       />
     </div>
