@@ -51,6 +51,27 @@ export default function AntyV3() {
   const superModeCooldownRef = useRef<boolean>(false);
   const [isSuperMode, setIsSuperMode] = useState(false);
   const spinDescentTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const expressionResetTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Helper function to clear any pending expression reset
+  const clearExpressionReset = () => {
+    if (expressionResetTimerRef.current) {
+      clearTimeout(expressionResetTimerRef.current);
+      expressionResetTimerRef.current = null;
+      console.log('[EXPRESSION TIMER] Cleared pending reset');
+    }
+  };
+
+  // Helper function to schedule expression reset to idle
+  const scheduleExpressionReset = (delayMs: number) => {
+    clearExpressionReset(); // Clear any existing timeout first
+    console.log(`[EXPRESSION TIMER] Scheduling reset to idle in ${delayMs}ms`);
+    expressionResetTimerRef.current = setTimeout(() => {
+      console.log('[EXPRESSION TIMER] Executing scheduled reset to idle');
+      setExpression('idle');
+      expressionResetTimerRef.current = null;
+    }, delayMs);
+  };
 
   // Animate the glow with ghostly, randomized movement
   useEffect(() => {
@@ -101,6 +122,9 @@ export default function AntyV3() {
       heartTimersRef.current.clear();
       if (superModeTimerRef.current) {
         clearTimeout(superModeTimerRef.current);
+      }
+      if (expressionResetTimerRef.current) {
+        clearTimeout(expressionResetTimerRef.current);
       }
       if (spinDescentTimerRef.current) {
         clearTimeout(spinDescentTimerRef.current);
@@ -307,7 +331,7 @@ export default function AntyV3() {
       case 'moods':
         // Trigger wink!
         setExpression('wink');
-        setTimeout(() => setExpression('idle'), 750);
+        scheduleExpressionReset(750);
         break;
 
       case 'play':
@@ -325,7 +349,7 @@ export default function AntyV3() {
           happiness: Math.min(100, prev.happiness + 15),
           energy: Math.max(0, prev.energy - 10),
         }));
-        setTimeout(() => setExpression('idle'), 1500);
+        scheduleExpressionReset(1500);
         break;
 
       case 'feed':
@@ -399,7 +423,7 @@ export default function AntyV3() {
           // Spawn love heart particles radiating out from Anty
           antyRef.current?.spawnLoveHearts?.();
         }, 2300);
-        setTimeout(() => setExpression('idle'), 4000);
+        scheduleExpressionReset(4000);
         break;
     }
   };
@@ -484,6 +508,9 @@ export default function AntyV3() {
 
       <ExpressionMenu
         onExpressionSelect={(expr) => {
+          // Clear any pending expression reset from previous states
+          clearExpressionReset();
+
           // Handle OFF animation manually since we need to delay expression change
           if (expr === 'off' && characterRef.current && glowRef.current) {
             const character = characterRef.current;
@@ -671,7 +698,7 @@ export default function AntyV3() {
                   }, 1400);
                 }
 
-                setTimeout(() => setExpression('idle'), 1350);
+                scheduleExpressionReset(1350);
               }, 700);
               return;
             }
@@ -829,7 +856,7 @@ export default function AntyV3() {
                   });
                 }, 200);
 
-                setTimeout(() => setExpression('idle'), 1350);
+                scheduleExpressionReset(1350);
               }, 100);
               return;
             }
@@ -900,7 +927,7 @@ export default function AntyV3() {
                   }
                 }, 1100);
 
-                setTimeout(() => setExpression('idle'), 1500);
+                scheduleExpressionReset(1500);
               }, 100);
               return;
             }
@@ -934,7 +961,7 @@ export default function AntyV3() {
                   repeat: 5,
                 });
 
-                setTimeout(() => setExpression('idle'), 1350);
+                scheduleExpressionReset(1350);
               }, 100);
               return;
             }
@@ -997,7 +1024,7 @@ export default function AntyV3() {
                   ease: 'power2.in',
                 });
 
-                setTimeout(() => setExpression('idle'), 6000);
+                scheduleExpressionReset(6000);
               }, 100);
               return;
             }
@@ -1567,16 +1594,16 @@ export default function AntyV3() {
           if (expr === 'off') {
             // Don't auto-return to idle
           } else if (expr === 'spin') {
-            setTimeout(() => setExpression('idle'), 1500);
+            scheduleExpressionReset(1500);
           } else if (expr === 'angry') {
             // Angry animation handles eye change internally via timeline
             // Don't auto-return to idle
           } else if (expr === 'sad') {
-            setTimeout(() => setExpression('idle'), 5500);
+            scheduleExpressionReset(5500);
           } else if (expr === 'idea') {
-            setTimeout(() => setExpression('idle'), 2300);
+            scheduleExpressionReset(2300);
           } else {
-            setTimeout(() => setExpression('idle'), 1350);
+            scheduleExpressionReset(1350);
           }
         }}
       />
