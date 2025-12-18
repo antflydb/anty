@@ -671,7 +671,7 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
           <div className="absolute flex inset-[33.41%_31.63%_38.76%_56.72%] items-center justify-center">
             <div
               ref={leftEyeRef}
-              className="flex-none scale-y-[-100%]"
+              className="flex-none"
               style={{
                 height: '44.52px',
                 width: '18.63px',
