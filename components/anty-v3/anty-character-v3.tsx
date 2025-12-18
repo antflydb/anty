@@ -676,8 +676,6 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
                 height: '44.52px',
                 width: '18.63px',
                 transformOrigin: 'center center',
-                transform: 'scaleY(1)',
-                transition: 'transform 0.25s ease-out'
               }}
             >
               <div className="relative size-full">
@@ -721,8 +719,6 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
                 height: '44.52px',
                 width: '18.63px',
                 transformOrigin: 'center center',
-                transform: 'scaleY(1)',
-                transition: 'transform 0.25s ease-out'
               }}
             >
               <div className="relative size-full">
