@@ -301,9 +301,9 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
     // Kill any ongoing blink animations on the eyes when expression changes away from idle
     if (expression !== 'idle' && leftEyeRef.current && rightEyeRef.current) {
       gsap.killTweensOf([leftEyeRef.current, rightEyeRef.current]);
-      // Reset eyes to default flipped state immediately
+      // Reset eyes to default state immediately
       gsap.set([leftEyeRef.current, rightEyeRef.current], {
-        scaleY: -1
+        scaleY: 1
       });
     }
 
@@ -322,6 +322,16 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
     // Set shocked eyes when expression changes to 'shocked'
     if (expression === 'shocked') {
       setIsShocked(true);
+
+      // Force shocked state immediately with GSAP to override any ongoing transitions
+      if (leftEyeRef.current && rightEyeRef.current) {
+        gsap.killTweensOf([leftEyeRef.current, rightEyeRef.current]);
+        gsap.set([leftEyeRef.current, rightEyeRef.current], {
+          scaleY: 1.4,
+          scaleX: 1.4,
+          clearProps: 'all', // Clear any conflicting props
+        });
+      }
     } else {
       setIsShocked(false);
 
@@ -334,9 +344,9 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
           rightEyeRef.current.style.removeProperty('transform');
           rightEyeRef.current.style.removeProperty('transition');
 
-          // Set GSAP-controlled transform back to flipped default
+          // Set GSAP-controlled transform back to default
           gsap.set([leftEyeRef.current, rightEyeRef.current], {
-            scaleY: -1
+            scaleY: 1
           });
         }
       }, 300); // Wait for CSS transition to complete
@@ -359,6 +369,17 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
     // Set idea eyes when expression changes to 'idea'
     if (expression === 'idea') {
       setIsIdea(true);
+
+      // Force idea state immediately with GSAP to override any ongoing transitions
+      if (leftEyeRef.current && rightEyeRef.current) {
+        gsap.killTweensOf([leftEyeRef.current, rightEyeRef.current]);
+        gsap.set([leftEyeRef.current, rightEyeRef.current], {
+          scaleY: 1.15,
+          scaleX: 1.15,
+          y: -8,
+          clearProps: 'all',
+        });
+      }
     } else {
       setIsIdea(false);
     }
@@ -401,19 +422,18 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
     if (!leftEye || !rightEye) return;
 
     // Create timeline for blink animation
-    // Eyes are flipped with scaleY(-1), so animate from -1 to -0.05 and back
     const blinkTl = gsap.timeline();
 
     // Close eyes (collapse to horizontal line)
     blinkTl.to([leftEye, rightEye], {
-      scaleY: -0.05, // Almost flat horizontal line (maintain flip direction)
+      scaleY: 0.05, // Almost flat horizontal line
       duration: 0.1, // 100ms to close
       ease: 'power2.in',
     });
 
     // Open eyes (expand back to normal)
     blinkTl.to([leftEye, rightEye], {
-      scaleY: -1, // Back to flipped normal
+      scaleY: 1, // Back to normal
       duration: 0.15, // 150ms to open
       ease: 'power2.out',
     });
@@ -430,35 +450,34 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
     if (!leftEye || !rightEye) return;
 
     // Create timeline for double blink
-    // Eyes are flipped with scaleY(-1), so maintain flip direction
     const blinkTl = gsap.timeline();
 
     // First blink
     blinkTl.to([leftEye, rightEye], {
-      scaleY: -0.05, // Maintain flip direction
+      scaleY: 0.05, // Collapse to line
       duration: 0.08, // Slightly faster
       ease: 'power2.in',
     });
     blinkTl.to([leftEye, rightEye], {
-      scaleY: -1, // Back to flipped normal
+      scaleY: 1, // Back to normal
       duration: 0.12,
       ease: 'power2.out',
     });
 
     // Short pause between blinks
     blinkTl.to([leftEye, rightEye], {
-      scaleY: -1, // Stay at flipped normal
+      scaleY: 1, // Stay at normal
       duration: 0.1, // 100ms pause
     });
 
     // Second blink
     blinkTl.to([leftEye, rightEye], {
-      scaleY: -0.05, // Maintain flip direction
+      scaleY: 0.05, // Collapse to line
       duration: 0.08,
       ease: 'power2.in',
     });
     blinkTl.to([leftEye, rightEye], {
-      scaleY: -1, // Back to flipped normal
+      scaleY: 1, // Back to normal
       duration: 0.12,
       ease: 'power2.out',
     });
@@ -640,10 +659,10 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
                 width: '18.63px',
                 transformOrigin: 'center center',
                 transform: isShocked
-                  ? 'scaleY(-1.4) scaleX(1.4)'
+                  ? 'scaleY(1.4) scaleX(1.4)'
                   : isIdea
-                  ? 'scaleY(-1.15) scaleX(1.15) translateY(-8px)'
-                  : 'scaleY(-1)',
+                  ? 'scaleY(1.15) scaleX(1.15) translateY(-8px)'
+                  : 'scaleY(1)',
                 transition: (isShocked || isIdea) ? 'none' : 'transform 0.25s ease-out'
               }}
             >
@@ -689,10 +708,10 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
                 width: '18.63px',
                 transformOrigin: 'center center',
                 transform: isShocked
-                  ? 'scaleY(-1.4) scaleX(1.4)'
+                  ? 'scaleY(1.4) scaleX(1.4)'
                   : isIdea
-                  ? 'scaleY(-1.15) scaleX(1.15) translateY(-8px)'
-                  : 'scaleY(-1)',
+                  ? 'scaleY(1.15) scaleX(1.15) translateY(-8px)'
+                  : 'scaleY(1)',
                 transition: (isShocked || isIdea) ? 'none' : 'transform 0.25s ease-out'
               }}
             >
