@@ -493,35 +493,35 @@ export default function AntyV3() {
               ease: 'power2.out',
             });
 
-            // 2. SNAP down with shrink to 65% (35% smaller) - slow start, FAST end
+            // 2. SNAP down HARD - super fast shrink to 65% (35% smaller)
             offTl.to(character, {
               y: 0,
               scale: 0.65,
-              duration: 0.15,
+              duration: 0.1, // Even faster - 100ms snap
               ease: 'expo.in', // Exponential acceleration for dramatic snap
             });
 
-            // Fade character to transparent at the very very end (super fast)
+            // Change expression RIGHT at the very end of snap (super late)
+            setTimeout(() => setExpression('off'), 590);
+
+            // Fade character to transparent IMMEDIATELY after snap (super fast)
             setTimeout(() => {
               gsap.to(character, {
                 opacity: 0.45,
-                duration: 0.08,
+                duration: 0.05, // Lightning fast - 50ms
                 ease: 'power2.in',
               });
-            }, 640); // Start at 640ms (right at the very very end)
+            }, 600); // Right when snap finishes
 
-            // Fade out background glows and shadow quickly near the very end
+            // Fade out background glows and shadow at the same time (super fast)
             setTimeout(() => {
               const shadow = document.getElementById('anty-shadow');
               gsap.to([innerGlow, outerGlow, shadow], {
                 opacity: 0,
-                duration: 0.15,
+                duration: 0.06, // Lightning fast - 60ms
                 ease: 'power2.in',
               });
-            }, 550); // Start at 550ms, finish by 700ms
-
-            // Change expression during snap down
-            setTimeout(() => setExpression('off'), 500);
+            }, 590); // Start right at the end of snap
             return; // Don't process further
           }
 
@@ -895,6 +895,103 @@ export default function AntyV3() {
               return;
             }
 
+            // Special handling for happy: leap to life then trigger wiggle animation
+            if (expr === 'happy') {
+              setExpression(expr);
+
+              // Manually trigger happy wiggle animation
+              setTimeout(() => {
+                if (!characterRef.current) return;
+
+                // Kill all existing animations and reset
+                gsap.killTweensOf(characterRef.current);
+                if (antyRef.current?.leftBodyRef?.current) {
+                  gsap.killTweensOf(antyRef.current.leftBodyRef.current);
+                  gsap.set(antyRef.current.leftBodyRef.current, { x: 0, y: 0 });
+                }
+                if (antyRef.current?.rightBodyRef?.current) {
+                  gsap.killTweensOf(antyRef.current.rightBodyRef.current);
+                  gsap.set(antyRef.current.rightBodyRef.current, { x: 0, y: 0 });
+                }
+                gsap.set(characterRef.current, { rotation: 0, y: 0, rotationY: 0, scale: 1 });
+
+                // Wiggle animation
+                gsap.to(characterRef.current, {
+                  rotation: 10,
+                  duration: 0.15,
+                  ease: 'power1.inOut',
+                  yoyo: true,
+                  repeat: 5,
+                });
+
+                setTimeout(() => setExpression('idle'), 1350);
+              }, 100);
+              return;
+            }
+
+            // Special handling for sad: leap to life then trigger droop animation
+            if (expr === 'sad') {
+              setExpression(expr);
+
+              // Manually trigger sad animation
+              setTimeout(() => {
+                if (!characterRef.current) return;
+
+                // Kill all existing animations and reset
+                gsap.killTweensOf(characterRef.current);
+                if (antyRef.current?.leftBodyRef?.current) {
+                  gsap.killTweensOf(antyRef.current.leftBodyRef.current);
+                  gsap.set(antyRef.current.leftBodyRef.current, { x: 0, y: 0 });
+                }
+                if (antyRef.current?.rightBodyRef?.current) {
+                  gsap.killTweensOf(antyRef.current.rightBodyRef.current);
+                  gsap.set(antyRef.current.rightBodyRef.current, { x: 0, y: 0 });
+                }
+                gsap.set(characterRef.current, { scale: 1, rotation: 0, y: 0, rotationY: 0 });
+
+                // Create sad droop timeline
+                const sadTl = gsap.timeline();
+
+                // Drop down slowly
+                sadTl.to(characterRef.current, {
+                  y: 15,
+                  duration: 0.6,
+                  ease: 'power2.out',
+                });
+
+                // Gentle sway left and right (3 cycles)
+                for (let i = 0; i < 3; i++) {
+                  sadTl.to(characterRef.current, {
+                    x: -8,
+                    duration: 0.8,
+                    ease: 'sine.inOut',
+                  });
+                  sadTl.to(characterRef.current, {
+                    x: 8,
+                    duration: 0.8,
+                    ease: 'sine.inOut',
+                  });
+                }
+
+                // Return to center
+                sadTl.to(characterRef.current, {
+                  x: 0,
+                  duration: 0.4,
+                  ease: 'sine.inOut',
+                });
+
+                // Rise back up
+                sadTl.to(characterRef.current, {
+                  y: 0,
+                  duration: 0.5,
+                  ease: 'power2.in',
+                });
+
+                setTimeout(() => setExpression('idle'), 6000);
+              }, 100);
+              return;
+            }
+
             // For all other expressions: leap to life then go straight to expression
             setExpression(expr);
             return; // Don't process further now
@@ -1229,12 +1326,71 @@ export default function AntyV3() {
             }, 1100);
           }
 
-          // Different timeout for spin - it doesn't auto-return to idle, handled by useEffect
+          // Trigger sad droop animation for sad expression
+          if (expr === 'sad' && characterRef.current) {
+            // Kill all existing animations and reset
+            gsap.killTweensOf(characterRef.current);
+            if (antyRef.current?.leftBodyRef?.current) {
+              gsap.killTweensOf(antyRef.current.leftBodyRef.current);
+              gsap.set(antyRef.current.leftBodyRef.current, { x: 0, y: 0 });
+            }
+            if (antyRef.current?.rightBodyRef?.current) {
+              gsap.killTweensOf(antyRef.current.rightBodyRef.current);
+              gsap.set(antyRef.current.rightBodyRef.current, { x: 0, y: 0 });
+            }
+            if (spinDescentTimerRef.current) {
+              clearTimeout(spinDescentTimerRef.current);
+              spinDescentTimerRef.current = null;
+            }
+            gsap.set(characterRef.current, { scale: 1, rotation: 0, y: 0, rotationY: 0 });
+
+            // Create sad droop timeline
+            const sadTl = gsap.timeline();
+
+            // Drop down slowly
+            sadTl.to(characterRef.current, {
+              y: 15,
+              duration: 0.6,
+              ease: 'power2.out',
+            });
+
+            // Gentle sway left and right (3 cycles)
+            for (let i = 0; i < 3; i++) {
+              sadTl.to(characterRef.current, {
+                x: -8,
+                duration: 0.8,
+                ease: 'sine.inOut',
+              });
+              sadTl.to(characterRef.current, {
+                x: 8,
+                duration: 0.8,
+                ease: 'sine.inOut',
+              });
+            }
+
+            // Return to center
+            sadTl.to(characterRef.current, {
+              x: 0,
+              duration: 0.4,
+              ease: 'sine.inOut',
+            });
+
+            // Rise back up
+            sadTl.to(characterRef.current, {
+              y: 0,
+              duration: 0.5,
+              ease: 'power2.in',
+            });
+          }
+
+          // Different timeout for different expressions
           // OFF state never auto-returns to idle - user must manually change
           if (expr === 'off') {
             // Don't auto-return to idle
           } else if (expr === 'spin') {
             setTimeout(() => setExpression('idle'), 1500);
+          } else if (expr === 'sad') {
+            setTimeout(() => setExpression('idle'), 6000);
           } else {
             setTimeout(() => setExpression('idle'), 1350);
           }

@@ -60,6 +60,7 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
   const [isWinking, setIsWinking] = useState(false);
   const [isHappy, setIsHappy] = useState(false);
   const [isShocked, setIsShocked] = useState(false);
+  const [isSad, setIsSad] = useState(false);
   const [isOff, setIsOff] = useState(false);
   const superGlowRef = useRef<HTMLDivElement>(null);
   const allowBlinkingRef = useRef<boolean>(true);
@@ -337,6 +338,13 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
       }, 300); // Wait for CSS transition to complete
     }
 
+    // Set sad eyes when expression changes to 'sad'
+    if (expression === 'sad') {
+      setIsSad(true);
+    } else {
+      setIsSad(false);
+    }
+
     // Set OFF state when expression changes to 'off'
     if (expression === 'off') {
       setIsOff(true);
@@ -523,6 +531,10 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
   const happyEyeLeft = "/anty-v3/eye-happy-left.svg"; // Happy left eye
   const happyEyeRight = "/anty-v3/eye-happy-right.svg"; // Happy right eye
 
+  // Sad expression assets
+  const sadEyeLeft = "/anty-v3/eye-sad-left.svg"; // Sad left eye
+  const sadEyeRight = "/anty-v3/eye-sad-right.svg"; // Sad right eye
+
   // OFF state (logo) assets - localized
   const logoEyeLeft = "/anty-v3/eye-logo-left.svg"; // Left triangle eye (EYE2)
   const logoEyeRight = "/anty-v3/eye-logo-right.svg"; // Right triangle eye (EYE1)
@@ -590,6 +602,12 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
               <img alt="" className="block max-w-none size-full" src={happyEyeLeft} />
             </div>
           </div>
+        ) : isSad ? (
+          <div className="absolute inset-[33.42%_30.45%_48.51%_55.1%]">
+            <div className="absolute inset-[0_0_0.09%_0]">
+              <img alt="" className="block max-w-none size-full" src={sadEyeLeft} />
+            </div>
+          </div>
         ) : (
           <div className="absolute flex inset-[33.41%_31.63%_38.76%_56.72%] items-center justify-center">
             <div
@@ -625,6 +643,12 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
           <div className="absolute inset-[33.42%_55.74%_48.51%_29.81%]">
             <div className="absolute inset-[0_0_0.09%_0]">
               <img alt="" className="block max-w-none size-full" src={happyEyeRight} />
+            </div>
+          </div>
+        ) : isSad ? (
+          <div className="absolute inset-[33.42%_55.74%_48.51%_29.81%]">
+            <div className="absolute inset-[0_0_0.09%_0]">
+              <img alt="" className="block max-w-none size-full" src={sadEyeRight} />
             </div>
           </div>
         ) : (
