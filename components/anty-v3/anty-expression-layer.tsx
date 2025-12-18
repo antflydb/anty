@@ -172,25 +172,8 @@ function ExpressionAsset({
  * Determine transition speed based on expression change
  */
 function getTransitionSpeed(from: ExpressionName, to: ExpressionName): string {
-  // Instant for blink
-  if (to === 'blink' || from === 'blink') return 'instant';
-
   // Fast for quick expressions
   if (to === 'wink' || from === 'wink') return 'fast';
-
-  // Slow for dramatic changes
-  const dramaticPairs = [
-    ['happy', 'angry'],
-    ['excited', 'sad'],
-    ['idle', 'sick'],
-  ];
-
-  const isDramatic = dramaticPairs.some(
-    ([a, b]) =>
-      (from === a && to === b) || (from === b && to === a)
-  );
-
-  if (isDramatic) return 'slow';
 
   // Normal for everything else
   return 'normal';
@@ -207,19 +190,7 @@ function getExpressionPlaceholderColor(expression: ExpressionName): {
   const colorMap: Record<ExpressionName, { body: string; eye: string }> = {
     idle: { body: '#e0e0e0', eye: '#333333' },
     happy: { body: '#ffeb3b', eye: '#333333' },
-    excited: { body: '#ff9800', eye: '#333333' },
     wink: { body: '#ffc107', eye: '#333333' },
-    sad: { body: '#90caf9', eye: '#1976d2' },
-    tired: { body: '#b0bec5', eye: '#546e7a' },
-    sleepy: { body: '#9fa8da', eye: '#5c6bc0' },
-    thinking: { body: '#ce93d8', eye: '#8e24aa' },
-    curious: { body: '#80deea', eye: '#00838f' },
-    talking: { body: '#a5d6a7', eye: '#388e3c' },
-    confused: { body: '#ffcc80', eye: '#e65100' },
-    angry: { body: '#ef5350', eye: '#b71c1c' },
-    sick: { body: '#aed581', eye: '#558b2f' },
-    proud: { body: '#ba68c8', eye: '#6a1b9a' },
-    blink: { body: '#e0e0e0', eye: '#333333' },
   };
 
   return colorMap[expression] || colorMap.idle;

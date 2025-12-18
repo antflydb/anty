@@ -5,23 +5,11 @@
 
 import type { AntyStats } from '@/lib/anty/stat-system';
 
-// Expression names matching Figma asset structure
+// Expression names - only expressions with visual assets
 export type ExpressionName =
-  | 'idle'
-  | 'happy'
-  | 'excited'
-  | 'wink'
-  | 'sad'
-  | 'tired'
-  | 'sleepy'
-  | 'thinking'
-  | 'curious'
-  | 'talking'
-  | 'confused'
-  | 'angry'
-  | 'sick'
-  | 'proud'
-  | 'blink';
+  | 'idle'    // Default vertical pill eyes
+  | 'happy'   // Smiling eyes
+  | 'wink';   // Half-closed right eye + closed left eye
 
 // Button names for interactive responses
 export type ButtonName = 'feed' | 'play' | 'chat' | 'moods';

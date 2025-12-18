@@ -215,7 +215,7 @@ export default function AntyV3() {
 
     switch (button) {
       case 'chat':
-        // Trigger tilt animation + thinking expression
+        // Trigger tilt animation
         gsap.to(characterElement, {
           rotation: -5,
           duration: 0.3,
@@ -223,9 +223,7 @@ export default function AntyV3() {
           yoyo: true,
           repeat: 1,
         });
-        setExpression('thinking');
         setStats((prev) => ({ ...prev, knowledge: Math.min(100, prev.knowledge + 10) }));
-        setTimeout(() => setExpression('idle'), 2000);
         break;
 
       case 'moods':
@@ -288,9 +286,6 @@ export default function AntyV3() {
           duration: 0.5,
           ease: 'elastic.out(1, 0.5)',
         });
-
-        // Trigger excited expression immediately
-        setExpression('excited');
 
         // SPAWN FOOD IMMEDIATELY - will arrive during hover!
         antyRef.current?.spawnFeedingParticles();

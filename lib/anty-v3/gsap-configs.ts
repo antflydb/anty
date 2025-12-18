@@ -85,27 +85,10 @@ export function getExpressionTransitionDuration(
   from: ExpressionName,
   to: ExpressionName
 ): number {
-  // Blink is instant
-  if (to === 'blink') return expressionTransitionDuration.instant;
-
-  // Dramatic shifts (slow)
-  const dramaticPairs: Array<[ExpressionName, ExpressionName]> = [
-    ['happy', 'angry'],
-    ['excited', 'sad'],
-    ['idle', 'angry'],
-    ['happy', 'sick'],
-  ];
-
-  const isDramatic = dramaticPairs.some(
-    ([a, b]) => (from === a && to === b) || (from === b && to === a)
-  );
-  if (isDramatic) return expressionTransitionDuration.slow;
-
-  // Quick transitions (fast)
+  // Quick transitions (fast) for wink
   const quickPairs: Array<[ExpressionName, ExpressionName]> = [
     ['idle', 'wink'],
     ['happy', 'wink'],
-    ['idle', 'blink'],
   ];
 
   const isQuick = quickPairs.some(

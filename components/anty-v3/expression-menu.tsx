@@ -11,19 +11,7 @@ interface ExpressionMenuProps {
 const EXPRESSIONS: { name: ExpressionName; emoji: string; label: string }[] = [
   { name: 'idle', emoji: '😐', label: 'Idle' },
   { name: 'happy', emoji: '😊', label: 'Happy' },
-  { name: 'excited', emoji: '🤩', label: 'Excited' },
   { name: 'wink', emoji: '😉', label: 'Wink' },
-  { name: 'thinking', emoji: '🤔', label: 'Thinking' },
-  { name: 'curious', emoji: '🧐', label: 'Curious' },
-  { name: 'proud', emoji: '😌', label: 'Proud' },
-  { name: 'sad', emoji: '😢', label: 'Sad' },
-  { name: 'tired', emoji: '😴', label: 'Tired' },
-  { name: 'sleepy', emoji: '🥱', label: 'Sleepy' },
-  { name: 'confused', emoji: '😕', label: 'Confused' },
-  { name: 'angry', emoji: '😠', label: 'Angry' },
-  { name: 'sick', emoji: '🤢', label: 'Sick' },
-  { name: 'talking', emoji: '💬', label: 'Talking' },
-  { name: 'blink', emoji: '👀', label: 'Blink' },
 ];
 
 export function ExpressionMenu({ onExpressionSelect }: ExpressionMenuProps) {
