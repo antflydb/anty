@@ -41,7 +41,8 @@ const ANIMATION_TIMING = {
   RESET_DURATION: 0.05,           // 50ms to reset (smooth but nearly instant)
 
   // Look left/right animations
-  LOOK_SCALE_X: 0.8,              // Contract eyes horizontally to 0.8x
+  LOOK_SCALE_Y: 0.7,              // Contract eyes vertically to 0.7x (narrower)
+  LOOK_SCALE_X: 1.2,              // Expand eyes horizontally to 1.2x (wider)
   LOOK_X_OFFSET: 12,              // Move eyes 12px left or right
   LOOK_DURATION: 0.15,            // 150ms animation
 
@@ -364,9 +365,10 @@ export function useEyeAnimations({
         rotation: 0,
       });
 
-      debugLog.gsap('both', 'to', { scaleX: ANIMATION_TIMING.LOOK_SCALE_X, x: -ANIMATION_TIMING.LOOK_X_OFFSET });
-      // Animate eyes to look left (contract horizontally and move left)
+      debugLog.gsap('both', 'to', { scaleY: ANIMATION_TIMING.LOOK_SCALE_Y, scaleX: ANIMATION_TIMING.LOOK_SCALE_X, x: -ANIMATION_TIMING.LOOK_X_OFFSET });
+      // Animate eyes to look left (contract vertically, expand horizontally, and move left)
       gsap.to([leftEye, rightEye], {
+        scaleY: ANIMATION_TIMING.LOOK_SCALE_Y,
         scaleX: ANIMATION_TIMING.LOOK_SCALE_X,
         x: -ANIMATION_TIMING.LOOK_X_OFFSET,
         duration: ANIMATION_TIMING.LOOK_DURATION,
@@ -376,7 +378,7 @@ export function useEyeAnimations({
       });
     }
 
-    // Look right animation - eyes move right, bunch closer, and contract
+    // Look right animation - eyes move right, contract vertically, expand horizontally
     if (expression === 'look-right' && leftEye && rightEye) {
       debugLog.gsap('both', 'kill', 'Clearing tweens for look-right');
       gsap.killTweensOf([leftEye, rightEye]);
@@ -391,9 +393,10 @@ export function useEyeAnimations({
         rotation: 0,
       });
 
-      debugLog.gsap('both', 'to', { scaleX: ANIMATION_TIMING.LOOK_SCALE_X, x: ANIMATION_TIMING.LOOK_X_OFFSET });
-      // Animate eyes to look right (contract horizontally and move right)
+      debugLog.gsap('both', 'to', { scaleY: ANIMATION_TIMING.LOOK_SCALE_Y, scaleX: ANIMATION_TIMING.LOOK_SCALE_X, x: ANIMATION_TIMING.LOOK_X_OFFSET });
+      // Animate eyes to look right (contract vertically, expand horizontally, and move right)
       gsap.to([leftEye, rightEye], {
+        scaleY: ANIMATION_TIMING.LOOK_SCALE_Y,
         scaleX: ANIMATION_TIMING.LOOK_SCALE_X,
         x: ANIMATION_TIMING.LOOK_X_OFFSET,
         duration: ANIMATION_TIMING.LOOK_DURATION,
