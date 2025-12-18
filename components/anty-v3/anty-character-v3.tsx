@@ -434,18 +434,18 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
     });
   };
 
-  // Fresh Figma asset URLs - Body parts
-  const img = "https://www.figma.com/api/mcp/asset/4f4c44eb-9219-40c0-b7a2-860fb2cc989f"; // Right bracket body
-  const img1 = "https://www.figma.com/api/mcp/asset/3c33ef9a-f6ed-4d68-a999-58fc0582714c"; // Left bracket body
-  const img2 = "https://www.figma.com/api/mcp/asset/89d00b5f-338a-4833-950d-06b47db12e2a"; // IDLE eyes (vertical pills) - node 574-115
+  // Local SVG assets - no network requests, instant loading
+  const img = "/anty-v3/body-right.svg"; // Right bracket body
+  const img1 = "/anty-v3/body-left.svg"; // Left bracket body
+  const img2 = "/anty-v3/eye-idle.svg"; // IDLE eyes (vertical pills)
 
-  // Wink expression assets (node 574-118)
-  const winkEye = "https://www.figma.com/api/mcp/asset/669168dd-38d4-4a4b-b2a4-f26f65f8f3c7"; // Wink half-closed right eye (EYE1)
-  const blinkLine = "https://www.figma.com/api/mcp/asset/8301eef8-b4c3-4d67-a9d1-b313dd340eff"; // Wink closed left eye line (EYE2)
+  // Wink expression assets
+  const winkEye = "/anty-v3/eye-wink-right.svg"; // Wink half-closed right eye
+  const blinkLine = "/anty-v3/eye-wink-left.svg"; // Wink closed left eye line
 
-  // Happy expression assets (node 33-5888)
-  const happyEyeLeft = "https://www.figma.com/api/mcp/asset/64d7ca94-8222-48bb-aff0-c0b3f006e499"; // Happy left eye (EYE2)
-  const happyEyeRight = "https://www.figma.com/api/mcp/asset/3459986b-1cf6-4cf0-adf3-31cc623578d0"; // Happy right eye (EYE1)
+  // Happy expression assets
+  const happyEyeLeft = "/anty-v3/eye-happy-left.svg"; // Happy left eye
+  const happyEyeRight = "/anty-v3/eye-happy-right.svg"; // Happy right eye
 
   return (
     <div
