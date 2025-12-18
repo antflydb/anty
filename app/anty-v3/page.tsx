@@ -1326,7 +1326,7 @@ export default function AntyV3() {
             }, 1100);
           }
 
-          // Trigger angry stern animation for sad expression
+          // Trigger angry stern animation
           if (expr === 'angry' && characterRef.current) {
             // Kill all existing animations and reset
             gsap.killTweensOf(characterRef.current);
@@ -1344,41 +1344,126 @@ export default function AntyV3() {
             }
             gsap.set(characterRef.current, { scale: 1, rotation: 0, y: 0, rotationY: 0 });
 
-            // Create angry stern timeline
+            // Create angry grumbling timeline
             const angryTl = gsap.timeline();
 
-            // Drop down slowly
+            // Drop down
             angryTl.to(characterRef.current, {
               y: 15,
               duration: 0.6,
               ease: 'power2.out',
             });
 
-            // Gentle sway left and right (3 cycles)
-            for (let i = 0; i < 3; i++) {
-              angryTl.to(characterRef.current, {
-                x: -8,
-                duration: 0.8,
-                ease: 'sine.inOut',
-              });
-              angryTl.to(characterRef.current, {
-                x: 8,
-                duration: 0.8,
-                ease: 'sine.inOut',
-              });
-            }
+            // Fast jittery grumbling WHILE dropping (all at same time as drop)
+            angryTl.to(characterRef.current, {
+              x: 6,
+              duration: 0.12,
+              ease: 'power1.inOut',
+            }, 0); // Start at same time as drop
 
-            // Return to center
+            angryTl.to(characterRef.current, {
+              x: -6,
+              duration: 0.12,
+              ease: 'power1.inOut',
+            }, 0.1);
+
+            angryTl.to(characterRef.current, {
+              x: 6,
+              duration: 0.12,
+              ease: 'power1.inOut',
+            }, 0.2);
+
+            angryTl.to(characterRef.current, {
+              x: -6,
+              duration: 0.12,
+              ease: 'power1.inOut',
+            }, 0.3);
+
+            angryTl.to(characterRef.current, {
+              x: 6,
+              duration: 0.12,
+              ease: 'power1.inOut',
+            }, 0.4);
+
+            // Snap to center at bottom
             angryTl.to(characterRef.current, {
               x: 0,
-              duration: 0.4,
-              ease: 'sine.inOut',
+              duration: 0.1,
+              ease: 'power1.out',
+            });
+
+            // Stay at bottom with angry eyes
+            angryTl.to(characterRef.current, {
+              y: 15,
+              duration: 1.5,
+            });
+
+            // Change eyes back to idle as we start rising
+            angryTl.call(() => {
+              setExpression('idle');
             });
 
             // Rise back up
             angryTl.to(characterRef.current, {
               y: 0,
               duration: 0.5,
+              ease: 'power2.in',
+            }, '-=0.5'); // Start rising immediately as eyes change
+          }
+
+          // Trigger sad droopy animation
+          if (expr === 'sad' && characterRef.current) {
+            // Kill all existing animations and reset
+            gsap.killTweensOf(characterRef.current);
+            if (antyRef.current?.leftBodyRef?.current) {
+              gsap.killTweensOf(antyRef.current.leftBodyRef.current);
+              gsap.set(antyRef.current.leftBodyRef.current, { x: 0, y: 0 });
+            }
+            if (antyRef.current?.rightBodyRef?.current) {
+              gsap.killTweensOf(antyRef.current.rightBodyRef.current);
+              gsap.set(antyRef.current.rightBodyRef.current, { x: 0, y: 0 });
+            }
+            if (spinDescentTimerRef.current) {
+              clearTimeout(spinDescentTimerRef.current);
+              spinDescentTimerRef.current = null;
+            }
+            gsap.set(characterRef.current, { scale: 1, rotation: 0, y: 0, rotationY: 0 });
+
+            // Create sad droopy timeline
+            const sadTl = gsap.timeline();
+
+            // Drop down gently
+            sadTl.to(characterRef.current, {
+              y: 18,
+              duration: 0.7,
+              ease: 'power2.out',
+            });
+
+            // Very gentle subtle sway (2 cycles, smaller movement)
+            for (let i = 0; i < 2; i++) {
+              sadTl.to(characterRef.current, {
+                x: -5,
+                duration: 1,
+                ease: 'sine.inOut',
+              });
+              sadTl.to(characterRef.current, {
+                x: 5,
+                duration: 1,
+                ease: 'sine.inOut',
+              });
+            }
+
+            // Return to center slowly
+            sadTl.to(characterRef.current, {
+              x: 0,
+              duration: 0.6,
+              ease: 'sine.inOut',
+            });
+
+            // Rise back up gently
+            sadTl.to(characterRef.current, {
+              y: 0,
+              duration: 0.6,
               ease: 'power2.in',
             });
           }
@@ -1390,7 +1475,10 @@ export default function AntyV3() {
           } else if (expr === 'spin') {
             setTimeout(() => setExpression('idle'), 1500);
           } else if (expr === 'angry') {
-            setTimeout(() => setExpression('idle'), 6000);
+            // Angry animation handles eye change internally via timeline
+            // Don't auto-return to idle
+          } else if (expr === 'sad') {
+            setTimeout(() => setExpression('idle'), 5500);
           } else {
             setTimeout(() => setExpression('idle'), 1350);
           }

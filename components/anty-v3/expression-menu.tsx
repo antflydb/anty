@@ -15,6 +15,7 @@ const EXPRESSIONS: { name: ExpressionName; emoji: string; label: string }[] = [
   { name: 'shocked', emoji: '😲', label: 'Shocked' },
   { name: 'wink', emoji: '😉', label: 'Wink' },
   { name: 'angry', emoji: '😠', label: 'Angry' },
+  { name: 'sad', emoji: '😢', label: 'Sad' },
   { name: 'off', emoji: '⏻', label: 'OFF' },
 ];
 

@@ -61,6 +61,7 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
   const [isHappy, setIsHappy] = useState(false);
   const [isShocked, setIsShocked] = useState(false);
   const [isAngry, setIsAngry] = useState(false);
+  const [isSad, setIsSad] = useState(false);
   const [isOff, setIsOff] = useState(false);
   const superGlowRef = useRef<HTMLDivElement>(null);
   const allowBlinkingRef = useRef<boolean>(true);
@@ -345,6 +346,13 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
       setIsAngry(false);
     }
 
+    // Set sad eyes when expression changes to 'sad'
+    if (expression === 'sad') {
+      setIsSad(true);
+    } else {
+      setIsSad(false);
+    }
+
     // Set OFF state when expression changes to 'off'
     if (expression === 'off') {
       setIsOff(true);
@@ -535,6 +543,8 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
   const angryEyeLeft = "/anty-v3/eye-angry-left.svg"; // Angry left eye
   const angryEyeRight = "/anty-v3/eye-angry-right.svg"; // Angry right eye
 
+  // Sad expression uses angry eyes flipped with scaleY(-1)
+
   // OFF state (logo) assets - localized
   const logoEyeLeft = "/anty-v3/eye-logo-left.svg"; // Left triangle eye (EYE2)
   const logoEyeRight = "/anty-v3/eye-logo-right.svg"; // Right triangle eye (EYE1)
@@ -606,6 +616,10 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
           <div className="absolute inset-[38%_28%_44%_50%]">
             <img alt="" className="block max-w-none size-full" src={angryEyeLeft} />
           </div>
+        ) : isSad ? (
+          <div className="absolute inset-[39%_30%_45%_51%]" style={{ transform: 'rotate(42deg) scale(0.85)' }}>
+            <img alt="" className="block max-w-none size-full" src={angryEyeLeft} />
+          </div>
         ) : (
           <div className="absolute flex inset-[33.41%_31.63%_38.76%_56.72%] items-center justify-center">
             <div
@@ -645,6 +659,10 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
           </div>
         ) : isAngry ? (
           <div className="absolute inset-[38%_50%_44%_28%]">
+            <img alt="" className="block max-w-none size-full" src={angryEyeRight} />
+          </div>
+        ) : isSad ? (
+          <div className="absolute inset-[39%_51%_45%_30%]" style={{ transform: 'rotate(-42deg) scale(0.85)' }}>
             <img alt="" className="block max-w-none size-full" src={angryEyeRight} />
           </div>
         ) : (

@@ -14,6 +14,7 @@ export type ExpressionName =
   | 'shocked' // Wide eyes with brackets moving apart
   | 'wink'    // Half-closed right eye + closed left eye
   | 'angry'   // Downward curved eyes with stern animation
+  | 'sad'     // Upward curved eyes with gentle droop animation
   | 'off';    // Logo state - triangle eyes, no animations
 
 // Button names for interactive responses
