@@ -319,18 +319,6 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
     debugLog.expression(prevExpression, expression);
     setCurrentExpression(expression);
 
-    // Update blinking permission based on expression
-    // Only allow blinking during idle - disable for all other expressions (angry, sad, off, etc.)
-    if (expression === 'idle' && !isOff) {
-      // Delay re-enabling blinking to allow eye transitions to complete
-      setTimeout(() => {
-        allowBlinkingRef.current = true;
-      }, 300);
-    } else {
-      // Disable blinking for angry, sad, off, and all other expressions
-      allowBlinkingRef.current = false;
-    }
-
     // Kill any ongoing blink animations on the eyes when expression changes away from idle
     // BUT: Don't kill/reset for shocked or idea, as they use GSAP transforms on the idle eyes
     if (expression !== 'idle' && expression !== 'shocked' && expression !== 'idea' && leftEyeRef.current && rightEyeRef.current) {

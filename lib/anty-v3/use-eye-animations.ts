@@ -193,7 +193,21 @@ export function useEyeAnimations({
   // 3.3: Expression-Based Blink Permission
   // ===========================
 
-  // TODO: Implementation in Phase 3
+  /**
+   * Manage blink permission based on current expression
+   * Only allow blinking during idle - disable for all other expressions
+   */
+  useEffect(() => {
+    if (expression === 'idle' && !isOff) {
+      // Delay re-enabling blinking to allow eye transitions to complete
+      setTimeout(() => {
+        allowBlinkingRef.current = true;
+      }, 300);
+    } else {
+      // Disable blinking for angry, sad, off, and all other expressions
+      allowBlinkingRef.current = false;
+    }
+  }, [expression, isOff]);
 
   // ===========================
   // 3.4: Expression Transition Animations
