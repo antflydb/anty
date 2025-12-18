@@ -676,12 +676,8 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
                 height: '44.52px',
                 width: '18.63px',
                 transformOrigin: 'center center',
-                transform: isShocked
-                  ? 'scaleY(1.4) scaleX(1.4)'
-                  : isIdea
-                  ? 'scaleY(1.15) scaleX(1.15) translateY(-8px)'
-                  : 'scaleY(1)',
-                transition: (isShocked || isIdea) ? 'none' : 'transform 0.25s ease-out'
+                transform: 'scaleY(1)',
+                transition: 'transform 0.25s ease-out'
               }}
             >
               <div className="relative size-full">
@@ -725,12 +721,8 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
                 height: '44.52px',
                 width: '18.63px',
                 transformOrigin: 'center center',
-                transform: isShocked
-                  ? 'scaleY(1.4) scaleX(1.4)'
-                  : isIdea
-                  ? 'scaleY(1.15) scaleX(1.15) translateY(-8px)'
-                  : 'scaleY(1)',
-                transition: (isShocked || isIdea) ? 'none' : 'transform 0.25s ease-out'
+                transform: 'scaleY(1)',
+                transition: 'transform 0.25s ease-out'
               }}
             >
               <div className="relative size-full">
