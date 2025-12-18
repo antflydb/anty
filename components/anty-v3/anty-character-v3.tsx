@@ -308,26 +308,10 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
     },
   }), [size]);
 
-  // Track previous expression to avoid unnecessary animations on mount
-  const prevExpressionRef = useRef<ExpressionName>('idle');
-
-  // Update expression when prop changes and trigger animations
+  // Update expression when prop changes and trigger state-based animations
+  // Note: GSAP-based eye animations (shocked, idea) are now handled in useEyeAnimations hook
   useEffect(() => {
-    const prevExpression = prevExpressionRef.current;
-    prevExpressionRef.current = expression;
-
-    debugLog.expression(prevExpression, expression);
     setCurrentExpression(expression);
-
-    // Kill any ongoing blink animations on the eyes when expression changes away from idle
-    // BUT: Don't kill/reset for shocked or idea, as they use GSAP transforms on the idle eyes
-    if (expression !== 'idle' && expression !== 'shocked' && expression !== 'idea' && leftEyeRef.current && rightEyeRef.current) {
-      gsap.killTweensOf([leftEyeRef.current, rightEyeRef.current]);
-      // Reset eyes to default state immediately
-      gsap.set([leftEyeRef.current, rightEyeRef.current], {
-        scaleY: 1
-      });
-    }
 
     // Trigger wink animation when expression changes to 'wink'
     if (expression === 'wink') {
@@ -339,45 +323,6 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
       setIsHappy(true);
     } else {
       setIsHappy(false);
-    }
-
-    // Set shocked eyes when expression changes to 'shocked'
-    if (expression === 'shocked') {
-      // Don't call setIsShocked - it causes a re-render that wipes out GSAP transforms!
-
-      // Force shocked state immediately with GSAP to override any ongoing transitions
-      if (leftEyeRef.current && rightEyeRef.current) {
-        debugLog.gsap('both', 'kill', 'Clearing tweens for shocked');
-        gsap.killTweensOf([leftEyeRef.current, rightEyeRef.current]);
-
-        debugLog.gsap('both', 'to', { scaleY: 1.4, scaleX: 1.4 });
-        // Animate eyes to shocked (grow bigger)
-        gsap.to([leftEyeRef.current, rightEyeRef.current], {
-          scaleY: 1.4,
-          scaleX: 1.4,
-          duration: 0.1,
-          ease: 'power2.out',
-          onStart: () => debugLog.both('Shocked animation started'),
-          onComplete: () => debugLog.both('Shocked animation complete'),
-        });
-      }
-    } else if (expression === 'idle' && (prevExpression === 'shocked' || prevExpression === 'idea')) {
-      // Reset when transitioning FROM shocked/idea back to idle
-      // Use a very short animation instead of instant set to avoid visible flashing
-      if (leftEyeRef.current && rightEyeRef.current) {
-        debugLog.gsap('both', 'kill', 'Resetting from shocked/idea to idle');
-        gsap.killTweensOf([leftEyeRef.current, rightEyeRef.current]);
-
-        debugLog.gsap('both', 'to', { scaleY: 1, scaleX: 1, y: 0, duration: 0.05 });
-        gsap.to([leftEyeRef.current, rightEyeRef.current], {
-          scaleY: 1,
-          scaleX: 1,
-          y: 0,
-          duration: 0.05,  // 50ms - smooth but nearly instant
-          ease: 'power2.out',
-          onComplete: () => debugLog.both('Reset to idle complete'),
-        });
-      }
     }
 
     // Set angry eyes when expression changes to 'angry'
@@ -394,45 +339,13 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
       setIsSad(false);
     }
 
-    // Set idea eyes when expression changes to 'idea'
-    if (expression === 'idea') {
-      // Don't call setIsIdea - it causes a re-render that wipes out GSAP transforms!
-
-      // Force idea state immediately with GSAP to override any ongoing transitions
-      if (leftEyeRef.current && rightEyeRef.current) {
-        debugLog.gsap('both', 'kill', 'Clearing tweens for idea');
-        gsap.killTweensOf([leftEyeRef.current, rightEyeRef.current]);
-
-        debugLog.gsap('both', 'set', { scaleY: 1, scaleX: 1, y: 0, rotation: 0 });
-        // Reset to baseline first to clear any previous transforms
-        gsap.set([leftEyeRef.current, rightEyeRef.current], {
-          scaleY: 1,
-          scaleX: 1,
-          y: 0,
-          rotation: 0,
-        });
-
-        debugLog.gsap('both', 'to', { scaleY: 1.15, scaleX: 1.15, y: -8 });
-        // Then apply idea transform (eyes look up and grow slightly)
-        gsap.to([leftEyeRef.current, rightEyeRef.current], {
-          scaleY: 1.15,
-          scaleX: 1.15,
-          y: -8,
-          duration: 0.1,
-          ease: 'power2.out',
-          onStart: () => debugLog.both('Idea animation started'),
-          onComplete: () => debugLog.both('Idea animation complete'),
-        });
-      }
-    }
-
     // Set OFF state when expression changes to 'off'
     if (expression === 'off') {
       setIsOff(true);
     } else {
       setIsOff(false);
     }
-  }, [expression, performWink, isOff]);
+  }, [expression, performWink]);
 
   // Super mode glow animation
   useEffect(() => {

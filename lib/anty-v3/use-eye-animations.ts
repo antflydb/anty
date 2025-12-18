@@ -213,7 +213,94 @@ export function useEyeAnimations({
   // 3.4: Expression Transition Animations
   // ===========================
 
-  // TODO: Implementation in Phase 4
+  /**
+   * Handle expression-specific eye animations (shocked, idea, resets)
+   * Uses GSAP transforms on idle eyes without triggering state re-renders
+   */
+  useEffect(() => {
+    const prevExpression = prevExpressionRef.current;
+    prevExpressionRef.current = expression;
+
+    debugLog.expression(prevExpression, expression);
+
+    const leftEye = leftEyeRef.current;
+    const rightEye = rightEyeRef.current;
+
+    // Kill any ongoing blink animations when expression changes away from idle
+    // BUT: Don't kill/reset for shocked or idea, as they use GSAP transforms on the idle eyes
+    if (expression !== 'idle' && expression !== 'shocked' && expression !== 'idea' && leftEye && rightEye) {
+      gsap.killTweensOf([leftEye, rightEye]);
+      // Reset eyes to default state immediately
+      gsap.set([leftEye, rightEye], {
+        scaleY: 1
+      });
+    }
+
+    // Set shocked eyes when expression changes to 'shocked'
+    if (expression === 'shocked' && leftEye && rightEye) {
+      // Don't call setIsShocked - it causes a re-render that wipes out GSAP transforms!
+
+      // Force shocked state immediately with GSAP to override any ongoing transitions
+      debugLog.gsap('both', 'kill', 'Clearing tweens for shocked');
+      gsap.killTweensOf([leftEye, rightEye]);
+
+      debugLog.gsap('both', 'to', { scaleY: 1.4, scaleX: 1.4 });
+      // Animate eyes to shocked (grow bigger)
+      gsap.to([leftEye, rightEye], {
+        scaleY: 1.4,
+        scaleX: 1.4,
+        duration: 0.1,
+        ease: 'power2.out',
+        onStart: () => debugLog.both('Shocked animation started'),
+        onComplete: () => debugLog.both('Shocked animation complete'),
+      });
+    } else if (expression === 'idle' && (prevExpression === 'shocked' || prevExpression === 'idea') && leftEye && rightEye) {
+      // Reset when transitioning FROM shocked/idea back to idle
+      // Use a very short animation instead of instant set to avoid visible flashing
+      debugLog.gsap('both', 'kill', 'Resetting from shocked/idea to idle');
+      gsap.killTweensOf([leftEye, rightEye]);
+
+      debugLog.gsap('both', 'to', { scaleY: 1, scaleX: 1, y: 0, duration: 0.05 });
+      gsap.to([leftEye, rightEye], {
+        scaleY: 1,
+        scaleX: 1,
+        y: 0,
+        duration: 0.05,  // 50ms - smooth but nearly instant
+        ease: 'power2.out',
+        onComplete: () => debugLog.both('Reset to idle complete'),
+      });
+    }
+
+    // Set idea eyes when expression changes to 'idea'
+    if (expression === 'idea' && leftEye && rightEye) {
+      // Don't call setIsIdea - it causes a re-render that wipes out GSAP transforms!
+
+      // Force idea state immediately with GSAP to override any ongoing transitions
+      debugLog.gsap('both', 'kill', 'Clearing tweens for idea');
+      gsap.killTweensOf([leftEye, rightEye]);
+
+      debugLog.gsap('both', 'set', { scaleY: 1, scaleX: 1, y: 0, rotation: 0 });
+      // Reset to baseline first to clear any previous transforms
+      gsap.set([leftEye, rightEye], {
+        scaleY: 1,
+        scaleX: 1,
+        y: 0,
+        rotation: 0,
+      });
+
+      debugLog.gsap('both', 'to', { scaleY: 1.15, scaleX: 1.15, y: -8 });
+      // Then apply idea transform (eyes look up and grow slightly)
+      gsap.to([leftEye, rightEye], {
+        scaleY: 1.15,
+        scaleX: 1.15,
+        y: -8,
+        duration: 0.1,
+        ease: 'power2.out',
+        onStart: () => debugLog.both('Idea animation started'),
+        onComplete: () => debugLog.both('Idea animation complete'),
+      });
+    }
+  }, [expression, leftEyeRef, rightEyeRef]);
 
   // ===========================
   // 3.5: Return Interface
