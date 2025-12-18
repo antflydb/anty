@@ -434,18 +434,18 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
     });
   };
 
-  // Figma asset URLs from localhost MCP server
-  const img = "http://localhost:3845/assets/f61f5eee0a4c503b51eb2c596b246821745b99a8.svg";
-  const img1 = "http://localhost:3845/assets/a14b6cd517de309621701f782bdf6c81889c4a43.svg";
-  const img2 = "http://localhost:3845/assets/36dc1ef172b0d1bbf9cfbd7e399e8dbb0da0b3b4.svg";
+  // Fresh Figma asset URLs - Body parts
+  const img = "https://www.figma.com/api/mcp/asset/4f4c44eb-9219-40c0-b7a2-860fb2cc989f"; // Right bracket body
+  const img1 = "https://www.figma.com/api/mcp/asset/3c33ef9a-f6ed-4d68-a999-58fc0582714c"; // Left bracket body
+  const img2 = "https://www.figma.com/api/mcp/asset/89d00b5f-338a-4833-950d-06b47db12e2a"; // IDLE eyes (vertical pills) - node 574-115
 
-  // Wink expression assets
-  const winkEye = "http://localhost:3845/assets/e4fb28c484c7e6676621eb48c0b6189a3d84f2e3.svg"; // Half-closed eye
-  const blinkLine = "http://localhost:3845/assets/5bfe8dfcf49aa1a7e408f8c7631a84eb1228754b.svg"; // Closed eye line
+  // Wink expression assets (node 574-118)
+  const winkEye = "https://www.figma.com/api/mcp/asset/669168dd-38d4-4a4b-b2a4-f26f65f8f3c7"; // Wink half-closed right eye (EYE1)
+  const blinkLine = "https://www.figma.com/api/mcp/asset/8301eef8-b4c3-4d67-a9d1-b313dd340eff"; // Wink closed left eye line (EYE2)
 
-  // Happy expression assets
-  const happyEyeLeft = "http://localhost:3845/assets/926605a1ac82ddab1592f4a8e9aebd84f14d974c.svg"; // Happy left eye
-  const happyEyeRight = "http://localhost:3845/assets/9a21e369d9b2e222ad4520d1d8eeb7fedced2d53.svg"; // Happy right eye
+  // Happy expression assets (node 33-5888)
+  const happyEyeLeft = "https://www.figma.com/api/mcp/asset/64d7ca94-8222-48bb-aff0-c0b3f006e499"; // Happy left eye (EYE2)
+  const happyEyeRight = "https://www.figma.com/api/mcp/asset/3459986b-1cf6-4cf0-adf3-31cc623578d0"; // Happy right eye (EYE1)
 
   return (
     <div

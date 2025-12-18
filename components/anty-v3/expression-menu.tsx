@@ -82,22 +82,37 @@ export function ExpressionMenu({ onExpressionSelect }: ExpressionMenuProps) {
         )}
       </AnimatePresence>
 
-      {/* Toggle button with pixel ellipsis */}
+      {/* Toggle button with menu SVG */}
       <motion.button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="bg-white rounded-full shadow-lg border border-gray-200 w-14 h-14 flex items-center justify-center hover:bg-gray-50 transition-colors"
+        className="flex items-center justify-center"
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
       >
         <motion.div
           animate={{ rotate: isExpanded ? 180 : 0 }}
           transition={{ duration: 0.2 }}
-          className="flex gap-1"
         >
-          {/* Pixel-style three squares (ellipsis) */}
-          <div className="w-1.5 h-1.5 bg-gray-700 rounded-sm" />
-          <div className="w-1.5 h-1.5 bg-gray-700 rounded-sm" />
-          <div className="w-1.5 h-1.5 bg-gray-700 rounded-sm" />
+          <svg width="56" height="56" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <g filter="url(#filter0_d_592_702)">
+              <path d="M2.03906 35.1262C2.03906 16.4773 17.157 1.35938 35.8059 1.35938V1.35938C54.4548 1.35938 69.5727 16.4773 69.5727 35.1262V35.1262C69.5727 53.7751 54.4548 68.893 35.8059 68.893V68.893C17.157 68.893 2.03906 53.7751 2.03906 35.1262V35.1262Z" fill="#F4F4F4"/>
+            </g>
+            <rect x="23.0391" y="32.7051" width="5.27686" height="5.27686" fill="#606060" fillOpacity="0.57"/>
+            <rect x="33.123" y="32.7051" width="5.27686" height="5.27686" fill="#606060" fillOpacity="0.57"/>
+            <rect x="43.2715" y="32.7051" width="5.27686" height="5.27686" fill="#606060" fillOpacity="0.57"/>
+            <defs>
+              <filter id="filter0_d_592_702" x="-0.0009377" y="-0.000625193" width="71.6132" height="71.6132" filterUnits="userSpaceOnUse" colorInterpolationFilters="sRGB">
+                <feFlood floodOpacity="0" result="BackgroundImageFix"/>
+                <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+                <feOffset dy="0.68"/>
+                <feGaussianBlur stdDeviation="1.02"/>
+                <feComposite in2="hardAlpha" operator="out"/>
+                <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.19 0"/>
+                <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_592_702"/>
+                <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_592_702" result="shape"/>
+              </filter>
+            </defs>
+          </svg>
         </motion.div>
       </motion.button>
     </div>
