@@ -1647,6 +1647,9 @@ export default function AntyV3() {
             scheduleExpressionReset(5500);
           } else if (expr === 'idea') {
             scheduleExpressionReset(2300);
+          } else if (expr === 'look-left' || expr === 'look-right') {
+            // Look animations hold briefly then return to idle
+            scheduleExpressionReset(800);
           } else {
             scheduleExpressionReset(1350);
           }

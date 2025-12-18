@@ -40,6 +40,11 @@ const ANIMATION_TIMING = {
   IDEA_DURATION: 0.1,             // 100ms animation
   RESET_DURATION: 0.05,           // 50ms to reset (smooth but nearly instant)
 
+  // Look left/right animations
+  LOOK_SCALE_X: 0.8,              // Contract eyes horizontally to 0.8x
+  LOOK_X_OFFSET: 12,              // Move eyes 12px left or right
+  LOOK_DURATION: 0.15,            // 150ms animation
+
   // Blink permission delays
   BLINK_RENABLE_DELAY: 300,       // 300ms delay before re-enabling blinking after returning to idle
 } as const;
@@ -256,8 +261,16 @@ export function useEyeAnimations({
     const rightEye = rightEyeRef.current;
 
     // Kill any ongoing blink animations when expression changes away from idle
-    // BUT: Don't kill/reset for shocked or idea, as they use GSAP transforms on the idle eyes
-    if (expression !== 'idle' && expression !== 'shocked' && expression !== 'idea' && leftEye && rightEye) {
+    // BUT: Don't kill/reset for shocked, idea, look-left, or look-right, as they use GSAP transforms on the idle eyes
+    if (
+      expression !== 'idle' &&
+      expression !== 'shocked' &&
+      expression !== 'idea' &&
+      expression !== 'look-left' &&
+      expression !== 'look-right' &&
+      leftEye &&
+      rightEye
+    ) {
       gsap.killTweensOf([leftEye, rightEye]);
       // Reset eyes to default state immediately
       gsap.set([leftEye, rightEye], {
@@ -283,16 +296,22 @@ export function useEyeAnimations({
         onStart: () => debugLog.both('Shocked animation started'),
         onComplete: () => debugLog.both('Shocked animation complete'),
       });
-    } else if (expression === 'idle' && (prevExpression === 'shocked' || prevExpression === 'idea') && leftEye && rightEye) {
-      // Reset when transitioning FROM shocked/idea back to idle
+    } else if (
+      expression === 'idle' &&
+      (prevExpression === 'shocked' || prevExpression === 'idea' || prevExpression === 'look-left' || prevExpression === 'look-right') &&
+      leftEye &&
+      rightEye
+    ) {
+      // Reset when transitioning FROM shocked/idea/look-left/look-right back to idle
       // Use a very short animation instead of instant set to avoid visible flashing
-      debugLog.gsap('both', 'kill', 'Resetting from shocked/idea to idle');
+      debugLog.gsap('both', 'kill', `Resetting from ${prevExpression} to idle`);
       gsap.killTweensOf([leftEye, rightEye]);
 
-      debugLog.gsap('both', 'to', { scaleY: 1, scaleX: 1, y: 0, duration: ANIMATION_TIMING.RESET_DURATION });
+      debugLog.gsap('both', 'to', { scaleY: 1, scaleX: 1, x: 0, y: 0, duration: ANIMATION_TIMING.RESET_DURATION });
       gsap.to([leftEye, rightEye], {
         scaleY: 1,
         scaleX: 1,
+        x: 0,
         y: 0,
         duration: ANIMATION_TIMING.RESET_DURATION,
         ease: 'power2.out',
@@ -327,6 +346,60 @@ export function useEyeAnimations({
         ease: 'power2.out',
         onStart: () => debugLog.both('Idea animation started'),
         onComplete: () => debugLog.both('Idea animation complete'),
+      });
+    }
+
+    // Look left animation - eyes move left, bunch closer, and contract
+    if (expression === 'look-left' && leftEye && rightEye) {
+      debugLog.gsap('both', 'kill', 'Clearing tweens for look-left');
+      gsap.killTweensOf([leftEye, rightEye]);
+
+      debugLog.gsap('both', 'set', { scaleY: 1, scaleX: 1, x: 0, y: 0, rotation: 0 });
+      // Reset to baseline first
+      gsap.set([leftEye, rightEye], {
+        scaleY: 1,
+        scaleX: 1,
+        x: 0,
+        y: 0,
+        rotation: 0,
+      });
+
+      debugLog.gsap('both', 'to', { scaleX: ANIMATION_TIMING.LOOK_SCALE_X, x: -ANIMATION_TIMING.LOOK_X_OFFSET });
+      // Animate eyes to look left (contract horizontally and move left)
+      gsap.to([leftEye, rightEye], {
+        scaleX: ANIMATION_TIMING.LOOK_SCALE_X,
+        x: -ANIMATION_TIMING.LOOK_X_OFFSET,
+        duration: ANIMATION_TIMING.LOOK_DURATION,
+        ease: 'power2.out',
+        onStart: () => debugLog.both('Look left animation started'),
+        onComplete: () => debugLog.both('Look left animation complete'),
+      });
+    }
+
+    // Look right animation - eyes move right, bunch closer, and contract
+    if (expression === 'look-right' && leftEye && rightEye) {
+      debugLog.gsap('both', 'kill', 'Clearing tweens for look-right');
+      gsap.killTweensOf([leftEye, rightEye]);
+
+      debugLog.gsap('both', 'set', { scaleY: 1, scaleX: 1, x: 0, y: 0, rotation: 0 });
+      // Reset to baseline first
+      gsap.set([leftEye, rightEye], {
+        scaleY: 1,
+        scaleX: 1,
+        x: 0,
+        y: 0,
+        rotation: 0,
+      });
+
+      debugLog.gsap('both', 'to', { scaleX: ANIMATION_TIMING.LOOK_SCALE_X, x: ANIMATION_TIMING.LOOK_X_OFFSET });
+      // Animate eyes to look right (contract horizontally and move right)
+      gsap.to([leftEye, rightEye], {
+        scaleX: ANIMATION_TIMING.LOOK_SCALE_X,
+        x: ANIMATION_TIMING.LOOK_X_OFFSET,
+        duration: ANIMATION_TIMING.LOOK_DURATION,
+        ease: 'power2.out',
+        onStart: () => debugLog.both('Look right animation started'),
+        onComplete: () => debugLog.both('Look right animation complete'),
       });
     }
   }, [expression, leftEyeRef, rightEyeRef]);

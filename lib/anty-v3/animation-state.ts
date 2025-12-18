@@ -7,16 +7,18 @@ import type { AntyStats } from '@/lib/anty/stat-system';
 
 // Expression names - only expressions with visual assets
 export type ExpressionName =
-  | 'idle'    // Default vertical pill eyes
-  | 'happy'   // Smiling eyes
-  | 'excited' // Smiling eyes with flip/jump animation and fireworks
-  | 'spin'    // Happy eyes with Y-axis spin jump
-  | 'shocked' // Wide eyes with brackets moving apart
-  | 'wink'    // Half-closed right eye + closed left eye
-  | 'angry'   // Downward curved eyes with stern animation
-  | 'sad'     // Upward curved eyes with gentle droop animation
-  | 'idea'    // Eyes look up with lightbulb moment
-  | 'off';    // Logo state - triangle eyes, no animations
+  | 'idle'       // Default vertical pill eyes
+  | 'happy'      // Smiling eyes
+  | 'excited'    // Smiling eyes with flip/jump animation and fireworks
+  | 'spin'       // Happy eyes with Y-axis spin jump
+  | 'shocked'    // Wide eyes with brackets moving apart
+  | 'wink'       // Half-closed right eye + closed left eye
+  | 'angry'      // Downward curved eyes with stern animation
+  | 'sad'        // Upward curved eyes with gentle droop animation
+  | 'idea'       // Eyes look up with lightbulb moment
+  | 'look-left'  // Eyes look left - bunched closer, contracted, moved left
+  | 'look-right' // Eyes look right - bunched closer, contracted, moved right
+  | 'off';       // Logo state - triangle eyes, no animations
 
 // Button names for interactive responses
 export type ButtonName = 'feed' | 'play' | 'chat' | 'moods';
