@@ -223,11 +223,26 @@ export default function AntyV3() {
       const outerGlow = glowRef.current;
       const shadow = document.getElementById('anty-shadow');
 
-      // Kill any existing animations
+      // Kill any existing animations and timers
       gsap.killTweensOf([characterElement, innerGlow, outerGlow, shadow]);
+      if (antyRef.current?.leftBodyRef?.current) {
+        gsap.killTweensOf(antyRef.current.leftBodyRef.current);
+        gsap.set(antyRef.current.leftBodyRef.current, { x: 0, y: 0 });
+      }
+      if (antyRef.current?.rightBodyRef?.current) {
+        gsap.killTweensOf(antyRef.current.rightBodyRef.current);
+        gsap.set(antyRef.current.rightBodyRef.current, { x: 0, y: 0 });
+      }
+      if (spinDescentTimerRef.current) {
+        clearTimeout(spinDescentTimerRef.current);
+        spinDescentTimerRef.current = null;
+      }
 
       // Leap to life animation
       const leapTl = gsap.timeline();
+
+      // Restore full opacity immediately
+      gsap.set(characterElement, { opacity: 1 });
 
       // Quick bounce up
       leapTl.to(characterElement, {
@@ -486,6 +501,15 @@ export default function AntyV3() {
               ease: 'expo.in', // Exponential acceleration for dramatic snap
             });
 
+            // Fade character to transparent at the very very end (super fast)
+            setTimeout(() => {
+              gsap.to(character, {
+                opacity: 0.45,
+                duration: 0.08,
+                ease: 'power2.in',
+              });
+            }, 640); // Start at 640ms (right at the very very end)
+
             // Fade out background glows and shadow quickly near the very end
             setTimeout(() => {
               const shadow = document.getElementById('anty-shadow');
@@ -508,11 +532,26 @@ export default function AntyV3() {
             const outerGlow = glowRef.current;
             const shadow = document.getElementById('anty-shadow');
 
-            // Kill any existing animations
+            // Kill any existing animations and timers
             gsap.killTweensOf([character, innerGlow, outerGlow, shadow]);
+            if (antyRef.current?.leftBodyRef?.current) {
+              gsap.killTweensOf(antyRef.current.leftBodyRef.current);
+              gsap.set(antyRef.current.leftBodyRef.current, { x: 0, y: 0 });
+            }
+            if (antyRef.current?.rightBodyRef?.current) {
+              gsap.killTweensOf(antyRef.current.rightBodyRef.current);
+              gsap.set(antyRef.current.rightBodyRef.current, { x: 0, y: 0 });
+            }
+            if (spinDescentTimerRef.current) {
+              clearTimeout(spinDescentTimerRef.current);
+              spinDescentTimerRef.current = null;
+            }
 
             // Leap to life animation
             const leapTl = gsap.timeline();
+
+            // Restore full opacity immediately
+            gsap.set(character, { opacity: 1 });
 
             // Quick bounce up
             leapTl.to(character, {
@@ -544,6 +583,321 @@ export default function AntyV3() {
                 opacity: 0.7,
               });
             }
+
+            // Special handling for shocked: go to idle first, then shocked
+            if (expr === 'shocked') {
+              setExpression('idle');
+              setTimeout(() => {
+                setExpression('shocked');
+
+                // Manually trigger shocked animation
+                if (characterRef.current && antyRef.current) {
+                  // Kill all existing animations and reset
+                  gsap.killTweensOf(characterRef.current);
+                  if (antyRef.current?.leftBodyRef?.current) {
+                    gsap.killTweensOf(antyRef.current.leftBodyRef.current);
+                    gsap.set(antyRef.current.leftBodyRef.current, { x: 0, y: 0 });
+                  }
+                  if (antyRef.current?.rightBodyRef?.current) {
+                    gsap.killTweensOf(antyRef.current.rightBodyRef.current);
+                    gsap.set(antyRef.current.rightBodyRef.current, { x: 0, y: 0 });
+                  }
+                  gsap.set(characterRef.current, { scale: 1, rotation: 0, y: 0, rotationY: 0 });
+
+                  const leftBody = antyRef.current.leftBodyRef?.current;
+                  const rightBody = antyRef.current.rightBodyRef?.current;
+
+                  gsap.to(characterRef.current, {
+                    y: -30,
+                    duration: 0.2,
+                    ease: 'power2.out',
+                  });
+
+                  if (leftBody && rightBody) {
+                    gsap.to(leftBody, {
+                      x: -15,
+                      y: -15,
+                      duration: 0.2,
+                      ease: 'back.out(2)',
+                    });
+                    gsap.to(rightBody, {
+                      x: 15,
+                      y: 15,
+                      duration: 0.2,
+                      ease: 'back.out(2)',
+                    });
+
+                    const shakeTl = gsap.timeline({ repeat: 3, yoyo: true });
+                    shakeTl.to(characterRef.current, {
+                      rotation: 2,
+                      duration: 0.08,
+                      ease: 'power1.inOut',
+                    });
+
+                    setTimeout(() => {
+                      gsap.to(leftBody, {
+                        x: 0,
+                        y: 0,
+                        duration: 0.25,
+                        ease: 'elastic.out(1, 0.5)',
+                      });
+                      gsap.to(rightBody, {
+                        x: 0,
+                        y: 0,
+                        duration: 0.25,
+                        ease: 'elastic.out(1, 0.5)',
+                      });
+                    }, 1350);
+                  }
+
+                  setTimeout(() => {
+                    if (!characterRef.current) return;
+                    gsap.to(characterRef.current, {
+                      y: 0,
+                      rotation: 0,
+                      duration: 0.5,
+                      ease: 'power1.inOut',
+                    });
+                  }, 1400);
+                }
+
+                setTimeout(() => setExpression('idle'), 1350);
+              }, 700);
+              return;
+            }
+
+            // Special handling for excited: leap to life then trigger animation
+            if (expr === 'excited') {
+              setExpression(expr);
+
+              // Manually trigger excited animation
+              setTimeout(() => {
+                if (!characterRef.current) return;
+
+                // Kill all existing animations and reset
+                gsap.killTweensOf(characterRef.current);
+                if (antyRef.current?.leftBodyRef?.current) {
+                  gsap.killTweensOf(antyRef.current.leftBodyRef.current);
+                  gsap.set(antyRef.current.leftBodyRef.current, { x: 0, y: 0 });
+                }
+                if (antyRef.current?.rightBodyRef?.current) {
+                  gsap.killTweensOf(antyRef.current.rightBodyRef.current);
+                  gsap.set(antyRef.current.rightBodyRef.current, { x: 0, y: 0 });
+                }
+                gsap.set(characterRef.current, { scale: 1, rotation: 0, y: 0, rotationY: 0 });
+
+                const excitedTl = gsap.timeline({
+                  onComplete: () => {
+                    gsap.set(characterRef.current, { rotation: 0 });
+                  }
+                });
+
+                // Jump up with 360° flip
+                excitedTl.to(characterRef.current, {
+                  y: -70,
+                  rotation: 360,
+                  duration: 0.5,
+                  ease: 'power2.out',
+                });
+
+                // Hold at top briefly
+                excitedTl.to(characterRef.current, {
+                  y: -70,
+                  rotation: 360,
+                  duration: 0.3,
+                });
+
+                // Float back down faster
+                excitedTl.to(characterRef.current, {
+                  y: 0,
+                  duration: 0.45,
+                  ease: 'power1.inOut',
+                });
+
+                // First excited hop
+                excitedTl.to(characterRef.current, {
+                  y: -25,
+                  duration: 0.18,
+                  ease: 'power2.out',
+                });
+                excitedTl.to(characterRef.current, {
+                  y: 0,
+                  duration: 0.18,
+                  ease: 'power2.in',
+                });
+
+                // Second excited hop
+                excitedTl.to(characterRef.current, {
+                  y: -18,
+                  duration: 0.15,
+                  ease: 'power2.out',
+                });
+                excitedTl.to(characterRef.current, {
+                  y: 0,
+                  duration: 0.15,
+                  ease: 'power2.in',
+                });
+
+                // FIREWORKS!
+                const colors = ['#FF1493', '#00CED1', '#FFD700', '#FF69B4', '#7B68EE', '#00FF7F', '#FF6347', '#FF00FF', '#00FFFF'];
+
+                setTimeout(() => {
+                  const burstPositions = [
+                    { x: window.innerWidth / 2 - 120, y: window.innerHeight / 2 - 220 },
+                    { x: window.innerWidth / 2 + 120, y: window.innerHeight / 2 - 200 },
+                    { x: window.innerWidth / 2, y: window.innerHeight / 2 - 260 },
+                  ];
+
+                  burstPositions.forEach((pos, burstIndex) => {
+                    setTimeout(() => {
+                      const burstColor = colors[Math.floor(Math.random() * colors.length)];
+
+                      // Main burst - 12 sparkles
+                      for (let i = 0; i < 12; i++) {
+                        const angle = (i / 12) * Math.PI * 2;
+                        const radius = 100;
+                        const offsetX = Math.cos(angle) * radius;
+                        const offsetY = Math.sin(angle) * radius;
+
+                        const sparkle = document.createElement('div');
+                        sparkle.textContent = '✨';
+                        sparkle.style.cssText = `
+                          position: fixed;
+                          left: ${pos.x}px;
+                          top: ${pos.y}px;
+                          font-size: 40px;
+                          pointer-events: none;
+                          z-index: 0;
+                          filter: drop-shadow(0 0 4px ${burstColor});
+                          will-change: transform, opacity;
+                        `;
+                        document.body.appendChild(sparkle);
+
+                        gsap.to(sparkle, {
+                          x: offsetX,
+                          y: offsetY,
+                          opacity: 0,
+                          duration: 1.2,
+                          ease: 'power2.out',
+                          onComplete: () => document.body.removeChild(sparkle),
+                        });
+                      }
+
+                      // Secondary smaller burst - 8 sparkles
+                      setTimeout(() => {
+                        for (let i = 0; i < 8; i++) {
+                          const angle = (i / 8) * Math.PI * 2 + 0.2;
+                          const radius = 60;
+                          const offsetX = Math.cos(angle) * radius;
+                          const offsetY = Math.sin(angle) * radius;
+
+                          const sparkle = document.createElement('div');
+                          sparkle.textContent = '✨';
+                          sparkle.style.cssText = `
+                            position: fixed;
+                            left: ${pos.x}px;
+                            top: ${pos.y}px;
+                            font-size: 24px;
+                            pointer-events: none;
+                            z-index: 0;
+                            filter: drop-shadow(0 0 3px ${burstColor});
+                            will-change: transform, opacity;
+                          `;
+                          document.body.appendChild(sparkle);
+
+                          gsap.to(sparkle, {
+                            x: offsetX,
+                            y: offsetY,
+                            opacity: 0,
+                            duration: 1,
+                            ease: 'power2.out',
+                            onComplete: () => document.body.removeChild(sparkle),
+                          });
+                        }
+                      }, 80);
+                    }, burstIndex * 120);
+                  });
+                }, 200);
+
+                setTimeout(() => setExpression('idle'), 1350);
+              }, 100);
+              return;
+            }
+
+            // Special handling for spin: leap to life then trigger animation
+            if (expr === 'spin') {
+              setExpression(expr);
+
+              // Manually trigger spin animation
+              setTimeout(() => {
+                if (!characterRef.current) return;
+
+                // Clear any existing descent timer
+                if (spinDescentTimerRef.current) {
+                  clearTimeout(spinDescentTimerRef.current);
+                  spinDescentTimerRef.current = null;
+                }
+
+                // Kill all existing animations and reset
+                gsap.killTweensOf(characterRef.current);
+                if (antyRef.current?.leftBodyRef?.current) {
+                  gsap.killTweensOf(antyRef.current.leftBodyRef.current);
+                  gsap.set(antyRef.current.leftBodyRef.current, { x: 0, y: 0 });
+                }
+                if (antyRef.current?.rightBodyRef?.current) {
+                  gsap.killTweensOf(antyRef.current.rightBodyRef.current);
+                  gsap.set(antyRef.current.rightBodyRef.current, { x: 0, y: 0 });
+                }
+                gsap.set(characterRef.current, { scale: 1, rotation: 0, y: 0, rotationY: 0 });
+
+                const currentRotation = gsap.getProperty(characterRef.current, 'rotationY') as number;
+                const currentY = gsap.getProperty(characterRef.current, 'y') as number;
+
+                // Jump to top if not already there
+                if (Math.abs(currentY) < 60) {
+                  gsap.to(characterRef.current, {
+                    y: -70,
+                    duration: 0.3,
+                    ease: 'power2.out',
+                  });
+                }
+
+                // Continue spinning from current rotation
+                gsap.to(characterRef.current, {
+                  rotationY: currentRotation + 720,
+                  duration: 1.1,
+                  ease: 'back.out(1.2)',
+                  onComplete: () => {
+                    const finalRotation = gsap.getProperty(characterRef.current, 'rotationY') as number;
+                    gsap.set(characterRef.current, { rotationY: finalRotation % 360 });
+                  }
+                });
+
+                // Schedule descent
+                spinDescentTimerRef.current = setTimeout(() => {
+                  if (characterRef.current) {
+                    const finalRotation = gsap.getProperty(characterRef.current, 'rotationY') as number;
+                    gsap.set(characterRef.current, { rotationY: finalRotation % 360 });
+
+                    gsap.to(characterRef.current, {
+                      y: 0,
+                      duration: 0.35,
+                      ease: 'power2.in',
+                      onComplete: () => {
+                        gsap.set(characterRef.current, { rotationY: 0 });
+                      }
+                    });
+                  }
+                }, 1100);
+
+                setTimeout(() => setExpression('idle'), 1500);
+              }, 100);
+              return;
+            }
+
+            // For all other expressions: leap to life then go straight to expression
+            setExpression(expr);
+            return; // Don't process further now
           }
 
           setExpression(expr);
@@ -552,6 +906,18 @@ export default function AntyV3() {
           if (expr === 'happy' && characterRef.current) {
             // Kill any existing animations and reset all transforms
             gsap.killTweensOf(characterRef.current);
+            if (antyRef.current?.leftBodyRef?.current) {
+              gsap.killTweensOf(antyRef.current.leftBodyRef.current);
+              gsap.set(antyRef.current.leftBodyRef.current, { x: 0, y: 0 });
+            }
+            if (antyRef.current?.rightBodyRef?.current) {
+              gsap.killTweensOf(antyRef.current.rightBodyRef.current);
+              gsap.set(antyRef.current.rightBodyRef.current, { x: 0, y: 0 });
+            }
+            if (spinDescentTimerRef.current) {
+              clearTimeout(spinDescentTimerRef.current);
+              spinDescentTimerRef.current = null;
+            }
             gsap.set(characterRef.current, { rotation: 0, y: 0, rotationY: 0, scale: 1 });
 
             gsap.to(characterRef.current, {
@@ -565,8 +931,21 @@ export default function AntyV3() {
 
           // Trigger flip jump animation for excited expression
           if (expr === 'excited' && characterRef.current) {
-            // Ensure scale is reset to 1 (in case coming from OFF)
-            gsap.set(characterRef.current, { scale: 1 });
+            // Kill all existing animations and reset
+            gsap.killTweensOf(characterRef.current);
+            if (antyRef.current?.leftBodyRef?.current) {
+              gsap.killTweensOf(antyRef.current.leftBodyRef.current);
+              gsap.set(antyRef.current.leftBodyRef.current, { x: 0, y: 0 });
+            }
+            if (antyRef.current?.rightBodyRef?.current) {
+              gsap.killTweensOf(antyRef.current.rightBodyRef.current);
+              gsap.set(antyRef.current.rightBodyRef.current, { x: 0, y: 0 });
+            }
+            if (spinDescentTimerRef.current) {
+              clearTimeout(spinDescentTimerRef.current);
+              spinDescentTimerRef.current = null;
+            }
+            gsap.set(characterRef.current, { scale: 1, rotation: 0, y: 0, rotationY: 0 });
 
             const excitedTl = gsap.timeline({
               onComplete: () => {
@@ -709,24 +1088,31 @@ export default function AntyV3() {
 
           // Trigger shocked animation - MORE DRAMATIC!
           if (expr === 'shocked' && characterRef.current && antyRef.current) {
-            // Ensure scale is reset to 1 (in case coming from OFF)
-            gsap.set(characterRef.current, { scale: 1 });
+            // Kill all existing animations and reset
+            gsap.killTweensOf(characterRef.current);
+            if (antyRef.current?.leftBodyRef?.current) {
+              gsap.killTweensOf(antyRef.current.leftBodyRef.current);
+              gsap.set(antyRef.current.leftBodyRef.current, { x: 0, y: 0 });
+            }
+            if (antyRef.current?.rightBodyRef?.current) {
+              gsap.killTweensOf(antyRef.current.rightBodyRef.current);
+              gsap.set(antyRef.current.rightBodyRef.current, { x: 0, y: 0 });
+            }
+            if (spinDescentTimerRef.current) {
+              clearTimeout(spinDescentTimerRef.current);
+              spinDescentTimerRef.current = null;
+            }
+            gsap.set(characterRef.current, { scale: 1, rotation: 0, y: 0, rotationY: 0 });
 
-            // Delay shocked animation if coming from OFF to let leap to life complete
-            const shockedDelay = expression === 'off' ? 700 : 0;
+            const leftBody = antyRef.current.leftBodyRef?.current;
+            const rightBody = antyRef.current.rightBodyRef?.current;
 
-            setTimeout(() => {
-              if (!characterRef.current || !antyRef.current) return;
-
-              const leftBody = antyRef.current.leftBodyRef?.current;
-              const rightBody = antyRef.current.rightBodyRef?.current;
-
-              // Character rises up HIGHER - more dramatic
-              gsap.to(characterRef.current, {
-                y: -30,
-                duration: 0.2,
-                ease: 'power2.out',
-              });
+            // Character rises up HIGHER - more dramatic
+            gsap.to(characterRef.current, {
+              y: -30,
+              duration: 0.2,
+              ease: 'power2.out',
+            });
 
             // Brackets move apart MORE - wider separation for dramatic effect
             if (leftBody && rightBody) {
@@ -768,17 +1154,15 @@ export default function AntyV3() {
               }, 1350);
             }
 
-              // Character comes back down smoothly after longer hold
-              setTimeout(() => {
-                if (!characterRef.current) return;
-                gsap.to(characterRef.current, {
-                  y: 0,
-                  rotation: 0,
-                  duration: 0.5,
-                  ease: 'power1.inOut',
-                });
-              }, 1400);
-            }, shockedDelay);
+            // Character comes back down smoothly after longer hold
+            setTimeout(() => {
+              gsap.to(characterRef.current, {
+                y: 0,
+                rotation: 0,
+                duration: 0.5,
+                ease: 'power1.inOut',
+              });
+            }, 1400);
           }
 
           // Trigger Y-axis spin jump animation for spin expression
@@ -789,11 +1173,17 @@ export default function AntyV3() {
               spinDescentTimerRef.current = null;
             }
 
-            // Kill any existing spin animations to allow continuous spinning
+            // Kill all existing animations and reset
             gsap.killTweensOf(characterRef.current);
-
-            // Ensure scale is reset to 1 (in case coming from OFF)
-            gsap.set(characterRef.current, { scale: 1 });
+            if (antyRef.current?.leftBodyRef?.current) {
+              gsap.killTweensOf(antyRef.current.leftBodyRef.current);
+              gsap.set(antyRef.current.leftBodyRef.current, { x: 0, y: 0 });
+            }
+            if (antyRef.current?.rightBodyRef?.current) {
+              gsap.killTweensOf(antyRef.current.rightBodyRef.current);
+              gsap.set(antyRef.current.rightBodyRef.current, { x: 0, y: 0 });
+            }
+            gsap.set(characterRef.current, { scale: 1, rotation: 0 });
 
             // Get current rotation and position
             const currentRotation = gsap.getProperty(characterRef.current, 'rotationY') as number;
