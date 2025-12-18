@@ -407,6 +407,18 @@ export default function AntyV3() {
       <ExpressionMenu
         onExpressionSelect={(expr) => {
           setExpression(expr);
+
+          // Trigger body wiggle animation for happy expression
+          if (expr === 'happy' && characterRef.current) {
+            gsap.to(characterRef.current, {
+              rotation: 10,
+              duration: 0.15,
+              ease: 'power1.inOut',
+              yoyo: true,
+              repeat: 5,
+            });
+          }
+
           setTimeout(() => setExpression('idle'), 2000);
         }}
       />
