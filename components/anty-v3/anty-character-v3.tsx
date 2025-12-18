@@ -523,9 +523,9 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
   const happyEyeLeft = "/anty-v3/eye-happy-left.svg"; // Happy left eye
   const happyEyeRight = "/anty-v3/eye-happy-right.svg"; // Happy right eye
 
-  // OFF state (logo) assets from Figma
-  const logoEyeLeft = "https://www.figma.com/api/mcp/asset/f2ae734b-bd8d-4902-88e3-9373c4da5424"; // Left triangle eye (EYE2)
-  const logoEyeRight = "https://www.figma.com/api/mcp/asset/7575032e-406f-4382-8837-0087a103ace2"; // Right triangle eye (EYE1)
+  // OFF state (logo) assets - localized
+  const logoEyeLeft = "/anty-v3/eye-logo-left.svg"; // Left triangle eye (EYE2)
+  const logoEyeRight = "/anty-v3/eye-logo-right.svg"; // Right triangle eye (EYE1)
 
   return (
     <div
