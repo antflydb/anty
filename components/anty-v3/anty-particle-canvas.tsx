@@ -11,7 +11,7 @@ interface AntyParticleCanvasProps {
 }
 
 export interface ParticleCanvasHandle {
-  spawnParticle: (type: ParticleType, x: number, y: number) => void;
+  spawnParticle: (type: ParticleType, x: number, y: number, color?: string) => void;
 }
 
 /**
@@ -30,7 +30,7 @@ export const AntyParticleCanvas = forwardRef<ParticleCanvasHandle, AntyParticleC
 
     // Expose spawn method to parent
     useImperativeHandle(ref, () => ({
-      spawnParticle: (type: ParticleType, x: number, y: number) => {
+      spawnParticle: (type: ParticleType, x: number, y: number, color?: string) => {
         const config = PARTICLE_CONFIGS[type];
         const timestamp = Date.now();
         const random = Math.random();
@@ -45,7 +45,7 @@ export const AntyParticleCanvas = forwardRef<ParticleCanvasHandle, AntyParticleC
           rotation: 0,
           opacity: 1,
           life: 1,
-          color: getParticleColor(type),
+          color: color || getParticleColor(type),
         };
 
         particlesRef.current = [...particlesRef.current, newParticle];
@@ -208,13 +208,12 @@ function drawHeart(ctx: CanvasRenderingContext2D) {
 }
 
 function drawSparkle(ctx: CanvasRenderingContext2D) {
-  // Star shape
-  ctx.fillStyle = '#ffd700';
+  // Star shape - uses fillStyle already set by drawParticle
   ctx.beginPath();
   for (let i = 0; i < 4; i++) {
     const angle = (i * Math.PI) / 2;
-    const x = Math.cos(angle) * 8;
-    const y = Math.sin(angle) * 8;
+    const x = Math.cos(angle) * 10;
+    const y = Math.sin(angle) * 10;
     if (i === 0) ctx.moveTo(x, y);
     else ctx.lineTo(x, y);
   }

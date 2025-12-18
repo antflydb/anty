@@ -10,6 +10,8 @@ export type ExpressionName =
   | 'idle'    // Default vertical pill eyes
   | 'happy'   // Smiling eyes
   | 'excited' // Smiling eyes with flip/jump animation and fireworks
+  | 'spin'    // Happy eyes with Y-axis spin jump
+  | 'shocked' // Wide eyes with brackets moving apart
   | 'wink';   // Half-closed right eye + closed left eye
 
 // Button names for interactive responses
@@ -149,7 +151,7 @@ export const PARTICLE_CONFIGS: Record<ParticleType, ParticleConfig> = {
       x: { min: -50, max: 50 },
       y: { min: -60, max: -100 },
     },
-    initialScale: { min: 0.3, max: 0.6 },
+    initialScale: { min: 0.5, max: 0.9 },
     rotationSpeed: { min: -180, max: 180 },
     fadeStart: 0.5,
   },

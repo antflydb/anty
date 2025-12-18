@@ -143,7 +143,7 @@ export default function AntyV3() {
 
       // Spawn celebration sparkles during transformation
       setTimeout(() => {
-        const canvasOffset = 160 / 2;
+        const canvasOffset = (160 * 5) / 2;
         for (let i = 0; i < 12; i++) {
           setTimeout(() => {
             antyRef.current?.spawnSparkle?.(
@@ -419,67 +419,257 @@ export default function AntyV3() {
             });
           }
 
-          // Trigger flip jump animation with fireworks for excited expression
+          // Trigger flip jump animation for excited expression
           if (expr === 'excited' && characterRef.current) {
-            const excitedTl = gsap.timeline();
+            const excitedTl = gsap.timeline({
+              onComplete: () => {
+                // Reset rotation invisibly after animation completes
+                gsap.set(characterRef.current, { rotation: 0 });
+              }
+            });
 
             // Jump up with 360° flip
             excitedTl.to(characterRef.current, {
-              y: -60,
+              y: -70,
               rotation: 360,
-              duration: 0.6,
+              duration: 0.5,
               ease: 'power2.out',
             });
 
-            // Land back down
+            // Hold at top briefly
             excitedTl.to(characterRef.current, {
-              y: 0,
-              rotation: 0,
-              duration: 0.4,
-              ease: 'bounce.out',
+              y: -70,
+              rotation: 360,
+              duration: 0.3,
             });
 
-            // Trigger fireworks burst at peak of jump
+            // Float back down faster
+            excitedTl.to(characterRef.current, {
+              y: 0,
+              duration: 0.45,
+              ease: 'power1.inOut',
+            });
+
+            // First excited hop
+            excitedTl.to(characterRef.current, {
+              y: -25,
+              duration: 0.18,
+              ease: 'power2.out',
+            });
+            excitedTl.to(characterRef.current, {
+              y: 0,
+              duration: 0.18,
+              ease: 'power2.in',
+            });
+
+            // Second excited hop
+            excitedTl.to(characterRef.current, {
+              y: -18,
+              duration: 0.15,
+              ease: 'power2.out',
+            });
+            excitedTl.to(characterRef.current, {
+              y: 0,
+              duration: 0.15,
+              ease: 'power2.in',
+            });
+
+            // FIREWORKS! Colorful blooming bursts - independent of character
+            const colors = ['#FF1493', '#00CED1', '#FFD700', '#FF69B4', '#7B68EE', '#00FF7F', '#FF6347', '#FF00FF', '#00FFFF'];
+
+            // Trigger fireworks almost immediately (0.2s in)
             setTimeout(() => {
-              const canvasOffset = 160 / 2;
-              // Spawn fireworks-style sparkles in a burst pattern
-              for (let i = 0; i < 15; i++) {
+              // Create 5 staggered firework bursts at different screen positions - higher up
+              const burstPositions = [
+                { x: window.innerWidth / 2 - 150, y: window.innerHeight / 2 - 200 },
+                { x: window.innerWidth / 2 + 150, y: window.innerHeight / 2 - 220 },
+                { x: window.innerWidth / 2, y: window.innerHeight / 2 - 280 },
+                { x: window.innerWidth / 2 - 100, y: window.innerHeight / 2 - 300 },
+                { x: window.innerWidth / 2 + 100, y: window.innerHeight / 2 - 160 }
+              ];
+
+              burstPositions.forEach((pos, burstIndex) => {
                 setTimeout(() => {
-                  antyRef.current?.spawnSparkle?.(
-                    canvasOffset + gsap.utils.random(-40, 40),
-                    canvasOffset + gsap.utils.random(-60, -20)
-                  );
-                }, i * 40);
-              }
-            }, 300);
+                  // Pick a random color for this burst
+                  const burstColor = colors[Math.floor(Math.random() * colors.length)];
 
-            // Create rising confetti emoji on the right side
-            setTimeout(() => {
-              const emojiElement = document.createElement('div');
-              emojiElement.textContent = '🎊';
-              emojiElement.style.position = 'absolute';
-              emojiElement.style.right = '20px';
-              emojiElement.style.bottom = '200px';
-              emojiElement.style.fontSize = '48px';
-              emojiElement.style.pointerEvents = 'none';
-              emojiElement.style.zIndex = '100';
-              document.body.appendChild(emojiElement);
+                  // Create firework shell going up
+                  const shell = document.createElement('div');
+                  shell.textContent = '●';
+                  shell.style.position = 'fixed';
+                  shell.style.left = `${pos.x}px`;
+                  shell.style.top = `${pos.y + 100}px`;
+                  shell.style.fontSize = '12px';
+                  shell.style.color = burstColor;
+                  shell.style.pointerEvents = 'none';
+                  shell.style.zIndex = '0';
+                  shell.style.filter = `drop-shadow(0 0 3px ${burstColor})`;
+                  document.body.appendChild(shell);
 
-              // Animate confetti rising
-              gsap.to(emojiElement, {
-                y: -150,
-                opacity: 0,
-                rotation: 20,
-                duration: 2.5,
-                ease: 'power1.out',
-                onComplete: () => {
-                  document.body.removeChild(emojiElement);
-                },
+                  // Animate shell going up with a short throw
+                  gsap.to(shell, {
+                    top: pos.y,
+                    duration: 0.3,
+                    ease: 'power2.out',
+                    onComplete: () => {
+                      document.body.removeChild(shell);
+                      // BURST at the top!
+
+                      // Main burst - 20 large sparkles radiating outward like star beams
+                      for (let i = 0; i < 20; i++) {
+                        const angle = (i / 20) * Math.PI * 2;
+                        const radius = 100;
+                        const offsetX = Math.cos(angle) * radius;
+                        const offsetY = Math.sin(angle) * radius;
+
+                        const sparkle = document.createElement('div');
+                        sparkle.textContent = '✨';
+                        sparkle.style.position = 'fixed';
+                        sparkle.style.left = `${pos.x}px`;
+                        sparkle.style.top = `${pos.y}px`;
+                        sparkle.style.fontSize = '40px';
+                        sparkle.style.pointerEvents = 'none';
+                        sparkle.style.zIndex = '0';
+                        sparkle.style.filter = `drop-shadow(0 0 5px ${burstColor})`;
+                        document.body.appendChild(sparkle);
+
+                        gsap.to(sparkle, {
+                          x: offsetX,
+                          y: offsetY,
+                          opacity: 0,
+                          duration: 1.5,
+                          ease: 'power2.out',
+                          onComplete: () => document.body.removeChild(sparkle),
+                        });
+                      }
+
+                      // Secondary smaller burst - adds depth
+                      setTimeout(() => {
+                        for (let i = 0; i < 15; i++) {
+                          const angle = (i / 15) * Math.PI * 2 + 0.1;
+                          const radius = 60;
+                          const offsetX = Math.cos(angle) * radius;
+                          const offsetY = Math.sin(angle) * radius;
+
+                          const sparkle = document.createElement('div');
+                          sparkle.textContent = '✨';
+                          sparkle.style.position = 'fixed';
+                          sparkle.style.left = `${pos.x}px`;
+                          sparkle.style.top = `${pos.y}px`;
+                          sparkle.style.fontSize = '28px';
+                          sparkle.style.pointerEvents = 'none';
+                          sparkle.style.zIndex = '0';
+                          sparkle.style.filter = `drop-shadow(0 0 3px ${burstColor})`;
+                          document.body.appendChild(sparkle);
+
+                          gsap.to(sparkle, {
+                            x: offsetX,
+                            y: offsetY,
+                            opacity: 0,
+                            duration: 1.2,
+                            ease: 'power2.out',
+                            onComplete: () => document.body.removeChild(sparkle),
+                          });
+                        }
+                      }, 100);
+                    },
+                  });
+                }, burstIndex * 150);
               });
-            }, 600);
+            }, 200);
           }
 
-          setTimeout(() => setExpression('idle'), 2000);
+          // Trigger shocked animation - MORE DRAMATIC!
+          if (expr === 'shocked' && characterRef.current && antyRef.current) {
+            const leftBody = antyRef.current.leftBodyRef?.current;
+            const rightBody = antyRef.current.rightBodyRef?.current;
+
+            // Character rises up HIGHER - more dramatic
+            gsap.to(characterRef.current, {
+              y: -30,
+              duration: 0.2,
+              ease: 'power2.out',
+            });
+
+            // Brackets move apart MORE - wider separation for dramatic effect
+            if (leftBody && rightBody) {
+              gsap.to(leftBody, {
+                x: -15,
+                y: -15,
+                duration: 0.2,
+                ease: 'back.out(2)',
+              });
+              gsap.to(rightBody, {
+                x: 15,
+                y: 15,
+                duration: 0.2,
+                ease: 'back.out(2)',
+              });
+
+              // Add a slight shake while shocked
+              const shakeTl = gsap.timeline({ repeat: 3, yoyo: true });
+              shakeTl.to(characterRef.current, {
+                rotation: 2,
+                duration: 0.08,
+                ease: 'power1.inOut',
+              });
+
+              // Brackets STAY OPEN then snap back tightly with eyes
+              setTimeout(() => {
+                gsap.to(leftBody, {
+                  x: 0,
+                  y: 0,
+                  duration: 0.25,
+                  ease: 'elastic.out(1, 0.5)',
+                });
+                gsap.to(rightBody, {
+                  x: 0,
+                  y: 0,
+                  duration: 0.25,
+                  ease: 'elastic.out(1, 0.5)',
+                });
+              }, 1350);
+            }
+
+            // Character comes back down smoothly after longer hold
+            setTimeout(() => {
+              gsap.to(characterRef.current, {
+                y: 0,
+                rotation: 0,
+                duration: 0.5,
+                ease: 'power1.inOut',
+              });
+            }, 1400);
+          }
+
+          // Trigger Y-axis spin jump animation for spin expression
+          if (expr === 'spin' && characterRef.current) {
+            // Spin with natural easing and overshoot
+            gsap.to(characterRef.current, {
+              rotationY: 720,
+              duration: 1.1,
+              ease: 'back.out(1.2)', // Natural easing with slight overshoot
+              onComplete: () => {
+                // Reset rotationY invisibly after animation completes
+                gsap.set(characterRef.current, { rotationY: 0 });
+              }
+            });
+
+            // Jump arc - separate from rotation for smooth motion
+            const jumpTl = gsap.timeline();
+            jumpTl.to(characterRef.current, {
+              y: -70,
+              duration: 0.5,
+              ease: 'power2.out',
+            });
+            jumpTl.to(characterRef.current, {
+              y: 0,
+              duration: 0.6,
+              ease: 'power2.in',
+            });
+          }
+
+          setTimeout(() => setExpression('idle'), 1350);
         }}
       />
     </div>

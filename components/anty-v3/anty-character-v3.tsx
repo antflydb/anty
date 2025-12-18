@@ -27,8 +27,10 @@ interface AntyCharacterV3Props {
 
 export interface AntyCharacterHandle {
   spawnFeedingParticles: () => void;
-  spawnSparkle?: (x: number, y: number) => void;
+  spawnSparkle?: (x: number, y: number, color?: string) => void;
   spawnLoveHearts?: () => void;
+  leftBodyRef?: React.RefObject<HTMLDivElement>;
+  rightBodyRef?: React.RefObject<HTMLDivElement>;
 }
 
 /**
@@ -49,13 +51,17 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
   const characterRef = useRef<HTMLDivElement>(null);
   const leftEyeRef = useRef<HTMLDivElement>(null);
   const rightEyeRef = useRef<HTMLDivElement>(null);
+  const leftBodyRef = useRef<HTMLDivElement>(null);
+  const rightBodyRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<ParticleCanvasHandle>(null);
 
   const [currentExpression, setCurrentExpression] = useState<ExpressionName>(expression);
   const [particles] = useState<Particle[]>([]);
   const [isWinking, setIsWinking] = useState(false);
   const [isHappy, setIsHappy] = useState(false);
+  const [isShocked, setIsShocked] = useState(false);
   const superGlowRef = useRef<HTMLDivElement>(null);
+  const allowBlinkingRef = useRef<boolean>(true);
 
   // Wink behavior - show wink expression with subtle motion and particle burst
   const performWink = useCallback(() => {
@@ -94,23 +100,27 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
     });
 
     // Spawn sparkle particles from right eye (winking eye)
-    // Canvas is 2x character size and centered, so offset positions accordingly
-    const canvasOffset = size / 2;
+    // Canvas is 5x character size and centered, so offset positions accordingly
+    const canvasOffset = (size * 5) / 2;
     if (canvasRef.current && canvasRef.current.spawnParticle) {
-      // Spawn 3 sparkles with slight delays for staggered effect
-      setTimeout(() => canvasRef.current?.spawnParticle('sparkle', canvasOffset + 110, canvasOffset + 50), 0);
-      setTimeout(() => canvasRef.current?.spawnParticle('sparkle', canvasOffset + 115, canvasOffset + 55), 50);
-      setTimeout(() => canvasRef.current?.spawnParticle('sparkle', canvasOffset + 105, canvasOffset + 52), 100);
+      // Spawn 4 sparkles with slight delays for staggered effect
+      // Right eye is at approximately +22px from center horizontally, -20px vertically
+      setTimeout(() => canvasRef.current?.spawnParticle('sparkle', canvasOffset + 22, canvasOffset - 20), 0);
+      setTimeout(() => canvasRef.current?.spawnParticle('sparkle', canvasOffset + 27, canvasOffset - 15), 50);
+      setTimeout(() => canvasRef.current?.spawnParticle('sparkle', canvasOffset + 17, canvasOffset - 18), 100);
+      setTimeout(() => canvasRef.current?.spawnParticle('sparkle', canvasOffset + 24, canvasOffset - 22), 150);
     }
   }, [size]);
 
-  // Expose particle spawning methods to parent
+  // Expose particle spawning methods and refs to parent
   useImperativeHandle(ref, () => ({
-    spawnSparkle: (x: number, y: number) => {
+    spawnSparkle: (x: number, y: number, color?: string) => {
       if (canvasRef.current && canvasRef.current.spawnParticle) {
-        canvasRef.current.spawnParticle('sparkle', x, y);
+        canvasRef.current.spawnParticle('sparkle', x, y, color);
       }
     },
+    leftBodyRef,
+    rightBodyRef,
     spawnLoveHearts: () => {
       const container = containerRef.current;
       if (!container) return;
@@ -272,6 +282,25 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
   useEffect(() => {
     setCurrentExpression(expression);
 
+    // Update blinking permission based on expression
+    if (expression === 'idle') {
+      // Delay re-enabling blinking to allow eye transitions to complete
+      setTimeout(() => {
+        allowBlinkingRef.current = true;
+      }, 300);
+    } else {
+      allowBlinkingRef.current = false;
+    }
+
+    // Kill any ongoing blink animations on the eyes when expression changes away from idle
+    if (expression !== 'idle' && leftEyeRef.current && rightEyeRef.current) {
+      gsap.killTweensOf([leftEyeRef.current, rightEyeRef.current]);
+      // Reset eyes to default flipped state immediately
+      gsap.set([leftEyeRef.current, rightEyeRef.current], {
+        scaleY: -1
+      });
+    }
+
     // Trigger wink animation when expression changes to 'wink'
     if (expression === 'wink') {
       performWink();
@@ -282,6 +311,29 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
       setIsHappy(true);
     } else {
       setIsHappy(false);
+    }
+
+    // Set shocked eyes when expression changes to 'shocked'
+    if (expression === 'shocked') {
+      setIsShocked(true);
+    } else {
+      setIsShocked(false);
+
+      // Reset inline transforms to default state after CSS transition completes
+      setTimeout(() => {
+        if (leftEyeRef.current && rightEyeRef.current && expression === 'idle') {
+          // Remove inline transform and transition to let GSAP take over
+          leftEyeRef.current.style.removeProperty('transform');
+          leftEyeRef.current.style.removeProperty('transition');
+          rightEyeRef.current.style.removeProperty('transform');
+          rightEyeRef.current.style.removeProperty('transition');
+
+          // Set GSAP-controlled transform back to flipped default
+          gsap.set([leftEyeRef.current, rightEyeRef.current], {
+            scaleY: -1
+          });
+        }
+      }, 300); // Wait for CSS transition to complete
     }
   }, [expression, performWink]);
 
@@ -303,6 +355,80 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
       gsap.set(superGlowRef.current, { opacity: 0, scale: 1 });
     }
   }, [isSuperMode]);
+
+  // Blink behavior - animate eyes collapsing vertically
+  const performBlink = useCallback(() => {
+    // Don't blink if not allowed (ref is instantly updated, unlike state)
+    if (!allowBlinkingRef.current) return;
+
+    const leftEye = leftEyeRef.current;
+    const rightEye = rightEyeRef.current;
+
+    if (!leftEye || !rightEye) return;
+
+    // Create timeline for blink animation
+    // Eyes are flipped with scaleY(-1), so animate from -1 to -0.05 and back
+    const blinkTl = gsap.timeline();
+
+    // Close eyes (collapse to horizontal line)
+    blinkTl.to([leftEye, rightEye], {
+      scaleY: -0.05, // Almost flat horizontal line (maintain flip direction)
+      duration: 0.1, // 100ms to close
+      ease: 'power2.in',
+    });
+
+    // Open eyes (expand back to normal)
+    blinkTl.to([leftEye, rightEye], {
+      scaleY: -1, // Back to flipped normal
+      duration: 0.15, // 150ms to open
+      ease: 'power2.out',
+    });
+  }, []);
+
+  // Double blink behavior - two quick blinks in succession
+  const performDoubleBlink = useCallback(() => {
+    // Don't blink if not allowed (ref is instantly updated, unlike state)
+    if (!allowBlinkingRef.current) return;
+
+    const leftEye = leftEyeRef.current;
+    const rightEye = rightEyeRef.current;
+
+    if (!leftEye || !rightEye) return;
+
+    // Create timeline for double blink
+    // Eyes are flipped with scaleY(-1), so maintain flip direction
+    const blinkTl = gsap.timeline();
+
+    // First blink
+    blinkTl.to([leftEye, rightEye], {
+      scaleY: -0.05, // Maintain flip direction
+      duration: 0.08, // Slightly faster
+      ease: 'power2.in',
+    });
+    blinkTl.to([leftEye, rightEye], {
+      scaleY: -1, // Back to flipped normal
+      duration: 0.12,
+      ease: 'power2.out',
+    });
+
+    // Short pause between blinks
+    blinkTl.to([leftEye, rightEye], {
+      scaleY: -1, // Stay at flipped normal
+      duration: 0.1, // 100ms pause
+    });
+
+    // Second blink
+    blinkTl.to([leftEye, rightEye], {
+      scaleY: -0.05, // Maintain flip direction
+      duration: 0.08,
+      ease: 'power2.in',
+    });
+    blinkTl.to([leftEye, rightEye], {
+      scaleY: -1, // Back to flipped normal
+      duration: 0.12,
+      ease: 'power2.out',
+    });
+  }, []);
 
   // Setup idle animations using GSAP
   useGSAP(
@@ -365,74 +491,8 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
 
       scheduleRandomBehavior();
     },
-    { scope: containerRef }
+    { scope: containerRef, dependencies: [performBlink, performDoubleBlink] }
   );
-
-  // Blink behavior - animate eyes collapsing vertically
-  const performBlink = () => {
-    const leftEye = leftEyeRef.current;
-    const rightEye = rightEyeRef.current;
-
-    if (!leftEye || !rightEye) return;
-
-    // Create timeline for blink animation
-    const blinkTl = gsap.timeline();
-
-    // Close eyes (collapse to horizontal line)
-    blinkTl.to([leftEye, rightEye], {
-      scaleY: 0.05, // Almost flat horizontal line
-      duration: 0.1, // 100ms to close
-      ease: 'power2.in',
-    });
-
-    // Open eyes (expand back to normal)
-    blinkTl.to([leftEye, rightEye], {
-      scaleY: 1, // Back to normal
-      duration: 0.15, // 150ms to open
-      ease: 'power2.out',
-    });
-  };
-
-  // Double blink behavior - two quick blinks in succession
-  const performDoubleBlink = () => {
-    const leftEye = leftEyeRef.current;
-    const rightEye = rightEyeRef.current;
-
-    if (!leftEye || !rightEye) return;
-
-    // Create timeline for double blink
-    const blinkTl = gsap.timeline();
-
-    // First blink
-    blinkTl.to([leftEye, rightEye], {
-      scaleY: 0.05,
-      duration: 0.08, // Slightly faster
-      ease: 'power2.in',
-    });
-    blinkTl.to([leftEye, rightEye], {
-      scaleY: 1,
-      duration: 0.12,
-      ease: 'power2.out',
-    });
-
-    // Short pause between blinks
-    blinkTl.to([leftEye, rightEye], {
-      scaleY: 1,
-      duration: 0.1, // 100ms pause
-    });
-
-    // Second blink
-    blinkTl.to([leftEye, rightEye], {
-      scaleY: 0.05,
-      duration: 0.08,
-      ease: 'power2.in',
-    });
-    blinkTl.to([leftEye, rightEye], {
-      scaleY: 1,
-      duration: 0.12,
-      ease: 'power2.out',
-    });
-  };
 
   // Local SVG assets - no network requests, instant loading
   const img = "/anty-v3/body-right.svg"; // Right bracket body
@@ -454,7 +514,7 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
       style={{ width: size, height: size, overflow: 'visible' }}
     >
       {/* Canvas overlay for particles - positioned to extend beyond character */}
-      <AntyParticleCanvas ref={canvasRef} particles={particles} width={size * 2} height={size * 2} />
+      <AntyParticleCanvas ref={canvasRef} particles={particles} width={size * 5} height={size * 5} />
 
       {/* Super Mode Golden Glow */}
       {isSuperMode && (
@@ -486,10 +546,10 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
         }}
       >
         {/* Anty body layers from Figma */}
-        <div className="absolute inset-[13.46%_0_0_13.46%]">
+        <div ref={rightBodyRef} className="absolute inset-[13.46%_0_0_13.46%]">
           <img alt="" className="block max-w-none size-full" src={img} />
         </div>
-        <div className="absolute inset-[0_13.15%_13.15%_0]">
+        <div ref={leftBodyRef} className="absolute inset-[0_13.15%_13.15%_0]">
           <img alt="" className="block max-w-none size-full" src={img1} />
         </div>
         {/* Left eye - varies by expression */}
@@ -508,7 +568,13 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
             <div
               ref={leftEyeRef}
               className="flex-none scale-y-[-100%]"
-              style={{ height: '44.52px', width: '18.63px', transformOrigin: 'center center' }}
+              style={{
+                height: '44.52px',
+                width: '18.63px',
+                transformOrigin: 'center center',
+                transform: isShocked ? 'scaleY(-1.4) scaleX(1.4)' : 'scaleY(-1)',
+                transition: isShocked ? 'none' : 'transform 0.25s ease-out'
+              }}
             >
               <div className="relative size-full">
                 <img alt="" className="block max-w-none size-full" src={img2} />
@@ -533,7 +599,13 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
             <div
               ref={rightEyeRef}
               className="flex-none scale-y-[-100%]"
-              style={{ height: '44.52px', width: '18.63px', transformOrigin: 'center center' }}
+              style={{
+                height: '44.52px',
+                width: '18.63px',
+                transformOrigin: 'center center',
+                transform: isShocked ? 'scaleY(-1.4) scaleX(1.4)' : 'scaleY(-1)',
+                transition: isShocked ? 'none' : 'transform 0.25s ease-out'
+              }}
             >
               <div className="relative size-full">
                 <img alt="" className="block max-w-none size-full" src={img2} />

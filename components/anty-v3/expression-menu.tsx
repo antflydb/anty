@@ -9,9 +9,10 @@ interface ExpressionMenuProps {
 }
 
 const EXPRESSIONS: { name: ExpressionName; emoji: string; label: string }[] = [
-  { name: 'idle', emoji: '😐', label: 'Idle' },
   { name: 'happy', emoji: '😊', label: 'Happy' },
   { name: 'excited', emoji: '🎉', label: 'Excited' },
+  { name: 'spin', emoji: '🌀', label: 'Spin' },
+  { name: 'shocked', emoji: '😲', label: 'Shocked' },
   { name: 'wink', emoji: '😉', label: 'Wink' },
 ];
 
