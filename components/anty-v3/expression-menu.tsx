@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Power } from 'lucide-react';
 import type { ExpressionName } from '@/lib/anty-v3/animation-state';
 
 interface ExpressionMenuProps {
@@ -98,29 +99,27 @@ export function ExpressionMenu({ onExpressionSelect, currentExpression }: Expres
         whileTap={{ scale: 0.95 }}
       >
         {isOff ? (
-          // ON button when in OFF state - orange power icon
-          <svg width="56" height="56" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <g filter="url(#filter0_d_on_button)">
-              <path d="M2.03906 35.1262C2.03906 16.4773 17.157 1.35938 35.8059 1.35938V1.35938C54.4548 1.35938 69.5727 16.4773 69.5727 35.1262V35.1262C69.5727 53.7751 54.4548 68.893 35.8059 68.893V68.893C17.157 68.893 2.03906 53.7751 2.03906 35.1262V35.1262Z" fill="#FF8C00"/>
-            </g>
-            {/* ON Power Symbol - centered and smaller */}
-            <g transform="translate(35.8059, 35.1262)">
-              <path d="M0,-8 L0,2" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
-              <path d="M-6,-4.5 C-8.5,-2.8 -10,0 -10,3 C-10,8.3 -5.5,11.5 0,11.5 C5.5,11.5 10,8.3 10,3 C10,0 8.5,-2.8 6,-4.5" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
-            </g>
-            <defs>
-              <filter id="filter0_d_on_button" x="-0.0009377" y="-0.000625193" width="71.6132" height="71.6132" filterUnits="userSpaceOnUse" colorInterpolationFilters="sRGB">
-                <feFlood floodOpacity="0" result="BackgroundImageFix"/>
-                <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
-                <feOffset dy="0.68"/>
-                <feGaussianBlur stdDeviation="1.02"/>
-                <feComposite in2="hardAlpha" operator="out"/>
-                <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.19 0"/>
-                <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_on_button"/>
-                <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_on_button" result="shape"/>
-              </filter>
-            </defs>
-          </svg>
+          // ON button when in OFF state - orange circle with Lucide power icon
+          <div className="relative w-14 h-14 flex items-center justify-center">
+            <svg width="56" height="56" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg" className="absolute">
+              <g filter="url(#filter0_d_on_button)">
+                <path d="M2.03906 35.1262C2.03906 16.4773 17.157 1.35938 35.8059 1.35938V1.35938C54.4548 1.35938 69.5727 16.4773 69.5727 35.1262V35.1262C69.5727 53.7751 54.4548 68.893 35.8059 68.893V68.893C17.157 68.893 2.03906 53.7751 2.03906 35.1262V35.1262Z" fill="#FF8C00"/>
+              </g>
+              <defs>
+                <filter id="filter0_d_on_button" x="-0.0009377" y="-0.000625193" width="71.6132" height="71.6132" filterUnits="userSpaceOnUse" colorInterpolationFilters="sRGB">
+                  <feFlood floodOpacity="0" result="BackgroundImageFix"/>
+                  <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+                  <feOffset dy="0.68"/>
+                  <feGaussianBlur stdDeviation="1.02"/>
+                  <feComposite in2="hardAlpha" operator="out"/>
+                  <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.19 0"/>
+                  <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_on_button"/>
+                  <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_on_button" result="shape"/>
+                </filter>
+              </defs>
+            </svg>
+            <Power className="w-6 h-6 text-white relative z-10" strokeWidth={2.5} />
+          </div>
         ) : (
           // Menu icon normally
           <motion.div
