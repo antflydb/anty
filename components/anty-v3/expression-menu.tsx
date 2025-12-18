@@ -103,9 +103,11 @@ export function ExpressionMenu({ onExpressionSelect, currentExpression }: Expres
             <g filter="url(#filter0_d_on_button)">
               <path d="M2.03906 35.1262C2.03906 16.4773 17.157 1.35938 35.8059 1.35938V1.35938C54.4548 1.35938 69.5727 16.4773 69.5727 35.1262V35.1262C69.5727 53.7751 54.4548 68.893 35.8059 68.893V68.893C17.157 68.893 2.03906 53.7751 2.03906 35.1262V35.1262Z" fill="#FF8C00"/>
             </g>
-            {/* ON Power Symbol */}
-            <path d="M35.8059 18V28" stroke="white" strokeWidth="3" strokeLinecap="round"/>
-            <path d="M28 22C24 24 21 28 21 33C21 40 27 45 35.8 45C44.6 45 50.6 40 50.6 33C50.6 28 47.6 24 43.6 22" stroke="white" strokeWidth="3" strokeLinecap="round"/>
+            {/* ON Power Symbol - centered and smaller */}
+            <g transform="translate(35.8059, 35.1262)">
+              <path d="M0,-8 L0,2" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
+              <path d="M-6,-4.5 C-8.5,-2.8 -10,0 -10,3 C-10,8.3 -5.5,11.5 0,11.5 C5.5,11.5 10,8.3 10,3 C10,0 8.5,-2.8 6,-4.5" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
+            </g>
             <defs>
               <filter id="filter0_d_on_button" x="-0.0009377" y="-0.000625193" width="71.6132" height="71.6132" filterUnits="userSpaceOnUse" colorInterpolationFilters="sRGB">
                 <feFlood floodOpacity="0" result="BackgroundImageFix"/>
