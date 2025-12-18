@@ -367,8 +367,17 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
       setIsIdea(true);
 
       // Force idea state immediately with GSAP to override any ongoing transitions
+      // First reset to baseline, then apply idea transform
       if (leftEyeRef.current && rightEyeRef.current) {
         gsap.killTweensOf([leftEyeRef.current, rightEyeRef.current]);
+        // Reset to baseline first
+        gsap.set([leftEyeRef.current, rightEyeRef.current], {
+          scaleY: 1,
+          scaleX: 1,
+          y: 0,
+          rotation: 0,
+        });
+        // Then apply idea transform
         gsap.to([leftEyeRef.current, rightEyeRef.current], {
           scaleY: 1.15,
           scaleX: 1.15,

@@ -1538,10 +1538,10 @@ export default function AntyV3() {
               }, 600);
             }, 300);
 
-            // Hang in the air
+            // Hang in the air longer
             ideaTl.to(characterRef.current, {
               y: -80,
-              duration: 0.5,
+              duration: 1.0,
             });
 
             // Drop back down
@@ -1564,7 +1564,7 @@ export default function AntyV3() {
           } else if (expr === 'sad') {
             setTimeout(() => setExpression('idle'), 5500);
           } else if (expr === 'idea') {
-            setTimeout(() => setExpression('idle'), 1800);
+            setTimeout(() => setExpression('idle'), 2300);
           } else {
             setTimeout(() => setExpression('idle'), 1350);
           }
