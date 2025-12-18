@@ -62,6 +62,7 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
   const [isShocked, setIsShocked] = useState(false);
   const [isAngry, setIsAngry] = useState(false);
   const [isSad, setIsSad] = useState(false);
+  const [isIdea, setIsIdea] = useState(false);
   const [isOff, setIsOff] = useState(false);
   const superGlowRef = useRef<HTMLDivElement>(null);
   const allowBlinkingRef = useRef<boolean>(true);
@@ -355,6 +356,13 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
       setIsSad(false);
     }
 
+    // Set idea eyes when expression changes to 'idea'
+    if (expression === 'idea') {
+      setIsIdea(true);
+    } else {
+      setIsIdea(false);
+    }
+
     // Set OFF state when expression changes to 'off'
     if (expression === 'off') {
       setIsOff(true);
@@ -631,8 +639,12 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
                 height: '44.52px',
                 width: '18.63px',
                 transformOrigin: 'center center',
-                transform: isShocked ? 'scaleY(-1.4) scaleX(1.4)' : 'scaleY(-1)',
-                transition: isShocked ? 'none' : 'transform 0.25s ease-out'
+                transform: isShocked
+                  ? 'scaleY(-1.4) scaleX(1.4)'
+                  : isIdea
+                  ? 'scaleY(-1.15) scaleX(1.15) translateY(-8px)'
+                  : 'scaleY(-1)',
+                transition: (isShocked || isIdea) ? 'none' : 'transform 0.25s ease-out'
               }}
             >
               <div className="relative size-full">
@@ -676,8 +688,12 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
                 height: '44.52px',
                 width: '18.63px',
                 transformOrigin: 'center center',
-                transform: isShocked ? 'scaleY(-1.4) scaleX(1.4)' : 'scaleY(-1)',
-                transition: isShocked ? 'none' : 'transform 0.25s ease-out'
+                transform: isShocked
+                  ? 'scaleY(-1.4) scaleX(1.4)'
+                  : isIdea
+                  ? 'scaleY(-1.15) scaleX(1.15) translateY(-8px)'
+                  : 'scaleY(-1)',
+                transition: (isShocked || isIdea) ? 'none' : 'transform 0.25s ease-out'
               }}
             >
               <div className="relative size-full">

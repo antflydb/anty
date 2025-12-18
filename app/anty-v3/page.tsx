@@ -1468,6 +1468,90 @@ export default function AntyV3() {
             });
           }
 
+          // Trigger idea "aha!" animation
+          if (expr === 'idea' && characterRef.current) {
+            // Kill all existing animations and reset
+            gsap.killTweensOf(characterRef.current);
+            if (antyRef.current?.leftBodyRef?.current) {
+              gsap.killTweensOf(antyRef.current.leftBodyRef.current);
+              gsap.set(antyRef.current.leftBodyRef.current, { x: 0, y: 0 });
+            }
+            if (antyRef.current?.rightBodyRef?.current) {
+              gsap.killTweensOf(antyRef.current.rightBodyRef.current);
+              gsap.set(antyRef.current.rightBodyRef.current, { x: 0, y: 0 });
+            }
+            if (spinDescentTimerRef.current) {
+              clearTimeout(spinDescentTimerRef.current);
+              spinDescentTimerRef.current = null;
+            }
+            gsap.set(characterRef.current, { scale: 1, rotation: 0, y: 0, rotationY: 0 });
+
+            // Create idea "aha!" timeline
+            const ideaTl = gsap.timeline();
+
+            // Jump up quickly
+            ideaTl.to(characterRef.current, {
+              y: -80,
+              duration: 0.4,
+              ease: 'power2.out',
+            });
+
+            // Spawn lightbulb emoji above Anty when in the air
+            setTimeout(() => {
+              const rect = characterRef.current?.getBoundingClientRect();
+              if (!rect) return;
+
+              const lightbulb = document.createElement('div');
+              lightbulb.textContent = '💡';
+              lightbulb.style.cssText = `
+                position: fixed;
+                left: ${rect.left + rect.width / 2 - 20}px;
+                top: ${rect.top - 40}px;
+                font-size: 48px;
+                pointer-events: none;
+                z-index: 1000;
+                filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.8));
+              `;
+              document.body.appendChild(lightbulb);
+
+              // Pop in
+              gsap.fromTo(lightbulb,
+                { scale: 0, opacity: 0, y: 20 },
+                {
+                  scale: 1.2,
+                  opacity: 1,
+                  y: 0,
+                  duration: 0.3,
+                  ease: 'back.out(2)',
+                }
+              );
+
+              // Float and fade out
+              setTimeout(() => {
+                gsap.to(lightbulb, {
+                  y: -30,
+                  opacity: 0,
+                  duration: 0.8,
+                  ease: 'power2.in',
+                  onComplete: () => document.body.removeChild(lightbulb),
+                });
+              }, 600);
+            }, 300);
+
+            // Hang in the air
+            ideaTl.to(characterRef.current, {
+              y: -80,
+              duration: 0.5,
+            });
+
+            // Drop back down
+            ideaTl.to(characterRef.current, {
+              y: 0,
+              duration: 0.4,
+              ease: 'power2.in',
+            });
+          }
+
           // Different timeout for different expressions
           // OFF state never auto-returns to idle - user must manually change
           if (expr === 'off') {
@@ -1479,6 +1563,8 @@ export default function AntyV3() {
             // Don't auto-return to idle
           } else if (expr === 'sad') {
             setTimeout(() => setExpression('idle'), 5500);
+          } else if (expr === 'idea') {
+            setTimeout(() => setExpression('idle'), 1800);
           } else {
             setTimeout(() => setExpression('idle'), 1350);
           }
