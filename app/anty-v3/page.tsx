@@ -24,7 +24,17 @@ export default function AntyV3() {
   }
 
   const [hearts, setHearts] = useState(3);
-  const [expression, setExpression] = useState<ExpressionName>('idle');
+  const [expression, setExpressionInternal] = useState<ExpressionName>('idle');
+
+  // Wrapped setExpression with logging
+  const setExpression = (newExpr: ExpressionName) => {
+    setExpressionInternal((prevExpression) => {
+      console.log(`setExpression called: ${prevExpression} → ${newExpr} at ${Date.now()}`);
+      console.trace('setExpression call stack');
+      return newExpr;
+    });
+  };
+
   const [stats, setStats] = useState<AntyStats>({
     energy: 100,
     happiness: 100,
