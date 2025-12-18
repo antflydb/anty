@@ -16,7 +16,36 @@ import gsap from 'gsap';
 import type { ExpressionName } from './animation-state';
 
 // ===========================
-// Section 1: Debug Utilities
+// Section 1: Animation Constants
+// ===========================
+
+/**
+ * Timing constants for eye animations
+ * All durations in seconds, scales are multipliers
+ */
+const ANIMATION_TIMING = {
+  // Blink animations
+  BLINK_CLOSE_DURATION: 0.1,      // 100ms to close eyes
+  BLINK_OPEN_DURATION: 0.15,      // 150ms to open eyes
+  BLINK_SCALE_CLOSED: 0.05,       // Nearly flat horizontal line
+  DOUBLE_BLINK_CLOSE_DURATION: 0.08,   // Slightly faster for double blink
+  DOUBLE_BLINK_OPEN_DURATION: 0.12,
+  DOUBLE_BLINK_PAUSE: 0.1,        // 100ms pause between blinks
+
+  // Expression animations
+  SHOCKED_SCALE: 1.4,             // Eyes grow to 1.4x
+  SHOCKED_DURATION: 0.1,          // 100ms animation
+  IDEA_SCALE: 1.15,               // Eyes grow to 1.15x
+  IDEA_Y_OFFSET: -8,              // Eyes move up 8px
+  IDEA_DURATION: 0.1,             // 100ms animation
+  RESET_DURATION: 0.05,           // 50ms to reset (smooth but nearly instant)
+
+  // Blink permission delays
+  BLINK_RENABLE_DELAY: 300,       // 300ms delay before re-enabling blinking after returning to idle
+} as const;
+
+// ===========================
+// Section 2: Debug Utilities
 // ===========================
 
 /**
@@ -119,15 +148,15 @@ export function useEyeAnimations({
 
     // Close eyes (collapse to horizontal line)
     blinkTl.to([leftEye, rightEye], {
-      scaleY: 0.05, // Almost flat horizontal line
-      duration: 0.1, // 100ms to close
+      scaleY: ANIMATION_TIMING.BLINK_SCALE_CLOSED,
+      duration: ANIMATION_TIMING.BLINK_CLOSE_DURATION,
       ease: 'power2.in',
     });
 
     // Open eyes (expand back to normal)
     blinkTl.to([leftEye, rightEye], {
       scaleY: 1, // Back to normal
-      duration: 0.15, // 150ms to open
+      duration: ANIMATION_TIMING.BLINK_OPEN_DURATION,
       ease: 'power2.out',
     });
   }, [leftEyeRef, rightEyeRef]);
@@ -160,31 +189,31 @@ export function useEyeAnimations({
 
     // First blink
     blinkTl.to([leftEye, rightEye], {
-      scaleY: 0.05, // Collapse to line
-      duration: 0.08, // Slightly faster
+      scaleY: ANIMATION_TIMING.BLINK_SCALE_CLOSED,
+      duration: ANIMATION_TIMING.DOUBLE_BLINK_CLOSE_DURATION,
       ease: 'power2.in',
     });
     blinkTl.to([leftEye, rightEye], {
       scaleY: 1, // Back to normal
-      duration: 0.12,
+      duration: ANIMATION_TIMING.DOUBLE_BLINK_OPEN_DURATION,
       ease: 'power2.out',
     });
 
     // Short pause between blinks
     blinkTl.to([leftEye, rightEye], {
       scaleY: 1, // Stay at normal
-      duration: 0.1, // 100ms pause
+      duration: ANIMATION_TIMING.DOUBLE_BLINK_PAUSE,
     });
 
     // Second blink
     blinkTl.to([leftEye, rightEye], {
-      scaleY: 0.05, // Collapse to line
-      duration: 0.08,
+      scaleY: ANIMATION_TIMING.BLINK_SCALE_CLOSED,
+      duration: ANIMATION_TIMING.DOUBLE_BLINK_CLOSE_DURATION,
       ease: 'power2.in',
     });
     blinkTl.to([leftEye, rightEye], {
       scaleY: 1, // Back to normal
-      duration: 0.12,
+      duration: ANIMATION_TIMING.DOUBLE_BLINK_OPEN_DURATION,
       ease: 'power2.out',
     });
   }, [leftEyeRef, rightEyeRef]);
@@ -202,7 +231,7 @@ export function useEyeAnimations({
       // Delay re-enabling blinking to allow eye transitions to complete
       setTimeout(() => {
         allowBlinkingRef.current = true;
-      }, 300);
+      }, ANIMATION_TIMING.BLINK_RENABLE_DELAY);
     } else {
       // Disable blinking for angry, sad, off, and all other expressions
       allowBlinkingRef.current = false;
@@ -244,12 +273,12 @@ export function useEyeAnimations({
       debugLog.gsap('both', 'kill', 'Clearing tweens for shocked');
       gsap.killTweensOf([leftEye, rightEye]);
 
-      debugLog.gsap('both', 'to', { scaleY: 1.4, scaleX: 1.4 });
+      debugLog.gsap('both', 'to', { scaleY: ANIMATION_TIMING.SHOCKED_SCALE, scaleX: ANIMATION_TIMING.SHOCKED_SCALE });
       // Animate eyes to shocked (grow bigger)
       gsap.to([leftEye, rightEye], {
-        scaleY: 1.4,
-        scaleX: 1.4,
-        duration: 0.1,
+        scaleY: ANIMATION_TIMING.SHOCKED_SCALE,
+        scaleX: ANIMATION_TIMING.SHOCKED_SCALE,
+        duration: ANIMATION_TIMING.SHOCKED_DURATION,
         ease: 'power2.out',
         onStart: () => debugLog.both('Shocked animation started'),
         onComplete: () => debugLog.both('Shocked animation complete'),
@@ -260,12 +289,12 @@ export function useEyeAnimations({
       debugLog.gsap('both', 'kill', 'Resetting from shocked/idea to idle');
       gsap.killTweensOf([leftEye, rightEye]);
 
-      debugLog.gsap('both', 'to', { scaleY: 1, scaleX: 1, y: 0, duration: 0.05 });
+      debugLog.gsap('both', 'to', { scaleY: 1, scaleX: 1, y: 0, duration: ANIMATION_TIMING.RESET_DURATION });
       gsap.to([leftEye, rightEye], {
         scaleY: 1,
         scaleX: 1,
         y: 0,
-        duration: 0.05,  // 50ms - smooth but nearly instant
+        duration: ANIMATION_TIMING.RESET_DURATION,
         ease: 'power2.out',
         onComplete: () => debugLog.both('Reset to idle complete'),
       });
@@ -288,13 +317,13 @@ export function useEyeAnimations({
         rotation: 0,
       });
 
-      debugLog.gsap('both', 'to', { scaleY: 1.15, scaleX: 1.15, y: -8 });
+      debugLog.gsap('both', 'to', { scaleY: ANIMATION_TIMING.IDEA_SCALE, scaleX: ANIMATION_TIMING.IDEA_SCALE, y: ANIMATION_TIMING.IDEA_Y_OFFSET });
       // Then apply idea transform (eyes look up and grow slightly)
       gsap.to([leftEye, rightEye], {
-        scaleY: 1.15,
-        scaleX: 1.15,
-        y: -8,
-        duration: 0.1,
+        scaleY: ANIMATION_TIMING.IDEA_SCALE,
+        scaleX: ANIMATION_TIMING.IDEA_SCALE,
+        y: ANIMATION_TIMING.IDEA_Y_OFFSET,
+        duration: ANIMATION_TIMING.IDEA_DURATION,
         ease: 'power2.out',
         onStart: () => debugLog.both('Idea animation started'),
         onComplete: () => debugLog.both('Idea animation complete'),
