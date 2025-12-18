@@ -22,10 +22,13 @@ interface AntyCharacterV3Props {
   onButtonClick?: (button: ButtonName) => void;
   className?: string;
   size?: number;
+  isSuperMode?: boolean;
 }
 
 export interface AntyCharacterHandle {
   spawnFeedingParticles: () => void;
+  spawnSparkle?: (x: number, y: number) => void;
+  spawnLoveHearts?: () => void;
 }
 
 /**
@@ -40,6 +43,7 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
   expression = 'idle',
   className = '',
   size = 160,
+  isSuperMode = false,
 }, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const characterRef = useRef<HTMLDivElement>(null);
@@ -51,6 +55,7 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
   const [particles] = useState<Particle[]>([]);
   const [isWinking, setIsWinking] = useState(false);
   const [isHappy, setIsHappy] = useState(false);
+  const superGlowRef = useRef<HTMLDivElement>(null);
 
   // Wink behavior - show wink expression with subtle motion and particle burst
   const performWink = useCallback(() => {
@@ -99,8 +104,87 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
     }
   }, [size]);
 
-  // Expose particle spawning method to parent
+  // Expose particle spawning methods to parent
   useImperativeHandle(ref, () => ({
+    spawnSparkle: (x: number, y: number) => {
+      if (canvasRef.current && canvasRef.current.spawnParticle) {
+        canvasRef.current.spawnParticle('sparkle', x, y);
+      }
+    },
+    spawnLoveHearts: () => {
+      const container = containerRef.current;
+      if (!container) return;
+
+      // Get Anty's position on screen
+      const containerRect = container.getBoundingClientRect();
+      const antyX = containerRect.left + containerRect.width / 2;
+      const antyY = containerRect.top + containerRect.height / 2;
+
+      // Spawn 8 purple heart SVGs radiating out
+      for (let i = 0; i < 8; i++) {
+        setTimeout(() => {
+          const heart = document.createElement('div');
+          heart.innerHTML = `
+            <svg width="20" height="20" viewBox="0 0 35 35" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M0 7.20312H6.08634V13.2895H0V7.20312Z" fill="#8B5CF6"/>
+              <path d="M0 14.4004H6.08634V20.4867H0V14.4004Z" fill="#8B5CF6"/>
+              <path d="M7.19922 7.20312H13.2856V13.2895H7.19922V7.20312Z" fill="#8B5CF6"/>
+              <path d="M14.3984 7.20312H20.4848V13.2895H14.3984V7.20312Z" fill="#8B5CF6"/>
+              <path d="M7.19922 0.00195312H13.2856V6.08829H7.19922V0.00195312Z" fill="#8B5CF6"/>
+              <path d="M7.19922 14.4004H13.2856V20.4867H7.19922V14.4004Z" fill="#8B5CF6"/>
+              <path d="M7.19922 21.6016H13.2856V27.6879H7.19922V21.6016Z" fill="#8B5CF6"/>
+              <path d="M14.3984 28.8008H20.4848V34.8871H14.3984V28.8008Z" fill="#8B5CF6"/>
+              <path d="M14.3984 21.6016H20.4848V27.6879H14.3984V21.6016Z" fill="#8B5CF6"/>
+              <path d="M14.3984 14.4004H20.4848V20.4867H14.3984V14.4004Z" fill="#8B5CF6"/>
+              <path d="M21.5996 7.20117H27.6859V13.2875H21.5996V7.20117Z" fill="#8B5CF6"/>
+              <path d="M21.5996 0H27.6859V6.08634H21.5996V0Z" fill="#8B5CF6"/>
+              <path d="M21.5996 14.4004H27.6859V20.4867H21.5996V14.4004Z" fill="#8B5CF6"/>
+              <path d="M28.7988 14.4004H34.8852V20.4867H28.7988V14.4004Z" fill="#8B5CF6"/>
+              <path d="M21.5996 21.6016H27.6859V27.6879H21.5996V21.6016Z" fill="#8B5CF6"/>
+              <path d="M28.7988 7.20117H34.8852V13.2875H28.7988V7.20117Z" fill="#8B5CF6"/>
+            </svg>
+          `;
+          heart.style.position = 'fixed';
+          heart.style.left = `${antyX}px`;
+          heart.style.top = `${antyY}px`;
+          heart.style.pointerEvents = 'none';
+          heart.style.zIndex = '1000';
+
+          document.body.appendChild(heart);
+
+          // Animate heart radiating outward
+          const angle = (i / 8) * Math.PI * 2;
+          const distance = gsap.utils.random(60, 100);
+
+          gsap.fromTo(heart,
+            {
+              x: 0,
+              y: 0,
+              scale: 0.5,
+              opacity: 0,
+            },
+            {
+              x: Math.cos(angle) * distance,
+              y: Math.sin(angle) * distance,
+              scale: 1,
+              opacity: 1,
+              duration: 0.4,
+              ease: 'power2.out',
+              onComplete: () => {
+                // Fade out
+                gsap.to(heart, {
+                  opacity: 0,
+                  scale: 0.3,
+                  duration: 0.3,
+                  ease: 'power2.in',
+                  onComplete: () => heart.remove()
+                });
+              }
+            }
+          );
+        }, i * 80);
+      }
+    },
     spawnFeedingParticles: () => {
       const container = containerRef.current;
       if (!container) return;
@@ -117,7 +201,7 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
         particle.className = 'food-confetti';
         particle.textContent = emojiFood[Math.floor(Math.random() * emojiFood.length)];
         particle.style.position = 'fixed'; // Fixed to viewport
-        particle.style.fontSize = `${gsap.utils.random(20, 40)}px`;
+        particle.style.fontSize = `${gsap.utils.random(32, 56)}px`;
         particle.style.pointerEvents = 'none';
         particle.style.zIndex = '1000';
 
@@ -200,6 +284,25 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
       setIsHappy(false);
     }
   }, [expression, performWink]);
+
+  // Super mode glow animation
+  useEffect(() => {
+    if (!superGlowRef.current) return;
+
+    if (isSuperMode) {
+      // Pulsing rainbow glow animation
+      const glowTl = gsap.timeline({ repeat: -1, yoyo: true });
+      glowTl.to(superGlowRef.current, {
+        opacity: 0.9,
+        scale: 1.1,
+        duration: 0.8,
+        ease: 'sine.inOut',
+      });
+    } else {
+      gsap.killTweensOf(superGlowRef.current);
+      gsap.set(superGlowRef.current, { opacity: 0, scale: 1 });
+    }
+  }, [isSuperMode]);
 
   // Setup idle animations using GSAP
   useGSAP(
@@ -353,6 +456,22 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
       {/* Canvas overlay for particles - positioned to extend beyond character */}
       <AntyParticleCanvas ref={canvasRef} particles={particles} width={size * 2} height={size * 2} />
 
+      {/* Super Mode Golden Glow */}
+      {isSuperMode && (
+        <div
+          ref={superGlowRef}
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+          style={{
+            width: '200px',
+            height: '200px',
+            borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(255, 215, 0, 0.6) 0%, rgba(255, 165, 0, 0.4) 50%, rgba(255, 215, 0, 0) 100%)',
+            filter: 'blur(20px)',
+            zIndex: 0,
+          }}
+        />
+      )}
+
       {/* Character body with animations */}
       <div
         ref={characterRef}
@@ -360,6 +479,10 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
         style={{
           willChange: 'transform',
           overflow: 'visible',
+          filter: isSuperMode
+            ? 'drop-shadow(0 0 20px rgba(255, 215, 0, 0.9)) drop-shadow(0 0 40px rgba(255, 165, 0, 0.6)) brightness(1.15) saturate(1.3)'
+            : 'none',
+          animation: isSuperMode ? 'superModeHue 3s linear infinite' : 'none',
         }}
       >
         {/* Anty body layers from Figma */}

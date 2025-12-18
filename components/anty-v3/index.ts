@@ -3,4 +3,5 @@ export { ActionButtonsV3 } from './action-buttons-v3';
 export { HeartMeter, type EarnedHeart } from './heart-meter';
 export { AntyExpressionLayer } from './anty-expression-layer';
 export { AntyParticleCanvas, type ParticleCanvasHandle } from './anty-particle-canvas';
+export { ExpressionMenu } from './expression-menu';
 export type { ButtonName } from '@/lib/anty-v3/animation-state';

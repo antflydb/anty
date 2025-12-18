@@ -2,11 +2,27 @@
 
 import { useState, useRef, useEffect } from 'react';
 import gsap from 'gsap';
-import { AntyCharacterV3, ActionButtonsV3, HeartMeter, type ButtonName, type AntyCharacterHandle, type EarnedHeart } from '@/components/anty-v3';
+import { AntyCharacterV3, ActionButtonsV3, HeartMeter, ExpressionMenu, type ButtonName, type AntyCharacterHandle, type EarnedHeart } from '@/components/anty-v3';
 import type { ExpressionName } from '@/lib/anty-v3/animation-state';
 import type { AntyStats } from '@/lib/anty/stat-system';
 
 export default function AntyV3() {
+  // Add CSS animation for super mode hue shift
+  if (typeof document !== 'undefined' && !document.getElementById('anty-super-mode-styles')) {
+    const style = document.createElement('style');
+    style.id = 'anty-super-mode-styles';
+    style.textContent = `
+      @keyframes superModeHue {
+        0% { filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.9)) drop-shadow(0 0 40px rgba(255, 165, 0, 0.6)) brightness(1.15) saturate(1.3) hue-rotate(0deg); }
+        25% { filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.9)) drop-shadow(0 0 40px rgba(255, 165, 0, 0.6)) brightness(1.15) saturate(1.3) hue-rotate(10deg); }
+        50% { filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.9)) drop-shadow(0 0 40px rgba(255, 165, 0, 0.6)) brightness(1.15) saturate(1.3) hue-rotate(0deg); }
+        75% { filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.9)) drop-shadow(0 0 40px rgba(255, 165, 0, 0.6)) brightness(1.15) saturate(1.3) hue-rotate(-10deg); }
+        100% { filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.9)) drop-shadow(0 0 40px rgba(255, 165, 0, 0.6)) brightness(1.15) saturate(1.3) hue-rotate(0deg); }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
   const [hearts, setHearts] = useState(3);
   const [expression, setExpression] = useState<ExpressionName>('idle');
   const [stats, setStats] = useState<AntyStats>({
@@ -21,6 +37,9 @@ export default function AntyV3() {
   const glowRef = useRef<HTMLDivElement>(null);
   const antyRef = useRef<AntyCharacterHandle>(null);
   const heartTimersRef = useRef<Map<number, NodeJS.Timeout>>(new Map());
+  const superModeTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const superModeCooldownRef = useRef<boolean>(false);
+  const [isSuperMode, setIsSuperMode] = useState(false);
 
   // Animate the glow with ghostly, randomized movement
   useEffect(() => {
@@ -69,8 +88,96 @@ export default function AntyV3() {
     return () => {
       heartTimersRef.current.forEach((timer) => clearTimeout(timer));
       heartTimersRef.current.clear();
+      if (superModeTimerRef.current) {
+        clearTimeout(superModeTimerRef.current);
+      }
     };
   }, []);
+
+  // Check if all 3 hearts are earned and trigger SUPER MODE!
+  useEffect(() => {
+    const allHeartsEarned = earnedHearts.length === 3;
+
+    if (allHeartsEarned && !isSuperMode && !superModeCooldownRef.current) {
+      // SUPER MARIO STYLE GROWTH!!! 🍄
+      const character = characterRef.current;
+      if (!character) return;
+
+      // Clear any existing super mode timer
+      if (superModeTimerRef.current) {
+        clearTimeout(superModeTimerRef.current);
+      }
+
+      setIsSuperMode(true);
+      superModeCooldownRef.current = true; // Set cooldown to prevent re-triggering
+
+      // Create the iconic pulsing growth animation
+      const superTl = gsap.timeline();
+
+      // Quick pulse sequence (like Mario's transformation)
+      superTl.to(character, {
+        scale: 1.15,
+        duration: 0.1,
+        ease: 'power1.out',
+      });
+      superTl.to(character, {
+        scale: 1.05,
+        duration: 0.1,
+        ease: 'power1.inOut',
+      });
+      superTl.to(character, {
+        scale: 1.2,
+        duration: 0.1,
+        ease: 'power1.out',
+      });
+      superTl.to(character, {
+        scale: 1.1,
+        duration: 0.1,
+        ease: 'power1.inOut',
+      });
+      superTl.to(character, {
+        scale: 1.45,
+        duration: 0.15,
+        ease: 'back.out(2)',
+      });
+
+      // Spawn celebration sparkles during transformation
+      setTimeout(() => {
+        const canvasOffset = 160 / 2;
+        for (let i = 0; i < 12; i++) {
+          setTimeout(() => {
+            antyRef.current?.spawnSparkle?.(
+              canvasOffset + gsap.utils.random(60, 100),
+              canvasOffset + gsap.utils.random(40, 80)
+            );
+          }, i * 30);
+        }
+      }, 0);
+
+      // Stay SUPER for 15 seconds
+      superModeTimerRef.current = setTimeout(() => {
+        // Shrink back to normal with a bounce
+        gsap.to(character, {
+          scale: 1,
+          duration: 0.4,
+          ease: 'elastic.out(1, 0.5)',
+        });
+        setIsSuperMode(false);
+        superModeTimerRef.current = null;
+
+        // Reset all earned hearts when reverting to normal
+        setEarnedHearts([]);
+        // Clear all heart timers
+        heartTimersRef.current.forEach((timer) => clearTimeout(timer));
+        heartTimersRef.current.clear();
+      }, 15000);
+    }
+
+    // Reset cooldown when hearts are lost (less than 3)
+    if (earnedHearts.length < 3 && superModeCooldownRef.current) {
+      superModeCooldownRef.current = false;
+    }
+  }, [earnedHearts, isSuperMode]);
 
   // Function to earn a heart (turn it purple)
   const earnHeart = (index: number) => {
@@ -215,6 +322,9 @@ export default function AntyV3() {
           if (firstGreyHeart !== undefined) {
             earnHeart(firstGreyHeart);
           }
+
+          // Spawn love heart particles radiating out from Anty
+          antyRef.current?.spawnLoveHearts?.();
         }, 2300);
         setTimeout(() => setExpression('idle'), 4000);
         break;
@@ -264,8 +374,17 @@ export default function AntyV3() {
             }}
           />
 
-          <div ref={characterRef} style={{ position: 'absolute', top: 0, left: 0, zIndex: 1 }}>
-            <AntyCharacterV3 ref={antyRef} stats={stats} expression={expression} />
+          <div
+            ref={characterRef}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              zIndex: 1,
+              transformOrigin: 'center center',
+            }}
+          >
+            <AntyCharacterV3 ref={antyRef} stats={stats} expression={expression} isSuperMode={isSuperMode} />
           </div>
 
           {/* Fixed shadow - doesn't move with character */}
@@ -289,6 +408,13 @@ export default function AntyV3() {
       </div>
 
       <ActionButtonsV3 onButtonClick={handleButtonClick} />
+
+      <ExpressionMenu
+        onExpressionSelect={(expr) => {
+          setExpression(expr);
+          setTimeout(() => setExpression('idle'), 2000);
+        }}
+      />
     </div>
   );
 }
