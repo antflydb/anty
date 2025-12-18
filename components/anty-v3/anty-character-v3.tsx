@@ -16,6 +16,26 @@ import { AntyParticleCanvas, type ParticleCanvasHandle } from './anty-particle-c
 // Register GSAP plugin
 gsap.registerPlugin(useGSAP);
 
+// Debug logging utilities for eye animations
+const debugLog = {
+  leftEye: (action: string, details?: any) => {
+    console.log(`[LEFT EYE] ${action}`, details || '');
+  },
+  rightEye: (action: string, details?: any) => {
+    console.log(`[RIGHT EYE] ${action}`, details || '');
+  },
+  both: (action: string, details?: any) => {
+    console.log(`[BOTH EYES] ${action}`, details || '');
+  },
+  expression: (from: string, to: string) => {
+    console.log(`[EXPRESSION] ${from} → ${to} at ${Date.now()}`);
+  },
+  gsap: (target: 'left' | 'right' | 'both', action: 'to' | 'set' | 'kill', props?: any) => {
+    const targetLabel = target === 'both' ? '[BOTH EYES]' : target === 'left' ? '[LEFT EYE]' : '[RIGHT EYE]';
+    console.log(`${targetLabel} GSAP.${action}`, props || '');
+  }
+};
+
 interface AntyCharacterV3Props {
   stats: AntyStats;
   expression?: ExpressionName;
@@ -59,10 +79,8 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
   const [particles] = useState<Particle[]>([]);
   const [isWinking, setIsWinking] = useState(false);
   const [isHappy, setIsHappy] = useState(false);
-  const [isShocked, setIsShocked] = useState(false);
   const [isAngry, setIsAngry] = useState(false);
   const [isSad, setIsSad] = useState(false);
-  const [isIdea, setIsIdea] = useState(false);
   const [isOff, setIsOff] = useState(false);
   const superGlowRef = useRef<HTMLDivElement>(null);
   const allowBlinkingRef = useRef<boolean>(true);
@@ -282,8 +300,15 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
     },
   }), [size]);
 
+  // Track previous expression to avoid unnecessary animations on mount
+  const prevExpressionRef = useRef<ExpressionName>('idle');
+
   // Update expression when prop changes and trigger animations
   useEffect(() => {
+    const prevExpression = prevExpressionRef.current;
+    prevExpressionRef.current = expression;
+
+    debugLog.expression(prevExpression, expression);
     setCurrentExpression(expression);
 
     // Update blinking permission based on expression
@@ -299,7 +324,8 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
     }
 
     // Kill any ongoing blink animations on the eyes when expression changes away from idle
-    if (expression !== 'idle' && leftEyeRef.current && rightEyeRef.current) {
+    // BUT: Don't kill/reset for shocked or idea, as they use GSAP transforms on the idle eyes
+    if (expression !== 'idle' && expression !== 'shocked' && expression !== 'idea' && leftEyeRef.current && rightEyeRef.current) {
       gsap.killTweensOf([leftEyeRef.current, rightEyeRef.current]);
       // Reset eyes to default state immediately
       gsap.set([leftEyeRef.current, rightEyeRef.current], {
@@ -321,29 +347,39 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
 
     // Set shocked eyes when expression changes to 'shocked'
     if (expression === 'shocked') {
-      setIsShocked(true);
+      // Don't call setIsShocked - it causes a re-render that wipes out GSAP transforms!
 
       // Force shocked state immediately with GSAP to override any ongoing transitions
       if (leftEyeRef.current && rightEyeRef.current) {
+        debugLog.gsap('both', 'kill', 'Clearing tweens for shocked');
         gsap.killTweensOf([leftEyeRef.current, rightEyeRef.current]);
+
+        debugLog.gsap('both', 'to', { scaleY: 1.4, scaleX: 1.4 });
+        // Animate eyes to shocked (grow bigger)
         gsap.to([leftEyeRef.current, rightEyeRef.current], {
           scaleY: 1.4,
           scaleX: 1.4,
           duration: 0.1,
           ease: 'power2.out',
+          onStart: () => debugLog.both('Shocked animation started'),
+          onComplete: () => debugLog.both('Shocked animation complete'),
         });
       }
-    } else {
-      setIsShocked(false);
-
-      // Reset to normal immediately when leaving shocked state
+    } else if (expression === 'idle' && (prevExpression === 'shocked' || prevExpression === 'idea')) {
+      // Reset when transitioning FROM shocked/idea back to idle
+      // Use a very short animation instead of instant set to avoid visible flashing
       if (leftEyeRef.current && rightEyeRef.current) {
+        debugLog.gsap('both', 'kill', 'Resetting from shocked/idea to idle');
         gsap.killTweensOf([leftEyeRef.current, rightEyeRef.current]);
+
+        debugLog.gsap('both', 'to', { scaleY: 1, scaleX: 1, y: 0, duration: 0.05 });
         gsap.to([leftEyeRef.current, rightEyeRef.current], {
           scaleY: 1,
           scaleX: 1,
-          duration: 0.2,
+          y: 0,
+          duration: 0.05,  // 50ms - smooth but nearly instant
           ease: 'power2.out',
+          onComplete: () => debugLog.both('Reset to idle complete'),
         });
       }
     }
@@ -364,40 +400,32 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
 
     // Set idea eyes when expression changes to 'idea'
     if (expression === 'idea') {
-      setIsIdea(true);
+      // Don't call setIsIdea - it causes a re-render that wipes out GSAP transforms!
 
       // Force idea state immediately with GSAP to override any ongoing transitions
-      // First reset to baseline, then apply idea transform
       if (leftEyeRef.current && rightEyeRef.current) {
+        debugLog.gsap('both', 'kill', 'Clearing tweens for idea');
         gsap.killTweensOf([leftEyeRef.current, rightEyeRef.current]);
-        // Reset to baseline first
+
+        debugLog.gsap('both', 'set', { scaleY: 1, scaleX: 1, y: 0, rotation: 0 });
+        // Reset to baseline first to clear any previous transforms
         gsap.set([leftEyeRef.current, rightEyeRef.current], {
           scaleY: 1,
           scaleX: 1,
           y: 0,
           rotation: 0,
         });
-        // Then apply idea transform
+
+        debugLog.gsap('both', 'to', { scaleY: 1.15, scaleX: 1.15, y: -8 });
+        // Then apply idea transform (eyes look up and grow slightly)
         gsap.to([leftEyeRef.current, rightEyeRef.current], {
           scaleY: 1.15,
           scaleX: 1.15,
           y: -8,
           duration: 0.1,
           ease: 'power2.out',
-        });
-      }
-    } else {
-      setIsIdea(false);
-
-      // Reset to normal when leaving idea state
-      if (leftEyeRef.current && rightEyeRef.current) {
-        gsap.killTweensOf([leftEyeRef.current, rightEyeRef.current]);
-        gsap.to([leftEyeRef.current, rightEyeRef.current], {
-          scaleY: 1,
-          scaleX: 1,
-          y: 0,
-          duration: 0.2,
-          ease: 'power2.out',
+          onStart: () => debugLog.both('Idea animation started'),
+          onComplete: () => debugLog.both('Idea animation complete'),
         });
       }
     }
@@ -432,15 +460,25 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
   // Blink behavior - animate eyes collapsing vertically
   const performBlink = useCallback(() => {
     // Don't blink if not allowed (ref is instantly updated, unlike state)
-    if (!allowBlinkingRef.current) return;
+    if (!allowBlinkingRef.current) {
+      debugLog.both('Blink blocked - not allowed');
+      return;
+    }
 
     const leftEye = leftEyeRef.current;
     const rightEye = rightEyeRef.current;
 
-    if (!leftEye || !rightEye) return;
+    if (!leftEye || !rightEye) {
+      debugLog.both('Blink blocked - refs not available');
+      return;
+    }
+
+    debugLog.both('Blink starting');
 
     // Create timeline for blink animation
-    const blinkTl = gsap.timeline();
+    const blinkTl = gsap.timeline({
+      onComplete: () => debugLog.both('Blink complete'),
+    });
 
     // Close eyes (collapse to horizontal line)
     blinkTl.to([leftEye, rightEye], {
@@ -460,15 +498,25 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
   // Double blink behavior - two quick blinks in succession
   const performDoubleBlink = useCallback(() => {
     // Don't blink if not allowed (ref is instantly updated, unlike state)
-    if (!allowBlinkingRef.current) return;
+    if (!allowBlinkingRef.current) {
+      debugLog.both('Double blink blocked - not allowed');
+      return;
+    }
 
     const leftEye = leftEyeRef.current;
     const rightEye = rightEyeRef.current;
 
-    if (!leftEye || !rightEye) return;
+    if (!leftEye || !rightEye) {
+      debugLog.both('Double blink blocked - refs not available');
+      return;
+    }
+
+    debugLog.both('Double blink starting');
 
     // Create timeline for double blink
-    const blinkTl = gsap.timeline();
+    const blinkTl = gsap.timeline({
+      onComplete: () => debugLog.both('Double blink complete'),
+    });
 
     // First blink
     blinkTl.to([leftEye, rightEye], {
@@ -714,7 +762,7 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
           <div className="absolute flex inset-[33.41%_57.36%_38.76%_31%] items-center justify-center">
             <div
               ref={rightEyeRef}
-              className="flex-none scale-y-[-100%]"
+              className="flex-none"
               style={{
                 height: '44.52px',
                 width: '18.63px',
