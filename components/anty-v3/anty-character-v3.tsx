@@ -285,13 +285,15 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
   useEffect(() => {
     setCurrentExpression(expression);
 
-    // Update blinking permission based on expression (never blink when OFF)
+    // Update blinking permission based on expression
+    // Only allow blinking during idle - disable for all other expressions (angry, sad, off, etc.)
     if (expression === 'idle' && !isOff) {
       // Delay re-enabling blinking to allow eye transitions to complete
       setTimeout(() => {
         allowBlinkingRef.current = true;
       }, 300);
     } else {
+      // Disable blinking for angry, sad, off, and all other expressions
       allowBlinkingRef.current = false;
     }
 
