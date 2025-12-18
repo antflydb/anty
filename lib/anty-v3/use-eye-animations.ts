@@ -96,16 +96,98 @@ export function useEyeAnimations({
    * Duration: 0.1s close + 0.15s open
    */
   const performBlink = useCallback(() => {
-    // TODO: Implementation in Phase 2
-  }, []);
+    // Don't blink if not allowed (ref is instantly updated, unlike state)
+    if (!allowBlinkingRef.current) {
+      debugLog.both('Blink blocked - not allowed');
+      return;
+    }
+
+    const leftEye = leftEyeRef.current;
+    const rightEye = rightEyeRef.current;
+
+    if (!leftEye || !rightEye) {
+      debugLog.both('Blink blocked - refs not available');
+      return;
+    }
+
+    debugLog.both('Blink starting');
+
+    // Create timeline for blink animation
+    const blinkTl = gsap.timeline({
+      onComplete: () => debugLog.both('Blink complete'),
+    });
+
+    // Close eyes (collapse to horizontal line)
+    blinkTl.to([leftEye, rightEye], {
+      scaleY: 0.05, // Almost flat horizontal line
+      duration: 0.1, // 100ms to close
+      ease: 'power2.in',
+    });
+
+    // Open eyes (expand back to normal)
+    blinkTl.to([leftEye, rightEye], {
+      scaleY: 1, // Back to normal
+      duration: 0.15, // 150ms to open
+      ease: 'power2.out',
+    });
+  }, [leftEyeRef, rightEyeRef]);
 
   /**
    * Performs a double blink animation
    * Two quick blinks in succession with a 0.1s pause between them
    */
   const performDoubleBlink = useCallback(() => {
-    // TODO: Implementation in Phase 2
-  }, []);
+    // Don't blink if not allowed (ref is instantly updated, unlike state)
+    if (!allowBlinkingRef.current) {
+      debugLog.both('Double blink blocked - not allowed');
+      return;
+    }
+
+    const leftEye = leftEyeRef.current;
+    const rightEye = rightEyeRef.current;
+
+    if (!leftEye || !rightEye) {
+      debugLog.both('Double blink blocked - refs not available');
+      return;
+    }
+
+    debugLog.both('Double blink starting');
+
+    // Create timeline for double blink
+    const blinkTl = gsap.timeline({
+      onComplete: () => debugLog.both('Double blink complete'),
+    });
+
+    // First blink
+    blinkTl.to([leftEye, rightEye], {
+      scaleY: 0.05, // Collapse to line
+      duration: 0.08, // Slightly faster
+      ease: 'power2.in',
+    });
+    blinkTl.to([leftEye, rightEye], {
+      scaleY: 1, // Back to normal
+      duration: 0.12,
+      ease: 'power2.out',
+    });
+
+    // Short pause between blinks
+    blinkTl.to([leftEye, rightEye], {
+      scaleY: 1, // Stay at normal
+      duration: 0.1, // 100ms pause
+    });
+
+    // Second blink
+    blinkTl.to([leftEye, rightEye], {
+      scaleY: 0.05, // Collapse to line
+      duration: 0.08,
+      ease: 'power2.in',
+    });
+    blinkTl.to([leftEye, rightEye], {
+      scaleY: 1, // Back to normal
+      duration: 0.12,
+      ease: 'power2.out',
+    });
+  }, [leftEyeRef, rightEyeRef]);
 
   // ===========================
   // 3.3: Expression-Based Blink Permission

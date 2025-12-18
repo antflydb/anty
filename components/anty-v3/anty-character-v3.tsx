@@ -12,6 +12,7 @@ import {
 import { type AntyStats } from '@/lib/anty/stat-system';
 import { AntyExpressionLayer } from './anty-expression-layer';
 import { AntyParticleCanvas, type ParticleCanvasHandle } from './anty-particle-canvas';
+import { useEyeAnimations } from '@/lib/anty-v3/use-eye-animations';
 
 // Register GSAP plugin
 gsap.registerPlugin(useGSAP);
@@ -83,7 +84,14 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
   const [isSad, setIsSad] = useState(false);
   const [isOff, setIsOff] = useState(false);
   const superGlowRef = useRef<HTMLDivElement>(null);
-  const allowBlinkingRef = useRef<boolean>(true);
+
+  // Use unified eye animation system
+  const { performBlink, performDoubleBlink, allowBlinkingRef } = useEyeAnimations({
+    leftEyeRef,
+    rightEyeRef,
+    expression,
+    isOff,
+  });
 
   // Wink behavior - show wink expression with subtle motion and particle burst
   const performWink = useCallback(() => {
@@ -456,98 +464,6 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
       gsap.set(superGlowRef.current, { opacity: 0, scale: 1 });
     }
   }, [isSuperMode]);
-
-  // Blink behavior - animate eyes collapsing vertically
-  const performBlink = useCallback(() => {
-    // Don't blink if not allowed (ref is instantly updated, unlike state)
-    if (!allowBlinkingRef.current) {
-      debugLog.both('Blink blocked - not allowed');
-      return;
-    }
-
-    const leftEye = leftEyeRef.current;
-    const rightEye = rightEyeRef.current;
-
-    if (!leftEye || !rightEye) {
-      debugLog.both('Blink blocked - refs not available');
-      return;
-    }
-
-    debugLog.both('Blink starting');
-
-    // Create timeline for blink animation
-    const blinkTl = gsap.timeline({
-      onComplete: () => debugLog.both('Blink complete'),
-    });
-
-    // Close eyes (collapse to horizontal line)
-    blinkTl.to([leftEye, rightEye], {
-      scaleY: 0.05, // Almost flat horizontal line
-      duration: 0.1, // 100ms to close
-      ease: 'power2.in',
-    });
-
-    // Open eyes (expand back to normal)
-    blinkTl.to([leftEye, rightEye], {
-      scaleY: 1, // Back to normal
-      duration: 0.15, // 150ms to open
-      ease: 'power2.out',
-    });
-  }, []);
-
-  // Double blink behavior - two quick blinks in succession
-  const performDoubleBlink = useCallback(() => {
-    // Don't blink if not allowed (ref is instantly updated, unlike state)
-    if (!allowBlinkingRef.current) {
-      debugLog.both('Double blink blocked - not allowed');
-      return;
-    }
-
-    const leftEye = leftEyeRef.current;
-    const rightEye = rightEyeRef.current;
-
-    if (!leftEye || !rightEye) {
-      debugLog.both('Double blink blocked - refs not available');
-      return;
-    }
-
-    debugLog.both('Double blink starting');
-
-    // Create timeline for double blink
-    const blinkTl = gsap.timeline({
-      onComplete: () => debugLog.both('Double blink complete'),
-    });
-
-    // First blink
-    blinkTl.to([leftEye, rightEye], {
-      scaleY: 0.05, // Collapse to line
-      duration: 0.08, // Slightly faster
-      ease: 'power2.in',
-    });
-    blinkTl.to([leftEye, rightEye], {
-      scaleY: 1, // Back to normal
-      duration: 0.12,
-      ease: 'power2.out',
-    });
-
-    // Short pause between blinks
-    blinkTl.to([leftEye, rightEye], {
-      scaleY: 1, // Stay at normal
-      duration: 0.1, // 100ms pause
-    });
-
-    // Second blink
-    blinkTl.to([leftEye, rightEye], {
-      scaleY: 0.05, // Collapse to line
-      duration: 0.08,
-      ease: 'power2.in',
-    });
-    blinkTl.to([leftEye, rightEye], {
-      scaleY: 1, // Back to normal
-      duration: 0.12,
-      ease: 'power2.out',
-    });
-  }, []);
 
   // Setup idle animations using GSAP (disabled when OFF)
   useGSAP(
