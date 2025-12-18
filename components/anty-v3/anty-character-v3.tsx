@@ -326,30 +326,26 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
       // Force shocked state immediately with GSAP to override any ongoing transitions
       if (leftEyeRef.current && rightEyeRef.current) {
         gsap.killTweensOf([leftEyeRef.current, rightEyeRef.current]);
-        gsap.set([leftEyeRef.current, rightEyeRef.current], {
+        gsap.to([leftEyeRef.current, rightEyeRef.current], {
           scaleY: 1.4,
           scaleX: 1.4,
-          clearProps: 'all', // Clear any conflicting props
+          duration: 0.1,
+          ease: 'power2.out',
         });
       }
     } else {
       setIsShocked(false);
 
-      // Reset inline transforms to default state after CSS transition completes
-      setTimeout(() => {
-        if (leftEyeRef.current && rightEyeRef.current && expression === 'idle') {
-          // Remove inline transform and transition to let GSAP take over
-          leftEyeRef.current.style.removeProperty('transform');
-          leftEyeRef.current.style.removeProperty('transition');
-          rightEyeRef.current.style.removeProperty('transform');
-          rightEyeRef.current.style.removeProperty('transition');
-
-          // Set GSAP-controlled transform back to default
-          gsap.set([leftEyeRef.current, rightEyeRef.current], {
-            scaleY: 1
-          });
-        }
-      }, 300); // Wait for CSS transition to complete
+      // Reset to normal immediately when leaving shocked state
+      if (leftEyeRef.current && rightEyeRef.current) {
+        gsap.killTweensOf([leftEyeRef.current, rightEyeRef.current]);
+        gsap.to([leftEyeRef.current, rightEyeRef.current], {
+          scaleY: 1,
+          scaleX: 1,
+          duration: 0.2,
+          ease: 'power2.out',
+        });
+      }
     }
 
     // Set angry eyes when expression changes to 'angry'
@@ -373,15 +369,28 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
       // Force idea state immediately with GSAP to override any ongoing transitions
       if (leftEyeRef.current && rightEyeRef.current) {
         gsap.killTweensOf([leftEyeRef.current, rightEyeRef.current]);
-        gsap.set([leftEyeRef.current, rightEyeRef.current], {
+        gsap.to([leftEyeRef.current, rightEyeRef.current], {
           scaleY: 1.15,
           scaleX: 1.15,
           y: -8,
-          clearProps: 'all',
+          duration: 0.1,
+          ease: 'power2.out',
         });
       }
     } else {
       setIsIdea(false);
+
+      // Reset to normal when leaving idea state
+      if (leftEyeRef.current && rightEyeRef.current) {
+        gsap.killTweensOf([leftEyeRef.current, rightEyeRef.current]);
+        gsap.to([leftEyeRef.current, rightEyeRef.current], {
+          scaleY: 1,
+          scaleX: 1,
+          y: 0,
+          duration: 0.2,
+          ease: 'power2.out',
+        });
+      }
     }
 
     // Set OFF state when expression changes to 'off'
