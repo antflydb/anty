@@ -51,7 +51,7 @@ export function ActionButtonsV3({ onButtonClick, isOff }: ActionButtonsV3Props) 
           <img
             src={button.svg}
             alt={button.alt}
-            className="w-[57.6px] h-[57.6px]"
+            className="w-[46px] h-[46px]"
           />
         </motion.button>
       ))}

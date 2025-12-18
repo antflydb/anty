@@ -100,8 +100,8 @@ export function ExpressionMenu({ onExpressionSelect, currentExpression }: Expres
       >
         {isOff ? (
           // ON button when in OFF state - orange circle with Lucide power icon
-          <div className="relative w-14 h-14 flex items-center justify-center">
-            <svg width="56" height="56" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg" className="absolute">
+          <div className="relative w-[45px] h-[45px] flex items-center justify-center">
+            <svg width="45" height="45" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg" className="absolute">
               <g filter="url(#filter0_d_on_button)">
                 <path d="M2.03906 35.1262C2.03906 16.4773 17.157 1.35938 35.8059 1.35938V1.35938C54.4548 1.35938 69.5727 16.4773 69.5727 35.1262V35.1262C69.5727 53.7751 54.4548 68.893 35.8059 68.893V68.893C17.157 68.893 2.03906 53.7751 2.03906 35.1262V35.1262Z" fill="#FF8C00"/>
               </g>
@@ -118,7 +118,7 @@ export function ExpressionMenu({ onExpressionSelect, currentExpression }: Expres
                 </filter>
               </defs>
             </svg>
-            <Power className="w-6 h-6 text-white relative z-10" strokeWidth={2.5} />
+            <Power className="w-5 h-5 text-white relative z-10" strokeWidth={2.5} />
           </div>
         ) : (
           // Menu icon normally
@@ -126,7 +126,7 @@ export function ExpressionMenu({ onExpressionSelect, currentExpression }: Expres
             animate={{ rotate: isExpanded ? 180 : 0 }}
             transition={{ duration: 0.2 }}
           >
-            <svg width="56" height="56" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <svg width="45" height="45" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
               <g filter="url(#filter0_d_592_702)">
                 <path d="M2.03906 35.1262C2.03906 16.4773 17.157 1.35938 35.8059 1.35938V1.35938C54.4548 1.35938 69.5727 16.4773 69.5727 35.1262V35.1262C69.5727 53.7751 54.4548 68.893 35.8059 68.893V68.893C17.157 68.893 2.03906 53.7751 2.03906 35.1262V35.1262Z" fill="#F4F4F4"/>
               </g>
