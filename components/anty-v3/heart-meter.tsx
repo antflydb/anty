@@ -11,9 +11,10 @@ export interface EarnedHeart {
 interface HeartMeterProps {
   hearts: number; // 0-3
   earnedHearts: EarnedHeart[]; // array of earned hearts with timestamps
+  isOff: boolean;
 }
 
-export function HeartMeter({ hearts, earnedHearts }: HeartMeterProps) {
+export function HeartMeter({ hearts, earnedHearts, isOff }: HeartMeterProps) {
   const maxHearts = 3;
 
   return (
@@ -28,14 +29,28 @@ export function HeartMeter({ hearts, earnedHearts }: HeartMeterProps) {
           <motion.div
             key={index}
             initial={{ scale: 0.8, opacity: 0.3 }}
-            animate={{
-              scale: isActive ? 1 : 0.8,
-              opacity: isActive ? 1 : 0.3,
-            }}
-            transition={{
-              duration: 0.3,
-              ease: 'easeOut',
-            }}
+            animate={
+              isOff
+                ? {
+                    y: -100,
+                    opacity: 0,
+                    transition: {
+                      delay: index * 0.08, // Cascade: each heart delayed by 80ms
+                      duration: 0.4,
+                      ease: 'easeIn',
+                    },
+                  }
+                : {
+                    y: 0,
+                    scale: isActive ? 1 : 0.8,
+                    opacity: isActive ? 1 : 0.3,
+                    transition: {
+                      delay: index * 0.05, // Faster snap back with slight cascade
+                      duration: 0.35,
+                      ease: [0.34, 1.56, 0.64, 1], // Bouncy ease
+                    },
+                  }
+            }
           >
             <motion.div
               className="w-7 h-7"

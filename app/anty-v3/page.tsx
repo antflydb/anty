@@ -251,7 +251,7 @@ export default function AntyV3() {
     const characterElement = characterRef.current;
     if (!characterElement) return;
 
-    // If coming from OFF state, leap to life first
+    // If coming from OFF state, WOOHOOO leap to life first!!!
     if (expression === 'off') {
       const innerGlow = document.querySelector('.inner-glow') as HTMLElement;
       const outerGlow = glowRef.current;
@@ -272,37 +272,46 @@ export default function AntyV3() {
         spinDescentTimerRef.current = null;
       }
 
-      // Leap to life animation
-      const leapTl = gsap.timeline();
+      // WOOHOOO LEAP TO LIFE ANIMATION!!!
+      const woohooTl = gsap.timeline();
 
       // Restore full opacity immediately
-      gsap.set(characterElement, { opacity: 1 });
+      gsap.set(characterElement, { opacity: 1, scale: 0.65 }); // Start from shrunk OFF state
 
-      // Quick bounce up
-      leapTl.to(characterElement, {
-        y: -25,
-        scale: 1.05,
-        duration: 0.25,
-        ease: 'power2.out',
+      // EXPLOSIVE POP UP - Much more dramatic!
+      woohooTl.to(characterElement, {
+        y: -50, // Higher jump!
+        scale: 1.2, // Overshoot scale
+        duration: 0.3,
+        ease: 'back.out(2.5)', // Exaggerated bounce
       });
 
-      // Settle back to normal
-      leapTl.to(characterElement, {
+      // Quick settle bounce
+      woohooTl.to(characterElement, {
+        y: -10,
+        scale: 1.05,
+        duration: 0.2,
+        ease: 'power2.inOut',
+      });
+
+      // Final settle to normal
+      woohooTl.to(characterElement, {
         y: 0,
         scale: 1,
-        duration: 0.35,
-        ease: 'elastic.out(1, 0.6)',
+        duration: 0.4,
+        ease: 'elastic.out(1, 0.5)',
       });
 
-      // Fade glows back in
+      // Fade glows back in with more energy
       if (innerGlow && outerGlow) {
         gsap.to([innerGlow, outerGlow], {
           opacity: 1,
-          duration: 0.5,
+          duration: 0.4,
           ease: 'power2.out',
         });
       }
-      // Shadow will be controlled by idle animation, just reset to base state
+
+      // Shadow pops back with character
       if (shadow) {
         gsap.set(shadow, {
           scaleX: 1,
@@ -310,6 +319,19 @@ export default function AntyV3() {
           opacity: 0.7,
         });
       }
+
+      // Spawn celebration sparkles during pop-in!
+      setTimeout(() => {
+        const canvasOffset = (160 * 5) / 2;
+        for (let i = 0; i < 8; i++) {
+          setTimeout(() => {
+            antyRef.current?.spawnSparkle?.(
+              canvasOffset + gsap.utils.random(40, 120),
+              canvasOffset + gsap.utils.random(30, 90)
+            );
+          }, i * 40);
+        }
+      }, 150);
 
       // Return to idle expression
       setExpression('idle');
@@ -430,7 +452,7 @@ export default function AntyV3() {
 
   return (
     <div className="bg-white min-h-screen flex flex-col relative">
-      <HeartMeter hearts={hearts} earnedHearts={earnedHearts} />
+      <HeartMeter hearts={hearts} earnedHearts={earnedHearts} isOff={expression === 'off'} />
 
       <div className="flex-1 flex items-center justify-center pb-12 relative">
         <div style={{ position: 'relative', width: '160px', height: '240px' }}>
@@ -504,9 +526,10 @@ export default function AntyV3() {
         </div>
       </div>
 
-      <ActionButtonsV3 onButtonClick={handleButtonClick} />
+      <ActionButtonsV3 onButtonClick={handleButtonClick} isOff={expression === 'off'} />
 
       <ExpressionMenu
+        currentExpression={expression}
         onExpressionSelect={(expr) => {
           // Clear any pending expression reset from previous states
           clearExpressionReset();
@@ -562,7 +585,7 @@ export default function AntyV3() {
             return; // Don't process further
           }
 
-          // Handle returning from OFF with leap to life
+          // Handle returning from OFF with WOOHOOO leap to life!!!
           if (expression === 'off' && expr !== 'off' && characterRef.current && glowRef.current) {
             const character = characterRef.current;
             const innerGlow = document.querySelector('.inner-glow') as HTMLElement;
@@ -584,35 +607,44 @@ export default function AntyV3() {
               spinDescentTimerRef.current = null;
             }
 
-            // Leap to life animation
-            const leapTl = gsap.timeline();
+            // WOOHOOO LEAP TO LIFE ANIMATION!!!
+            const woohooTl = gsap.timeline();
 
             // Restore full opacity immediately
-            gsap.set(character, { opacity: 1 });
+            gsap.set(character, { opacity: 1, scale: 0.65 }); // Start from shrunk OFF state
 
-            // Quick bounce up
-            leapTl.to(character, {
-              y: -25,
-              scale: 1.05,
-              duration: 0.25,
-              ease: 'power2.out',
+            // EXPLOSIVE POP UP - Much more dramatic!
+            woohooTl.to(character, {
+              y: -50, // Higher jump!
+              scale: 1.2, // Overshoot scale
+              duration: 0.3,
+              ease: 'back.out(2.5)', // Exaggerated bounce
             });
 
-            // Settle back to normal
-            leapTl.to(character, {
+            // Quick settle bounce
+            woohooTl.to(character, {
+              y: -10,
+              scale: 1.05,
+              duration: 0.2,
+              ease: 'power2.inOut',
+            });
+
+            // Final settle to normal
+            woohooTl.to(character, {
               y: 0,
               scale: 1,
-              duration: 0.35,
-              ease: 'elastic.out(1, 0.6)',
+              duration: 0.4,
+              ease: 'elastic.out(1, 0.5)',
             });
 
-            // Fade glows back in
+            // Fade glows back in with more energy
             gsap.to([innerGlow, outerGlow], {
               opacity: 1,
-              duration: 0.5,
+              duration: 0.4,
               ease: 'power2.out',
             });
-            // Shadow will be controlled by idle animation, just reset to base state
+
+            // Shadow pops back with character
             if (shadow) {
               gsap.set(shadow, {
                 scaleX: 1,
@@ -620,6 +652,19 @@ export default function AntyV3() {
                 opacity: 0.7,
               });
             }
+
+            // Spawn celebration sparkles during pop-in!
+            setTimeout(() => {
+              const canvasOffset = (160 * 5) / 2;
+              for (let i = 0; i < 8; i++) {
+                setTimeout(() => {
+                  antyRef.current?.spawnSparkle?.(
+                    canvasOffset + gsap.utils.random(40, 120),
+                    canvasOffset + gsap.utils.random(30, 90)
+                  );
+                }, i * 40);
+              }
+            }, 150);
 
             // Special handling for shocked: go to idle first, then shocked
             if (expr === 'shocked') {
