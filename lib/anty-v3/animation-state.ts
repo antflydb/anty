@@ -13,7 +13,7 @@ export type ExpressionName =
   | 'spin'    // Happy eyes with Y-axis spin jump
   | 'shocked' // Wide eyes with brackets moving apart
   | 'wink'    // Half-closed right eye + closed left eye
-  | 'sad'     // Downward curved eyes with droop animation
+  | 'angry'   // Downward curved eyes with stern animation
   | 'off';    // Logo state - triangle eyes, no animations
 
 // Button names for interactive responses

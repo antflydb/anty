@@ -930,7 +930,7 @@ export default function AntyV3() {
             }
 
             // Special handling for sad: leap to life then trigger droop animation
-            if (expr === 'sad') {
+            if (expr === 'angry') {
               setExpression(expr);
 
               // Manually trigger sad animation
@@ -949,11 +949,11 @@ export default function AntyV3() {
                 }
                 gsap.set(characterRef.current, { scale: 1, rotation: 0, y: 0, rotationY: 0 });
 
-                // Create sad droop timeline
-                const sadTl = gsap.timeline();
+                // Create angry stern timeline
+                const angryTl = gsap.timeline();
 
                 // Drop down slowly
-                sadTl.to(characterRef.current, {
+                angryTl.to(characterRef.current, {
                   y: 15,
                   duration: 0.6,
                   ease: 'power2.out',
@@ -961,12 +961,12 @@ export default function AntyV3() {
 
                 // Gentle sway left and right (3 cycles)
                 for (let i = 0; i < 3; i++) {
-                  sadTl.to(characterRef.current, {
+                  angryTl.to(characterRef.current, {
                     x: -8,
                     duration: 0.8,
                     ease: 'sine.inOut',
                   });
-                  sadTl.to(characterRef.current, {
+                  angryTl.to(characterRef.current, {
                     x: 8,
                     duration: 0.8,
                     ease: 'sine.inOut',
@@ -974,14 +974,14 @@ export default function AntyV3() {
                 }
 
                 // Return to center
-                sadTl.to(characterRef.current, {
+                angryTl.to(characterRef.current, {
                   x: 0,
                   duration: 0.4,
                   ease: 'sine.inOut',
                 });
 
                 // Rise back up
-                sadTl.to(characterRef.current, {
+                angryTl.to(characterRef.current, {
                   y: 0,
                   duration: 0.5,
                   ease: 'power2.in',
@@ -1326,8 +1326,8 @@ export default function AntyV3() {
             }, 1100);
           }
 
-          // Trigger sad droop animation for sad expression
-          if (expr === 'sad' && characterRef.current) {
+          // Trigger angry stern animation for sad expression
+          if (expr === 'angry' && characterRef.current) {
             // Kill all existing animations and reset
             gsap.killTweensOf(characterRef.current);
             if (antyRef.current?.leftBodyRef?.current) {
@@ -1344,11 +1344,11 @@ export default function AntyV3() {
             }
             gsap.set(characterRef.current, { scale: 1, rotation: 0, y: 0, rotationY: 0 });
 
-            // Create sad droop timeline
-            const sadTl = gsap.timeline();
+            // Create angry stern timeline
+            const angryTl = gsap.timeline();
 
             // Drop down slowly
-            sadTl.to(characterRef.current, {
+            angryTl.to(characterRef.current, {
               y: 15,
               duration: 0.6,
               ease: 'power2.out',
@@ -1356,12 +1356,12 @@ export default function AntyV3() {
 
             // Gentle sway left and right (3 cycles)
             for (let i = 0; i < 3; i++) {
-              sadTl.to(characterRef.current, {
+              angryTl.to(characterRef.current, {
                 x: -8,
                 duration: 0.8,
                 ease: 'sine.inOut',
               });
-              sadTl.to(characterRef.current, {
+              angryTl.to(characterRef.current, {
                 x: 8,
                 duration: 0.8,
                 ease: 'sine.inOut',
@@ -1369,14 +1369,14 @@ export default function AntyV3() {
             }
 
             // Return to center
-            sadTl.to(characterRef.current, {
+            angryTl.to(characterRef.current, {
               x: 0,
               duration: 0.4,
               ease: 'sine.inOut',
             });
 
             // Rise back up
-            sadTl.to(characterRef.current, {
+            angryTl.to(characterRef.current, {
               y: 0,
               duration: 0.5,
               ease: 'power2.in',
@@ -1389,7 +1389,7 @@ export default function AntyV3() {
             // Don't auto-return to idle
           } else if (expr === 'spin') {
             setTimeout(() => setExpression('idle'), 1500);
-          } else if (expr === 'sad') {
+          } else if (expr === 'angry') {
             setTimeout(() => setExpression('idle'), 6000);
           } else {
             setTimeout(() => setExpression('idle'), 1350);
