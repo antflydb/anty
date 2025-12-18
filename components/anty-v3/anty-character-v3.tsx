@@ -319,31 +319,35 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
     }
 
     // Set happy eyes when expression changes to 'happy' or 'excited'
+    // Use requestAnimationFrame to avoid flash during state swap
     if (expression === 'happy' || expression === 'excited') {
-      setIsHappy(true);
+      requestAnimationFrame(() => setIsHappy(true));
     } else {
-      setIsHappy(false);
+      requestAnimationFrame(() => setIsHappy(false));
     }
 
     // Set angry eyes when expression changes to 'angry'
+    // Use requestAnimationFrame to avoid flash during state swap
     if (expression === 'angry') {
-      setIsAngry(true);
+      requestAnimationFrame(() => setIsAngry(true));
     } else {
-      setIsAngry(false);
+      requestAnimationFrame(() => setIsAngry(false));
     }
 
     // Set sad eyes when expression changes to 'sad'
+    // Use requestAnimationFrame to avoid flash during state swap
     if (expression === 'sad') {
-      setIsSad(true);
+      requestAnimationFrame(() => setIsSad(true));
     } else {
-      setIsSad(false);
+      requestAnimationFrame(() => setIsSad(false));
     }
 
     // Set OFF state when expression changes to 'off'
+    // Use requestAnimationFrame to avoid flash during state swap
     if (expression === 'off') {
-      setIsOff(true);
+      requestAnimationFrame(() => setIsOff(true));
     } else {
-      setIsOff(false);
+      requestAnimationFrame(() => setIsOff(false));
     }
   }, [expression, performWink]);
 
