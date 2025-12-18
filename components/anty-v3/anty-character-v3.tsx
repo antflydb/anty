@@ -277,8 +277,8 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
       performWink();
     }
 
-    // Set happy eyes when expression changes to 'happy'
-    if (expression === 'happy') {
+    // Set happy eyes when expression changes to 'happy' or 'excited'
+    if (expression === 'happy' || expression === 'excited') {
       setIsHappy(true);
     } else {
       setIsHappy(false);

@@ -9,6 +9,7 @@ import type { AntyStats } from '@/lib/anty/stat-system';
 export type ExpressionName =
   | 'idle'    // Default vertical pill eyes
   | 'happy'   // Smiling eyes
+  | 'excited' // Smiling eyes with flip/jump animation and fireworks
   | 'wink';   // Half-closed right eye + closed left eye
 
 // Button names for interactive responses

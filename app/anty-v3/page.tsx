@@ -419,6 +419,66 @@ export default function AntyV3() {
             });
           }
 
+          // Trigger flip jump animation with fireworks for excited expression
+          if (expr === 'excited' && characterRef.current) {
+            const excitedTl = gsap.timeline();
+
+            // Jump up with 360° flip
+            excitedTl.to(characterRef.current, {
+              y: -60,
+              rotation: 360,
+              duration: 0.6,
+              ease: 'power2.out',
+            });
+
+            // Land back down
+            excitedTl.to(characterRef.current, {
+              y: 0,
+              rotation: 0,
+              duration: 0.4,
+              ease: 'bounce.out',
+            });
+
+            // Trigger fireworks burst at peak of jump
+            setTimeout(() => {
+              const canvasOffset = 160 / 2;
+              // Spawn fireworks-style sparkles in a burst pattern
+              for (let i = 0; i < 15; i++) {
+                setTimeout(() => {
+                  antyRef.current?.spawnSparkle?.(
+                    canvasOffset + gsap.utils.random(-40, 40),
+                    canvasOffset + gsap.utils.random(-60, -20)
+                  );
+                }, i * 40);
+              }
+            }, 300);
+
+            // Create rising confetti emoji on the right side
+            setTimeout(() => {
+              const emojiElement = document.createElement('div');
+              emojiElement.textContent = '🎊';
+              emojiElement.style.position = 'absolute';
+              emojiElement.style.right = '20px';
+              emojiElement.style.bottom = '200px';
+              emojiElement.style.fontSize = '48px';
+              emojiElement.style.pointerEvents = 'none';
+              emojiElement.style.zIndex = '100';
+              document.body.appendChild(emojiElement);
+
+              // Animate confetti rising
+              gsap.to(emojiElement, {
+                y: -150,
+                opacity: 0,
+                rotation: 20,
+                duration: 2.5,
+                ease: 'power1.out',
+                onComplete: () => {
+                  document.body.removeChild(emojiElement);
+                },
+              });
+            }, 600);
+          }
+
           setTimeout(() => setExpression('idle'), 2000);
         }}
       />

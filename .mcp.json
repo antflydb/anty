@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "figma": {
+      "command": "npx",
+      "args": ["@figma/mcp-server-figma"],
+      "env": {}
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["@playwright/mcp@latest", "--headless"],
+      "env": {}
+    }
+  }
+}
