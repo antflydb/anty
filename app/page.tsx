@@ -327,6 +327,218 @@ export default function AntyV3() {
         break;
       }
 
+      case 'nod': {
+        // Nod animation (vertical yes motion)
+        const leftEye = antyRef.current?.leftEyeRef?.current;
+        const rightEye = antyRef.current?.rightEyeRef?.current;
+
+        if (leftEye && rightEye) {
+          gsap.killTweensOf([leftEye, rightEye]);
+          gsap.set([leftEye, rightEye], { scaleY: 1, y: 0 });
+        }
+
+        gsap.set(char, {
+          scale: 1,
+          rotation: 0,
+          y: 0,
+          rotationY: 0,
+          rotationX: 0,
+          transformPerspective: 600,
+        });
+
+        // Create nod timeline - rotate on X axis (up/down nod)
+        const nodTl = gsap.timeline();
+
+        // First nod - tilt forward with eyes contracting upward
+        nodTl.to(char, {
+          rotationX: -35,
+          y: 8,
+          duration: 0.15,
+          ease: 'power2.out',
+          transformPerspective: 600,
+        });
+        if (leftEye && rightEye) {
+          nodTl.to([leftEye, rightEye], {
+            scaleY: 0.85,
+            y: -4,
+            duration: 0.15,
+            ease: 'power2.out',
+          }, '<');
+        }
+
+        // Return to center
+        nodTl.to(char, {
+          rotationX: 0,
+          y: 0,
+          duration: 0.15,
+          ease: 'power2.inOut',
+        });
+        if (leftEye && rightEye) {
+          nodTl.to([leftEye, rightEye], {
+            scaleY: 1,
+            y: 0,
+            duration: 0.15,
+            ease: 'power2.inOut',
+          }, '<');
+        }
+
+        // Second nod - tilt forward
+        nodTl.to(char, {
+          rotationX: -35,
+          y: 8,
+          duration: 0.15,
+          ease: 'power2.out',
+        });
+        if (leftEye && rightEye) {
+          nodTl.to([leftEye, rightEye], {
+            scaleY: 0.85,
+            y: -4,
+            duration: 0.15,
+            ease: 'power2.out',
+          }, '<');
+        }
+
+        // Return to center
+        nodTl.to(char, {
+          rotationX: 0,
+          y: 0,
+          duration: 0.15,
+          ease: 'power2.inOut',
+        });
+        if (leftEye && rightEye) {
+          nodTl.to([leftEye, rightEye], {
+            scaleY: 1,
+            y: 0,
+            duration: 0.15,
+            ease: 'power2.inOut',
+          }, '<');
+        }
+
+        // Third nod - tilt forward
+        nodTl.to(char, {
+          rotationX: -35,
+          y: 8,
+          duration: 0.15,
+          ease: 'power2.out',
+        });
+        if (leftEye && rightEye) {
+          nodTl.to([leftEye, rightEye], {
+            scaleY: 0.85,
+            y: -4,
+            duration: 0.15,
+            ease: 'power2.out',
+          }, '<');
+        }
+
+        // Final return to neutral
+        nodTl.to(char, {
+          rotationX: 0,
+          y: 0,
+          duration: 0.2,
+          ease: 'power2.inOut',
+        });
+        if (leftEye && rightEye) {
+          nodTl.to([leftEye, rightEye], {
+            scaleY: 1,
+            y: 0,
+            duration: 0.2,
+            ease: 'power2.inOut',
+          }, '<');
+        }
+
+        scheduleExpressionReset(1350);
+        break;
+      }
+
+      case 'headshake': {
+        // Headshake animation (horizontal no motion)
+        const leftEye = antyRef.current?.leftEyeRef?.current;
+        const rightEye = antyRef.current?.rightEyeRef?.current;
+
+        if (leftEye && rightEye) {
+          gsap.killTweensOf([leftEye, rightEye]);
+          gsap.set([leftEye, rightEye], { scaleY: 1, y: 0 });
+        }
+
+        gsap.set(char, {
+          scale: 1,
+          rotation: 0,
+          y: 0,
+          rotationY: 0,
+          rotationX: 0,
+          transformPerspective: 600,
+        });
+
+        // Create headshake timeline - rotate on Y axis (left/right shake)
+        const headshakeTl = gsap.timeline();
+
+        // Contract eyes downward for the entire shake duration
+        if (leftEye && rightEye) {
+          headshakeTl.to([leftEye, rightEye], {
+            scaleY: 0.85,
+            y: 4,
+            duration: 0.18,
+            ease: 'power2.out',
+          }, 0);
+        }
+
+        // First shake - rotate left
+        headshakeTl.to(char, {
+          rotationY: -45,
+          duration: 0.18,
+          ease: 'power4.out',
+          transformPerspective: 600,
+        }, 0);
+
+        // Snap to right
+        headshakeTl.to(char, {
+          rotationY: 45,
+          duration: 0.2,
+          ease: 'power4.inOut',
+        });
+
+        // Snap back to left
+        headshakeTl.to(char, {
+          rotationY: -45,
+          duration: 0.2,
+          ease: 'power4.inOut',
+        });
+
+        // Snap to right
+        headshakeTl.to(char, {
+          rotationY: 45,
+          duration: 0.2,
+          ease: 'power4.inOut',
+        });
+
+        // Snap back to left
+        headshakeTl.to(char, {
+          rotationY: -45,
+          duration: 0.2,
+          ease: 'power4.inOut',
+        });
+
+        // Final return to neutral
+        headshakeTl.to(char, {
+          rotationY: 0,
+          duration: 0.22,
+          ease: 'power2.inOut',
+        });
+
+        // Return eyes to normal
+        if (leftEye && rightEye) {
+          headshakeTl.to([leftEye, rightEye], {
+            scaleY: 1,
+            y: 0,
+            duration: 0.22,
+            ease: 'power2.inOut',
+          }, '<');
+        }
+
+        scheduleExpressionReset(1400);
+        break;
+      }
+
       default:
         // For other expressions, just set them without special animations
         scheduleExpressionReset(3000);
