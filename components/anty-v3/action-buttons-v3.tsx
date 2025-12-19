@@ -16,12 +16,13 @@ const buttons: Array<{ name: ButtonName; svg: string; alt: string }> = [
   { name: 'feed', svg: '/button-eat.svg', alt: 'Eat' },
 ];
 
-export function ActionButtonsV3({ onButtonClick, isOff }: ActionButtonsV3Props) {
+export function ActionButtonsV3({ onButtonClick, isOff, moodsButtonRef }: ActionButtonsV3Props) {
   return (
     <div className="flex gap-5 justify-center pb-8">
       {buttons.map((button, index) => (
         <motion.button
           key={button.name}
+          ref={button.name === 'moods' ? moodsButtonRef : undefined}
           whileHover={!isOff ? { scale: 1.05 } : {}}
           whileTap={!isOff ? { scale: 0.95 } : {}}
           transition={{ duration: 0.2 }}

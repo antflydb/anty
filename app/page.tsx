@@ -8,20 +8,22 @@ import type { AntyStats } from '@/lib/anty-v3/stat-system';
 
 export default function AntyV3() {
   // Add CSS animation for super mode hue shift
-  if (typeof document !== 'undefined' && !document.getElementById('anty-super-mode-styles')) {
-    const style = document.createElement('style');
-    style.id = 'anty-super-mode-styles';
-    style.textContent = `
-      @keyframes superModeHue {
-        0% { filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.9)) drop-shadow(0 0 40px rgba(255, 165, 0, 0.6)) brightness(1.15) saturate(1.3) hue-rotate(0deg); }
-        25% { filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.9)) drop-shadow(0 0 40px rgba(255, 165, 0, 0.6)) brightness(1.15) saturate(1.3) hue-rotate(10deg); }
-        50% { filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.9)) drop-shadow(0 0 40px rgba(255, 165, 0, 0.6)) brightness(1.15) saturate(1.3) hue-rotate(0deg); }
-        75% { filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.9)) drop-shadow(0 0 40px rgba(255, 165, 0, 0.6)) brightness(1.15) saturate(1.3) hue-rotate(-10deg); }
-        100% { filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.9)) drop-shadow(0 0 40px rgba(255, 165, 0, 0.6)) brightness(1.15) saturate(1.3) hue-rotate(0deg); }
-      }
-    `;
-    document.head.appendChild(style);
-  }
+  useEffect(() => {
+    if (!document.getElementById('anty-super-mode-styles')) {
+      const style = document.createElement('style');
+      style.id = 'anty-super-mode-styles';
+      style.textContent = `
+        @keyframes superModeHue {
+          0% { filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.9)) drop-shadow(0 0 40px rgba(255, 165, 0, 0.6)) brightness(1.15) saturate(1.3) hue-rotate(0deg); }
+          25% { filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.9)) drop-shadow(0 0 40px rgba(255, 165, 0, 0.6)) brightness(1.15) saturate(1.3) hue-rotate(10deg); }
+          50% { filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.9)) drop-shadow(0 0 40px rgba(255, 165, 0, 0.6)) brightness(1.15) saturate(1.3) hue-rotate(0deg); }
+          75% { filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.9)) drop-shadow(0 0 40px rgba(255, 165, 0, 0.6)) brightness(1.15) saturate(1.3) hue-rotate(-10deg); }
+          100% { filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.9)) drop-shadow(0 0 40px rgba(255, 165, 0, 0.6)) brightness(1.15) saturate(1.3) hue-rotate(0deg); }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+  }, []);
 
   // Game mode state
   const [gameMode, setGameMode] = useState<'idle' | 'game'>('idle');
@@ -73,6 +75,7 @@ export default function AntyV3() {
   const [isSuperMode, setIsSuperMode] = useState(false);
   const spinDescentTimerRef = useRef<NodeJS.Timeout | null>(null);
   const expressionResetTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const animationTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Helper function to clear any pending expression reset
   const clearExpressionReset = () => {
@@ -463,6 +466,46 @@ export default function AntyV3() {
     const characterElement = characterRef.current;
     if (!characterElement) return;
 
+    // Kill any existing animations and clear pending timers to prevent animation stacking
+    gsap.killTweensOf(characterElement);
+    clearExpressionReset();
+    if (animationTimerRef.current) {
+      clearTimeout(animationTimerRef.current);
+      animationTimerRef.current = null;
+    }
+
+    // Reset eyes to idle position if they're stuck in look-left/look-right
+    if (antyRef.current?.leftEyeRef?.current && antyRef.current?.rightEyeRef?.current) {
+      const leftEye = antyRef.current.leftEyeRef.current;
+      const rightEye = antyRef.current.rightEyeRef.current;
+      const leftPath = antyRef.current.leftEyePathRef?.current;
+      const rightPath = antyRef.current.rightEyePathRef?.current;
+
+      // Kill any ongoing eye animations
+      gsap.killTweensOf([leftEye, rightEye]);
+      if (leftPath && rightPath) {
+        gsap.killTweensOf([leftPath, rightPath]);
+      }
+
+      // Reset eyes to idle state
+      gsap.set([leftEye, rightEye], {
+        height: 44.52, // IDLE_HEIGHT
+        width: 18.63,  // IDLE_WIDTH
+        scaleY: 1,
+        scaleX: 1,
+        x: 0,
+        y: 0,
+      });
+
+      // Reset SVG paths to idle shape
+      if (leftPath && rightPath) {
+        const IDLE_PATH = "M1.15413e-10 11.6436C-2.8214e-05 5.21301 5.21305 -5.88744e-05 11.6437 5.01528e-10C18.0742 5.88744e-05 23.2872 5.21305 23.2872 11.6436V44.0092C23.2872 50.4398 18.0742 55.6528 11.6437 55.6528C5.21315 55.6528 0.000170216 50.4398 0.000142003 44.0093L1.15413e-10 11.6436Z";
+        gsap.set([leftPath, rightPath], {
+          attr: { d: IDLE_PATH }
+        });
+      }
+    }
+
     // If coming from OFF state, WOOHOOO leap to life first!!!
     if (expression === 'off') {
       const innerGlow = document.querySelector('.inner-glow') as HTMLElement;
@@ -558,6 +601,10 @@ export default function AntyV3() {
           ease: 'power2.out',
           yoyo: true,
           repeat: 1,
+          onComplete: () => {
+            // Ensure rotation is reset to 0 after animation completes
+            gsap.set(characterElement, { rotation: 0 });
+          },
         });
         setStats((prev) => ({ ...prev, knowledge: Math.min(100, prev.knowledge + 10) }));
         break;
@@ -639,7 +686,7 @@ export default function AntyV3() {
         }
 
         // Earn a heart and trigger pulse at happy eyes moment
-        setTimeout(() => {
+        animationTimerRef.current = setTimeout(() => {
           setExpression('happy');
           // Find first grey (not earned) heart and earn it
           const firstGreyHeart = [0, 1, 2].find(
@@ -651,6 +698,7 @@ export default function AntyV3() {
 
           // Spawn love heart particles radiating out from Anty
           antyRef.current?.spawnLoveHearts?.();
+          animationTimerRef.current = null;
         }, 2300);
         scheduleExpressionReset(4000);
         break;
@@ -1887,10 +1935,10 @@ export default function AntyV3() {
               { expression: 'idle', delay: 1000 },        // Back to center
               { expression: 'look-right', delay: 1000 },  // Look right
               { expression: 'idle', delay: 1000 },        // Back to center
-              { expression: 'look-left', delay: 1000 },   // Quick left
-              { expression: 'look-right', delay: 300 },   // Quick right (no center)
-              { expression: 'look-left', delay: 300 },    // Quick left (no center)
-              { expression: 'idle', delay: 300 },         // Return to idle
+              { expression: 'look-left', delay: 1000 },   // Quick left (start lowering)
+              { expression: 'look-right', delay: 300 },   // Quick right (lowered)
+              { expression: 'look-left', delay: 300 },    // Quick left (lowered)
+              { expression: 'idle', delay: 300 },         // Return to idle (raise back up)
             ];
 
             let currentStep = 0;
@@ -1900,6 +1948,26 @@ export default function AntyV3() {
               const step = sequence[currentStep];
               setTimeout(() => {
                 setExpression(step.expression);
+
+                // Lower Anty during the last three back-and-forth looks (steps 4, 5, 6)
+                if (characterRef.current) {
+                  if (currentStep === 4) {
+                    // Start lowering on first quick look
+                    gsap.to(characterRef.current, {
+                      y: 15,
+                      duration: 0.2,
+                      ease: 'power2.out',
+                    });
+                  } else if (currentStep === 7) {
+                    // Raise back up when returning to idle
+                    gsap.to(characterRef.current, {
+                      y: 0,
+                      duration: 0.3,
+                      ease: 'power2.out',
+                    });
+                  }
+                }
+
                 currentStep++;
                 executeSequence();
               }, step.delay);

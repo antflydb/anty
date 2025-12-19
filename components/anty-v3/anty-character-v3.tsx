@@ -53,6 +53,10 @@ export interface AntyCharacterHandle {
   spawnLoveHearts?: () => void;
   leftBodyRef?: React.RefObject<HTMLDivElement>;
   rightBodyRef?: React.RefObject<HTMLDivElement>;
+  leftEyeRef?: React.RefObject<HTMLDivElement>;
+  rightEyeRef?: React.RefObject<HTMLDivElement>;
+  leftEyePathRef?: React.RefObject<SVGPathElement>;
+  rightEyePathRef?: React.RefObject<SVGPathElement>;
 }
 
 /**
@@ -312,6 +316,10 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
         tl.delay(i * 0.01);
       });
     },
+    leftEyeRef,
+    rightEyeRef,
+    leftEyePathRef,
+    rightEyePathRef,
   }), [size]);
 
   // Update expression when prop changes and trigger state-based animations
