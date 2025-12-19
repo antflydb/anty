@@ -101,6 +101,155 @@ export default function AntyV3() {
     }, delayMs);
   };
 
+  // Centralized emotion animation trigger - reused by chat and expression menu
+  const triggerEmotionAnimation = (expr: ExpressionName) => {
+    clearExpressionReset();
+    setExpression(expr);
+
+    if (!characterRef.current) return;
+
+    const char = characterRef.current;
+
+    // Kill existing animations
+    gsap.killTweensOf(char);
+    if (antyRef.current?.leftBodyRef?.current) {
+      gsap.killTweensOf(antyRef.current.leftBodyRef.current);
+      gsap.set(antyRef.current.leftBodyRef.current, { x: 0, y: 0 });
+    }
+    if (antyRef.current?.rightBodyRef?.current) {
+      gsap.killTweensOf(antyRef.current.rightBodyRef.current);
+      gsap.set(antyRef.current.rightBodyRef.current, { x: 0, y: 0 });
+    }
+    if (spinDescentTimerRef.current) {
+      clearTimeout(spinDescentTimerRef.current);
+      spinDescentTimerRef.current = null;
+    }
+    gsap.set(char, { rotation: 0, y: 0, rotationY: 0, scale: 1 });
+
+    switch (expr) {
+      case 'happy':
+        gsap.to(char, {
+          rotation: 10,
+          duration: 0.15,
+          ease: 'power1.inOut',
+          yoyo: true,
+          repeat: 5,
+        });
+        scheduleExpressionReset(1350);
+        break;
+
+      case 'excited': {
+        const excitedTl = gsap.timeline({
+          onComplete: () => gsap.set(char, { rotation: 0 }),
+        });
+        excitedTl.to(char, { y: -70, rotation: 360, duration: 0.5, ease: 'power2.out' });
+        excitedTl.to(char, { y: -70, rotation: 360, duration: 0.3 });
+        excitedTl.to(char, { y: 0, duration: 0.45, ease: 'power1.inOut' });
+        excitedTl.to(char, { y: -25, duration: 0.18, ease: 'power2.out' });
+        excitedTl.to(char, { y: 0, duration: 0.18, ease: 'power2.in' });
+        excitedTl.to(char, { y: -18, duration: 0.15, ease: 'power2.out' });
+        excitedTl.to(char, { y: 0, duration: 0.15, ease: 'power2.in' });
+        scheduleExpressionReset(1350);
+        break;
+      }
+
+      case 'shocked': {
+        const leftBody = antyRef.current?.leftBodyRef?.current;
+        const rightBody = antyRef.current?.rightBodyRef?.current;
+
+        gsap.to(char, { y: -30, duration: 0.2, ease: 'power2.out' });
+
+        if (leftBody && rightBody) {
+          gsap.to(leftBody, { x: -15, y: -15, duration: 0.2, ease: 'back.out(2)' });
+          gsap.to(rightBody, { x: 15, y: 15, duration: 0.2, ease: 'back.out(2)' });
+
+          const shakeTl = gsap.timeline({ repeat: 3, yoyo: true });
+          shakeTl.to(char, { rotation: 2, duration: 0.08, ease: 'power1.inOut' });
+
+          setTimeout(() => {
+            gsap.to(leftBody, { x: 0, y: 0, duration: 0.25, ease: 'elastic.out(1, 0.5)' });
+            gsap.to(rightBody, { x: 0, y: 0, duration: 0.25, ease: 'elastic.out(1, 0.5)' });
+          }, 1350);
+        }
+
+        setTimeout(() => {
+          if (char) {
+            gsap.to(char, { y: 0, rotation: 0, duration: 0.5, ease: 'power1.inOut' });
+          }
+        }, 1400);
+        scheduleExpressionReset(1350);
+        break;
+      }
+
+      case 'sad':
+        gsap.to(char, { y: 10, scale: 0.9, duration: 0.6, ease: 'power2.out' });
+        setTimeout(() => {
+          if (char) {
+            gsap.to(char, { y: 0, scale: 1, duration: 0.4, ease: 'power2.in' });
+          }
+        }, 1500);
+        scheduleExpressionReset(2500);
+        break;
+
+      case 'angry': {
+        const angryTl = gsap.timeline();
+        angryTl.to(char, { y: 15, duration: 0.6, ease: 'power2.out' });
+        for (let i = 0; i < 3; i++) {
+          angryTl.to(char, { x: -8, duration: 0.8, ease: 'sine.inOut' });
+          angryTl.to(char, { x: 8, duration: 0.8, ease: 'sine.inOut' });
+        }
+        angryTl.to(char, { x: 0, duration: 0.4, ease: 'sine.inOut' });
+        angryTl.to(char, { y: 0, duration: 0.5, ease: 'power2.in' });
+        scheduleExpressionReset(6000);
+        break;
+      }
+
+      case 'spin': {
+        if (spinDescentTimerRef.current) {
+          clearTimeout(spinDescentTimerRef.current);
+          spinDescentTimerRef.current = null;
+        }
+
+        const currentRotation = gsap.getProperty(char, 'rotationY') as number;
+        const currentY = gsap.getProperty(char, 'y') as number;
+
+        if (Math.abs(currentY) < 60) {
+          gsap.to(char, { y: -70, duration: 0.3, ease: 'power2.out' });
+        }
+
+        gsap.to(char, {
+          rotationY: currentRotation + 720,
+          duration: 1.1,
+          ease: 'back.out(1.2)',
+          onComplete: () => {
+            const finalRotation = gsap.getProperty(char, 'rotationY') as number;
+            gsap.set(char, { rotationY: finalRotation % 360 });
+          },
+        });
+
+        spinDescentTimerRef.current = setTimeout(() => {
+          if (char) {
+            const finalRotation = gsap.getProperty(char, 'rotationY') as number;
+            gsap.set(char, { rotationY: finalRotation % 360 });
+            gsap.to(char, {
+              y: 0,
+              duration: 0.35,
+              ease: 'power2.in',
+              onComplete: () => gsap.set(char, { rotationY: 0 }),
+            });
+          }
+        }, 1100);
+        scheduleExpressionReset(1500);
+        break;
+      }
+
+      default:
+        // For other expressions, just set them without special animations
+        scheduleExpressionReset(3000);
+        break;
+    }
+  };
+
   // Keyboard controls
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -2317,126 +2466,8 @@ export default function AntyV3() {
         isOpen={isChatOpen}
         onClose={() => setIsChatOpen(false)}
         onEmotion={(emotion) => {
-          // Clear any pending expression reset
-          clearExpressionReset();
-
-          // Set the emotion
-          setExpression(emotion);
-
-          // Trigger body animations for specific emotions
-          if (characterRef.current) {
-            const char = characterRef.current;
-
-            // Kill existing animations
-            gsap.killTweensOf(char);
-            if (antyRef.current?.leftBodyRef?.current) {
-              gsap.killTweensOf(antyRef.current.leftBodyRef.current);
-            }
-            if (antyRef.current?.rightBodyRef?.current) {
-              gsap.killTweensOf(antyRef.current.rightBodyRef.current);
-            }
-
-            switch (emotion) {
-              case 'happy':
-                // Wiggle animation
-                gsap.to(char, {
-                  rotation: 10,
-                  duration: 0.15,
-                  ease: 'power1.inOut',
-                  yoyo: true,
-                  repeat: 3,
-                  onComplete: () => gsap.set(char, { rotation: 0 }),
-                });
-                break;
-
-              case 'excited':
-                // Bounce animation
-                gsap.to(char, {
-                  y: -20,
-                  duration: 0.2,
-                  ease: 'power2.out',
-                  yoyo: true,
-                  repeat: 1,
-                  onComplete: () => gsap.set(char, { y: 0 }),
-                });
-                break;
-
-              case 'shocked':
-                // Quick shake
-                gsap.to(char, {
-                  x: 5,
-                  duration: 0.05,
-                  ease: 'power1.inOut',
-                  yoyo: true,
-                  repeat: 5,
-                  onComplete: () => gsap.set(char, { x: 0 }),
-                });
-                break;
-
-              case 'sad':
-                // Droop animation
-                gsap.to(char, {
-                  y: 10,
-                  scale: 0.95,
-                  duration: 0.3,
-                  ease: 'power2.out',
-                  onComplete: () => {
-                    // Reset after droop
-                    gsap.to(char, {
-                      y: 0,
-                      scale: 1,
-                      duration: 0.3,
-                      delay: 0.5,
-                      ease: 'power2.out',
-                    });
-                  },
-                });
-                break;
-
-              case 'wink':
-                // Subtle tilt
-                gsap.to(char, {
-                  rotation: -5,
-                  duration: 0.2,
-                  ease: 'power2.inOut',
-                  yoyo: true,
-                  repeat: 1,
-                  onComplete: () => gsap.set(char, { rotation: 0 }),
-                });
-                break;
-
-              case 'idea':
-                // Pop up animation
-                gsap.to(char, {
-                  y: -15,
-                  scale: 1.05,
-                  duration: 0.15,
-                  ease: 'back.out(2)',
-                  onComplete: () => {
-                    gsap.to(char, {
-                      y: 0,
-                      scale: 1,
-                      duration: 0.2,
-                      ease: 'power2.inOut',
-                    });
-                  },
-                });
-                break;
-
-              case 'spin':
-                // Spin animation
-                gsap.to(char, {
-                  rotationY: 360,
-                  duration: 0.6,
-                  ease: 'power2.inOut',
-                  onComplete: () => gsap.set(char, { rotationY: 0 }),
-                });
-                break;
-            }
-          }
-
-          // Reset to idle after 3 seconds
-          scheduleExpressionReset(3000);
+          // Trigger the full emotion animation sequence
+          triggerEmotionAnimation(emotion);
         }}
       />
 
