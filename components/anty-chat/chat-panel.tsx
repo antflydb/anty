@@ -169,6 +169,10 @@ export function ChatPanel({ isOpen, onClose, onEmotion }: ChatPanelProps) {
       }
     } finally {
       setIsLoading(false);
+      // Auto-focus input after sending message
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 100);
     }
   };
 
@@ -195,14 +199,7 @@ export function ChatPanel({ isOpen, onClose, onEmotion }: ChatPanelProps) {
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-            className="fixed inset-0 bg-black/20 z-40"
-          />
+          {/* Backdrop - removed dark overlay for clear view */}
 
           {/* Panel */}
           <motion.div

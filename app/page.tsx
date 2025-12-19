@@ -724,7 +724,15 @@ export default function AntyV3() {
           <HeartMeter hearts={hearts} earnedHearts={earnedHearts} isOff={expression === 'off'} />
 
           <div className="flex-1 flex items-center justify-center pb-12 relative">
-            <div style={{ position: 'relative', width: '160px', height: '240px' }}>
+            <div
+              style={{
+                position: 'relative',
+                width: '160px',
+                height: '240px',
+                transition: 'transform 0.3s ease-out',
+                transform: isChatOpen ? 'translateX(-192px)' : 'translateX(0)', // Move left by half of chat panel width (384px/2)
+              }}
+            >
               {/* Floating glow behind Anty - Layer 1 (inner, more saturated) */}
               <div
                 className="inner-glow absolute left-1/2 -translate-x-1/2"
@@ -2311,8 +2319,122 @@ export default function AntyV3() {
         onEmotion={(emotion) => {
           // Clear any pending expression reset
           clearExpressionReset();
+
           // Set the emotion
           setExpression(emotion);
+
+          // Trigger body animations for specific emotions
+          if (characterRef.current) {
+            const char = characterRef.current;
+
+            // Kill existing animations
+            gsap.killTweensOf(char);
+            if (antyRef.current?.leftBodyRef?.current) {
+              gsap.killTweensOf(antyRef.current.leftBodyRef.current);
+            }
+            if (antyRef.current?.rightBodyRef?.current) {
+              gsap.killTweensOf(antyRef.current.rightBodyRef.current);
+            }
+
+            switch (emotion) {
+              case 'happy':
+                // Wiggle animation
+                gsap.to(char, {
+                  rotation: 10,
+                  duration: 0.15,
+                  ease: 'power1.inOut',
+                  yoyo: true,
+                  repeat: 3,
+                  onComplete: () => gsap.set(char, { rotation: 0 }),
+                });
+                break;
+
+              case 'excited':
+                // Bounce animation
+                gsap.to(char, {
+                  y: -20,
+                  duration: 0.2,
+                  ease: 'power2.out',
+                  yoyo: true,
+                  repeat: 1,
+                  onComplete: () => gsap.set(char, { y: 0 }),
+                });
+                break;
+
+              case 'shocked':
+                // Quick shake
+                gsap.to(char, {
+                  x: 5,
+                  duration: 0.05,
+                  ease: 'power1.inOut',
+                  yoyo: true,
+                  repeat: 5,
+                  onComplete: () => gsap.set(char, { x: 0 }),
+                });
+                break;
+
+              case 'sad':
+                // Droop animation
+                gsap.to(char, {
+                  y: 10,
+                  scale: 0.95,
+                  duration: 0.3,
+                  ease: 'power2.out',
+                  onComplete: () => {
+                    // Reset after droop
+                    gsap.to(char, {
+                      y: 0,
+                      scale: 1,
+                      duration: 0.3,
+                      delay: 0.5,
+                      ease: 'power2.out',
+                    });
+                  },
+                });
+                break;
+
+              case 'wink':
+                // Subtle tilt
+                gsap.to(char, {
+                  rotation: -5,
+                  duration: 0.2,
+                  ease: 'power2.inOut',
+                  yoyo: true,
+                  repeat: 1,
+                  onComplete: () => gsap.set(char, { rotation: 0 }),
+                });
+                break;
+
+              case 'idea':
+                // Pop up animation
+                gsap.to(char, {
+                  y: -15,
+                  scale: 1.05,
+                  duration: 0.15,
+                  ease: 'back.out(2)',
+                  onComplete: () => {
+                    gsap.to(char, {
+                      y: 0,
+                      scale: 1,
+                      duration: 0.2,
+                      ease: 'power2.inOut',
+                    });
+                  },
+                });
+                break;
+
+              case 'spin':
+                // Spin animation
+                gsap.to(char, {
+                  rotationY: 360,
+                  duration: 0.6,
+                  ease: 'power2.inOut',
+                  onComplete: () => gsap.set(char, { rotationY: 0 }),
+                });
+                break;
+            }
+          }
+
           // Reset to idle after 3 seconds
           scheduleExpressionReset(3000);
         }}
