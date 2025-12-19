@@ -32,9 +32,10 @@ Anty will react to the conversation with expressions like:
 ### UI Features
 - **Slide-in panel** from the right side
 - **Auto-scroll** to latest messages
-- **Streaming responses** - Messages appear word-by-word in real-time
+- **Streaming responses** - Messages appear word-by-word in real-time (emotion tags hidden during streaming)
 - **Typing indicator** while Anty is thinking
 - **Timestamp** on each message
+- **Clickable debug info** - Click any assistant message to see detected emotion and raw response
 - **API key management** (store, change, or clear)
 - **Responsive design** (works on mobile and desktop)
 - **Specific error messages** - Clear feedback for different error types (invalid API key, rate limits, network issues, etc.)
@@ -139,13 +140,13 @@ Using GPT-4o-mini provides 60x cost savings compared to GPT-4 while maintaining 
 - Click the key icon to re-enter your API key
 
 **Anty doesn't react**:
-- Open browser console (F12) and look for `[CHAT]`, `[CHAT UI]`, and `[EMOTION MAPPER]` logs
-- The logs will show:
+- Click on any assistant message to see debug info
+- The debug section shows:
   - What emotion was detected in the AI response
-  - How it was mapped to an Anty expression
-  - Whether the emotion callback was triggered
+  - The raw response including emotion tags
 - The AI should include emotion tags like `[EMOTION:happy]` in responses
 - Try asking more emotional questions to trigger reactions
+- If no emotion shows in debug info, the AI may not be including emotion tags
 
 **Build errors**:
 - The build may show TypeScript errors in `anty-character-v3.tsx` (pre-existing issue)
