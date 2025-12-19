@@ -111,6 +111,20 @@ export function useFlappyGame({
   const lastFrameTimeRef = useRef<number>(0);
   const lastCelebrationColorRef = useRef<string | undefined>(undefined);
 
+  // Use refs to stabilize game loop and prevent constant recreation
+  const gameStateRef = useRef(gameState);
+  const configRef = useRef(config);
+  const onCollisionRef = useRef(onCollision);
+  const onDifficultyIncreaseRef = useRef(onDifficultyIncrease);
+  const onCollectibleCollectedRef = useRef(onCollectibleCollected);
+
+  // Keep refs synced (callbacks will update later after they're defined)
+  useEffect(() => { gameStateRef.current = gameState; }, [gameState]);
+  useEffect(() => { configRef.current = config; }, [config]);
+  useEffect(() => { onCollisionRef.current = onCollision; }, [onCollision]);
+  useEffect(() => { onDifficultyIncreaseRef.current = onDifficultyIncrease; }, [onDifficultyIncrease]);
+  useEffect(() => { onCollectibleCollectedRef.current = onCollectibleCollected; }, [onCollectibleCollected]);
+
   /**
    * Start the game
    */
@@ -177,25 +191,31 @@ export function useFlappyGame({
   }, []);
 
   /**
-   * Handle game over
+   * Handle game over logic when state changes to game_over
+   */
+  useEffect(() => {
+    if (gameState === 'game_over') {
+      const isNewHighScore = score > highScore;
+      if (isNewHighScore) {
+        setHighScore(score);
+      }
+      onGameOver?.(score, isNewHighScore);
+    }
+  }, [gameState, score, highScore, onGameOver]);
+
+  /**
+   * Legacy handleGameOver for backward compatibility
    */
   const handleGameOver = useCallback(() => {
     setGameState('game_over');
-
-    const isNewHighScore = score > highScore;
-    if (isNewHighScore) {
-      setHighScore(score);
-    }
-
-    onGameOver?.(score, isNewHighScore);
-  }, [score, highScore, onGameOver]);
+  }, []);
 
   /**
    * Game loop - runs every frame when playing
    */
   const gameLoop = useCallback(
     (currentTime: number) => {
-      if (gameState !== 'playing') return;
+      if (gameStateRef.current !== 'playing') return;
 
       // Calculate delta time (seconds)
       const deltaTime = Math.min(
@@ -208,13 +228,13 @@ export function useFlappyGame({
       setPlayer(prev => updatePlayerPhysics(prev, deltaTime * 60, canvasHeight));
 
       // Update world
-      setObstacles(prev => updateObstacles(prev, config.scrollSpeed, deltaTime * 60));
-      setCollectibles(prev => updateCollectibles(prev, config.scrollSpeed, deltaTime * 60));
+      setObstacles(prev => updateObstacles(prev, configRef.current.scrollSpeed, deltaTime * 60));
+      setCollectibles(prev => updateCollectibles(prev, configRef.current.scrollSpeed, deltaTime * 60));
 
       // Spawn new obstacles if needed
       setObstacles(prev => {
-        if (shouldSpawnObstacle(prev, canvasWidth, config.obstacleSpacing)) {
-          const newObstacle = generateObstacle(canvasWidth, config.gapHeight);
+        if (shouldSpawnObstacle(prev, canvasWidth, configRef.current.obstacleSpacing)) {
+          const newObstacle = generateObstacle(canvasWidth, configRef.current.gapHeight);
 
           // Maybe spawn collectible in FREE SPACE between obstacles (not in the gap)
           const newCollectibles: Collectible[] = [];
@@ -242,7 +262,7 @@ export function useFlappyGame({
       setPlayer(currentPlayer => {
         setObstacles(currentObstacles => {
           if (checkObstacleCollision(currentPlayer, currentObstacles, canvasHeight)) {
-            onCollision?.(
+            onCollisionRef.current?.(
               GAME_PHYSICS.PLAYER_X + GAME_PHYSICS.PLAYER_SIZE / 2,
               currentPlayer.y + GAME_PHYSICS.PLAYER_SIZE / 2
             );
@@ -260,7 +280,7 @@ export function useFlappyGame({
                 const level = Math.floor(newScore / GAME_PHYSICS.DIFFICULTY_SCORE_INTERVAL);
                 setConfig(getDifficultyConfig(newScore));
                 // Add 1 to level for display (start game is level 1, first announcement is level 2)
-                onDifficultyIncrease?.(level + 1);
+                onDifficultyIncreaseRef.current?.(level + 1);
               }
 
               return newScore;
@@ -295,7 +315,7 @@ export function useFlappyGame({
 
             // Trigger effects
             collected.forEach(col => {
-              onCollectibleCollected?.(col.x, col.y, col.value);
+              onCollectibleCollectedRef.current?.(col.x, col.y, col.value);
             });
 
             // Mark as collected
@@ -313,16 +333,7 @@ export function useFlappyGame({
       // Continue loop
       gameLoopRef.current = requestAnimationFrame(gameLoop);
     },
-    [
-      gameState,
-      config,
-      canvasWidth,
-      canvasHeight,
-      handleGameOver,
-      onCollision,
-      onDifficultyIncrease,
-      onCollectibleCollected,
-    ]
+    [canvasWidth, canvasHeight] // Only stable canvas dimensions - rest use refs
   );
 
   /**
