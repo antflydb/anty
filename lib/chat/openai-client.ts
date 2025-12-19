@@ -69,7 +69,7 @@ Keep responses concise and friendly. Remember, you're demonstrating your emotion
 
     try {
       const stream = await this.client.chat.completions.create({
-        model: 'gpt-4',
+        model: 'gpt-4o-mini', // Changed from gpt-4 for 60x cost savings
         messages: allMessages,
         stream: true,
         temperature: 0.8,
@@ -93,13 +93,33 @@ Keep responses concise and friendly. Remember, you're demonstrating your emotion
       // Remove emotion tag from displayed message
       const cleanMessage = fullMessage.replace(/\[EMOTION:\w+(?:-\w+)?\]\s*/g, '');
 
+      console.log('[CHAT] Full response:', fullMessage);
+      console.log('[CHAT] Detected emotion:', emotion);
+      console.log('[CHAT] Clean message:', cleanMessage);
+
       return {
         message: cleanMessage,
         emotion,
       };
-    } catch (error) {
-      console.error('Error sending message:', error);
-      throw error;
+    } catch (error: any) {
+      console.error('[CHAT] Error sending message:', error);
+
+      // Provide specific error messages
+      let errorMessage = 'An unexpected error occurred. Please try again.';
+
+      if (error?.status === 401) {
+        errorMessage = 'Invalid API key. Please check your OpenAI API key and try again.';
+      } else if (error?.status === 429) {
+        errorMessage = 'Rate limit exceeded. Please wait a moment and try again.';
+      } else if (error?.status === 500 || error?.status === 503) {
+        errorMessage = 'OpenAI service is currently unavailable. Please try again later.';
+      } else if (error?.message?.includes('fetch')) {
+        errorMessage = 'Network error. Please check your internet connection.';
+      } else if (error?.code === 'insufficient_quota') {
+        errorMessage = 'Your OpenAI account has insufficient credits. Please add credits to your account.';
+      }
+
+      throw new Error(errorMessage);
     }
   }
 }

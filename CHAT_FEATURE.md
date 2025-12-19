@@ -32,10 +32,12 @@ Anty will react to the conversation with expressions like:
 ### UI Features
 - **Slide-in panel** from the right side
 - **Auto-scroll** to latest messages
+- **Streaming responses** - Messages appear word-by-word in real-time
 - **Typing indicator** while Anty is thinking
 - **Timestamp** on each message
 - **API key management** (store, change, or clear)
 - **Responsive design** (works on mobile and desktop)
+- **Specific error messages** - Clear feedback for different error types (invalid API key, rate limits, network issues, etc.)
 
 ## Architecture
 
@@ -118,12 +120,12 @@ The current architecture supports this - you would:
 
 ## API Costs
 
-ChatGPT API usage costs money. The chat uses the `gpt-4` model with:
+ChatGPT API usage costs money. The chat uses the `gpt-4o-mini` model with:
 - Max tokens: 300 per response
 - Temperature: 0.8 (for more creative/emotional responses)
-- Streaming enabled (for better UX)
+- Streaming enabled (messages appear word-by-word in real-time)
 
-Typical costs are a few cents per conversation.
+Using GPT-4o-mini provides 60x cost savings compared to GPT-4 while maintaining excellent quality for this use case. Typical costs are fractions of a cent per conversation.
 
 ## Troubleshooting
 
@@ -137,9 +139,13 @@ Typical costs are a few cents per conversation.
 - Click the key icon to re-enter your API key
 
 **Anty doesn't react**:
-- Check the browser console for emotion parsing logs
-- The AI should include emotion tags in responses
-- Try asking more emotional questions
+- Open browser console (F12) and look for `[CHAT]`, `[CHAT UI]`, and `[EMOTION MAPPER]` logs
+- The logs will show:
+  - What emotion was detected in the AI response
+  - How it was mapped to an Anty expression
+  - Whether the emotion callback was triggered
+- The AI should include emotion tags like `[EMOTION:happy]` in responses
+- Try asking more emotional questions to trigger reactions
 
 **Build errors**:
 - The build may show TypeScript errors in `anty-character-v3.tsx` (pre-existing issue)

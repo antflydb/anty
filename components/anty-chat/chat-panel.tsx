@@ -88,6 +88,17 @@ export function ChatPanel({ isOpen, onClose, onEmotion }: ChatPanelProps) {
     setInput('');
     setIsLoading(true);
 
+    // Create a placeholder message for streaming
+    const assistantMessageId = (Date.now() + 1).toString();
+    const assistantMessage: Message = {
+      id: assistantMessageId,
+      role: 'assistant',
+      content: '',
+      timestamp: new Date(),
+    };
+
+    setMessages((prev) => [...prev, assistantMessage]);
+
     try {
       const chatHistory: ChatMessage[] = messages.map((msg) => ({
         role: msg.role,
@@ -99,37 +110,59 @@ export function ChatPanel({ isOpen, onClose, onEmotion }: ChatPanelProps) {
         content: userMessage.content,
       });
 
-      const response = await chatClient.sendMessage(chatHistory);
+      // Stream the response
+      const response = await chatClient.sendMessage(chatHistory, (chunk) => {
+        // Update the message content with each chunk
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === assistantMessageId
+              ? { ...msg, content: msg.content + chunk }
+              : msg
+          )
+        );
+      });
 
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: response.message,
-        timestamp: new Date(),
-      };
-
-      setMessages((prev) => [...prev, assistantMessage]);
+      // Update with final clean message
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === assistantMessageId
+            ? { ...msg, content: response.message }
+            : msg
+        )
+      );
 
       // Trigger emotion if present
       if (response.emotion) {
+        console.log('[CHAT UI] Emotion detected from response:', response.emotion);
         const expression = mapEmotionToExpression(response.emotion);
+        console.log('[CHAT UI] Mapped to expression:', expression);
         if (expression) {
+          console.log('[CHAT UI] Triggering onEmotion callback with:', expression);
           onEmotion?.(expression);
+        } else {
+          console.warn('[CHAT UI] No expression mapping found for emotion:', response.emotion);
         }
+      } else {
+        console.log('[CHAT UI] No emotion detected in response');
       }
-    } catch (error) {
-      console.error('Error sending message:', error);
+    } catch (error: any) {
+      console.error('[CHAT UI] Error sending message:', error);
 
+      // Remove the placeholder message
+      setMessages((prev) => prev.filter((msg) => msg.id !== assistantMessageId));
+
+      // Show specific error message
       const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
+        id: (Date.now() + 2).toString(),
         role: 'assistant',
-        content: 'Oops! Something went wrong. Please check your API key and try again.',
+        content: error.message || 'Oops! Something went wrong. Please try again.',
         timestamp: new Date(),
       };
 
       setMessages((prev) => [...prev, errorMessage]);
 
       // Trigger sad emotion
+      console.log('[CHAT UI] Error occurred, triggering sad emotion');
       const expression = mapEmotionToExpression('sad');
       if (expression) {
         onEmotion?.(expression);

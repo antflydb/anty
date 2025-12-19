@@ -4,8 +4,12 @@ import type { ExpressionName } from '../anty-v3/animation-state';
  * Maps emotion tags from chat responses to Anty's expression names
  */
 export function mapEmotionToExpression(emotion: string | undefined): ExpressionName | null {
-  if (!emotion) return null;
+  if (!emotion) {
+    console.log('[EMOTION MAPPER] No emotion provided');
+    return null;
+  }
 
+  console.log('[EMOTION MAPPER] Mapping emotion:', emotion);
   const emotionLower = emotion.toLowerCase();
 
   // Direct mappings
@@ -54,7 +58,9 @@ export function mapEmotionToExpression(emotion: string | undefined): ExpressionN
     'celebrating': 'spin',
   };
 
-  return emotionMap[emotionLower] || null;
+  const mappedExpression = emotionMap[emotionLower] || null;
+  console.log('[EMOTION MAPPER] Result:', emotionLower, '->', mappedExpression);
+  return mappedExpression;
 }
 
 /**
