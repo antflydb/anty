@@ -540,16 +540,14 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
           <div className="absolute flex inset-[33.41%_31.63%_38.76%_56.72%] items-center justify-center">
             <div
               ref={leftEyeRef}
-              className="flex-none overflow-hidden"
+              className="flex-none overflow-hidden flex items-end"
               style={{
                 height: '44.52px',
                 width: '18.63px',
                 transformOrigin: 'center center',
               }}
             >
-              <div className="relative size-full">
-                <img alt="" className="block max-w-none" src={img2} style={{ width: '18.63px', height: '44.52px', objectFit: 'none' }} />
-              </div>
+              <img alt="" className="block max-w-none" src={img2} style={{ width: '18.63px', height: '44.52px', objectFit: 'none' }} />
             </div>
           </div>
         )}
@@ -583,16 +581,14 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
           <div className="absolute flex inset-[33.41%_57.36%_38.76%_31%] items-center justify-center">
             <div
               ref={rightEyeRef}
-              className="flex-none overflow-hidden"
+              className="flex-none overflow-hidden flex items-end"
               style={{
                 height: '44.52px',
                 width: '18.63px',
                 transformOrigin: 'center center',
               }}
             >
-              <div className="relative size-full">
-                <img alt="" className="block max-w-none" src={img2} style={{ width: '18.63px', height: '44.52px', objectFit: 'none' }} />
-              </div>
+              <img alt="" className="block max-w-none" src={img2} style={{ width: '18.63px', height: '44.52px', objectFit: 'none' }} />
             </div>
           </div>
         )}
