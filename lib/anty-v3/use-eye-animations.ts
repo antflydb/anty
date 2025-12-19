@@ -42,7 +42,7 @@ const ANIMATION_TIMING = {
 
   // Look left/right animations
   LOOK_HEIGHT: 24,                // Shorter eye height when looking (vs 44.52px idle)
-  LOOK_WIDTH: 18.63,              // Keep same width as idle
+  LOOK_WIDTH: 10.04,              // Proportional width to maintain aspect ratio (24 / 2.39)
   IDLE_HEIGHT: 44.52,             // Idle eye height
   IDLE_WIDTH: 18.63,              // Idle eye width
   LOOK_X_OFFSET: 12,              // Move eyes 12px left or right
@@ -310,9 +310,10 @@ export function useEyeAnimations({
       debugLog.gsap('both', 'kill', `Resetting from ${prevExpression} to idle`);
       gsap.killTweensOf([leftEye, rightEye]);
 
-      debugLog.gsap('both', 'to', { height: ANIMATION_TIMING.IDLE_HEIGHT, scaleY: 1, scaleX: 1, x: 0, y: 0, duration: ANIMATION_TIMING.RESET_DURATION });
+      debugLog.gsap('both', 'to', { height: ANIMATION_TIMING.IDLE_HEIGHT, width: ANIMATION_TIMING.IDLE_WIDTH, scaleY: 1, scaleX: 1, x: 0, y: 0, duration: ANIMATION_TIMING.RESET_DURATION });
       gsap.to([leftEye, rightEye], {
         height: ANIMATION_TIMING.IDLE_HEIGHT,
+        width: ANIMATION_TIMING.IDLE_WIDTH,
         scaleY: 1,
         scaleX: 1,
         x: 0,
@@ -358,10 +359,11 @@ export function useEyeAnimations({
       debugLog.gsap('both', 'kill', 'Clearing tweens for look-left');
       gsap.killTweensOf([leftEye, rightEye]);
 
-      debugLog.gsap('both', 'set', { height: ANIMATION_TIMING.IDLE_HEIGHT, scaleY: 1, scaleX: 1, x: 0, y: 0, rotation: 0 });
+      debugLog.gsap('both', 'set', { height: ANIMATION_TIMING.IDLE_HEIGHT, width: ANIMATION_TIMING.IDLE_WIDTH, scaleY: 1, scaleX: 1, x: 0, y: 0, rotation: 0 });
       // Reset to baseline first
       gsap.set([leftEye, rightEye], {
         height: ANIMATION_TIMING.IDLE_HEIGHT,
+        width: ANIMATION_TIMING.IDLE_WIDTH,
         scaleY: 1,
         scaleX: 1,
         x: 0,
@@ -369,10 +371,11 @@ export function useEyeAnimations({
         rotation: 0,
       });
 
-      debugLog.gsap('both', 'to', { height: ANIMATION_TIMING.LOOK_HEIGHT, x: -ANIMATION_TIMING.LOOK_X_OFFSET });
+      debugLog.gsap('both', 'to', { height: ANIMATION_TIMING.LOOK_HEIGHT, width: ANIMATION_TIMING.LOOK_WIDTH, x: -ANIMATION_TIMING.LOOK_X_OFFSET });
       // Animate eyes to look left (morph to shorter shape and move left)
       gsap.to([leftEye, rightEye], {
         height: ANIMATION_TIMING.LOOK_HEIGHT,
+        width: ANIMATION_TIMING.LOOK_WIDTH,
         x: -ANIMATION_TIMING.LOOK_X_OFFSET,
         duration: ANIMATION_TIMING.LOOK_DURATION,
         ease: 'power2.out',
@@ -386,10 +389,11 @@ export function useEyeAnimations({
       debugLog.gsap('both', 'kill', 'Clearing tweens for look-right');
       gsap.killTweensOf([leftEye, rightEye]);
 
-      debugLog.gsap('both', 'set', { height: ANIMATION_TIMING.IDLE_HEIGHT, scaleY: 1, scaleX: 1, x: 0, y: 0, rotation: 0 });
+      debugLog.gsap('both', 'set', { height: ANIMATION_TIMING.IDLE_HEIGHT, width: ANIMATION_TIMING.IDLE_WIDTH, scaleY: 1, scaleX: 1, x: 0, y: 0, rotation: 0 });
       // Reset to baseline first
       gsap.set([leftEye, rightEye], {
         height: ANIMATION_TIMING.IDLE_HEIGHT,
+        width: ANIMATION_TIMING.IDLE_WIDTH,
         scaleY: 1,
         scaleX: 1,
         x: 0,
@@ -397,10 +401,11 @@ export function useEyeAnimations({
         rotation: 0,
       });
 
-      debugLog.gsap('both', 'to', { height: ANIMATION_TIMING.LOOK_HEIGHT, x: ANIMATION_TIMING.LOOK_X_OFFSET });
+      debugLog.gsap('both', 'to', { height: ANIMATION_TIMING.LOOK_HEIGHT, width: ANIMATION_TIMING.LOOK_WIDTH, x: ANIMATION_TIMING.LOOK_X_OFFSET });
       // Animate eyes to look right (morph to shorter shape and move right)
       gsap.to([leftEye, rightEye], {
         height: ANIMATION_TIMING.LOOK_HEIGHT,
+        width: ANIMATION_TIMING.LOOK_WIDTH,
         x: ANIMATION_TIMING.LOOK_X_OFFSET,
         duration: ANIMATION_TIMING.LOOK_DURATION,
         ease: 'power2.out',
