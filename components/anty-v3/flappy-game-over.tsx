@@ -27,7 +27,7 @@ export function FlappyGameOver({
     const updateHoldProgress = () => {
       if (holdStartTimeRef.current) {
         const elapsed = Date.now() - holdStartTimeRef.current;
-        const progress = Math.min(elapsed / 2000, 1); // 2 seconds
+        const progress = Math.min(elapsed / 1000, 1); // 1 second
         setHoldProgress(progress);
 
         if (progress >= 1) {
