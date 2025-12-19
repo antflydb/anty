@@ -149,6 +149,88 @@ export default function AntyV3() {
         excitedTl.to(char, { y: 0, duration: 0.18, ease: 'power2.in' });
         excitedTl.to(char, { y: -18, duration: 0.15, ease: 'power2.out' });
         excitedTl.to(char, { y: 0, duration: 0.15, ease: 'power2.in' });
+
+        // FIREWORKS!
+        const colors = ['#FF1493', '#00CED1', '#FFD700', '#FF69B4', '#7B68EE', '#00FF7F', '#FF6347', '#FF00FF', '#00FFFF'];
+
+        setTimeout(() => {
+          const burstPositions = [
+            { x: window.innerWidth / 2 - 120, y: window.innerHeight / 2 - 220 },
+            { x: window.innerWidth / 2 + 120, y: window.innerHeight / 2 - 200 },
+            { x: window.innerWidth / 2, y: window.innerHeight / 2 - 260 },
+          ];
+
+          burstPositions.forEach((pos, burstIndex) => {
+            setTimeout(() => {
+              const burstColor = colors[Math.floor(Math.random() * colors.length)];
+
+              // Main burst - 12 sparkles
+              for (let i = 0; i < 12; i++) {
+                const angle = (i / 12) * Math.PI * 2;
+                const radius = 100;
+                const offsetX = Math.cos(angle) * radius;
+                const offsetY = Math.sin(angle) * radius;
+
+                const sparkle = document.createElement('div');
+                sparkle.textContent = '✨';
+                sparkle.style.cssText = `
+                  position: fixed;
+                  left: ${pos.x}px;
+                  top: ${pos.y}px;
+                  font-size: 40px;
+                  pointer-events: none;
+                  z-index: 0;
+                  filter: drop-shadow(0 0 4px ${burstColor});
+                  will-change: transform, opacity;
+                `;
+                document.body.appendChild(sparkle);
+
+                gsap.to(sparkle, {
+                  x: offsetX,
+                  y: offsetY,
+                  opacity: 0,
+                  duration: 1.2,
+                  ease: 'power2.out',
+                  onComplete: () => { document.body.removeChild(sparkle); },
+                });
+              }
+
+              // Secondary smaller burst - 8 sparkles
+              setTimeout(() => {
+                for (let i = 0; i < 8; i++) {
+                  const angle = (i / 8) * Math.PI * 2 + 0.2;
+                  const radius = 60;
+                  const offsetX = Math.cos(angle) * radius;
+                  const offsetY = Math.sin(angle) * radius;
+
+                  const sparkle = document.createElement('div');
+                  sparkle.textContent = '✨';
+                  sparkle.style.cssText = `
+                    position: fixed;
+                    left: ${pos.x}px;
+                    top: ${pos.y}px;
+                    font-size: 24px;
+                    pointer-events: none;
+                    z-index: 0;
+                    filter: drop-shadow(0 0 3px ${burstColor});
+                    will-change: transform, opacity;
+                  `;
+                  document.body.appendChild(sparkle);
+
+                  gsap.to(sparkle, {
+                    x: offsetX,
+                    y: offsetY,
+                    opacity: 0,
+                    duration: 1,
+                    ease: 'power2.out',
+                    onComplete: () => { document.body.removeChild(sparkle); },
+                  });
+                }
+              }, 80);
+            }, burstIndex * 120);
+          });
+        }, 200);
+
         scheduleExpressionReset(1350);
         break;
       }
