@@ -93,10 +93,6 @@ Keep responses concise and friendly. Remember, you're demonstrating your emotion
       // Remove emotion tag from displayed message
       const cleanMessage = fullMessage.replace(/\[EMOTION:\w+(?:-\w+)?\]\s*/g, '');
 
-      console.log('[CHAT] Full response:', fullMessage);
-      console.log('[CHAT] Detected emotion:', emotion);
-      console.log('[CHAT] Clean message:', cleanMessage);
-
       return {
         message: cleanMessage,
         emotion,

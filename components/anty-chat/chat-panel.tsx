@@ -2,9 +2,9 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Send, Loader2, Key } from 'lucide-react';
+import { X, Send, Loader2, Key, ChevronDown, ChevronUp } from 'lucide-react';
 import { AntyChat, type ChatMessage } from '@/lib/chat/openai-client';
-import { mapEmotionToExpression } from '@/lib/chat/emotion-mapper';
+import { mapEmotionToExpression, stripEmotionTags } from '@/lib/chat/emotion-mapper';
 import type { ExpressionName } from '@/lib/anty-v3/animation-state';
 
 interface ChatPanelProps {
@@ -18,6 +18,9 @@ interface Message {
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
+  emotion?: string;
+  rawContent?: string;
+  showDebug?: boolean;
 }
 
 export function ChatPanel({ isOpen, onClose, onEmotion }: ChatPanelProps) {
@@ -110,40 +113,45 @@ export function ChatPanel({ isOpen, onClose, onEmotion }: ChatPanelProps) {
         content: userMessage.content,
       });
 
+      let rawResponse = '';
+
       // Stream the response
       const response = await chatClient.sendMessage(chatHistory, (chunk) => {
-        // Update the message content with each chunk
+        rawResponse += chunk;
+        // Strip emotion tags from the displayed content during streaming
+        const cleanChunk = stripEmotionTags(rawResponse);
+
         setMessages((prev) =>
           prev.map((msg) =>
             msg.id === assistantMessageId
-              ? { ...msg, content: msg.content + chunk }
+              ? { ...msg, content: cleanChunk }
               : msg
           )
         );
       });
 
-      // Update with final clean message
+      // Update with final message including debug info
       setMessages((prev) =>
         prev.map((msg) =>
           msg.id === assistantMessageId
-            ? { ...msg, content: response.message }
+            ? {
+                ...msg,
+                content: response.message,
+                emotion: response.emotion,
+                rawContent: rawResponse,
+              }
             : msg
         )
       );
 
       // Trigger emotion if present
       if (response.emotion) {
-        console.log('[CHAT UI] Emotion detected from response:', response.emotion);
         const expression = mapEmotionToExpression(response.emotion);
-        console.log('[CHAT UI] Mapped to expression:', expression);
         if (expression) {
-          console.log('[CHAT UI] Triggering onEmotion callback with:', expression);
           onEmotion?.(expression);
         } else {
           console.warn('[CHAT UI] No expression mapping found for emotion:', response.emotion);
         }
-      } else {
-        console.log('[CHAT UI] No emotion detected in response');
       }
     } catch (error: any) {
       console.error('[CHAT UI] Error sending message:', error);
@@ -162,7 +170,6 @@ export function ChatPanel({ isOpen, onClose, onEmotion }: ChatPanelProps) {
       setMessages((prev) => [...prev, errorMessage]);
 
       // Trigger sad emotion
-      console.log('[CHAT UI] Error occurred, triggering sad emotion');
       const expression = mapEmotionToExpression('sad');
       if (expression) {
         onEmotion?.(expression);
@@ -193,6 +200,14 @@ export function ChatPanel({ isOpen, onClose, onEmotion }: ChatPanelProps) {
     setChatClient(null);
     setShowApiKeyInput(true);
     setMessages([]);
+  };
+
+  const toggleDebugInfo = (messageId: string) => {
+    setMessages((prev) =>
+      prev.map((msg) =>
+        msg.id === messageId ? { ...msg, showDebug: !msg.showDebug } : msg
+      )
+    );
   };
 
   return (
@@ -285,7 +300,12 @@ export function ChatPanel({ isOpen, onClose, onEmotion }: ChatPanelProps) {
                           message.role === 'user'
                             ? 'bg-orange-500 text-white'
                             : 'bg-gray-100 text-gray-900'
-                        }`}
+                        } ${message.role === 'assistant' && (message.emotion || message.rawContent) ? 'cursor-pointer hover:shadow-md transition-shadow' : ''}`}
+                        onClick={() => {
+                          if (message.role === 'assistant' && (message.emotion || message.rawContent)) {
+                            toggleDebugInfo(message.id);
+                          }
+                        }}
                       >
                         <p className="text-sm">{message.content}</p>
                         <p className="text-xs opacity-70 mt-1">
@@ -294,6 +314,41 @@ export function ChatPanel({ isOpen, onClose, onEmotion }: ChatPanelProps) {
                             minute: '2-digit',
                           })}
                         </p>
+
+                        {/* Debug info section - only for assistant messages */}
+                        {message.role === 'assistant' && message.showDebug && (message.emotion || message.rawContent) && (
+                          <div className="mt-2 pt-2 border-t border-gray-300">
+                            <div className="flex items-center gap-1 text-xs text-gray-600 mb-1">
+                              {message.showDebug ? (
+                                <ChevronUp className="w-3 h-3" />
+                              ) : (
+                                <ChevronDown className="w-3 h-3" />
+                              )}
+                              <span className="font-medium">Debug Info</span>
+                            </div>
+                            {message.emotion && (
+                              <div className="text-xs text-gray-600 mb-1">
+                                <span className="font-medium">Emotion:</span> {message.emotion}
+                              </div>
+                            )}
+                            {message.rawContent && (
+                              <div className="text-xs text-gray-600">
+                                <span className="font-medium">Raw:</span>
+                                <pre className="mt-1 p-2 bg-gray-200 rounded text-[10px] overflow-x-auto whitespace-pre-wrap break-words">
+                                  {message.rawContent}
+                                </pre>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Show collapse hint for messages with debug info */}
+                        {message.role === 'assistant' && !message.showDebug && (message.emotion || message.rawContent) && (
+                          <div className="flex items-center gap-1 text-xs text-gray-500 mt-1 opacity-50">
+                            <ChevronDown className="w-3 h-3" />
+                            <span>Click to see debug info</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
