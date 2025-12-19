@@ -31,9 +31,10 @@ interface ExpressionMenuInternalProps extends ExpressionMenuProps {
   isExpanded: boolean;
   onClose: () => void;
   buttonRef: React.RefObject<HTMLButtonElement | null>;
+  isChatOpen?: boolean;
 }
 
-export function ExpressionMenu({ onExpressionSelect, currentExpression, isExpanded, onClose, buttonRef }: ExpressionMenuInternalProps) {
+export function ExpressionMenu({ onExpressionSelect, currentExpression, isExpanded, onClose, buttonRef, isChatOpen }: ExpressionMenuInternalProps) {
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Click outside to close
@@ -61,6 +62,11 @@ export function ExpressionMenu({ onExpressionSelect, currentExpression, isExpand
   // Keyboard hotkeys
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Disable all keyboard shortcuts when chat is open
+      if (isChatOpen) {
+        return;
+      }
+
       const expression = EXPRESSIONS.find((expr) => {
         if (expr.hotkey === '←') return e.key === 'ArrowLeft';
         if (expr.hotkey === '→') return e.key === 'ArrowRight';
@@ -75,7 +81,7 @@ export function ExpressionMenu({ onExpressionSelect, currentExpression, isExpand
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onExpressionSelect]);
+  }, [onExpressionSelect, isChatOpen]);
 
   const handleExpressionClick = (expression: ExpressionName) => {
     onExpressionSelect(expression);

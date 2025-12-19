@@ -102,7 +102,7 @@ export default function AntyV3() {
   };
 
   // Centralized emotion animation trigger - reused by chat and expression menu
-  const triggerEmotionAnimation = (expr: ExpressionName) => {
+  const triggerEmotionAnimation = (expr: ExpressionName, isChatOpen = false) => {
     clearExpressionReset();
     setExpression(expr);
 
@@ -154,10 +154,12 @@ export default function AntyV3() {
         const colors = ['#FF1493', '#00CED1', '#FFD700', '#FF69B4', '#7B68EE', '#00FF7F', '#FF6347', '#FF00FF', '#00FFFF'];
 
         setTimeout(() => {
+          // Adjust particle positions when chat is open (shift left by 192px to match Anty's position)
+          const xOffset = isChatOpen ? -192 : 0;
           const burstPositions = [
-            { x: window.innerWidth / 2 - 120, y: window.innerHeight / 2 - 220 },
-            { x: window.innerWidth / 2 + 120, y: window.innerHeight / 2 - 200 },
-            { x: window.innerWidth / 2, y: window.innerHeight / 2 - 260 },
+            { x: window.innerWidth / 2 - 120 + xOffset, y: window.innerHeight / 2 - 220 },
+            { x: window.innerWidth / 2 + 120 + xOffset, y: window.innerHeight / 2 - 200 },
+            { x: window.innerWidth / 2 + xOffset, y: window.innerHeight / 2 - 260 },
           ];
 
           burstPositions.forEach((pos, burstIndex) => {
@@ -1064,6 +1066,7 @@ export default function AntyV3() {
         isExpanded={isExpressionMenuExpanded}
         onClose={() => setIsExpressionMenuExpanded(false)}
         buttonRef={moodsButtonRef}
+        isChatOpen={isChatOpen}
         onExpressionSelect={(expr) => {
           // Clear any pending expression reset from previous states
           clearExpressionReset();
@@ -2553,8 +2556,8 @@ export default function AntyV3() {
         isOpen={isChatOpen}
         onClose={() => setIsChatOpen(false)}
         onEmotion={(emotion) => {
-          // Trigger the full emotion animation sequence
-          triggerEmotionAnimation(emotion);
+          // Trigger the full emotion animation sequence with chat mode enabled
+          triggerEmotionAnimation(emotion, isChatOpen);
         }}
       />
 
