@@ -253,6 +253,11 @@ export default function AntyV3() {
   // Keyboard controls
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Disable all keyboard shortcuts when chat is open
+      if (isChatOpen) {
+        return;
+      }
+
       // Prevent default behavior for arrow keys and space
       if (['ArrowLeft', 'ArrowRight', 'Space', ' '].includes(e.key)) {
         e.preventDefault();
@@ -287,7 +292,7 @@ export default function AntyV3() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [expression]);
+  }, [expression, isChatOpen]);
 
   // Animate the glow with ghostly, randomized movement
   useEffect(() => {
