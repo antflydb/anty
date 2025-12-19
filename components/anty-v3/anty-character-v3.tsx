@@ -72,6 +72,10 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
   const characterRef = useRef<HTMLDivElement>(null);
   const leftEyeRef = useRef<HTMLDivElement>(null);
   const rightEyeRef = useRef<HTMLDivElement>(null);
+  const leftEyeIdleImgRef = useRef<HTMLImageElement>(null);
+  const rightEyeIdleImgRef = useRef<HTMLImageElement>(null);
+  const leftEyeLookingImgRef = useRef<HTMLImageElement>(null);
+  const rightEyeLookingImgRef = useRef<HTMLImageElement>(null);
   const leftBodyRef = useRef<HTMLDivElement>(null);
   const rightBodyRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<ParticleCanvasHandle>(null);
@@ -89,6 +93,10 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
   const { performBlink, performDoubleBlink, allowBlinkingRef } = useEyeAnimations({
     leftEyeRef,
     rightEyeRef,
+    leftEyeIdleImgRef,
+    rightEyeIdleImgRef,
+    leftEyeLookingImgRef,
+    rightEyeLookingImgRef,
     expression,
     isOff,
   });
@@ -446,6 +454,7 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
   const img = "/anty-v3/body-right.svg"; // Right bracket body
   const img1 = "/anty-v3/body-left.svg"; // Left bracket body
   const img2 = "/anty-v3/eye-idle.svg"; // IDLE eyes (vertical pills)
+  const eyeLooking = "/eye-looking.svg"; // LOOKING eyes (shorter, wider pills)
 
   // Wink expression assets
   const winkEye = "/anty-v3/eye-wink-right.svg"; // Wink half-closed right eye
@@ -540,14 +549,15 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
           <div className="absolute flex inset-[33.41%_31.63%_38.76%_56.72%] items-center justify-center">
             <div
               ref={leftEyeRef}
-              className="flex-none flex items-center justify-center"
+              className="flex-none flex items-center justify-center relative"
               style={{
                 height: '44.52px',
                 width: '18.63px',
                 transformOrigin: 'center center',
               }}
             >
-              <img alt="" className="block" src={img2} style={{ height: '100%', width: 'auto', objectFit: 'contain' }} />
+              <img ref={leftEyeIdleImgRef} alt="" className="absolute" src={img2} style={{ height: '100%', width: 'auto', objectFit: 'contain' }} />
+              <img ref={leftEyeLookingImgRef} alt="" className="absolute" src={eyeLooking} style={{ height: '100%', width: 'auto', objectFit: 'contain', opacity: 0 }} />
             </div>
           </div>
         )}
@@ -581,14 +591,15 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
           <div className="absolute flex inset-[33.41%_57.36%_38.76%_31%] items-center justify-center">
             <div
               ref={rightEyeRef}
-              className="flex-none flex items-center justify-center"
+              className="flex-none flex items-center justify-center relative"
               style={{
                 height: '44.52px',
                 width: '18.63px',
                 transformOrigin: 'center center',
               }}
             >
-              <img alt="" className="block" src={img2} style={{ height: '100%', width: 'auto', objectFit: 'contain' }} />
+              <img ref={rightEyeIdleImgRef} alt="" className="absolute" src={img2} style={{ height: '100%', width: 'auto', objectFit: 'contain' }} />
+              <img ref={rightEyeLookingImgRef} alt="" className="absolute" src={eyeLooking} style={{ height: '100%', width: 'auto', objectFit: 'contain', opacity: 0 }} />
             </div>
           </div>
         )}
