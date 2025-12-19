@@ -21,21 +21,28 @@ const EXPRESSIONS: { name: ExpressionName; emoji: string; label: string }[] = [
   { name: 'idea', emoji: '💡', label: 'Idea' },
   { name: 'look-left', emoji: '👈', label: 'Look Left' },
   { name: 'look-right', emoji: '👉', label: 'Look Right' },
-  { name: 'off', emoji: '⏻', label: 'OFF' },
+  { name: 'lookaround', emoji: '👀', label: 'Look Around' },
 ];
 
-export function ExpressionMenu({ onExpressionSelect, currentExpression }: ExpressionMenuProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
+interface ExpressionMenuInternalProps extends ExpressionMenuProps {
+  isExpanded: boolean;
+  onClose: () => void;
+  buttonRef: React.RefObject<HTMLButtonElement | null>;
+}
 
-  // When in OFF state, clicking the button should trigger a special "wakeup" behavior
-  const isOff = currentExpression === 'off';
+export function ExpressionMenu({ onExpressionSelect, currentExpression, isExpanded, onClose, buttonRef }: ExpressionMenuInternalProps) {
+  const menuRef = useRef<HTMLDivElement>(null);
 
   // Click outside to close
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setIsExpanded(false);
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(event.target as Node) &&
+        buttonRef.current &&
+        !buttonRef.current.contains(event.target as Node)
+      ) {
+        onClose();
       }
     };
 
@@ -46,111 +53,60 @@ export function ExpressionMenu({ onExpressionSelect, currentExpression }: Expres
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isExpanded]);
+  }, [isExpanded, onClose, buttonRef]);
 
   const handleExpressionClick = (expression: ExpressionName) => {
     onExpressionSelect(expression);
     // Don't auto-collapse - keep menu open
   };
 
-  const handleToggleClick = () => {
-    if (isOff) {
-      // If OFF, clicking wakes up Anty (triggers idle/WOOHOOO animation)
-      onExpressionSelect('idle');
-    } else {
-      // Otherwise, toggle menu expansion
-      setIsExpanded(!isExpanded);
+  // Calculate position relative to button
+  const [position, setPosition] = useState({ bottom: 0, left: 0 });
+
+  useEffect(() => {
+    if (buttonRef.current && isExpanded && menuRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      // Wait for menu to render to get its width
+      setTimeout(() => {
+        if (menuRef.current) {
+          const menuWidth = menuRef.current.offsetWidth;
+          setPosition({
+            bottom: window.innerHeight - rect.top + 10,
+            left: rect.left + rect.width / 2 - menuWidth / 2, // Center the menu
+          });
+        }
+      }, 0);
     }
-  };
+  }, [isExpanded, buttonRef]);
 
   return (
-    <div ref={menuRef} className="fixed bottom-8 right-8 flex flex-col items-end gap-2">
-      <AnimatePresence>
-        {isExpanded && !isOff && (
-          <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20, scale: 0.9 }}
-            transition={{ duration: 0.2, ease: 'easeOut' }}
-            className="bg-white rounded-2xl shadow-lg border border-gray-200 p-3 max-h-96 overflow-y-auto"
-            style={{ width: '200px' }}
-          >
-            <div className="grid grid-cols-2 gap-2">
-              {EXPRESSIONS.map((expr) => (
-                <motion.button
-                  key={expr.name}
-                  onClick={() => handleExpressionClick(expr.name)}
-                  className="flex flex-col items-center justify-center gap-1 p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <span className="text-2xl">{expr.emoji}</span>
-                  <span className="text-xs text-gray-600 font-medium">{expr.label}</span>
-                </motion.button>
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Toggle button - shows menu icon normally, ON button when OFF */}
-      <motion.button
-        onClick={handleToggleClick}
-        className="flex items-center justify-center"
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-      >
-        {isOff ? (
-          // ON button when in OFF state - orange circle with Lucide power icon
-          <div className="relative w-[45px] h-[45px] flex items-center justify-center">
-            <svg width="45" height="45" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg" className="absolute">
-              <g filter="url(#filter0_d_on_button)">
-                <path d="M2.03906 35.1262C2.03906 16.4773 17.157 1.35938 35.8059 1.35938V1.35938C54.4548 1.35938 69.5727 16.4773 69.5727 35.1262V35.1262C69.5727 53.7751 54.4548 68.893 35.8059 68.893V68.893C17.157 68.893 2.03906 53.7751 2.03906 35.1262V35.1262Z" fill="#FF8C00"/>
-              </g>
-              <defs>
-                <filter id="filter0_d_on_button" x="-0.0009377" y="-0.000625193" width="71.6132" height="71.6132" filterUnits="userSpaceOnUse" colorInterpolationFilters="sRGB">
-                  <feFlood floodOpacity="0" result="BackgroundImageFix"/>
-                  <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
-                  <feOffset dy="0.68"/>
-                  <feGaussianBlur stdDeviation="1.02"/>
-                  <feComposite in2="hardAlpha" operator="out"/>
-                  <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.19 0"/>
-                  <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_on_button"/>
-                  <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_on_button" result="shape"/>
-                </filter>
-              </defs>
-            </svg>
-            <Power className="w-5 h-5 text-white relative z-10" strokeWidth={2.5} />
+    <AnimatePresence>
+      {isExpanded && (
+        <motion.div
+          ref={menuRef}
+          initial={{ opacity: 0, y: 20, scale: 0.9 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 20, scale: 0.9 }}
+          transition={{ duration: 0.2, ease: 'easeOut' }}
+          className="fixed bg-white rounded-2xl shadow-lg border border-gray-200 p-3 z-50"
+          style={{ bottom: `${position.bottom}px`, left: `${position.left}px` }}
+        >
+          <div className="flex flex-row gap-2">
+            {EXPRESSIONS.map((expr) => (
+              <motion.button
+                key={expr.name}
+                onClick={() => handleExpressionClick(expr.name)}
+                className="flex flex-col items-center justify-center gap-0.5 p-2 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors min-w-[60px]"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <span className="text-xl">{expr.emoji}</span>
+                <span className="text-[10px] text-gray-600 font-medium whitespace-nowrap">{expr.label}</span>
+              </motion.button>
+            ))}
           </div>
-        ) : (
-          // Menu icon normally
-          <motion.div
-            animate={{ rotate: isExpanded ? 180 : 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            <svg width="45" height="45" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <g filter="url(#filter0_d_592_702)">
-                <path d="M2.03906 35.1262C2.03906 16.4773 17.157 1.35938 35.8059 1.35938V1.35938C54.4548 1.35938 69.5727 16.4773 69.5727 35.1262V35.1262C69.5727 53.7751 54.4548 68.893 35.8059 68.893V68.893C17.157 68.893 2.03906 53.7751 2.03906 35.1262V35.1262Z" fill="#F4F4F4"/>
-              </g>
-              <rect x="23.0391" y="32.7051" width="5.27686" height="5.27686" fill="#606060" fillOpacity="0.57"/>
-              <rect x="33.123" y="32.7051" width="5.27686" height="5.27686" fill="#606060" fillOpacity="0.57"/>
-              <rect x="43.2715" y="32.7051" width="5.27686" height="5.27686" fill="#606060" fillOpacity="0.57"/>
-              <defs>
-                <filter id="filter0_d_592_702" x="-0.0009377" y="-0.000625193" width="71.6132" height="71.6132" filterUnits="userSpaceOnUse" colorInterpolationFilters="sRGB">
-                  <feFlood floodOpacity="0" result="BackgroundImageFix"/>
-                  <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
-                  <feOffset dy="0.68"/>
-                  <feGaussianBlur stdDeviation="1.02"/>
-                  <feComposite in2="hardAlpha" operator="out"/>
-                  <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.19 0"/>
-                  <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_592_702"/>
-                  <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_592_702" result="shape"/>
-                </filter>
-              </defs>
-            </svg>
-          </motion.div>
-        )}
-      </motion.button>
-    </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }

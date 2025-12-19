@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import gsap from 'gsap';
-import { AntyCharacterV3, ActionButtonsV3, HeartMeter, ExpressionMenu, FlappyGame, type ButtonName, type AntyCharacterHandle, type EarnedHeart } from '@/components/anty-v3';
+import { AntyCharacterV3, ActionButtonsV3, HeartMeter, ExpressionMenu, PowerButton, FlappyGame, type ButtonName, type AntyCharacterHandle, type EarnedHeart } from '@/components/anty-v3';
 import type { ExpressionName } from '@/lib/anty-v3/animation-state';
 import type { AntyStats } from '@/lib/anty/stat-system';
 
@@ -44,6 +44,7 @@ export default function AntyV3() {
 
   const [hearts, setHearts] = useState(3);
   const [expression, setExpressionInternal] = useState<ExpressionName>('idle');
+  const [isExpressionMenuExpanded, setIsExpressionMenuExpanded] = useState(false);
 
   // Wrapped setExpression with logging
   const setExpression = (newExpr: ExpressionName) => {
@@ -65,6 +66,7 @@ export default function AntyV3() {
   const characterRef = useRef<HTMLDivElement>(null);
   const glowRef = useRef<HTMLDivElement>(null);
   const antyRef = useRef<AntyCharacterHandle>(null);
+  const moodsButtonRef = useRef<HTMLButtonElement>(null);
   const heartTimersRef = useRef<Map<number, NodeJS.Timeout>>(new Map());
   const superModeTimerRef = useRef<NodeJS.Timeout | null>(null);
   const superModeCooldownRef = useRef<boolean>(false);
@@ -133,9 +135,13 @@ export default function AntyV3() {
 
   // Animate the glow with ghostly, randomized movement
   useEffect(() => {
-    if (!glowRef.current) return;
+    // Only animate in idle mode when glow exists
+    if (gameMode !== 'idle' || !glowRef.current) return;
 
     const animateGhostly = () => {
+      // Check if we're still in idle mode and glow still exists
+      if (gameMode !== 'idle' || !glowRef.current) return;
+
       // Random parameters for each animation cycle
       const randomY = gsap.utils.random(-8, -16);
       const randomX = gsap.utils.random(-3, 3);
@@ -151,6 +157,9 @@ export default function AntyV3() {
         duration: randomDuration,
         ease: 'sine.inOut',
         onComplete: () => {
+          // Check again before return animation
+          if (gameMode !== 'idle' || !glowRef.current) return;
+
           // Return to base state with different random values
           const returnDuration = gsap.utils.random(2, 3.2);
           gsap.to(glowRef.current, {
@@ -169,9 +178,11 @@ export default function AntyV3() {
     animateGhostly();
 
     return () => {
-      gsap.killTweensOf(glowRef.current);
+      if (glowRef.current) {
+        gsap.killTweensOf(glowRef.current);
+      }
     };
-  }, []);
+  }, [gameMode]);
 
   // Cleanup heart timers on unmount
   useEffect(() => {
@@ -552,9 +563,8 @@ export default function AntyV3() {
         break;
 
       case 'moods':
-        // Trigger wink!
-        setExpression('wink');
-        scheduleExpressionReset(750);
+        // Toggle expression menu
+        setIsExpressionMenuExpanded(!isExpressionMenuExpanded);
         break;
 
       case 'play':
@@ -703,7 +713,22 @@ export default function AntyV3() {
                   transformOrigin: 'center center',
                 }}
               >
-                <AntyCharacterV3 ref={antyRef} stats={stats} expression={expression} isSuperMode={isSuperMode} />
+                <AntyCharacterV3
+                  ref={antyRef}
+                  stats={stats}
+                  expression={expression}
+                  isSuperMode={isSuperMode}
+                  onSpontaneousExpression={(expr) => {
+                    // Only trigger spontaneous looks when in idle state
+                    if (expression !== 'idle') return;
+
+                    setExpression(expr);
+                    // Reset to idle after 1 second for spontaneous looks
+                    if (expr === 'look-left' || expr === 'look-right') {
+                      scheduleExpressionReset(1000);
+                    }
+                  }}
+                />
               </div>
 
               {/* Fixed shadow - doesn't move with character */}
@@ -727,11 +752,14 @@ export default function AntyV3() {
           </div>
 
           <div className="action-buttons">
-            <ActionButtonsV3 onButtonClick={handleButtonClick} isOff={expression === 'off'} />
+            <ActionButtonsV3 onButtonClick={handleButtonClick} isOff={expression === 'off'} moodsButtonRef={moodsButtonRef} />
           </div>
 
           <ExpressionMenu
         currentExpression={expression}
+        isExpanded={isExpressionMenuExpanded}
+        onClose={() => setIsExpressionMenuExpanded(false)}
+        buttonRef={moodsButtonRef}
         onExpressionSelect={(expr) => {
           // Clear any pending expression reset from previous states
           clearExpressionReset();
@@ -1852,6 +1880,34 @@ export default function AntyV3() {
           } else if (expr === 'look-left' || expr === 'look-right') {
             // Look animations hold briefly then return to idle
             scheduleExpressionReset(800);
+          } else if (expr === 'lookaround') {
+            // Lookaround: deliberate left-center-right-center, then quick darting
+            const sequence = [
+              { expression: 'look-left', delay: 0 },      // Look left
+              { expression: 'idle', delay: 1000 },        // Back to center
+              { expression: 'look-right', delay: 1000 },  // Look right
+              { expression: 'idle', delay: 1000 },        // Back to center
+              { expression: 'look-left', delay: 1000 },   // Quick left
+              { expression: 'look-right', delay: 300 },   // Quick right (no center)
+              { expression: 'look-left', delay: 300 },    // Quick left (no center)
+              { expression: 'idle', delay: 300 },         // Return to idle
+            ];
+
+            let currentStep = 0;
+            const executeSequence = () => {
+              if (currentStep >= sequence.length) return;
+
+              const step = sequence[currentStep];
+              setTimeout(() => {
+                setExpression(step.expression);
+                currentStep++;
+                executeSequence();
+              }, step.delay);
+            };
+
+            executeSequence();
+
+            // Don't schedule reset - the sequence handles returning to idle
           } else {
             scheduleExpressionReset(1350);
           }
@@ -1870,6 +1926,146 @@ export default function AntyV3() {
           />
         </>
       )}
+
+      {/* Power button - always rendered */}
+      <PowerButton
+        isOff={expression === 'off'}
+        onToggle={() => {
+          if (expression === 'off') {
+            // Turn on - use happy as the default "on" expression
+            const onExpression: ExpressionName = 'happy';
+
+            // Clear any pending expression reset
+            clearExpressionReset();
+
+            // Handle returning from OFF with WOOHOOO leap to life!!!
+            if (characterRef.current && glowRef.current) {
+              const character = characterRef.current;
+              const innerGlow = document.querySelector('.inner-glow') as HTMLElement;
+              const outerGlow = glowRef.current;
+              const shadow = document.getElementById('anty-shadow');
+
+              // Kill any existing animations and timers
+              gsap.killTweensOf([character, innerGlow, outerGlow, shadow]);
+              if (antyRef.current?.leftBodyRef?.current) {
+                gsap.killTweensOf(antyRef.current.leftBodyRef.current);
+                gsap.set(antyRef.current.leftBodyRef.current, { x: 0, y: 0 });
+              }
+              if (antyRef.current?.rightBodyRef?.current) {
+                gsap.killTweensOf(antyRef.current.rightBodyRef.current);
+                gsap.set(antyRef.current.rightBodyRef.current, { x: 0, y: 0 });
+              }
+              if (spinDescentTimerRef.current) {
+                clearTimeout(spinDescentTimerRef.current);
+                spinDescentTimerRef.current = null;
+              }
+
+              // WOOHOOO LEAP TO LIFE ANIMATION!!!
+              const woohooTl = gsap.timeline();
+
+              // Restore full opacity immediately
+              gsap.set(character, { opacity: 1, scale: 0.65 }); // Start from shrunk OFF state
+
+              // EXPLOSIVE POP UP - Much more dramatic!
+              woohooTl.to(character, {
+                y: -50, // Higher jump!
+                scale: 1.2, // Overshoot scale
+                duration: 0.3,
+                ease: 'back.out(2.5)', // Exaggerated bounce
+              });
+
+              // Quick settle bounce
+              woohooTl.to(character, {
+                y: -10,
+                scale: 1.05,
+                duration: 0.2,
+                ease: 'power2.inOut',
+              });
+
+              // Final settle to normal
+              woohooTl.to(character, {
+                y: 0,
+                scale: 1,
+                duration: 0.4,
+                ease: 'elastic.out(1, 0.5)',
+              });
+
+              // Fade glows back in with more energy
+              gsap.to([innerGlow, outerGlow], {
+                opacity: 1,
+                duration: 0.4,
+                ease: 'power2.out',
+              });
+
+              // Shadow pops back with character
+              if (shadow) {
+                gsap.set(shadow, {
+                  scaleX: 1,
+                  scaleY: 1,
+                  opacity: 0.7,
+                });
+              }
+            }
+
+            setExpression(onExpression);
+
+            // Return to idle after a brief moment
+            scheduleExpressionReset(1500);
+          } else {
+            // Turn off
+            clearExpressionReset();
+
+            if (characterRef.current && glowRef.current) {
+              const character = characterRef.current;
+              const innerGlow = document.querySelector('.inner-glow') as HTMLElement;
+              const outerGlow = glowRef.current;
+
+              // Kill any existing animations
+              gsap.killTweensOf([character, innerGlow, outerGlow]);
+
+              // Create OFF animation timeline
+              const offTl = gsap.timeline();
+
+              // 1. Climb up (0.5s) - eyes stay as idle during this
+              offTl.to(character, {
+                y: -60,
+                duration: 0.5,
+                ease: 'power2.out',
+              });
+
+              // 2. SNAP down HARD - super fast shrink to 65% (35% smaller)
+              offTl.to(character, {
+                y: 0,
+                scale: 0.65,
+                duration: 0.1, // Even faster - 100ms snap
+                ease: 'expo.in', // Exponential acceleration for dramatic snap
+              });
+
+              // Change expression RIGHT at the very end of snap (super late)
+              setTimeout(() => setExpression('off'), 590);
+
+              // Fade character to transparent IMMEDIATELY after snap (super fast)
+              setTimeout(() => {
+                gsap.to(character, {
+                  opacity: 0.45,
+                  duration: 0.05, // Lightning fast - 50ms
+                  ease: 'power2.in',
+                });
+              }, 600); // Right when snap finishes
+
+              // Fade out background glows and shadow at the same time (super fast)
+              setTimeout(() => {
+                const shadow = document.getElementById('anty-shadow');
+                gsap.to([innerGlow, outerGlow, shadow], {
+                  opacity: 0,
+                  duration: 0.06, // Lightning fast - 60ms
+                  ease: 'power2.in',
+                });
+              }, 590); // Start right at the end of snap
+            }
+          }
+        }}
+      />
 
       {/* White fade overlay for classy transition - always rendered */}
       <div

@@ -41,6 +41,7 @@ interface AntyCharacterV3Props {
   stats: AntyStats;
   expression?: ExpressionName;
   onButtonClick?: (button: ButtonName) => void;
+  onSpontaneousExpression?: (expression: ExpressionName) => void;
   className?: string;
   size?: number;
   isSuperMode?: boolean;
@@ -64,6 +65,7 @@ export interface AntyCharacterHandle {
  */
 export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Props>(({
   expression = 'idle',
+  onSpontaneousExpression,
   className = '',
   size = 160,
   isSuperMode = false,
@@ -419,31 +421,77 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
     { scope: containerRef, dependencies: [isOff] }
   );
 
-  // Setup spontaneous behaviors (random blinking only)
+  // Track current expression in a ref to avoid recreating the scheduler
+  const currentExpressionRef = useRef(expression);
+  useEffect(() => {
+    currentExpressionRef.current = expression;
+  }, [expression]);
+
+  // Store callbacks in refs to prevent scheduler recreation
+  const performBlinkRef = useRef(performBlink);
+  const performDoubleBlinkRef = useRef(performDoubleBlink);
+  const onSpontaneousExpressionRef = useRef(onSpontaneousExpression);
+
+  useEffect(() => {
+    performBlinkRef.current = performBlink;
+    performDoubleBlinkRef.current = performDoubleBlink;
+    onSpontaneousExpressionRef.current = onSpontaneousExpression;
+  }, [performBlink, performDoubleBlink, onSpontaneousExpression]);
+
+  // Setup spontaneous behaviors (random blinking and occasional looking)
+  // IMPORTANT: Empty dependencies to ensure only ONE scheduler is ever created
   useGSAP(
     () => {
+      let isActive = true;
+
       const scheduleRandomBehavior = () => {
-        const delay = gsap.utils.random(3, 10); // Random delay between 3-10 seconds
+        if (!isActive) return;
+
+        const delay = gsap.utils.random(5, 12); // Random delay between 5-12 seconds (longer spacing)
 
         gsap.delayedCall(delay, () => {
-          const random = Math.random();
+          if (!isActive) return;
 
-          if (random < 0.25) {
-            // 25% chance of double blink
-            performDoubleBlink();
-          } else {
-            // 75% chance of single blink
-            performBlink();
+          // Only trigger behaviors when in idle state (check ref, not prop)
+          if (currentExpressionRef.current !== 'idle') {
+            // If not idle, wait another full delay period before checking again
+            scheduleRandomBehavior();
+            return;
           }
 
-          // Schedule next behavior
+          const random = Math.random();
+
+          if (random < 0.2) {
+            // 20% chance of double blink
+            performDoubleBlinkRef.current();
+          } else if (random < 0.9) {
+            // 70% chance of single blink
+            performBlinkRef.current();
+          } else if (random < 0.95) {
+            // 5% chance of look left (rare)
+            if (onSpontaneousExpressionRef.current) {
+              onSpontaneousExpressionRef.current('look-left');
+            }
+          } else {
+            // 5% chance of look right (rare)
+            if (onSpontaneousExpressionRef.current) {
+              onSpontaneousExpressionRef.current('look-right');
+            }
+          }
+
+          // Schedule next behavior (minimum 5 seconds from now)
           scheduleRandomBehavior();
         });
       };
 
       scheduleRandomBehavior();
+
+      // Cleanup function to stop scheduling when component unmounts
+      return () => {
+        isActive = false;
+      };
     },
-    { scope: containerRef, dependencies: [performBlink, performDoubleBlink] }
+    { scope: containerRef, dependencies: [] }
   );
 
   // Local SVG assets - no network requests, instant loading
