@@ -16,8 +16,11 @@ export type ExpressionName =
   | 'angry'      // Downward curved eyes with stern animation
   | 'sad'        // Upward curved eyes with gentle droop animation
   | 'idea'       // Eyes look up with lightbulb moment
+  | 'lookaround' // Look left and right in sequence
   | 'look-left'  // Eyes look left - bunched closer, contracted, moved left
   | 'look-right' // Eyes look right - bunched closer, contracted, moved right
+  | 'nod'        // Vertical head nod (yes/affirm)
+  | 'headshake'  // Horizontal head shake (no/deny)
   | 'off';       // Logo state - triangle eyes, no animations
 
 // Button names for interactive responses

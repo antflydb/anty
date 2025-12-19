@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Power } from 'lucide-react';
+import { Kbd } from '@/components/ui/kbd';
 import type { ExpressionName } from '@/lib/anty-v3/animation-state';
 
 interface ExpressionMenuProps {
@@ -10,18 +11,20 @@ interface ExpressionMenuProps {
   currentExpression: ExpressionName;
 }
 
-const EXPRESSIONS: { name: ExpressionName; emoji: string; label: string }[] = [
-  { name: 'happy', emoji: '😊', label: 'Happy' },
-  { name: 'excited', emoji: '🎉', label: 'Excited' },
-  { name: 'spin', emoji: '🌀', label: 'Spin' },
-  { name: 'shocked', emoji: '😲', label: 'Shocked' },
-  { name: 'wink', emoji: '😉', label: 'Wink' },
-  { name: 'angry', emoji: '😠', label: 'Angry' },
-  { name: 'sad', emoji: '😢', label: 'Sad' },
-  { name: 'idea', emoji: '💡', label: 'Idea' },
-  { name: 'look-left', emoji: '👈', label: 'Look Left' },
-  { name: 'look-right', emoji: '👉', label: 'Look Right' },
-  { name: 'lookaround', emoji: '👀', label: 'Look Around' },
+const EXPRESSIONS: { name: ExpressionName; emoji: string; label: string; hotkey: string }[] = [
+  { name: 'happy', emoji: '😊', label: 'Happy', hotkey: '1' },
+  { name: 'excited', emoji: '🎉', label: 'Excited', hotkey: '2' },
+  { name: 'spin', emoji: '🌀', label: 'Spin', hotkey: '3' },
+  { name: 'shocked', emoji: '😲', label: 'Shocked', hotkey: '4' },
+  { name: 'wink', emoji: '😉', label: 'Wink', hotkey: '5' },
+  { name: 'angry', emoji: '😠', label: 'Angry', hotkey: '6' },
+  { name: 'sad', emoji: '😢', label: 'Sad', hotkey: '7' },
+  { name: 'idea', emoji: '💡', label: 'Idea', hotkey: '8' },
+  { name: 'lookaround', emoji: '👀', label: 'Look Around', hotkey: '9' },
+  { name: 'nod', emoji: '👍', label: 'Nod', hotkey: '0' },
+  { name: 'headshake', emoji: '👎', label: 'Headshake', hotkey: '-' },
+  { name: 'look-left', emoji: '👈', label: 'Look Left', hotkey: '←' },
+  { name: 'look-right', emoji: '👉', label: 'Look Right', hotkey: '→' },
 ];
 
 interface ExpressionMenuInternalProps extends ExpressionMenuProps {
@@ -54,6 +57,25 @@ export function ExpressionMenu({ onExpressionSelect, currentExpression, isExpand
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [isExpanded, onClose, buttonRef]);
+
+  // Keyboard hotkeys
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const expression = EXPRESSIONS.find((expr) => {
+        if (expr.hotkey === '←') return e.key === 'ArrowLeft';
+        if (expr.hotkey === '→') return e.key === 'ArrowRight';
+        return e.key === expr.hotkey;
+      });
+
+      if (expression) {
+        e.preventDefault();
+        onExpressionSelect(expression.name);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onExpressionSelect]);
 
   const handleExpressionClick = (expression: ExpressionName) => {
     onExpressionSelect(expression);
@@ -96,12 +118,13 @@ export function ExpressionMenu({ onExpressionSelect, currentExpression, isExpand
               <motion.button
                 key={expr.name}
                 onClick={() => handleExpressionClick(expr.name)}
-                className="flex flex-col items-center justify-center gap-0.5 p-2 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors min-w-[60px]"
+                className="flex flex-col items-center justify-center gap-1 p-2 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors min-w-[60px]"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
                 <span className="text-xl">{expr.emoji}</span>
                 <span className="text-[10px] text-gray-600 font-medium whitespace-nowrap">{expr.label}</span>
+                <Kbd className="text-[9px] px-1 py-0.5">{expr.hotkey}</Kbd>
               </motion.button>
             ))}
           </div>

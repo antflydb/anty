@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import gsap from 'gsap';
-import { AntyCharacterV3, ActionButtonsV3, HeartMeter, ExpressionMenu, PowerButton, FlappyGame, type ButtonName, type AntyCharacterHandle, type EarnedHeart } from '@/components/anty-v3';
+import { AntyCharacterV3, ActionButtonsV3, HeartMeter, ExpressionMenu, PowerButton, FlappyGame, FPSMeter, type ButtonName, type AntyCharacterHandle, type EarnedHeart } from '@/components/anty-v3';
 import type { ExpressionName } from '@/lib/anty-v3/animation-state';
 import type { AntyStats } from '@/lib/anty-v3/stat-system';
 
@@ -462,6 +462,101 @@ export default function AntyV3() {
     );
   };
 
+  // Reusable wake-up animation when returning from OFF state
+  const performWakeUpAnimation = () => {
+    const characterElement = characterRef.current;
+    if (!characterElement) return;
+
+    const innerGlow = document.querySelector('.inner-glow') as HTMLElement;
+    const outerGlow = glowRef.current;
+    const shadow = document.getElementById('anty-shadow');
+
+    // Kill any existing animations and timers
+    gsap.killTweensOf([characterElement, innerGlow, outerGlow, shadow]);
+    if (antyRef.current?.leftBodyRef?.current) {
+      gsap.killTweensOf(antyRef.current.leftBodyRef.current);
+      gsap.set(antyRef.current.leftBodyRef.current, { x: 0, y: 0 });
+    }
+    if (antyRef.current?.rightBodyRef?.current) {
+      gsap.killTweensOf(antyRef.current.rightBodyRef.current);
+      gsap.set(antyRef.current.rightBodyRef.current, { x: 0, y: 0 });
+    }
+    if (spinDescentTimerRef.current) {
+      clearTimeout(spinDescentTimerRef.current);
+      spinDescentTimerRef.current = null;
+    }
+
+    // REDESIGNED WAKE-UP ANIMATION
+    const wakeUpTl = gsap.timeline();
+
+    // Setup - restore opacity and set will-change for GPU optimization
+    gsap.set(characterElement, {
+      opacity: 1,
+      scale: 0.65,
+      willChange: 'transform',
+    });
+
+    // 1. Jump up to apex (0.2s) - controlled rise
+    wakeUpTl.to(characterElement, {
+      y: -45,
+      scale: 1,
+      duration: 0.2,
+      ease: 'power2.out',
+      force3D: true,
+      onStart: () => {
+        // Spawn sparkles during the leap up
+        const canvasOffset = (160 * 5) / 2;
+        for (let i = 0; i < 12; i++) {
+          setTimeout(() => {
+            antyRef.current?.spawnSparkle?.(
+              canvasOffset + gsap.utils.random(-30, 30),
+              canvasOffset + gsap.utils.random(-25, 10),
+              i % 3 === 0 ? '#FFD700' : i % 3 === 1 ? '#87CEEB' : '#FF69B4'
+            );
+          }, i * 20);
+        }
+      },
+    });
+
+    // 2. Tiny hang at apex (0.05s) - just a breath
+    wakeUpTl.to(characterElement, {
+      y: -45,
+      scale: 1,
+      duration: 0.05,
+      ease: 'none',
+    });
+
+    // 3. Drop down faster (0.3s)
+    wakeUpTl.to(characterElement, {
+      y: 0,
+      scale: 1,
+      duration: 0.3,
+      ease: 'power2.in', // Faster drop with gravity feel
+      force3D: true,
+      onComplete: () => {
+        gsap.set(characterElement, { willChange: 'auto' });
+      },
+    });
+
+    // Fade glows back in (parallel with jump)
+    if (innerGlow && outerGlow) {
+      gsap.to([innerGlow, outerGlow], {
+        opacity: 1,
+        duration: 0.5,
+        ease: 'power2.out',
+      });
+    }
+
+    // Shadow pops back immediately
+    if (shadow) {
+      gsap.set(shadow, {
+        scaleX: 1,
+        scaleY: 1,
+        opacity: 0.7,
+      });
+    }
+  };
+
   const handleButtonClick = (button: ButtonName) => {
     const characterElement = characterRef.current;
     if (!characterElement) return;
@@ -508,87 +603,7 @@ export default function AntyV3() {
 
     // If coming from OFF state, WOOHOOO leap to life first!!!
     if (expression === 'off') {
-      const innerGlow = document.querySelector('.inner-glow') as HTMLElement;
-      const outerGlow = glowRef.current;
-      const shadow = document.getElementById('anty-shadow');
-
-      // Kill any existing animations and timers
-      gsap.killTweensOf([characterElement, innerGlow, outerGlow, shadow]);
-      if (antyRef.current?.leftBodyRef?.current) {
-        gsap.killTweensOf(antyRef.current.leftBodyRef.current);
-        gsap.set(antyRef.current.leftBodyRef.current, { x: 0, y: 0 });
-      }
-      if (antyRef.current?.rightBodyRef?.current) {
-        gsap.killTweensOf(antyRef.current.rightBodyRef.current);
-        gsap.set(antyRef.current.rightBodyRef.current, { x: 0, y: 0 });
-      }
-      if (spinDescentTimerRef.current) {
-        clearTimeout(spinDescentTimerRef.current);
-        spinDescentTimerRef.current = null;
-      }
-
-      // WOOHOOO LEAP TO LIFE ANIMATION!!!
-      const woohooTl = gsap.timeline();
-
-      // Restore full opacity immediately
-      gsap.set(characterElement, { opacity: 1, scale: 0.65 }); // Start from shrunk OFF state
-
-      // EXPLOSIVE POP UP - Much more dramatic!
-      woohooTl.to(characterElement, {
-        y: -50, // Higher jump!
-        scale: 1.2, // Overshoot scale
-        duration: 0.3,
-        ease: 'back.out(2.5)', // Exaggerated bounce
-      });
-
-      // Quick settle bounce
-      woohooTl.to(characterElement, {
-        y: -10,
-        scale: 1.05,
-        duration: 0.2,
-        ease: 'power2.inOut',
-      });
-
-      // Final settle to normal
-      woohooTl.to(characterElement, {
-        y: 0,
-        scale: 1,
-        duration: 0.4,
-        ease: 'elastic.out(1, 0.5)',
-      });
-
-      // Fade glows back in with more energy
-      if (innerGlow && outerGlow) {
-        gsap.to([innerGlow, outerGlow], {
-          opacity: 1,
-          duration: 0.4,
-          ease: 'power2.out',
-        });
-      }
-
-      // Shadow pops back with character
-      if (shadow) {
-        gsap.set(shadow, {
-          scaleX: 1,
-          scaleY: 1,
-          opacity: 0.7,
-        });
-      }
-
-      // Spawn celebration sparkles during pop-in!
-      setTimeout(() => {
-        const canvasOffset = (160 * 5) / 2;
-        for (let i = 0; i < 8; i++) {
-          setTimeout(() => {
-            antyRef.current?.spawnSparkle?.(
-              canvasOffset + gsap.utils.random(40, 120),
-              canvasOffset + gsap.utils.random(30, 90)
-            );
-          }, i * 40);
-        }
-      }, 150);
-
-      // Return to idle expression
+      performWakeUpAnimation();
       setExpression('idle');
     }
 
@@ -707,6 +722,7 @@ export default function AntyV3() {
 
   return (
     <div className="bg-white min-h-screen flex flex-col relative">
+      <FPSMeter />
       {gameMode === 'idle' ? (
         <>
           <HeartMeter hearts={hearts} earnedHearts={earnedHearts} isOff={expression === 'off'} />
@@ -865,84 +881,7 @@ export default function AntyV3() {
 
           // Handle returning from OFF with WOOHOOO leap to life!!!
           if (expression === 'off' && expr !== 'off' && characterRef.current && glowRef.current) {
-            const character = characterRef.current;
-            const innerGlow = document.querySelector('.inner-glow') as HTMLElement;
-            const outerGlow = glowRef.current;
-            const shadow = document.getElementById('anty-shadow');
-
-            // Kill any existing animations and timers
-            gsap.killTweensOf([character, innerGlow, outerGlow, shadow]);
-            if (antyRef.current?.leftBodyRef?.current) {
-              gsap.killTweensOf(antyRef.current.leftBodyRef.current);
-              gsap.set(antyRef.current.leftBodyRef.current, { x: 0, y: 0 });
-            }
-            if (antyRef.current?.rightBodyRef?.current) {
-              gsap.killTweensOf(antyRef.current.rightBodyRef.current);
-              gsap.set(antyRef.current.rightBodyRef.current, { x: 0, y: 0 });
-            }
-            if (spinDescentTimerRef.current) {
-              clearTimeout(spinDescentTimerRef.current);
-              spinDescentTimerRef.current = null;
-            }
-
-            // WOOHOOO LEAP TO LIFE ANIMATION!!!
-            const woohooTl = gsap.timeline();
-
-            // Restore full opacity immediately
-            gsap.set(character, { opacity: 1, scale: 0.65 }); // Start from shrunk OFF state
-
-            // EXPLOSIVE POP UP - Much more dramatic!
-            woohooTl.to(character, {
-              y: -50, // Higher jump!
-              scale: 1.2, // Overshoot scale
-              duration: 0.3,
-              ease: 'back.out(2.5)', // Exaggerated bounce
-            });
-
-            // Quick settle bounce
-            woohooTl.to(character, {
-              y: -10,
-              scale: 1.05,
-              duration: 0.2,
-              ease: 'power2.inOut',
-            });
-
-            // Final settle to normal
-            woohooTl.to(character, {
-              y: 0,
-              scale: 1,
-              duration: 0.4,
-              ease: 'elastic.out(1, 0.5)',
-            });
-
-            // Fade glows back in with more energy
-            gsap.to([innerGlow, outerGlow], {
-              opacity: 1,
-              duration: 0.4,
-              ease: 'power2.out',
-            });
-
-            // Shadow pops back with character
-            if (shadow) {
-              gsap.set(shadow, {
-                scaleX: 1,
-                scaleY: 1,
-                opacity: 0.7,
-              });
-            }
-
-            // Spawn celebration sparkles during pop-in!
-            setTimeout(() => {
-              const canvasOffset = (160 * 5) / 2;
-              for (let i = 0; i < 8; i++) {
-                setTimeout(() => {
-                  antyRef.current?.spawnSparkle?.(
-                    canvasOffset + gsap.utils.random(40, 120),
-                    canvasOffset + gsap.utils.random(30, 90)
-                  );
-                }, i * 40);
-              }
-            }, 150);
+            performWakeUpAnimation();
 
             // Special handling for shocked: go to idle first, then shocked
             if (expr === 'shocked') {
@@ -1893,7 +1832,9 @@ export default function AntyV3() {
                   opacity: 0,
                   duration: 0.8,
                   ease: 'power2.in',
-                  onComplete: () => document.body.removeChild(lightbulb),
+                  onComplete: () => {
+                    document.body.removeChild(lightbulb);
+                  },
                 });
               }, 600);
             }, 300);
@@ -1912,6 +1853,242 @@ export default function AntyV3() {
             });
           }
 
+          // Trigger nod animation (vertical yes motion)
+          if (expr === 'nod' && characterRef.current && antyRef.current) {
+            // Kill all existing animations and reset
+            gsap.killTweensOf(characterRef.current);
+            if (antyRef.current?.leftBodyRef?.current) {
+              gsap.killTweensOf(antyRef.current.leftBodyRef.current);
+              gsap.set(antyRef.current.leftBodyRef.current, { x: 0, y: 0 });
+            }
+            if (antyRef.current?.rightBodyRef?.current) {
+              gsap.killTweensOf(antyRef.current.rightBodyRef.current);
+              gsap.set(antyRef.current.rightBodyRef.current, { x: 0, y: 0 });
+            }
+            if (spinDescentTimerRef.current) {
+              clearTimeout(spinDescentTimerRef.current);
+              spinDescentTimerRef.current = null;
+            }
+            gsap.set(characterRef.current, {
+              scale: 1,
+              rotation: 0,
+              y: 0,
+              rotationY: 0,
+              rotationX: 0,
+              transformPerspective: 600,
+            });
+
+            // Get eye refs
+            const leftEye = antyRef.current.leftEyeRef?.current;
+            const rightEye = antyRef.current.rightEyeRef?.current;
+
+            if (leftEye && rightEye) {
+              gsap.killTweensOf([leftEye, rightEye]);
+              gsap.set([leftEye, rightEye], { scaleY: 1, y: 0 });
+            }
+
+            // Create nod timeline - rotate on X axis (up/down nod)
+            const nodTl = gsap.timeline();
+
+            // First nod - tilt forward with eyes contracting upward
+            nodTl.to(characterRef.current, {
+              rotationX: -35,
+              y: 8,
+              duration: 0.15,
+              ease: 'power2.out',
+              transformPerspective: 600,
+            });
+            if (leftEye && rightEye) {
+              nodTl.to([leftEye, rightEye], {
+                scaleY: 0.85,
+                y: -4,
+                duration: 0.15,
+                ease: 'power2.out',
+              }, '<');
+            }
+
+            // Return to center
+            nodTl.to(characterRef.current, {
+              rotationX: 0,
+              y: 0,
+              duration: 0.15,
+              ease: 'power2.inOut',
+            });
+            if (leftEye && rightEye) {
+              nodTl.to([leftEye, rightEye], {
+                scaleY: 1,
+                y: 0,
+                duration: 0.15,
+                ease: 'power2.inOut',
+              }, '<');
+            }
+
+            // Second nod - tilt forward
+            nodTl.to(characterRef.current, {
+              rotationX: -35,
+              y: 8,
+              duration: 0.15,
+              ease: 'power2.out',
+            });
+            if (leftEye && rightEye) {
+              nodTl.to([leftEye, rightEye], {
+                scaleY: 0.85,
+                y: -4,
+                duration: 0.15,
+                ease: 'power2.out',
+              }, '<');
+            }
+
+            // Return to center
+            nodTl.to(characterRef.current, {
+              rotationX: 0,
+              y: 0,
+              duration: 0.15,
+              ease: 'power2.inOut',
+            });
+            if (leftEye && rightEye) {
+              nodTl.to([leftEye, rightEye], {
+                scaleY: 1,
+                y: 0,
+                duration: 0.15,
+                ease: 'power2.inOut',
+              }, '<');
+            }
+
+            // Third nod - tilt forward
+            nodTl.to(characterRef.current, {
+              rotationX: -35,
+              y: 8,
+              duration: 0.15,
+              ease: 'power2.out',
+            });
+            if (leftEye && rightEye) {
+              nodTl.to([leftEye, rightEye], {
+                scaleY: 0.85,
+                y: -4,
+                duration: 0.15,
+                ease: 'power2.out',
+              }, '<');
+            }
+
+            // Final return to neutral
+            nodTl.to(characterRef.current, {
+              rotationX: 0,
+              y: 0,
+              duration: 0.2,
+              ease: 'power2.inOut',
+            });
+            if (leftEye && rightEye) {
+              nodTl.to([leftEye, rightEye], {
+                scaleY: 1,
+                y: 0,
+                duration: 0.2,
+                ease: 'power2.inOut',
+              }, '<');
+            }
+          }
+
+          // Trigger headshake animation (horizontal no motion)
+          if (expr === 'headshake' && characterRef.current && antyRef.current) {
+            // Kill all existing animations and reset
+            gsap.killTweensOf(characterRef.current);
+            if (antyRef.current?.leftBodyRef?.current) {
+              gsap.killTweensOf(antyRef.current.leftBodyRef.current);
+              gsap.set(antyRef.current.leftBodyRef.current, { x: 0, y: 0 });
+            }
+            if (antyRef.current?.rightBodyRef?.current) {
+              gsap.killTweensOf(antyRef.current.rightBodyRef.current);
+              gsap.set(antyRef.current.rightBodyRef.current, { x: 0, y: 0 });
+            }
+            if (spinDescentTimerRef.current) {
+              clearTimeout(spinDescentTimerRef.current);
+              spinDescentTimerRef.current = null;
+            }
+            gsap.set(characterRef.current, {
+              scale: 1,
+              rotation: 0,
+              y: 0,
+              rotationY: 0,
+              rotationX: 0,
+              transformPerspective: 600,
+            });
+
+            // Get eye refs
+            const leftEye = antyRef.current.leftEyeRef?.current;
+            const rightEye = antyRef.current.rightEyeRef?.current;
+
+            if (leftEye && rightEye) {
+              gsap.killTweensOf([leftEye, rightEye]);
+              gsap.set([leftEye, rightEye], { scaleY: 1, y: 0 });
+            }
+
+            // Create headshake timeline - rotate on Y axis (left/right shake)
+            const headshakeTl = gsap.timeline();
+
+            // Contract eyes downward for the entire shake duration
+            if (leftEye && rightEye) {
+              headshakeTl.to([leftEye, rightEye], {
+                scaleY: 0.85,
+                y: 4,
+                duration: 0.18,
+                ease: 'power2.out',
+              }, 0);
+            }
+
+            // First shake - rotate left
+            headshakeTl.to(characterRef.current, {
+              rotationY: -45,
+              duration: 0.18,
+              ease: 'power4.out',
+              transformPerspective: 600,
+            }, 0);
+
+            // Snap to right
+            headshakeTl.to(characterRef.current, {
+              rotationY: 45,
+              duration: 0.2,
+              ease: 'power4.inOut',
+            });
+
+            // Snap back to left
+            headshakeTl.to(characterRef.current, {
+              rotationY: -45,
+              duration: 0.2,
+              ease: 'power4.inOut',
+            });
+
+            // Snap to right
+            headshakeTl.to(characterRef.current, {
+              rotationY: 45,
+              duration: 0.2,
+              ease: 'power4.inOut',
+            });
+
+            // Snap back to left
+            headshakeTl.to(characterRef.current, {
+              rotationY: -45,
+              duration: 0.2,
+              ease: 'power4.inOut',
+            });
+
+            // Final return to neutral
+            headshakeTl.to(characterRef.current, {
+              rotationY: 0,
+              duration: 0.22,
+              ease: 'power2.inOut',
+            });
+
+            // Return eyes to normal
+            if (leftEye && rightEye) {
+              headshakeTl.to([leftEye, rightEye], {
+                scaleY: 1,
+                y: 0,
+                duration: 0.22,
+                ease: 'power2.inOut',
+              }, '<');
+            }
+          }
+
           // Different timeout for different expressions
           // OFF state never auto-returns to idle - user must manually change
           if (expr === 'off') {
@@ -1925,12 +2102,16 @@ export default function AntyV3() {
             scheduleExpressionReset(5500);
           } else if (expr === 'idea') {
             scheduleExpressionReset(2300);
+          } else if (expr === 'nod') {
+            scheduleExpressionReset(1200);
+          } else if (expr === 'headshake') {
+            scheduleExpressionReset(900);
           } else if (expr === 'look-left' || expr === 'look-right') {
             // Look animations hold briefly then return to idle
             scheduleExpressionReset(800);
           } else if (expr === 'lookaround') {
             // Lookaround: deliberate left-center-right-center, then quick darting
-            const sequence = [
+            const sequence: { expression: ExpressionName; delay: number }[] = [
               { expression: 'look-left', delay: 0 },      // Look left
               { expression: 'idle', delay: 1000 },        // Back to center
               { expression: 'look-right', delay: 1000 },  // Look right
@@ -2007,73 +2188,7 @@ export default function AntyV3() {
             clearExpressionReset();
 
             // Handle returning from OFF with WOOHOOO leap to life!!!
-            if (characterRef.current && glowRef.current) {
-              const character = characterRef.current;
-              const innerGlow = document.querySelector('.inner-glow') as HTMLElement;
-              const outerGlow = glowRef.current;
-              const shadow = document.getElementById('anty-shadow');
-
-              // Kill any existing animations and timers
-              gsap.killTweensOf([character, innerGlow, outerGlow, shadow]);
-              if (antyRef.current?.leftBodyRef?.current) {
-                gsap.killTweensOf(antyRef.current.leftBodyRef.current);
-                gsap.set(antyRef.current.leftBodyRef.current, { x: 0, y: 0 });
-              }
-              if (antyRef.current?.rightBodyRef?.current) {
-                gsap.killTweensOf(antyRef.current.rightBodyRef.current);
-                gsap.set(antyRef.current.rightBodyRef.current, { x: 0, y: 0 });
-              }
-              if (spinDescentTimerRef.current) {
-                clearTimeout(spinDescentTimerRef.current);
-                spinDescentTimerRef.current = null;
-              }
-
-              // WOOHOOO LEAP TO LIFE ANIMATION!!!
-              const woohooTl = gsap.timeline();
-
-              // Restore full opacity immediately
-              gsap.set(character, { opacity: 1, scale: 0.65 }); // Start from shrunk OFF state
-
-              // EXPLOSIVE POP UP - Much more dramatic!
-              woohooTl.to(character, {
-                y: -50, // Higher jump!
-                scale: 1.2, // Overshoot scale
-                duration: 0.3,
-                ease: 'back.out(2.5)', // Exaggerated bounce
-              });
-
-              // Quick settle bounce
-              woohooTl.to(character, {
-                y: -10,
-                scale: 1.05,
-                duration: 0.2,
-                ease: 'power2.inOut',
-              });
-
-              // Final settle to normal
-              woohooTl.to(character, {
-                y: 0,
-                scale: 1,
-                duration: 0.4,
-                ease: 'elastic.out(1, 0.5)',
-              });
-
-              // Fade glows back in with more energy
-              gsap.to([innerGlow, outerGlow], {
-                opacity: 1,
-                duration: 0.4,
-                ease: 'power2.out',
-              });
-
-              // Shadow pops back with character
-              if (shadow) {
-                gsap.set(shadow, {
-                  scaleX: 1,
-                  scaleY: 1,
-                  opacity: 0.7,
-                });
-              }
-            }
+            performWakeUpAnimation();
 
             setExpression(onExpression);
 

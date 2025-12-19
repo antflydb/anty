@@ -280,13 +280,15 @@ export function useEyeAnimations({
     const rightEye = rightEyeRef.current;
 
     // Kill any ongoing blink animations when expression changes away from idle
-    // BUT: Don't kill/reset for shocked, idea, look-left, or look-right, as they use GSAP transforms on the idle eyes
+    // BUT: Don't kill/reset for shocked, idea, look-left, look-right, nod, or headshake, as they use GSAP transforms on the idle eyes
     if (
       expression !== 'idle' &&
       expression !== 'shocked' &&
       expression !== 'idea' &&
       expression !== 'look-left' &&
       expression !== 'look-right' &&
+      expression !== 'nod' &&
+      expression !== 'headshake' &&
       leftEye &&
       rightEye
     ) {
@@ -317,11 +319,11 @@ export function useEyeAnimations({
       });
     } else if (
       expression === 'idle' &&
-      (prevExpression === 'shocked' || prevExpression === 'idea' || prevExpression === 'look-left' || prevExpression === 'look-right') &&
+      (prevExpression === 'shocked' || prevExpression === 'idea' || prevExpression === 'look-left' || prevExpression === 'look-right' || prevExpression === 'nod' || prevExpression === 'headshake') &&
       leftEye &&
       rightEye
     ) {
-      // Reset when transitioning FROM shocked/idea/look-left/look-right back to idle
+      // Reset when transitioning FROM shocked/idea/look-left/look-right/nod/headshake back to idle
       // Use a very short animation instead of instant set to avoid visible flashing
       const leftPath = leftEyePathRef.current;
       const rightPath = rightEyePathRef.current;
