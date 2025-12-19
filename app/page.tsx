@@ -837,6 +837,35 @@ export default function AntyV3() {
             // Kill any existing animations
             gsap.killTweensOf([character, innerGlow, outerGlow]);
 
+            // Reset eyes to center position (in case they're stuck left/right)
+            if (antyRef.current?.leftEyeRef?.current && antyRef.current?.rightEyeRef?.current) {
+              const leftEye = antyRef.current.leftEyeRef.current;
+              const rightEye = antyRef.current.rightEyeRef.current;
+              const leftPath = antyRef.current.leftEyePathRef?.current;
+              const rightPath = antyRef.current.rightEyePathRef?.current;
+
+              gsap.killTweensOf([leftEye, rightEye]);
+              if (leftPath && rightPath) {
+                gsap.killTweensOf([leftPath, rightPath]);
+              }
+
+              // Reset to centered idle state
+              gsap.set([leftEye, rightEye], {
+                x: 0,
+                y: 0,
+                scaleX: 1,
+                scaleY: 1,
+                height: 44.52,
+                width: 18.63,
+              });
+
+              // Reset SVG paths to idle shape
+              if (leftPath && rightPath) {
+                const IDLE_PATH = "M1.15413e-10 11.6436C-2.8214e-05 5.21301 5.21305 -5.88744e-05 11.6437 5.01528e-10C18.0742 5.88744e-05 23.2872 5.21305 23.2872 11.6436V44.0092C23.2872 50.4398 18.0742 55.6528 11.6437 55.6528C5.21315 55.6528 0.000170216 50.4398 0.000142003 44.0093L1.15413e-10 11.6436Z";
+                gsap.set([leftPath, rightPath], { attr: { d: IDLE_PATH } });
+              }
+            }
+
             // Create OFF animation timeline
             const offTl = gsap.timeline();
 
@@ -2205,6 +2234,35 @@ export default function AntyV3() {
 
               // Kill any existing animations
               gsap.killTweensOf([character, innerGlow, outerGlow]);
+
+              // Reset eyes to center position (in case they're stuck left/right)
+              if (antyRef.current?.leftEyeRef?.current && antyRef.current?.rightEyeRef?.current) {
+                const leftEye = antyRef.current.leftEyeRef.current;
+                const rightEye = antyRef.current.rightEyeRef.current;
+                const leftPath = antyRef.current.leftEyePathRef?.current;
+                const rightPath = antyRef.current.rightEyePathRef?.current;
+
+                gsap.killTweensOf([leftEye, rightEye]);
+                if (leftPath && rightPath) {
+                  gsap.killTweensOf([leftPath, rightPath]);
+                }
+
+                // Reset to centered idle state
+                gsap.set([leftEye, rightEye], {
+                  x: 0,
+                  y: 0,
+                  scaleX: 1,
+                  scaleY: 1,
+                  height: 44.52,
+                  width: 18.63,
+                });
+
+                // Reset SVG paths to idle shape
+                if (leftPath && rightPath) {
+                  const IDLE_PATH = "M1.15413e-10 11.6436C-2.8214e-05 5.21301 5.21305 -5.88744e-05 11.6437 5.01528e-10C18.0742 5.88744e-05 23.2872 5.21305 23.2872 11.6436V44.0092C23.2872 50.4398 18.0742 55.6528 11.6437 55.6528C5.21315 55.6528 0.000170216 50.4398 0.000142003 44.0093L1.15413e-10 11.6436Z";
+                  gsap.set([leftPath, rightPath], { attr: { d: IDLE_PATH } });
+                }
+              }
 
               // Create OFF animation timeline
               const offTl = gsap.timeline();

@@ -109,9 +109,17 @@ function drawObstacle(
   const cornerRadius = 8;
 
   // Main column color - very dark, almost black like the mockup
-  const columnColor = '#1a1a1a';
-  const highlightColor = '#2a2a2a';
-  const shadowColor = '#0a0a0a';
+  // If passed, use celebration color
+  let columnColor = '#1a1a1a';
+  let highlightColor = '#2a2a2a';
+  let shadowColor = '#0a0a0a';
+
+  if (obstacle.passed && obstacle.passedColor) {
+    columnColor = obstacle.passedColor;
+    // Create lighter and darker variants for highlight and shadow
+    highlightColor = lightenColor(obstacle.passedColor, 20);
+    shadowColor = darkenColor(obstacle.passedColor, 20);
+  }
 
   // Top column with rounded bottom corners
   ctx.fillStyle = columnColor;
@@ -301,4 +309,26 @@ function drawAntfly(ctx: CanvasRenderingContext2D, collectible: Collectible, tim
   ctx.fillText('A', 0, 1);
 
   ctx.restore();
+}
+
+/**
+ * Lighten a hex color by a percentage
+ */
+function lightenColor(hex: string, percent: number): string {
+  const num = parseInt(hex.replace('#', ''), 16);
+  const r = Math.min(255, ((num >> 16) & 255) + Math.round((255 - ((num >> 16) & 255)) * (percent / 100)));
+  const g = Math.min(255, ((num >> 8) & 255) + Math.round((255 - ((num >> 8) & 255)) * (percent / 100)));
+  const b = Math.min(255, (num & 255) + Math.round((255 - (num & 255)) * (percent / 100)));
+  return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
+}
+
+/**
+ * Darken a hex color by a percentage
+ */
+function darkenColor(hex: string, percent: number): string {
+  const num = parseInt(hex.replace('#', ''), 16);
+  const r = Math.max(0, ((num >> 16) & 255) - Math.round(((num >> 16) & 255) * (percent / 100)));
+  const g = Math.max(0, ((num >> 8) & 255) - Math.round(((num >> 8) & 255) * (percent / 100)));
+  const b = Math.max(0, (num & 255) - Math.round((num & 255) * (percent / 100)));
+  return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
 }

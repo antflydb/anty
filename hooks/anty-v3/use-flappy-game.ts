@@ -29,6 +29,34 @@ import {
   applyMagneticPull,
 } from '@/lib/anty-v3/game-physics';
 
+/**
+ * Fun, pleasing color palette for passed obstacles
+ */
+const CELEBRATION_COLORS = [
+  '#FF6B9D', // Pink
+  '#4ECDC4', // Teal
+  '#95E1D3', // Mint
+  '#F38181', // Coral
+  '#AA96DA', // Purple
+  '#FCBAD3', // Light Pink
+  '#FFE66D', // Yellow
+  '#A8DADC', // Light Blue
+  '#F1C40F', // Gold
+  '#3498DB', // Blue
+  '#E74C3C', // Red
+  '#2ECC71', // Green
+];
+
+/**
+ * Get a random color from palette, ensuring it's different from the last color
+ */
+function getRandomCelebrationColor(lastColor?: string): string {
+  const availableColors = lastColor
+    ? CELEBRATION_COLORS.filter(c => c !== lastColor)
+    : CELEBRATION_COLORS;
+  return availableColors[Math.floor(Math.random() * availableColors.length)];
+}
+
 export interface UseFlappyGameOptions {
   /** Canvas width in pixels */
   canvasWidth: number;
@@ -81,6 +109,7 @@ export function useFlappyGame({
   // Refs for game loop
   const gameLoopRef = useRef<number | null>(null);
   const lastFrameTimeRef = useRef<number>(0);
+  const lastCelebrationColorRef = useRef<string | undefined>(undefined);
 
   /**
    * Start the game
@@ -100,6 +129,7 @@ export function useFlappyGame({
     setObstacles([]);
     setCollectibles([]);
     setConfig(getDifficultyConfig(0));
+    lastCelebrationColorRef.current = undefined;
 
     // Spawn initial obstacles - start closer for immediate gameplay
     const initialObstacles: Obstacle[] = [];
@@ -236,10 +266,15 @@ export function useFlappyGame({
               return newScore;
             });
 
-            // Mark as passed
-            return currentObstacles.map(obs =>
-              passedIds.includes(obs.id) ? { ...obs, passed: true } : obs
-            );
+            // Mark as passed and assign celebration colors
+            return currentObstacles.map(obs => {
+              if (passedIds.includes(obs.id)) {
+                const celebrationColor = getRandomCelebrationColor(lastCelebrationColorRef.current);
+                lastCelebrationColorRef.current = celebrationColor;
+                return { ...obs, passed: true, passedColor: celebrationColor };
+              }
+              return obs;
+            });
           }
 
           return currentObstacles;

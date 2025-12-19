@@ -27,6 +27,9 @@ export interface Obstacle {
 
   /** Whether player has passed this obstacle (for scoring) */
   passed: boolean;
+
+  /** Color to display after being passed (celebration color) */
+  passedColor?: string;
 }
 
 /**
