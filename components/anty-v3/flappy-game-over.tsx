@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 
 interface FlappyGameOverProps {
@@ -18,20 +18,64 @@ export function FlappyGameOver({
   onPlayAgain,
   onExit,
 }: FlappyGameOverProps) {
-  // Handle keyboard for play again
+  const [holdProgress, setHoldProgress] = useState(0);
+  const holdStartTimeRef = useRef<number | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
+
+  // Handle keyboard for play again with hold mechanic
   useEffect(() => {
+    const updateHoldProgress = () => {
+      if (holdStartTimeRef.current) {
+        const elapsed = Date.now() - holdStartTimeRef.current;
+        const progress = Math.min(elapsed / 2000, 1); // 2 seconds
+        setHoldProgress(progress);
+
+        if (progress >= 1) {
+          // Fully held - play again
+          onPlayAgain();
+          holdStartTimeRef.current = null;
+          setHoldProgress(0);
+        } else {
+          animationFrameRef.current = requestAnimationFrame(updateHoldProgress);
+        }
+      }
+    };
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === ' ' || e.key === 'Space') {
         e.preventDefault();
-        onPlayAgain();
+        if (!holdStartTimeRef.current) {
+          holdStartTimeRef.current = Date.now();
+          animationFrameRef.current = requestAnimationFrame(updateHoldProgress);
+        }
       } else if (e.key === 'Escape') {
         e.preventDefault();
         onExit();
       }
     };
 
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.key === ' ' || e.key === 'Space') {
+        e.preventDefault();
+        // Reset if released early
+        holdStartTimeRef.current = null;
+        setHoldProgress(0);
+        if (animationFrameRef.current) {
+          cancelAnimationFrame(animationFrameRef.current);
+        }
+      }
+    };
+
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
   }, [onPlayAgain, onExit]);
 
   return (
@@ -79,7 +123,7 @@ export function FlappyGameOver({
         {/* Title */}
         {!isNewHighScore && (
           <div className="text-6xl font-bold text-white mb-6" style={{ fontFamily: 'system-ui', textShadow: '0 4px 8px rgba(0,0,0,0.4)' }}>
-            Game over
+            Game Over
           </div>
         )}
 
@@ -95,11 +139,30 @@ export function FlappyGameOver({
 
         {/* Buttons */}
         <div className="flex flex-col gap-3 items-center">
-          <div className="inline-block px-6 py-3 bg-white/20 backdrop-blur-sm rounded-lg border-2 border-white/40 cursor-pointer hover:bg-white/30 transition-colors" onClick={onPlayAgain}>
-            <div className="text-base font-semibold text-white" style={{ fontFamily: 'system-ui' }}>
-              Space to play again
+          {/* Play Again Button with Hold Progress */}
+          <div className="relative inline-block px-6 py-3 bg-white/20 backdrop-blur-sm rounded-lg border-2 border-white/40 overflow-hidden">
+            {/* White fill progress (left to right) */}
+            <div
+              className="absolute inset-0 bg-white transition-all"
+              style={{
+                width: `${holdProgress * 100}%`,
+                transition: holdProgress === 0 ? 'width 0.1s ease-out' : 'none',
+              }}
+            />
+            {/* Text */}
+            <div
+              className="relative text-base font-semibold z-10"
+              style={{
+                fontFamily: 'system-ui',
+                color: holdProgress > 0.5 ? '#000' : '#fff',
+                transition: 'color 0.1s',
+              }}
+            >
+              Hold space to play again
             </div>
           </div>
+
+          {/* Exit Button */}
           <div className="inline-block px-6 py-3 bg-white/20 backdrop-blur-sm rounded-lg border-2 border-white/40 cursor-pointer hover:bg-white/30 transition-colors" onClick={onExit}>
             <div className="text-base font-semibold text-white" style={{ fontFamily: 'system-ui' }}>
               Esc to exit
