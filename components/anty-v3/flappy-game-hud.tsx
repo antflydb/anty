@@ -67,7 +67,7 @@ export function FlappyGameHUD({ gameState, score, highScore }: FlappyGameHUDProp
             >
               <div className="inline-block px-8 py-4 bg-white/20 backdrop-blur-sm rounded-lg border-2 border-white/40">
                 <div className="text-2xl font-semibold text-white" style={{ fontFamily: 'system-ui' }}>
-                  Press space to play
+                  Press space to play FlappyAF
                 </div>
               </div>
             </motion.div>
