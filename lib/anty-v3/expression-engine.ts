@@ -6,7 +6,7 @@
  */
 
 import type { ExpressionName } from './animation-state';
-import type { AntyStats } from '@/lib/anty/stat-system';
+import type { AntyStats } from '@/lib/anty-v3/stat-system';
 
 /**
  * Selects the appropriate expression based on current character stats.

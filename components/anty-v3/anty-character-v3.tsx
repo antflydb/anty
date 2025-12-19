@@ -9,7 +9,7 @@ import {
   type Particle,
   DEFAULT_IDLE_CONFIG,
 } from '@/lib/anty-v3/animation-state';
-import { type AntyStats } from '@/lib/anty/stat-system';
+import { type AntyStats } from '@/lib/anty-v3/stat-system';
 import { AntyExpressionLayer } from './anty-expression-layer';
 import { AntyParticleCanvas, type ParticleCanvasHandle } from './anty-particle-canvas';
 import { useEyeAnimations } from '@/lib/anty-v3/use-eye-animations';

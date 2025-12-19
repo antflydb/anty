@@ -1,11 +1,9 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { ThemeProvider } from "@/components/providers/theme-provider";
 
 export const metadata: Metadata = {
-  title: "SearchAF - Answer Engine Built for the AI Era",
-  description: "SearchAF delivers an answer engine with an answer bar to elevate the traditional search experience - more than search, it's answers. Powered by Antfly DB.",
-  manifest: "/site.webmanifest",
+  title: "Anty - Your AI Companion",
+  description: "Anty is an interactive AI companion built with Next.js and GSAP animations.",
 };
 
 export default function RootLayout({
@@ -14,16 +12,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en">
       <body className="antialiased">
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          {children}
-        </ThemeProvider>
+        {children}
       </body>
     </html>
   );

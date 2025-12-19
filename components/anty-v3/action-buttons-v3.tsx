@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { type ButtonName } from '@/lib/anty-v3/animation-state';
 
 interface ActionButtonsV3Props {
+  moodsButtonRef?: React.RefObject<HTMLButtonElement | null>;
   onButtonClick: (button: ButtonName) => void;
   isOff: boolean;
 }

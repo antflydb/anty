@@ -3,7 +3,7 @@
  * Defines types for GSAP-powered animation system
  */
 
-import type { AntyStats } from '@/lib/anty/stat-system';
+import type { AntyStats } from '@/lib/anty-v3/stat-system';
 
 // Expression names - only expressions with visual assets
 export type ExpressionName =
