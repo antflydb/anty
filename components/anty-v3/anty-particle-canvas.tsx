@@ -43,6 +43,7 @@ export const AntyParticleCanvas = forwardRef<ParticleCanvasHandle, AntyParticleC
           vy: gsap.utils.random(config.initialVelocity.y.min, config.initialVelocity.y.max),
           scale: gsap.utils.random(config.initialScale.min, config.initialScale.max),
           rotation: 0,
+          rotationSpeed: gsap.utils.random(config.rotationSpeed.min, config.rotationSpeed.max), // Performance: calc once at creation
           opacity: 1,
           life: 1,
           color: color || getParticleColor(type),
@@ -75,14 +76,23 @@ export const AntyParticleCanvas = forwardRef<ParticleCanvasHandle, AntyParticleC
 
         // Update and draw particles
         const dt = deltaTime / 1000; // Convert to seconds
-        particlesRef.current = particlesRef.current
-          .map((particle) => updateParticle(particle, dt))
-          .filter((particle) => particle.life > 0);
 
-        // Draw all particles
-        particlesRef.current.forEach((particle) => {
-          drawParticle(ctx, particle);
-        });
+        // Memory leak fix: Replace map/filter with efficient for-loop
+        const alive: Particle[] = [];
+        for (let i = 0; i < particlesRef.current.length; i++) {
+          const updated = updateParticle(particlesRef.current[i], dt);
+          if (updated.life > 0) {
+            alive.push(updated);
+            // Draw particle immediately (single pass)
+            drawParticle(ctx, updated);
+          }
+        }
+        particlesRef.current = alive;
+
+        // Diagnostic logging when particle count is high (no limits yet)
+        if (particlesRef.current.length > 150) {
+          console.warn(`[PARTICLES] High particle count: ${particlesRef.current.length}`);
+        }
       };
 
       // Add to GSAP ticker for 60fps updates
@@ -124,12 +134,8 @@ function updateParticle(particle: Particle, dt: number): Particle {
   const newX = particle.x + particle.vx * dt;
   const newY = particle.y + particle.vy * dt;
 
-  // Update rotation
-  const rotationSpeed = gsap.utils.random(
-    config.rotationSpeed.min,
-    config.rotationSpeed.max
-  );
-  const newRotation = particle.rotation + rotationSpeed * dt;
+  // Update rotation using stored rotationSpeed (performance: no recalc per frame)
+  const newRotation = particle.rotation + particle.rotationSpeed * dt;
 
   // Update life (decreases based on lifetime)
   const lifeDecay = dt / config.lifetime;
@@ -148,6 +154,7 @@ function updateParticle(particle: Particle, dt: number): Particle {
     vx: particle.vx,
     vy: newVy,
     rotation: newRotation,
+    rotationSpeed: particle.rotationSpeed,
     opacity: newOpacity,
     life: newLife,
   };

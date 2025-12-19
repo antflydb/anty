@@ -39,6 +39,7 @@ export interface Particle {
   vy: number; // velocity y
   scale: number;
   rotation: number;
+  rotationSpeed: number; // degrees per second (set once at creation for performance)
   opacity: number;
   life: number; // 0-1, decreases over time
   color?: string;

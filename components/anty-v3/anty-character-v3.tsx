@@ -87,11 +87,15 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
   const [currentExpression, setCurrentExpression] = useState<ExpressionName>(expression);
   const [particles] = useState<Particle[]>([]);
   const [isWinking, setIsWinking] = useState(false);
-  const [isHappy, setIsHappy] = useState(false);
-  const [isAngry, setIsAngry] = useState(false);
-  const [isSad, setIsSad] = useState(false);
-  const [isOff, setIsOff] = useState(false);
+
+  // Performance fix: Compute expression states instead of storing in state (reduces 5+ re-renders to 1)
+  const isHappy = expression === 'happy' || expression === 'excited';
+  const isAngry = expression === 'angry';
+  const isSad = expression === 'sad';
+  const isOff = expression === 'off';
+
   const superGlowRef = useRef<HTMLDivElement>(null);
+  const superGlowTimelineRef = useRef<gsap.core.Timeline | null>(null); // Memory leak fix
 
   // Use unified eye animation system
   const { performBlink, performDoubleBlink, allowBlinkingRef } = useEyeAnimations({
@@ -331,38 +335,8 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
     if (expression === 'wink') {
       performWink();
     }
-
-    // Set happy eyes when expression changes to 'happy' or 'excited'
-    // Use requestAnimationFrame to avoid flash during state swap
-    if (expression === 'happy' || expression === 'excited') {
-      requestAnimationFrame(() => setIsHappy(true));
-    } else {
-      requestAnimationFrame(() => setIsHappy(false));
-    }
-
-    // Set angry eyes when expression changes to 'angry'
-    // Use requestAnimationFrame to avoid flash during state swap
-    if (expression === 'angry') {
-      requestAnimationFrame(() => setIsAngry(true));
-    } else {
-      requestAnimationFrame(() => setIsAngry(false));
-    }
-
-    // Set sad eyes when expression changes to 'sad'
-    // Use requestAnimationFrame to avoid flash during state swap
-    if (expression === 'sad') {
-      requestAnimationFrame(() => setIsSad(true));
-    } else {
-      requestAnimationFrame(() => setIsSad(false));
-    }
-
-    // Set OFF state when expression changes to 'off'
-    // Use requestAnimationFrame to avoid flash during state swap
-    if (expression === 'off') {
-      requestAnimationFrame(() => setIsOff(true));
-    } else {
-      requestAnimationFrame(() => setIsOff(false));
-    }
+    // Performance fix: Removed 5 separate setState calls for isHappy, isAngry, isSad, isOff
+    // These are now computed values, reducing re-renders from 5+ to 1
   }, [expression, performWink]);
 
   // Super mode glow animation
@@ -370,6 +344,11 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
     if (!superGlowRef.current) return;
 
     if (isSuperMode) {
+      // Memory leak fix: Kill any previous timeline before creating new one
+      if (superGlowTimelineRef.current) {
+        superGlowTimelineRef.current.kill();
+      }
+
       // Pulsing rainbow glow animation
       const glowTl = gsap.timeline({ repeat: -1, yoyo: true });
       glowTl.to(superGlowRef.current, {
@@ -378,10 +357,24 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
         duration: 0.8,
         ease: 'sine.inOut',
       });
+
+      // Store timeline reference for cleanup
+      superGlowTimelineRef.current = glowTl;
     } else {
-      gsap.killTweensOf(superGlowRef.current);
+      // Properly kill timeline and reset
+      if (superGlowTimelineRef.current) {
+        superGlowTimelineRef.current.kill();
+        superGlowTimelineRef.current = null;
+      }
       gsap.set(superGlowRef.current, { opacity: 0, scale: 1 });
     }
+
+    // Cleanup on unmount
+    return () => {
+      if (superGlowTimelineRef.current) {
+        superGlowTimelineRef.current.kill();
+      }
+    };
   }, [isSuperMode]);
 
   // Setup idle animations using GSAP (disabled when OFF)

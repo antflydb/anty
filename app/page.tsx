@@ -81,6 +81,11 @@ export default function AntyV3() {
   const expressionResetTimerRef = useRef<NodeJS.Timeout | null>(null);
   const animationTimerRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Memory leak fix: Track all sparkles and animation timers for cleanup
+  const sparkleCleanupRef = useRef<Set<HTMLElement>>(new Set());
+  const animationTimersRef = useRef<Set<NodeJS.Timeout>>(new Set());
+  const lastAnimationTimeRef = useRef<number>(0);
+
   // Helper function to clear any pending expression reset
   const clearExpressionReset = () => {
     if (expressionResetTimerRef.current) {
@@ -101,9 +106,56 @@ export default function AntyV3() {
     }, delayMs);
   };
 
+  // Memory leak fix: Clear all sparkle DOM nodes
+  const clearAllSparkles = () => {
+    sparkleCleanupRef.current.forEach(el => {
+      if (el.parentNode) {
+        document.body.removeChild(el);
+      }
+    });
+    sparkleCleanupRef.current.clear();
+  };
+
+  // Memory leak fix: Clear all animation timers
+  const clearAllAnimationTimers = () => {
+    animationTimersRef.current.forEach(timer => clearTimeout(timer));
+    animationTimersRef.current.clear();
+  };
+
+  // Memory leak fix: Helper for tracked timeouts
+  const createTrackedTimeout = (callback: () => void, delay: number): NodeJS.Timeout => {
+    const timer = setTimeout(() => {
+      animationTimersRef.current.delete(timer);
+      callback();
+    }, delay);
+    animationTimersRef.current.add(timer);
+    return timer;
+  };
+
+  // Cleanup on component unmount
+  useEffect(() => {
+    return () => {
+      clearAllSparkles();
+      clearAllAnimationTimers();
+    };
+  }, []);
+
   // Centralized emotion animation trigger - reused by chat and expression menu
   const triggerEmotionAnimation = (expr: ExpressionName, isChatOpen = false) => {
+    // Memory leak fix: Add debounce to prevent animation spam
+    const now = Date.now();
+    const ANIMATION_COOLDOWN = 300; // ms
+    if (now - lastAnimationTimeRef.current < ANIMATION_COOLDOWN) {
+      console.log('[ANIMATION] Ignoring rapid trigger - cooldown active');
+      return;
+    }
+    lastAnimationTimeRef.current = now;
+
+    // Memory leak fix: Clear all previous animations before starting new ones
     clearExpressionReset();
+    clearAllSparkles();
+    clearAllAnimationTimers();
+
     setExpression(expr);
 
     if (!characterRef.current) return;
@@ -153,7 +205,7 @@ export default function AntyV3() {
         // FIREWORKS!
         const colors = ['#FF1493', '#00CED1', '#FFD700', '#FF69B4', '#7B68EE', '#00FF7F', '#FF6347', '#FF00FF', '#00FFFF'];
 
-        setTimeout(() => {
+        createTrackedTimeout(() => {
           // Adjust particle positions when chat is open (shift left by 192px to match Anty's position)
           const xOffset = isChatOpen ? -192 : 0;
           const burstPositions = [
@@ -163,7 +215,7 @@ export default function AntyV3() {
           ];
 
           burstPositions.forEach((pos, burstIndex) => {
-            setTimeout(() => {
+            createTrackedTimeout(() => {
               const burstColor = colors[Math.floor(Math.random() * colors.length)];
 
               // Main burst - 12 sparkles
@@ -185,6 +237,7 @@ export default function AntyV3() {
                   filter: drop-shadow(0 0 4px ${burstColor});
                   will-change: transform, opacity;
                 `;
+                sparkleCleanupRef.current.add(sparkle); // Track for cleanup
                 document.body.appendChild(sparkle);
 
                 gsap.to(sparkle, {
@@ -193,12 +246,17 @@ export default function AntyV3() {
                   opacity: 0,
                   duration: 1.2,
                   ease: 'power2.out',
-                  onComplete: () => { document.body.removeChild(sparkle); },
+                  onComplete: () => {
+                    sparkleCleanupRef.current.delete(sparkle);
+                    if (sparkle.parentNode) {
+                      document.body.removeChild(sparkle);
+                    }
+                  },
                 });
               }
 
               // Secondary smaller burst - 8 sparkles
-              setTimeout(() => {
+              createTrackedTimeout(() => {
                 for (let i = 0; i < 8; i++) {
                   const angle = (i / 8) * Math.PI * 2 + 0.2;
                   const radius = 60;
@@ -217,6 +275,7 @@ export default function AntyV3() {
                     filter: drop-shadow(0 0 3px ${burstColor});
                     will-change: transform, opacity;
                   `;
+                  sparkleCleanupRef.current.add(sparkle); // Track for cleanup
                   document.body.appendChild(sparkle);
 
                   gsap.to(sparkle, {
@@ -225,7 +284,12 @@ export default function AntyV3() {
                     opacity: 0,
                     duration: 1,
                     ease: 'power2.out',
-                    onComplete: () => { document.body.removeChild(sparkle); },
+                    onComplete: () => {
+                      sparkleCleanupRef.current.delete(sparkle);
+                      if (sparkle.parentNode) {
+                        document.body.removeChild(sparkle);
+                      }
+                    },
                   });
                 }
               }, 80);
@@ -250,13 +314,13 @@ export default function AntyV3() {
           const shakeTl = gsap.timeline({ repeat: 3, yoyo: true });
           shakeTl.to(char, { rotation: 2, duration: 0.08, ease: 'power1.inOut' });
 
-          setTimeout(() => {
+          createTrackedTimeout(() => {
             gsap.to(leftBody, { x: 0, y: 0, duration: 0.25, ease: 'elastic.out(1, 0.5)' });
             gsap.to(rightBody, { x: 0, y: 0, duration: 0.25, ease: 'elastic.out(1, 0.5)' });
           }, 1350);
         }
 
-        setTimeout(() => {
+        createTrackedTimeout(() => {
           if (char) {
             gsap.to(char, { y: 0, rotation: 0, duration: 0.5, ease: 'power1.inOut' });
           }
@@ -267,7 +331,7 @@ export default function AntyV3() {
 
       case 'sad':
         gsap.to(char, { y: 10, scale: 0.9, duration: 0.6, ease: 'power2.out' });
-        setTimeout(() => {
+        createTrackedTimeout(() => {
           if (char) {
             gsap.to(char, { y: 0, scale: 1, duration: 0.4, ease: 'power2.in' });
           }
@@ -1524,7 +1588,7 @@ export default function AntyV3() {
                 // FIREWORKS!
                 const colors = ['#FF1493', '#00CED1', '#FFD700', '#FF69B4', '#7B68EE', '#00FF7F', '#FF6347', '#FF00FF', '#00FFFF'];
 
-                setTimeout(() => {
+                createTrackedTimeout(() => {
                   const burstPositions = [
                     { x: window.innerWidth / 2 - 120, y: window.innerHeight / 2 - 220 },
                     { x: window.innerWidth / 2 + 120, y: window.innerHeight / 2 - 200 },
@@ -1532,7 +1596,7 @@ export default function AntyV3() {
                   ];
 
                   burstPositions.forEach((pos, burstIndex) => {
-                    setTimeout(() => {
+                    createTrackedTimeout(() => {
                       const burstColor = colors[Math.floor(Math.random() * colors.length)];
 
                       // Main burst - 12 sparkles
@@ -1554,6 +1618,7 @@ export default function AntyV3() {
                           filter: drop-shadow(0 0 4px ${burstColor});
                           will-change: transform, opacity;
                         `;
+                        sparkleCleanupRef.current.add(sparkle); // Track for cleanup
                         document.body.appendChild(sparkle);
 
                         gsap.to(sparkle, {
@@ -1562,12 +1627,17 @@ export default function AntyV3() {
                           opacity: 0,
                           duration: 1.2,
                           ease: 'power2.out',
-                          onComplete: () => { document.body.removeChild(sparkle); },
+                          onComplete: () => {
+                            sparkleCleanupRef.current.delete(sparkle);
+                            if (sparkle.parentNode) {
+                              document.body.removeChild(sparkle);
+                            }
+                          },
                         });
                       }
 
                       // Secondary smaller burst - 8 sparkles
-                      setTimeout(() => {
+                      createTrackedTimeout(() => {
                         for (let i = 0; i < 8; i++) {
                           const angle = (i / 8) * Math.PI * 2 + 0.2;
                           const radius = 60;
@@ -1586,6 +1656,7 @@ export default function AntyV3() {
                             filter: drop-shadow(0 0 3px ${burstColor});
                             will-change: transform, opacity;
                           `;
+                          sparkleCleanupRef.current.add(sparkle); // Track for cleanup
                           document.body.appendChild(sparkle);
 
                           gsap.to(sparkle, {
@@ -1594,7 +1665,12 @@ export default function AntyV3() {
                             opacity: 0,
                             duration: 1,
                             ease: 'power2.out',
-                            onComplete: () => { document.body.removeChild(sparkle); },
+                            onComplete: () => {
+                              sparkleCleanupRef.current.delete(sparkle);
+                              if (sparkle.parentNode) {
+                                document.body.removeChild(sparkle);
+                              }
+                            },
                           });
                         }
                       }, 80);
@@ -1884,7 +1960,7 @@ export default function AntyV3() {
             const colors = ['#FF1493', '#00CED1', '#FFD700', '#FF69B4', '#7B68EE', '#00FF7F', '#FF6347', '#FF00FF', '#00FFFF'];
 
             // Trigger fireworks almost immediately (0.2s in)
-            setTimeout(() => {
+            createTrackedTimeout(() => {
               // Create 3 staggered firework bursts (reduced from 5 for performance)
               const burstPositions = [
                 { x: window.innerWidth / 2 - 120, y: window.innerHeight / 2 - 220 },
@@ -1893,7 +1969,7 @@ export default function AntyV3() {
               ];
 
               burstPositions.forEach((pos, burstIndex) => {
-                setTimeout(() => {
+                createTrackedTimeout(() => {
                   // Pick a random color for this burst
                   const burstColor = colors[Math.floor(Math.random() * colors.length)];
 
@@ -1917,6 +1993,7 @@ export default function AntyV3() {
                       filter: drop-shadow(0 0 4px ${burstColor});
                       will-change: transform, opacity;
                     `;
+                    sparkleCleanupRef.current.add(sparkle); // Track for cleanup
                     document.body.appendChild(sparkle);
 
                     gsap.to(sparkle, {
@@ -1925,12 +2002,17 @@ export default function AntyV3() {
                       opacity: 0,
                       duration: 1.2,
                       ease: 'power2.out',
-                      onComplete: () => { document.body.removeChild(sparkle); },
+                      onComplete: () => {
+                        sparkleCleanupRef.current.delete(sparkle);
+                        if (sparkle.parentNode) {
+                          document.body.removeChild(sparkle);
+                        }
+                      },
                     });
                   }
 
                   // Secondary smaller burst - 8 sparkles (reduced from 15)
-                  setTimeout(() => {
+                  createTrackedTimeout(() => {
                     for (let i = 0; i < 8; i++) {
                       const angle = (i / 8) * Math.PI * 2 + 0.2;
                       const radius = 60;
@@ -1949,6 +2031,7 @@ export default function AntyV3() {
                         filter: drop-shadow(0 0 3px ${burstColor});
                         will-change: transform, opacity;
                       `;
+                      sparkleCleanupRef.current.add(sparkle); // Track for cleanup
                       document.body.appendChild(sparkle);
 
                       gsap.to(sparkle, {
@@ -1957,7 +2040,12 @@ export default function AntyV3() {
                         opacity: 0,
                         duration: 1,
                         ease: 'power2.out',
-                        onComplete: () => { document.body.removeChild(sparkle); },
+                        onComplete: () => {
+                          sparkleCleanupRef.current.delete(sparkle);
+                          if (sparkle.parentNode) {
+                            document.body.removeChild(sparkle);
+                          }
+                        },
                       });
                     }
                   }, 80);

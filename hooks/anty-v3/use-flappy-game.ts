@@ -105,6 +105,7 @@ export function useFlappyGame({
   const [obstacles, setObstacles] = useState<Obstacle[]>([]);
   const [collectibles, setCollectibles] = useState<Collectible[]>([]);
   const [config, setConfig] = useState<GameConfig>(getDifficultyConfig(0));
+  const [scrollPosition, setScrollPosition] = useState(0); // Performance fix: moved from setInterval to RAF
 
   // Refs for game loop
   const gameLoopRef = useRef<number | null>(null);
@@ -135,6 +136,7 @@ export function useFlappyGame({
     // Reset state
     setGameState('playing');
     setScore(0);
+    setScrollPosition(0); // Performance fix: reset scroll position
     setPlayer({
       y: GAME_PHYSICS.PLAYER_START_Y,
       velocity: 0,
@@ -180,6 +182,7 @@ export function useFlappyGame({
   const resetToReady = useCallback(() => {
     setGameState('ready');
     setScore(0);
+    setScrollPosition(0); // Performance fix: reset scroll position
     setPlayer({
       y: GAME_PHYSICS.PLAYER_START_Y,
       velocity: 0,
@@ -223,6 +226,9 @@ export function useFlappyGame({
         0.1 // Cap to avoid huge jumps
       );
       lastFrameTimeRef.current = currentTime;
+
+      // Performance fix: Update scroll position using RAF (was setInterval)
+      setScrollPosition(prev => prev + configRef.current.scrollSpeed * deltaTime * 60);
 
       // Update player physics
       setPlayer(prev => updatePlayerPhysics(prev, deltaTime * 60, canvasHeight));
@@ -369,6 +375,7 @@ export function useFlappyGame({
     obstacles,
     collectibles,
     config,
+    scrollPosition, // Performance fix: now managed by RAF game loop
 
     // Actions
     flap,

@@ -24,8 +24,6 @@ interface FlappyGameProps {
  */
 export function FlappyGame({ highScore, onExit }: FlappyGameProps) {
   const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
-  const [scrollPosition, setScrollPosition] = useState(0);
-  const scrollPositionRef = useRef(0);
   const gameContainerRef = useRef<HTMLDivElement>(null);
   const shakeContainerRef = useRef<HTMLDivElement>(null);
   const backgroundRef = useRef<HTMLDivElement>(null);
@@ -55,6 +53,7 @@ export function FlappyGame({ highScore, onExit }: FlappyGameProps) {
     obstacles,
     collectibles,
     config,
+    scrollPosition, // Performance fix: now managed by RAF game loop
     flap,
     startGame,
     resetToReady,
@@ -82,17 +81,8 @@ export function FlappyGame({ highScore, onExit }: FlappyGameProps) {
     },
   });
 
-  // Update scroll position for parallax
-  useEffect(() => {
-    if (gameState === 'playing') {
-      const interval = setInterval(() => {
-        scrollPositionRef.current += config.scrollSpeed;
-        setScrollPosition(scrollPositionRef.current);
-      }, 16); // ~60fps
-
-      return () => clearInterval(interval);
-    }
-  }, [gameState, config.scrollSpeed]);
+  // Performance fix: Removed setInterval-based scroll update (lines 86-95)
+  // scrollPosition now updated in RAF game loop for perfect timing sync
 
   // Initial setup
   useEffect(() => {
