@@ -73,6 +73,45 @@ export default function AntyV3() {
     }, delayMs);
   };
 
+  // Keyboard controls
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Prevent default behavior for arrow keys and space
+      if (['ArrowLeft', 'ArrowRight', 'Space', ' '].includes(e.key)) {
+        e.preventDefault();
+      }
+
+      if (e.key === 'ArrowLeft') {
+        setExpression('look-left');
+        scheduleExpressionReset(800);
+      } else if (e.key === 'ArrowRight') {
+        setExpression('look-right');
+        scheduleExpressionReset(800);
+      } else if (e.key === ' ' || e.key === 'Space') {
+        // Trigger jump animation
+        if (characterRef.current && expression !== 'off') {
+          const character = characterRef.current;
+
+          // Simple jump animation
+          const jumpTl = gsap.timeline();
+          jumpTl.to(character, {
+            y: -60,
+            duration: 0.3,
+            ease: 'power2.out',
+          });
+          jumpTl.to(character, {
+            y: 0,
+            duration: 0.3,
+            ease: 'power2.in',
+          });
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [expression]);
+
   // Animate the glow with ghostly, randomized movement
   useEffect(() => {
     if (!glowRef.current) return;

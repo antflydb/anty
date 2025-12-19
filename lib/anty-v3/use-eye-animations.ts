@@ -20,6 +20,16 @@ import type { ExpressionName } from './animation-state';
 // ===========================
 
 /**
+ * SVG Path data for morphing between eye shapes
+ */
+const EYE_PATHS = {
+  // Idle eye - tall vertical pill (23.29 × 55.65)
+  IDLE: "M1.15413e-10 11.6436C-2.8214e-05 5.21301 5.21305 -5.88744e-05 11.6437 5.01528e-10C18.0742 5.88744e-05 23.2872 5.21305 23.2872 11.6436V44.0092C23.2872 50.4398 18.0742 55.6528 11.6437 55.6528C5.21315 55.6528 0.000170216 50.4398 0.000142003 44.0093L1.15413e-10 11.6436Z",
+  // Looking eye - shorter, wider pill (26 × 43)
+  LOOKING: "M8.24203e-05 29.9999C3.6901e-05 37.1796 5.82038 43 13.0001 42.9999C20.1798 42.9999 26 37.1796 26 30V12.9999C26 5.82023 20.1798 -1.58161e-06 13.0001 -1.58161e-06C5.82049 -1.58161e-06 0.000235718 5.82023 0.0001902 12.9999L8.24203e-05 29.9999Z",
+} as const;
+
+/**
  * Timing constants for eye animations
  * All durations in seconds, scales are multipliers
  */
@@ -41,12 +51,14 @@ const ANIMATION_TIMING = {
   RESET_DURATION: 0.05,           // 50ms to reset (smooth but nearly instant)
 
   // Look left/right animations
-  LOOK_HEIGHT: 29,                // Looking eye height (scaled to match idle proportions)
-  LOOK_WIDTH: 17.5,               // Looking eye width (scaled to match idle proportions)
+  LOOK_HEIGHT: 33,                // Looking eye height (slightly bigger)
+  LOOK_WIDTH: 20,                 // Looking eye width (slightly bigger)
   IDLE_HEIGHT: 44.52,             // Idle eye height
   IDLE_WIDTH: 18.63,              // Idle eye width
   LOOK_X_OFFSET: 12,              // Move eyes 12px left or right
-  LOOK_DURATION: 0.2,             // 200ms animation for smooth morph
+  LOOK_BUNCH: 4,                  // Additional movement to bunch eyes closer together
+  LOOK_DURATION: 0.25,            // 250ms animation for smoother morph
+  LOOK_CROSSFADE_DELAY: 0.05,     // 50ms delay before starting cross-fade
 
   // Blink permission delays
   BLINK_RENABLE_DELAY: 300,       // 300ms delay before re-enabling blinking after returning to idle
@@ -86,10 +98,8 @@ const debugLog = {
 interface UseEyeAnimationsProps {
   leftEyeRef: React.RefObject<HTMLDivElement>;
   rightEyeRef: React.RefObject<HTMLDivElement>;
-  leftEyeIdleImgRef: React.RefObject<HTMLImageElement>;
-  rightEyeIdleImgRef: React.RefObject<HTMLImageElement>;
-  leftEyeLookingImgRef: React.RefObject<HTMLImageElement>;
-  rightEyeLookingImgRef: React.RefObject<HTMLImageElement>;
+  leftEyePathRef: React.RefObject<SVGPathElement>;
+  rightEyePathRef: React.RefObject<SVGPathElement>;
   expression: ExpressionName;
   isOff: boolean;
 }
@@ -116,10 +126,8 @@ interface UseEyeAnimationsReturn {
 export function useEyeAnimations({
   leftEyeRef,
   rightEyeRef,
-  leftEyeIdleImgRef,
-  rightEyeIdleImgRef,
-  leftEyeLookingImgRef,
-  rightEyeLookingImgRef,
+  leftEyePathRef,
+  rightEyePathRef,
   expression,
   isOff,
 }: UseEyeAnimationsProps): UseEyeAnimationsReturn {
@@ -315,15 +323,13 @@ export function useEyeAnimations({
     ) {
       // Reset when transitioning FROM shocked/idea/look-left/look-right back to idle
       // Use a very short animation instead of instant set to avoid visible flashing
-      const leftIdleImg = leftEyeIdleImgRef.current;
-      const rightIdleImg = rightEyeIdleImgRef.current;
-      const leftLookingImg = leftEyeLookingImgRef.current;
-      const rightLookingImg = rightEyeLookingImgRef.current;
+      const leftPath = leftEyePathRef.current;
+      const rightPath = rightEyePathRef.current;
 
       debugLog.gsap('both', 'kill', `Resetting from ${prevExpression} to idle`);
       gsap.killTweensOf([leftEye, rightEye]);
-      if (leftIdleImg && rightIdleImg && leftLookingImg && rightLookingImg) {
-        gsap.killTweensOf([leftIdleImg, rightIdleImg, leftLookingImg, rightLookingImg]);
+      if (leftPath && rightPath) {
+        gsap.killTweensOf([leftPath, rightPath]);
       }
 
       debugLog.gsap('both', 'to', { height: ANIMATION_TIMING.IDLE_HEIGHT, width: ANIMATION_TIMING.IDLE_WIDTH, scaleY: 1, scaleX: 1, x: 0, y: 0, duration: ANIMATION_TIMING.RESET_DURATION });
@@ -339,21 +345,10 @@ export function useEyeAnimations({
         onComplete: () => debugLog.both('Reset to idle complete'),
       });
 
-      // Cross-fade back to idle images if coming from look-left/right
-      if (
-        (prevExpression === 'look-left' || prevExpression === 'look-right') &&
-        leftIdleImg &&
-        rightIdleImg &&
-        leftLookingImg &&
-        rightLookingImg
-      ) {
-        gsap.to([leftLookingImg, rightLookingImg], {
-          opacity: 0,
-          duration: ANIMATION_TIMING.RESET_DURATION,
-          ease: 'power2.out',
-        });
-        gsap.to([leftIdleImg, rightIdleImg], {
-          opacity: 1,
+      // Morph paths back to IDLE if coming from looking state
+      if ((prevExpression === 'look-left' || prevExpression === 'look-right') && leftPath && rightPath) {
+        gsap.to([leftPath, rightPath], {
+          attr: { d: EYE_PATHS.IDLE },
           duration: ANIMATION_TIMING.RESET_DURATION,
           ease: 'power2.out',
         });
@@ -390,106 +385,96 @@ export function useEyeAnimations({
       });
     }
 
-    // Look left animation - cross-fade to looking shape and move left
+    // Look left animation - morph SVG path and move left
     if (expression === 'look-left' && leftEye && rightEye) {
-      const leftIdleImg = leftEyeIdleImgRef.current;
-      const rightIdleImg = rightEyeIdleImgRef.current;
-      const leftLookingImg = leftEyeLookingImgRef.current;
-      const rightLookingImg = rightEyeLookingImgRef.current;
+      const leftPath = leftEyePathRef.current;
+      const rightPath = rightEyePathRef.current;
 
-      if (!leftIdleImg || !rightIdleImg || !leftLookingImg || !rightLookingImg) return;
+      if (!leftPath || !rightPath) return;
 
       debugLog.gsap('both', 'kill', 'Clearing tweens for look-left');
-      gsap.killTweensOf([leftEye, rightEye, leftIdleImg, rightIdleImg, leftLookingImg, rightLookingImg]);
+      gsap.killTweensOf([leftEye, rightEye, leftPath, rightPath]);
 
-      debugLog.gsap('both', 'set', { height: ANIMATION_TIMING.IDLE_HEIGHT, width: ANIMATION_TIMING.IDLE_WIDTH, scaleY: 1, scaleX: 1, x: 0, y: 0, rotation: 0 });
-      // Reset to baseline first
-      gsap.set([leftEye, rightEye], {
-        height: ANIMATION_TIMING.IDLE_HEIGHT,
-        width: ANIMATION_TIMING.IDLE_WIDTH,
-        scaleY: 1,
-        scaleX: 1,
-        x: 0,
-        y: 0,
-        rotation: 0,
+      debugLog.gsap('both', 'to', { 'path-morph': 'IDLE→LOOKING', 'left-x': -ANIMATION_TIMING.LOOK_X_OFFSET, 'right-x': -(ANIMATION_TIMING.LOOK_X_OFFSET - ANIMATION_TIMING.LOOK_BUNCH) });
+
+      // Morph SVG paths from IDLE to LOOKING shape
+      gsap.to([leftPath, rightPath], {
+        attr: { d: EYE_PATHS.LOOKING },
+        duration: ANIMATION_TIMING.LOOK_DURATION,
+        ease: 'power2.out',
       });
-      gsap.set([leftIdleImg, rightIdleImg], { opacity: 1 });
-      gsap.set([leftLookingImg, rightLookingImg], { opacity: 0 });
 
-      debugLog.gsap('both', 'to', { height: ANIMATION_TIMING.LOOK_HEIGHT, width: ANIMATION_TIMING.LOOK_WIDTH, x: -ANIMATION_TIMING.LOOK_X_OFFSET, 'cross-fade': 'idle→looking' });
-      // Animate container dimensions and position
+      // Animate container dimensions to match looking eye size
       gsap.to([leftEye, rightEye], {
         height: ANIMATION_TIMING.LOOK_HEIGHT,
         width: ANIMATION_TIMING.LOOK_WIDTH,
+        duration: ANIMATION_TIMING.LOOK_DURATION,
+        ease: 'power2.out',
+      });
+
+      // Animate left eye position (full movement)
+      gsap.to(leftEye, {
         x: -ANIMATION_TIMING.LOOK_X_OFFSET,
         duration: ANIMATION_TIMING.LOOK_DURATION,
         ease: 'power2.out',
-        onStart: () => debugLog.both('Look left animation started'),
+        onStart: () => debugLog.leftEye('Look left animation started'),
+      });
+
+      // Animate right eye position (bunches closer - moves less left)
+      gsap.to(rightEye, {
+        x: -(ANIMATION_TIMING.LOOK_X_OFFSET - ANIMATION_TIMING.LOOK_BUNCH),
+        duration: ANIMATION_TIMING.LOOK_DURATION,
+        ease: 'power2.out',
+        onStart: () => debugLog.rightEye('Look left animation started (bunched closer)'),
         onComplete: () => debugLog.both('Look left animation complete'),
-      });
-      // Cross-fade from idle to looking shape
-      gsap.to([leftIdleImg, rightIdleImg], {
-        opacity: 0,
-        duration: ANIMATION_TIMING.LOOK_DURATION,
-        ease: 'power2.out',
-      });
-      gsap.to([leftLookingImg, rightLookingImg], {
-        opacity: 1,
-        duration: ANIMATION_TIMING.LOOK_DURATION,
-        ease: 'power2.out',
       });
     }
 
-    // Look right animation - cross-fade to looking shape and move right
+    // Look right animation - morph SVG path and move right
     if (expression === 'look-right' && leftEye && rightEye) {
-      const leftIdleImg = leftEyeIdleImgRef.current;
-      const rightIdleImg = rightEyeIdleImgRef.current;
-      const leftLookingImg = leftEyeLookingImgRef.current;
-      const rightLookingImg = rightEyeLookingImgRef.current;
+      const leftPath = leftEyePathRef.current;
+      const rightPath = rightEyePathRef.current;
 
-      if (!leftIdleImg || !rightIdleImg || !leftLookingImg || !rightLookingImg) return;
+      if (!leftPath || !rightPath) return;
 
       debugLog.gsap('both', 'kill', 'Clearing tweens for look-right');
-      gsap.killTweensOf([leftEye, rightEye, leftIdleImg, rightIdleImg, leftLookingImg, rightLookingImg]);
+      gsap.killTweensOf([leftEye, rightEye, leftPath, rightPath]);
 
-      debugLog.gsap('both', 'set', { height: ANIMATION_TIMING.IDLE_HEIGHT, width: ANIMATION_TIMING.IDLE_WIDTH, scaleY: 1, scaleX: 1, x: 0, y: 0, rotation: 0 });
-      // Reset to baseline first
-      gsap.set([leftEye, rightEye], {
-        height: ANIMATION_TIMING.IDLE_HEIGHT,
-        width: ANIMATION_TIMING.IDLE_WIDTH,
-        scaleY: 1,
-        scaleX: 1,
-        x: 0,
-        y: 0,
-        rotation: 0,
+      debugLog.gsap('both', 'to', { 'path-morph': 'IDLE→LOOKING', 'left-x': ANIMATION_TIMING.LOOK_X_OFFSET - ANIMATION_TIMING.LOOK_BUNCH, 'right-x': ANIMATION_TIMING.LOOK_X_OFFSET });
+
+      // Morph SVG paths from IDLE to LOOKING shape
+      gsap.to([leftPath, rightPath], {
+        attr: { d: EYE_PATHS.LOOKING },
+        duration: ANIMATION_TIMING.LOOK_DURATION,
+        ease: 'power2.out',
       });
-      gsap.set([leftIdleImg, rightIdleImg], { opacity: 1 });
-      gsap.set([leftLookingImg, rightLookingImg], { opacity: 0 });
 
-      debugLog.gsap('both', 'to', { height: ANIMATION_TIMING.LOOK_HEIGHT, width: ANIMATION_TIMING.LOOK_WIDTH, x: ANIMATION_TIMING.LOOK_X_OFFSET, 'cross-fade': 'idle→looking' });
-      // Animate container dimensions and position
+      // Animate container dimensions to match looking eye size
       gsap.to([leftEye, rightEye], {
         height: ANIMATION_TIMING.LOOK_HEIGHT,
         width: ANIMATION_TIMING.LOOK_WIDTH,
+        duration: ANIMATION_TIMING.LOOK_DURATION,
+        ease: 'power2.out',
+      });
+
+      // Animate left eye position (bunches closer - moves less right)
+      gsap.to(leftEye, {
+        x: ANIMATION_TIMING.LOOK_X_OFFSET - ANIMATION_TIMING.LOOK_BUNCH,
+        duration: ANIMATION_TIMING.LOOK_DURATION,
+        ease: 'power2.out',
+        onStart: () => debugLog.leftEye('Look right animation started (bunched closer)'),
+      });
+
+      // Animate right eye position (full movement)
+      gsap.to(rightEye, {
         x: ANIMATION_TIMING.LOOK_X_OFFSET,
         duration: ANIMATION_TIMING.LOOK_DURATION,
         ease: 'power2.out',
-        onStart: () => debugLog.both('Look right animation started'),
+        onStart: () => debugLog.rightEye('Look right animation started'),
         onComplete: () => debugLog.both('Look right animation complete'),
       });
-      // Cross-fade from idle to looking shape
-      gsap.to([leftIdleImg, rightIdleImg], {
-        opacity: 0,
-        duration: ANIMATION_TIMING.LOOK_DURATION,
-        ease: 'power2.out',
-      });
-      gsap.to([leftLookingImg, rightLookingImg], {
-        opacity: 1,
-        duration: ANIMATION_TIMING.LOOK_DURATION,
-        ease: 'power2.out',
-      });
     }
-  }, [expression, leftEyeRef, rightEyeRef, leftEyeIdleImgRef, rightEyeIdleImgRef, leftEyeLookingImgRef, rightEyeLookingImgRef]);
+  }, [expression, leftEyeRef, rightEyeRef, leftEyePathRef, rightEyePathRef]);
 
   // ===========================
   // 3.5: Return Interface

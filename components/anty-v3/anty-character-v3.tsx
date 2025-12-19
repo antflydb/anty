@@ -72,10 +72,8 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
   const characterRef = useRef<HTMLDivElement>(null);
   const leftEyeRef = useRef<HTMLDivElement>(null);
   const rightEyeRef = useRef<HTMLDivElement>(null);
-  const leftEyeIdleImgRef = useRef<HTMLImageElement>(null);
-  const rightEyeIdleImgRef = useRef<HTMLImageElement>(null);
-  const leftEyeLookingImgRef = useRef<HTMLImageElement>(null);
-  const rightEyeLookingImgRef = useRef<HTMLImageElement>(null);
+  const leftEyePathRef = useRef<SVGPathElement>(null);
+  const rightEyePathRef = useRef<SVGPathElement>(null);
   const leftBodyRef = useRef<HTMLDivElement>(null);
   const rightBodyRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<ParticleCanvasHandle>(null);
@@ -93,10 +91,8 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
   const { performBlink, performDoubleBlink, allowBlinkingRef } = useEyeAnimations({
     leftEyeRef,
     rightEyeRef,
-    leftEyeIdleImgRef,
-    rightEyeIdleImgRef,
-    leftEyeLookingImgRef,
-    rightEyeLookingImgRef,
+    leftEyePathRef,
+    rightEyePathRef,
     expression,
     isOff,
   });
@@ -556,8 +552,21 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
                 transformOrigin: 'center center',
               }}
             >
-              <img ref={leftEyeIdleImgRef} alt="" className="absolute" src={img2} style={{ height: '100%', width: 'auto', objectFit: 'contain' }} />
-              <img ref={leftEyeLookingImgRef} alt="" className="absolute" src={eyeLooking} style={{ height: '100%', width: 'auto', objectFit: 'contain', opacity: 0 }} />
+              <svg
+                preserveAspectRatio="none"
+                width="100%"
+                height="100%"
+                viewBox="0 0 26 55.6528"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                style={{ display: 'block' }}
+              >
+                <path
+                  ref={leftEyePathRef}
+                  d="M1.15413e-10 11.6436C-2.8214e-05 5.21301 5.21305 -5.88744e-05 11.6437 5.01528e-10C18.0742 5.88744e-05 23.2872 5.21305 23.2872 11.6436V44.0092C23.2872 50.4398 18.0742 55.6528 11.6437 55.6528C5.21315 55.6528 0.000170216 50.4398 0.000142003 44.0093L1.15413e-10 11.6436Z"
+                  fill="#052333"
+                />
+              </svg>
             </div>
           </div>
         )}
@@ -598,8 +607,21 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
                 transformOrigin: 'center center',
               }}
             >
-              <img ref={rightEyeIdleImgRef} alt="" className="absolute" src={img2} style={{ height: '100%', width: 'auto', objectFit: 'contain' }} />
-              <img ref={rightEyeLookingImgRef} alt="" className="absolute" src={eyeLooking} style={{ height: '100%', width: 'auto', objectFit: 'contain', opacity: 0 }} />
+              <svg
+                preserveAspectRatio="none"
+                width="100%"
+                height="100%"
+                viewBox="0 0 26 55.6528"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                style={{ display: 'block' }}
+              >
+                <path
+                  ref={rightEyePathRef}
+                  d="M1.15413e-10 11.6436C-2.8214e-05 5.21301 5.21305 -5.88744e-05 11.6437 5.01528e-10C18.0742 5.88744e-05 23.2872 5.21305 23.2872 11.6436V44.0092C23.2872 50.4398 18.0742 55.6528 11.6437 55.6528C5.21315 55.6528 0.000170216 50.4398 0.000142003 44.0093L1.15413e-10 11.6436Z"
+                  fill="#052333"
+                />
+              </svg>
             </div>
           </div>
         )}
