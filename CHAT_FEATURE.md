@@ -24,10 +24,12 @@ Anty will react to the conversation with expressions like:
 - **Sad** 😢 - When something unfortunate happens
 - **Wink** 😉 - During playful or flirty moments
 - **Idea** 💡 - When having an insight or eureka moment
-- **Nod** ✅ - To confirm or agree
-- **Headshake** ❌ - To disagree
+- **Nod** ✅ - **IMPORTANT**: When answering "yes", confirming, or agreeing (3 vertical nods)
+- **Headshake** ❌ - **IMPORTANT**: When answering "no", disagreeing, or saying something is incorrect (5 horizontal shakes)
 - **Look-left/right** 👀 - When thinking or considering options
 - **Spin** 🎊 - When celebrating
+
+**Try asking yes/no questions** to see Anty nod or shake his head! The AI is trained to use these reactions for affirmative and negative responses.
 
 ### UI Features
 - **Slide-in panel** from the right side
@@ -92,18 +94,24 @@ The emotion tag is stripped from the displayed message, so users only see the cl
 
 For the best demo experience:
 
-1. **Ask emotional questions**:
+1. **Ask yes/no questions** to see affirmative/negative reactions:
+   - "Is 2+2 equal to 4?" → Anty nods yes ✅
+   - "Can you help me?" → Anty nods in agreement ✅
+   - "Is the sky green?" → Anty shakes his head no ❌
+   - "Does this seem right to you?" → Anty will nod or shake based on context
+
+2. **Ask emotional questions**:
    - "That's amazing!" → Anty gets excited 🎉
    - "Can you help me with something?" → Anty looks happy 😊
    - "Oh no, something broke!" → Anty looks sad 😢
    - "Wow, I didn't expect that!" → Anty looks shocked 😲
 
-2. **Try different conversation styles**:
+3. **Try different conversation styles**:
    - Playful/joking → Anty winks 😉
    - Ask for ideas → Anty has lightbulb moments 💡
    - Celebrate achievements → Anty spins with joy 🎊
 
-3. **Watch the reactions**: The emotions happen in real-time as Anty responds
+4. **Watch the reactions**: The emotions happen in real-time as Anty responds
 
 ## Future Enhancements
 
