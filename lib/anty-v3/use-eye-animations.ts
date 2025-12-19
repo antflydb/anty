@@ -41,8 +41,10 @@ const ANIMATION_TIMING = {
   RESET_DURATION: 0.05,           // 50ms to reset (smooth but nearly instant)
 
   // Look left/right animations
-  LOOK_SCALE_Y: 0.7,              // Contract eyes vertically to 0.7x (narrower)
-  LOOK_SCALE_X: 1.2,              // Expand eyes horizontally to 1.2x (wider)
+  LOOK_HEIGHT: 24,                // Shorter eye height when looking (vs 44.52px idle)
+  LOOK_WIDTH: 18.63,              // Keep same width as idle
+  IDLE_HEIGHT: 44.52,             // Idle eye height
+  IDLE_WIDTH: 18.63,              // Idle eye width
   LOOK_X_OFFSET: 12,              // Move eyes 12px left or right
   LOOK_DURATION: 0.15,            // 150ms animation
 
@@ -308,8 +310,9 @@ export function useEyeAnimations({
       debugLog.gsap('both', 'kill', `Resetting from ${prevExpression} to idle`);
       gsap.killTweensOf([leftEye, rightEye]);
 
-      debugLog.gsap('both', 'to', { scaleY: 1, scaleX: 1, x: 0, y: 0, duration: ANIMATION_TIMING.RESET_DURATION });
+      debugLog.gsap('both', 'to', { height: ANIMATION_TIMING.IDLE_HEIGHT, scaleY: 1, scaleX: 1, x: 0, y: 0, duration: ANIMATION_TIMING.RESET_DURATION });
       gsap.to([leftEye, rightEye], {
+        height: ANIMATION_TIMING.IDLE_HEIGHT,
         scaleY: 1,
         scaleX: 1,
         x: 0,
@@ -355,9 +358,10 @@ export function useEyeAnimations({
       debugLog.gsap('both', 'kill', 'Clearing tweens for look-left');
       gsap.killTweensOf([leftEye, rightEye]);
 
-      debugLog.gsap('both', 'set', { scaleY: 1, scaleX: 1, x: 0, y: 0, rotation: 0 });
+      debugLog.gsap('both', 'set', { height: ANIMATION_TIMING.IDLE_HEIGHT, scaleY: 1, scaleX: 1, x: 0, y: 0, rotation: 0 });
       // Reset to baseline first
       gsap.set([leftEye, rightEye], {
+        height: ANIMATION_TIMING.IDLE_HEIGHT,
         scaleY: 1,
         scaleX: 1,
         x: 0,
@@ -365,11 +369,10 @@ export function useEyeAnimations({
         rotation: 0,
       });
 
-      debugLog.gsap('both', 'to', { scaleY: ANIMATION_TIMING.LOOK_SCALE_Y, scaleX: ANIMATION_TIMING.LOOK_SCALE_X, x: -ANIMATION_TIMING.LOOK_X_OFFSET });
-      // Animate eyes to look left (contract vertically, expand horizontally, and move left)
+      debugLog.gsap('both', 'to', { height: ANIMATION_TIMING.LOOK_HEIGHT, x: -ANIMATION_TIMING.LOOK_X_OFFSET });
+      // Animate eyes to look left (morph to shorter shape and move left)
       gsap.to([leftEye, rightEye], {
-        scaleY: ANIMATION_TIMING.LOOK_SCALE_Y,
-        scaleX: ANIMATION_TIMING.LOOK_SCALE_X,
+        height: ANIMATION_TIMING.LOOK_HEIGHT,
         x: -ANIMATION_TIMING.LOOK_X_OFFSET,
         duration: ANIMATION_TIMING.LOOK_DURATION,
         ease: 'power2.out',
@@ -378,14 +381,15 @@ export function useEyeAnimations({
       });
     }
 
-    // Look right animation - eyes move right, contract vertically, expand horizontally
+    // Look right animation - eyes morph to shorter shape and move right
     if (expression === 'look-right' && leftEye && rightEye) {
       debugLog.gsap('both', 'kill', 'Clearing tweens for look-right');
       gsap.killTweensOf([leftEye, rightEye]);
 
-      debugLog.gsap('both', 'set', { scaleY: 1, scaleX: 1, x: 0, y: 0, rotation: 0 });
+      debugLog.gsap('both', 'set', { height: ANIMATION_TIMING.IDLE_HEIGHT, scaleY: 1, scaleX: 1, x: 0, y: 0, rotation: 0 });
       // Reset to baseline first
       gsap.set([leftEye, rightEye], {
+        height: ANIMATION_TIMING.IDLE_HEIGHT,
         scaleY: 1,
         scaleX: 1,
         x: 0,
@@ -393,11 +397,10 @@ export function useEyeAnimations({
         rotation: 0,
       });
 
-      debugLog.gsap('both', 'to', { scaleY: ANIMATION_TIMING.LOOK_SCALE_Y, scaleX: ANIMATION_TIMING.LOOK_SCALE_X, x: ANIMATION_TIMING.LOOK_X_OFFSET });
-      // Animate eyes to look right (contract vertically, expand horizontally, and move right)
+      debugLog.gsap('both', 'to', { height: ANIMATION_TIMING.LOOK_HEIGHT, x: ANIMATION_TIMING.LOOK_X_OFFSET });
+      // Animate eyes to look right (morph to shorter shape and move right)
       gsap.to([leftEye, rightEye], {
-        scaleY: ANIMATION_TIMING.LOOK_SCALE_Y,
-        scaleX: ANIMATION_TIMING.LOOK_SCALE_X,
+        height: ANIMATION_TIMING.LOOK_HEIGHT,
         x: ANIMATION_TIMING.LOOK_X_OFFSET,
         duration: ANIMATION_TIMING.LOOK_DURATION,
         ease: 'power2.out',
