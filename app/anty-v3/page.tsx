@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import gsap from 'gsap';
-import { AntyCharacterV3, ActionButtonsV3, HeartMeter, ExpressionMenu, type ButtonName, type AntyCharacterHandle, type EarnedHeart } from '@/components/anty-v3';
+import { AntyCharacterV3, ActionButtonsV3, HeartMeter, ExpressionMenu, FlappyGame, type ButtonName, type AntyCharacterHandle, type EarnedHeart } from '@/components/anty-v3';
 import type { ExpressionName } from '@/lib/anty-v3/animation-state';
 import type { AntyStats } from '@/lib/anty/stat-system';
 
@@ -22,6 +22,25 @@ export default function AntyV3() {
     `;
     document.head.appendChild(style);
   }
+
+  // Game mode state
+  const [gameMode, setGameMode] = useState<'idle' | 'game'>('idle');
+  const [gameHighScore, setGameHighScore] = useState(0);
+  const [showWhiteFade, setShowWhiteFade] = useState(false);
+  const whiteFadeRef = useRef<HTMLDivElement>(null);
+
+  // Load high score from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('anty-flappy-high-score');
+    if (saved) setGameHighScore(parseInt(saved, 10));
+  }, []);
+
+  // Save high score when changed
+  useEffect(() => {
+    if (gameHighScore > 0) {
+      localStorage.setItem('anty-flappy-high-score', gameHighScore.toString());
+    }
+  }, [gameHighScore]);
 
   const [hearts, setHearts] = useState(3);
   const [expression, setExpressionInternal] = useState<ExpressionName>('idle');
@@ -286,6 +305,149 @@ export default function AntyV3() {
     heartTimersRef.current.set(index, timer);
   };
 
+  // Update stats after game ends
+  const updateStatsFromGame = (finalScore: number, newHighScore: number, isNewHighScore: boolean) => {
+    const happinessGain = Math.min(30, finalScore * 2);
+    const energyLoss = 15;
+    const knowledgeGain = Math.floor(finalScore / 5);
+
+    setStats(prev => ({
+      ...prev,
+      happiness: Math.min(100, prev.happiness + happinessGain),
+      energy: Math.max(0, prev.energy - energyLoss),
+      knowledge: Math.min(100, prev.knowledge + knowledgeGain),
+    }));
+
+    // Update high score state
+    if (newHighScore > gameHighScore) {
+      setGameHighScore(newHighScore);
+    }
+
+    // Earn a heart for achieving a new high score!
+    if (isNewHighScore && finalScore > 0) {
+      const firstGrey = [0, 1, 2].find(i => !earnedHearts.find(h => h.index === i));
+      if (firstGrey !== undefined) {
+        // Delay heart earning until after exit animation completes
+        setTimeout(() => {
+          earnHeart(firstGrey);
+        }, 800); // After character returns to position
+      }
+    }
+  };
+
+  // Enter game animation
+  const enterGameAnimation = () => {
+    const characterElement = characterRef.current;
+    const whiteFade = whiteFadeRef.current;
+    if (!characterElement || !whiteFade) return;
+
+    // Show white fade overlay
+    setShowWhiteFade(true);
+
+    const tl = gsap.timeline();
+
+    // 1. Cascade fade-out buttons first
+    tl.to(
+      '.action-buttons button',
+      {
+        y: 100,
+        opacity: 0,
+        stagger: 0.05,
+        duration: 0.3,
+        ease: 'power2.in',
+      }
+    );
+
+    // 2. Fade out UI and character
+    tl.to(
+      ['.heart-meter', '.expression-menu', characterElement, '.inner-glow', glowRef.current],
+      {
+        opacity: 0,
+        duration: 0.25,
+      },
+      '-=0.15'
+    );
+
+    // 3. White fade in - COMPLETELY to white
+    tl.fromTo(
+      whiteFade,
+      { opacity: 0 },
+      {
+        opacity: 1,
+        duration: 0.3,
+        ease: 'power2.inOut',
+        onComplete: () => {
+          // Switch to game mode while screen is white
+          setTimeout(() => {
+            setGameMode('game');
+            // Wait a bit for game to mount, then fade out white
+            setTimeout(() => {
+              gsap.to(whiteFade, {
+                opacity: 0,
+                duration: 0.4,
+                ease: 'power2.out',
+                onComplete: () => setShowWhiteFade(false),
+              });
+            }, 200);
+          }, 100);
+        },
+      },
+      '-=0.1'
+    );
+
+    // Note: Position and scale will be set by game mode when it activates
+  };
+
+  // Exit game animation
+  const exitGameAnimation = () => {
+    const characterElement = characterRef.current;
+    if (!characterElement) {
+      setGameMode('idle');
+      return;
+    }
+
+    const tl = gsap.timeline({
+      onComplete: () => {
+        setGameMode('idle');
+        setExpression('idle');
+      },
+    });
+
+    // 1. Reset Anty position and scale
+    tl.to(characterElement, {
+      x: 0,
+      y: 0,
+      scale: 1,
+      rotation: 0,
+      duration: 0.5,
+      ease: 'elastic.out(1, 0.5)',
+    });
+
+    // 2. Fade in UI
+    tl.to(
+      ['.heart-meter', '.expression-menu'],
+      {
+        opacity: 1,
+        y: 0,
+        duration: 0.3,
+        stagger: 0.05,
+      },
+      '-=0.3'
+    );
+
+    // 3. Fade in buttons
+    tl.to(
+      '.action-buttons button',
+      {
+        y: 0,
+        opacity: 1,
+        duration: 0.3,
+        stagger: 0.05,
+      },
+      '-=0.2'
+    );
+  };
+
   const handleButtonClick = (button: ButtonName) => {
     const characterElement = characterRef.current;
     if (!characterElement) return;
@@ -396,21 +558,17 @@ export default function AntyV3() {
         break;
 
       case 'play':
-        // Trigger wiggle animation + happy eyes
-        gsap.to(characterElement, {
-          rotation: 10,
-          duration: 0.15,
-          ease: 'power1.inOut',
-          yoyo: true,
-          repeat: 5,
-        });
-        setExpression('happy');
-        setStats((prev) => ({
-          ...prev,
-          happiness: Math.min(100, prev.happiness + 15),
-          energy: Math.max(0, prev.energy - 10),
-        }));
-        scheduleExpressionReset(1500);
+        // Toggle game mode
+        if (gameMode === 'game') {
+          // Exit game mode - trigger exit animation
+          exitGameAnimation();
+          return;
+        }
+
+        // Enter game mode - set expression to idle, trigger animation
+        // Mode switch happens inside enterGameAnimation when white fade completes
+        setExpression('idle');
+        enterGameAnimation();
         break;
 
       case 'feed':
@@ -491,83 +649,88 @@ export default function AntyV3() {
 
   return (
     <div className="bg-white min-h-screen flex flex-col relative">
-      <HeartMeter hearts={hearts} earnedHearts={earnedHearts} isOff={expression === 'off'} />
+      {gameMode === 'idle' ? (
+        <>
+          <HeartMeter hearts={hearts} earnedHearts={earnedHearts} isOff={expression === 'off'} />
 
-      <div className="flex-1 flex items-center justify-center pb-12 relative">
-        <div style={{ position: 'relative', width: '160px', height: '240px' }}>
-          {/* Floating glow behind Anty - Layer 1 (inner, more saturated) */}
-          <div
-            className="inner-glow absolute left-1/2 -translate-x-1/2"
-            style={{
-              top: '80px',
-              width: '120px',
-              height: '90px',
-              borderRadius: '50%',
-              opacity: 1,
-              background: 'linear-gradient(90deg, #C5D4FF 0%, #E0C5FF 100%)',
-              filter: 'blur(25px)',
-              transform: 'translate(-50%, -50%)',
-              transformOrigin: 'center center',
-              pointerEvents: 'none',
-              zIndex: 0,
-            }}
-          />
+          <div className="flex-1 flex items-center justify-center pb-12 relative">
+            <div style={{ position: 'relative', width: '160px', height: '240px' }}>
+              {/* Floating glow behind Anty - Layer 1 (inner, more saturated) */}
+              <div
+                className="inner-glow absolute left-1/2 -translate-x-1/2"
+                style={{
+                  top: '80px',
+                  width: '120px',
+                  height: '90px',
+                  borderRadius: '50%',
+                  opacity: 1,
+                  background: 'linear-gradient(90deg, #C5D4FF 0%, #E0C5FF 100%)',
+                  filter: 'blur(25px)',
+                  transform: 'translate(-50%, -50%)',
+                  transformOrigin: 'center center',
+                  pointerEvents: 'none',
+                  zIndex: 0,
+                }}
+              />
 
-          {/* Floating glow behind Anty - Layer 2 (outer, softer) */}
-          <div
-            ref={glowRef}
-            className="absolute left-1/2 -translate-x-1/2"
-            style={{
-              top: '80px',
-              width: '170px',
-              height: '130px',
-              borderRadius: '50%',
-              opacity: 1,
-              background: 'linear-gradient(90deg, #D5E2FF 0%, #EED5FF 100%)',
-              filter: 'blur(45px)',
-              transform: 'translate(-50%, -50%)',
-              transformOrigin: 'center center',
-              pointerEvents: 'none',
-              zIndex: 0,
-            }}
-          />
+              {/* Floating glow behind Anty - Layer 2 (outer, softer) */}
+              <div
+                ref={glowRef}
+                className="absolute left-1/2 -translate-x-1/2"
+                style={{
+                  top: '80px',
+                  width: '170px',
+                  height: '130px',
+                  borderRadius: '50%',
+                  opacity: 1,
+                  background: 'linear-gradient(90deg, #D5E2FF 0%, #EED5FF 100%)',
+                  filter: 'blur(45px)',
+                  transform: 'translate(-50%, -50%)',
+                  transformOrigin: 'center center',
+                  pointerEvents: 'none',
+                  zIndex: 0,
+                }}
+              />
 
-          <div
-            ref={characterRef}
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              zIndex: 1,
-              transformOrigin: 'center center',
-            }}
-          >
-            <AntyCharacterV3 ref={antyRef} stats={stats} expression={expression} isSuperMode={isSuperMode} />
+              {/* Anty character in idle mode */}
+              <div
+                ref={characterRef}
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  zIndex: 1,
+                  transformOrigin: 'center center',
+                }}
+              >
+                <AntyCharacterV3 ref={antyRef} stats={stats} expression={expression} isSuperMode={isSuperMode} />
+              </div>
+
+              {/* Fixed shadow - doesn't move with character */}
+              <div
+                className="absolute left-1/2 -translate-x-1/2"
+                style={{
+                  bottom: '0px',
+                  width: '160px',
+                  height: '40px',
+                  background: 'radial-gradient(ellipse, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0) 70%)',
+                  filter: 'blur(12px)',
+                  borderRadius: '50%',
+                  opacity: 0.7,
+                  transform: 'scaleX(1) scaleY(1)',
+                  transformOrigin: 'center center',
+                  pointerEvents: 'none',
+                }}
+                id="anty-shadow"
+              />
+            </div>
           </div>
 
-          {/* Fixed shadow - doesn't move with character */}
-          <div
-            className="absolute left-1/2 -translate-x-1/2"
-            style={{
-              bottom: '0px', // At bottom of container
-              width: '160px',
-              height: '40px',
-              background: 'radial-gradient(ellipse, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0) 70%)',
-              filter: 'blur(12px)',
-              borderRadius: '50%',
-              opacity: 0.7,
-              transform: 'scaleX(1) scaleY(1)', // Initial state - ensures it's visible
-              transformOrigin: 'center center',
-              pointerEvents: 'none',
-            }}
-            id="anty-shadow"
-          />
-        </div>
-      </div>
+          <div className="action-buttons">
+            <ActionButtonsV3 onButtonClick={handleButtonClick} isOff={expression === 'off'} />
+          </div>
 
-      <ActionButtonsV3 onButtonClick={handleButtonClick} isOff={expression === 'off'} />
-
-      <ExpressionMenu
+          <ExpressionMenu
         currentExpression={expression}
         onExpressionSelect={(expr) => {
           // Clear any pending expression reset from previous states
@@ -1692,6 +1855,33 @@ export default function AntyV3() {
           } else {
             scheduleExpressionReset(1350);
           }
+        }}
+      />
+        </>
+      ) : (
+        <>
+          <FlappyGame
+            highScore={gameHighScore}
+            onExit={(finalScore, newHighScore) => {
+              const isNewHighScore = newHighScore > gameHighScore;
+              updateStatsFromGame(finalScore, newHighScore, isNewHighScore);
+              exitGameAnimation();
+            }}
+          />
+        </>
+      )}
+
+      {/* White fade overlay for classy transition - always rendered */}
+      <div
+        ref={whiteFadeRef}
+        style={{
+          position: 'fixed',
+          inset: 0,
+          backgroundColor: 'white',
+          zIndex: 9999,
+          pointerEvents: 'none',
+          opacity: 0,
+          display: showWhiteFade ? 'block' : 'none',
         }}
       />
     </div>
