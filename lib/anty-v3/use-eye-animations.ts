@@ -41,8 +41,8 @@ const ANIMATION_TIMING = {
   RESET_DURATION: 0.05,           // 50ms to reset (smooth but nearly instant)
 
   // Look left/right animations
-  LOOK_HEIGHT: 43,                // Looking eye height (from SVG)
-  LOOK_WIDTH: 26,                 // Looking eye width (from SVG)
+  LOOK_HEIGHT: 29,                // Looking eye height (scaled to match idle proportions)
+  LOOK_WIDTH: 17.5,               // Looking eye width (scaled to match idle proportions)
   IDLE_HEIGHT: 44.52,             // Idle eye height
   IDLE_WIDTH: 18.63,              // Idle eye width
   LOOK_X_OFFSET: 12,              // Move eyes 12px left or right
