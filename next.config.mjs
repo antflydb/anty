@@ -3,7 +3,8 @@ import remarkGfm from 'remark-gfm'
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'export',
+  // Temporarily disable static export for chat feature to work
+  // output: 'export',
   pageExtensions: ['js', 'jsx', 'ts', 'tsx', 'md', 'mdx'],
   reactStrictMode: true,
   eslint: {
@@ -17,6 +18,18 @@ const nextConfig = {
         hostname: 'images.unsplash.com',
       },
     ],
+  },
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      // Don't resolve 'fs' module on the client to prevent errors
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        net: false,
+        tls: false,
+      };
+    }
+    return config;
   },
 }
 

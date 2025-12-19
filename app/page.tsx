@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import gsap from 'gsap';
 import { AntyCharacterV3, ActionButtonsV3, HeartMeter, ExpressionMenu, PowerButton, FlappyGame, FPSMeter, type ButtonName, type AntyCharacterHandle, type EarnedHeart } from '@/components/anty-v3';
+import { ChatPanel } from '@/components/anty-chat';
 import type { ExpressionName } from '@/lib/anty-v3/animation-state';
 import type { AntyStats } from '@/lib/anty-v3/stat-system';
 
@@ -30,6 +31,9 @@ export default function AntyV3() {
   const [gameHighScore, setGameHighScore] = useState(0);
   const [showWhiteFade, setShowWhiteFade] = useState(false);
   const whiteFadeRef = useRef<HTMLDivElement>(null);
+
+  // Chat panel state
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   // Load high score from localStorage
   useEffect(() => {
@@ -609,19 +613,11 @@ export default function AntyV3() {
 
     switch (button) {
       case 'chat':
-        // Trigger tilt animation
-        gsap.to(characterElement, {
-          rotation: -5,
-          duration: 0.3,
-          ease: 'power2.out',
-          yoyo: true,
-          repeat: 1,
-          onComplete: () => {
-            // Ensure rotation is reset to 0 after animation completes
-            gsap.set(characterElement, { rotation: 0 });
-          },
-        });
-        setStats((prev) => ({ ...prev, knowledge: Math.min(100, prev.knowledge + 10) }));
+        // Open chat panel
+        setIsChatOpen(true);
+        // Trigger happy animation when opening chat
+        setExpression('happy');
+        scheduleExpressionReset(2000);
         break;
 
       case 'moods':
@@ -2305,6 +2301,20 @@ export default function AntyV3() {
               }, 590); // Start right at the end of snap
             }
           }
+        }}
+      />
+
+      {/* Chat Panel */}
+      <ChatPanel
+        isOpen={isChatOpen}
+        onClose={() => setIsChatOpen(false)}
+        onEmotion={(emotion) => {
+          // Clear any pending expression reset
+          clearExpressionReset();
+          // Set the emotion
+          setExpression(emotion);
+          // Reset to idle after 3 seconds
+          scheduleExpressionReset(3000);
         }}
       />
 
