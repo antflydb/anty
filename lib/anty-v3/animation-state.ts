@@ -27,7 +27,7 @@ export type ExpressionName =
 export type ButtonName = 'feed' | 'play' | 'chat' | 'moods';
 
 // Particle types for canvas rendering
-export type ParticleType = 'heart' | 'sparkle' | 'sweat' | 'zzz';
+export type ParticleType = 'heart' | 'sparkle' | 'sweat' | 'zzz' | 'confetti';
 
 // Particle object for canvas system
 export interface Particle {
@@ -186,6 +186,17 @@ export const PARTICLE_CONFIGS: Record<ParticleType, ParticleConfig> = {
     initialScale: { min: 0.6, max: 0.9 },
     rotationSpeed: { min: -20, max: 20 },
     fadeStart: 0.7,
+  },
+  confetti: {
+    lifetime: 3.0,
+    gravity: 250,
+    initialVelocity: {
+      x: { min: -150, max: 150 },
+      y: { min: -300, max: -150 },
+    },
+    initialScale: { min: 0.6, max: 1.2 },
+    rotationSpeed: { min: -360, max: 360 },
+    fadeStart: 0.8,
   },
 };
 

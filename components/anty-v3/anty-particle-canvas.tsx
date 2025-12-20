@@ -188,6 +188,9 @@ function drawParticle(ctx: CanvasRenderingContext2D, particle: Particle) {
     case 'zzz':
       drawZzz(ctx);
       break;
+    case 'confetti':
+      drawConfetti(ctx, particle);
+      break;
   }
 
   ctx.restore();
@@ -237,6 +240,22 @@ function drawZzz(ctx: CanvasRenderingContext2D) {
   ctx.fillText('Z', 0, 0);
 }
 
+function drawConfetti(ctx: CanvasRenderingContext2D, particle: Particle) {
+  // Draw colorful rectangles/squares
+  ctx.fillStyle = particle.color || '#ffd700';
+
+  // Alternate between rectangle and square based on particle ID
+  const isSquare = particle.id.charCodeAt(0) % 2 === 0;
+
+  if (isSquare) {
+    // Square confetti
+    ctx.fillRect(-6, -6, 12, 12);
+  } else {
+    // Rectangular confetti
+    ctx.fillRect(-8, -4, 16, 8);
+  }
+}
+
 function getParticleColor(type: ParticleType): string {
   switch (type) {
     case 'heart':
@@ -247,6 +266,11 @@ function getParticleColor(type: ParticleType): string {
       return '#87ceeb';
     case 'zzz':
       return '#9370db';
+    case 'confetti':
+      // Random from celebration palette
+      const colors = ['#FF6B9D', '#4ECDC4', '#95E1D3', '#F38181', '#AA96DA',
+                      '#FCBAD3', '#FFE66D', '#A8DADC', '#F1C40F', '#3498DB'];
+      return colors[Math.floor(Math.random() * colors.length)];
     default:
       return '#ff0000';
   }

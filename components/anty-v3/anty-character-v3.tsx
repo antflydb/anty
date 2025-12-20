@@ -51,6 +51,7 @@ export interface AntyCharacterHandle {
   spawnFeedingParticles: () => void;
   spawnSparkle?: (x: number, y: number, color?: string) => void;
   spawnLoveHearts?: () => void;
+  spawnConfetti?: (x: number, y: number, count?: number) => void;
   leftBodyRef?: React.RefObject<HTMLDivElement>;
   rightBodyRef?: React.RefObject<HTMLDivElement>;
   leftEyeRef?: React.RefObject<HTMLDivElement>;
@@ -319,6 +320,17 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
         // Stagger the start times for cascading effect
         tl.delay(i * 0.01);
       });
+    },
+    spawnConfetti: (x: number, y: number, count = 30) => {
+      if (!canvasRef.current || !canvasRef.current.spawnParticle) return;
+
+      // Spawn burst of confetti at specified position
+      for (let i = 0; i < count; i++) {
+        // Stagger spawn for more natural burst
+        setTimeout(() => {
+          canvasRef.current?.spawnParticle('confetti', x, y);
+        }, i * 15); // 15ms stagger
+      }
     },
     leftEyeRef,
     rightEyeRef,

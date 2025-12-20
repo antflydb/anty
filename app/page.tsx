@@ -297,6 +297,18 @@ export default function AntyV3() {
           });
         }, 200);
 
+        // Confetti celebration
+        if (antyRef.current?.spawnConfetti) {
+          createTrackedTimeout(() => {
+            const xOffset = isChatOpen ? -192 : 0;
+            const centerX = window.innerWidth / 2 + xOffset;
+            const centerY = window.innerHeight / 2 - 220;
+
+            // Large confetti explosion for excited
+            antyRef.current?.spawnConfetti?.(centerX, centerY, 40);
+          }, 300); // Slightly delayed after jump starts
+        }
+
         scheduleExpressionReset(1350);
         break;
       }
@@ -738,6 +750,13 @@ export default function AntyV3() {
 
       setIsSuperMode(true);
       superModeCooldownRef.current = true; // Set cooldown to prevent re-triggering
+
+      // Confetti celebration for super mode
+      if (antyRef.current?.spawnConfetti) {
+        const centerX = window.innerWidth / 2;
+        const centerY = window.innerHeight / 2;
+        antyRef.current.spawnConfetti(centerX, centerY, 60); // Big celebration
+      }
 
       // Create the iconic pulsing growth animation
       const superTl = gsap.timeline();
