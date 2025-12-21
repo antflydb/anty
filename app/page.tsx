@@ -1175,12 +1175,14 @@ export default function AntyV3() {
     const leftEye = antyRef.current?.leftEyeRef?.current;
     const rightEye = antyRef.current?.rightEyeRef?.current;
     const searchBar = searchBarRef.current;
+    const shadow = document.getElementById('anty-shadow');
 
     if (!leftBody || !rightBody || !searchBar) return;
 
-    // STEP 1: Eyes fade out (150ms) - happens first
-    if (leftEye && rightEye) {
-      tl.to([leftEye, rightEye], {
+    // STEP 1: Eyes and shadow fade out (150ms) - happens first
+    const fadeTargets = [leftEye, rightEye, shadow].filter(Boolean);
+    if (fadeTargets.length > 0) {
+      tl.to(fadeTargets, {
         opacity: 0,
         duration: 0.15,
         ease: 'power2.in'
@@ -1190,8 +1192,8 @@ export default function AntyV3() {
     // STEP 2: Body halves separate, scale down, move to corners (500ms)
     // Left half moves to top-left corner of search bar
     tl.to(leftBody, {
-      x: -311, // Half of search bar width (642/2) + bracket offset
-      y: -35,  // Half of search bar height (69/2)
+      x: -321, // Search bar half-width (642/2)
+      y: -34.5, // Search bar half-height (69/2)
       scale: 0.14, // Scale from ~160px to ~22px
       rotation: 0, // Lock rotation during morph
       duration: 0.5,
@@ -1200,8 +1202,8 @@ export default function AntyV3() {
 
     // Right half moves to bottom-right corner
     tl.to(rightBody, {
-      x: 311,
-      y: 35,
+      x: 321,
+      y: 34.5,
       scale: 0.14,
       rotation: 0,
       duration: 0.5,
@@ -1236,6 +1238,7 @@ export default function AntyV3() {
     const leftEye = antyRef.current?.leftEyeRef?.current;
     const rightEye = antyRef.current?.rightEyeRef?.current;
     const searchBar = searchBarRef.current;
+    const shadow = document.getElementById('anty-shadow');
 
     if (!leftBody || !rightBody || !searchBar) return;
 
@@ -1261,10 +1264,11 @@ export default function AntyV3() {
       ease: 'back.out(1.7)' // Bouncy return
     }, 0.15);
 
-    // STEP 4: Eyes fade back in (200ms)
-    if (leftEye && rightEye) {
-      tl.to([leftEye, rightEye], {
-        opacity: 1,
+    // STEP 4: Eyes and shadow fade back in (200ms)
+    const showTargets = [leftEye, rightEye, shadow].filter(Boolean);
+    if (showTargets.length > 0) {
+      tl.to(showTargets, {
+        opacity: shadow ? 0.7 : 1, // Shadow uses 0.7 opacity
         duration: 0.2,
         ease: 'power2.out'
       }, 0.5);
