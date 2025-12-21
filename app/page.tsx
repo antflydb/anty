@@ -1162,6 +1162,7 @@ export default function AntyV3() {
 
   // Morph Anty character to search bar
   const morphToSearchBar = () => {
+    console.log('[SEARCH] Opening search mode');
     setSearchActive(true);
 
     const tl = gsap.timeline({
@@ -1177,10 +1178,13 @@ export default function AntyV3() {
     const searchBar = searchBarRef.current;
     const shadow = document.getElementById('anty-shadow');
 
+    console.log('[SEARCH] Elements:', { leftBody: !!leftBody, rightBody: !!rightBody, searchBar: !!searchBar, shadow: !!shadow });
+
     if (!leftBody || !rightBody || !searchBar) return;
 
     // STEP 1: Eyes and shadow fade out (150ms) - happens first
     const fadeTargets = [leftEye, rightEye, shadow].filter(Boolean);
+    console.log('[SEARCH] Fading out', fadeTargets.length, 'elements');
     if (fadeTargets.length > 0) {
       tl.to(fadeTargets, {
         opacity: 0,

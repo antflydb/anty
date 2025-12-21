@@ -453,6 +453,7 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
 
       // Don't animate when in search mode - character is being morphed
       if (searchMode) {
+        console.log('[IDLE] Disabling idle animation - search mode active');
         gsap.killTweensOf([character, shadow]);
         return;
       }
