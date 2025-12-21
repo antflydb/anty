@@ -191,6 +191,7 @@ export default function AntyV3() {
         break;
 
       case 'excited': {
+        console.log('[EXCITED CASE] Entered excited case in triggerEmotionAnimation');
         const excitedTl = gsap.timeline({
           onComplete: () => gsap.set(char, { rotation: 0 }),
         });
@@ -299,14 +300,18 @@ export default function AntyV3() {
 
         // Confetti celebration
         if (antyRef.current?.spawnConfetti) {
+          console.log('[EXCITED] Triggering confetti for excited emotion');
           createTrackedTimeout(() => {
             const xOffset = isChatOpen ? -192 : 0;
             const centerX = window.innerWidth / 2 + xOffset;
             const centerY = window.innerHeight / 2 - 220;
 
+            console.log('[EXCITED] Calling spawnConfetti with:', { centerX, centerY });
             // Large confetti explosion for excited
             antyRef.current?.spawnConfetti?.(centerX, centerY, 40);
           }, 300); // Slightly delayed after jump starts
+        } else {
+          console.warn('[EXCITED] No spawnConfetti method available');
         }
 
         scheduleExpressionReset(1350);
@@ -755,7 +760,10 @@ export default function AntyV3() {
       if (antyRef.current?.spawnConfetti) {
         const centerX = window.innerWidth / 2;
         const centerY = window.innerHeight / 2;
+        console.log('[SUPER MODE] Triggering confetti:', { centerX, centerY });
         antyRef.current.spawnConfetti(centerX, centerY, 60); // Big celebration
+      } else {
+        console.warn('[SUPER MODE] No spawnConfetti method available');
       }
 
       // Create the iconic pulsing growth animation
@@ -2071,6 +2079,20 @@ export default function AntyV3() {
                 }, burstIndex * 120);
               });
             }, 200);
+
+            // Confetti celebration
+            if (antyRef.current?.spawnConfetti) {
+              console.log('[EXCITED MENU] Triggering confetti from expression menu');
+              createTrackedTimeout(() => {
+                const centerX = window.innerWidth / 2;
+                const centerY = window.innerHeight / 2 - 220;
+
+                console.log('[EXCITED MENU] Calling spawnConfetti with:', { centerX, centerY });
+                antyRef.current?.spawnConfetti?.(centerX, centerY, 40);
+              }, 300);
+            } else {
+              console.warn('[EXCITED MENU] No spawnConfetti method available');
+            }
           }
 
           // Trigger shocked animation - MORE DRAMATIC!

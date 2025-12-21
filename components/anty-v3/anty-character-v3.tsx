@@ -322,13 +322,46 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
       });
     },
     spawnConfetti: (x: number, y: number, count = 30) => {
-      if (!canvasRef.current || !canvasRef.current.spawnParticle) return;
+      console.log('[CONFETTI] Spawning confetti:', { screenX: x, screenY: y, count, hasCanvas: !!canvasRef.current });
+      if (!canvasRef.current || !canvasRef.current.spawnParticle || !containerRef.current) {
+        console.warn('[CONFETTI] Canvas or container ref not available');
+        return;
+      }
+
+      // Convert screen coordinates to canvas-relative coordinates
+      // Canvas is centered on the character with size * 5 dimensions
+      const canvasWidth = size * 5;
+      const canvasHeight = size * 5;
+      const canvasCenterX = canvasWidth / 2;
+      const canvasCenterY = canvasHeight / 2;
+
+      // Get character's position on screen
+      const containerRect = containerRef.current.getBoundingClientRect();
+      const charCenterX = containerRect.left + containerRect.width / 2;
+      const charCenterY = containerRect.top + containerRect.height / 2;
+
+      // Calculate offset from character center
+      const offsetX = x - charCenterX;
+      const offsetY = y - charCenterY;
+
+      // Convert to canvas coordinates (canvas center is at character center)
+      const canvasX = canvasCenterX + offsetX;
+      const canvasY = canvasCenterY + offsetY;
+
+      console.log('[CONFETTI] Converted coords:', {
+        screenPos: { x, y },
+        charCenter: { x: charCenterX, y: charCenterY },
+        offset: { x: offsetX, y: offsetY },
+        canvasPos: { x: canvasX, y: canvasY }
+      });
 
       // Spawn burst of confetti at specified position
       for (let i = 0; i < count; i++) {
         // Stagger spawn for more natural burst
         setTimeout(() => {
-          canvasRef.current?.spawnParticle('confetti', x, y);
+          if (canvasRef.current?.spawnParticle) {
+            canvasRef.current.spawnParticle('confetti', canvasX, canvasY);
+          }
         }, i * 15); // 15ms stagger
       }
     },
