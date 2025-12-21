@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import gsap from 'gsap';
 import { AntyCharacterV3, ActionButtonsV3, HeartMeter, ExpressionMenu, PowerButton, FlappyGame, FPSMeter, type ButtonName, type AntyCharacterHandle, type EarnedHeart } from '@/components/anty-v3';
+import { AntySearchBar } from '@/components/anty-v3/anty-search-bar';
 import { ChatPanel } from '@/components/anty-chat';
 import type { ExpressionName } from '@/lib/anty-v3/animation-state';
 import type { AntyStats } from '@/lib/anty-v3/stat-system';
@@ -85,6 +86,12 @@ export default function AntyV3() {
   const sparkleCleanupRef = useRef<Set<HTMLElement>>(new Set());
   const animationTimersRef = useRef<Set<NodeJS.Timeout>>(new Set());
   const lastAnimationTimeRef = useRef<number>(0);
+
+  // Search mode state
+  const [searchActive, setSearchActive] = useState(false);
+  const [searchValue, setSearchValue] = useState('');
+  const searchBarRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Helper function to clear any pending expression reset
   const clearExpressionReset = () => {
@@ -193,7 +200,9 @@ export default function AntyV3() {
       case 'excited': {
         console.log('[EXCITED CASE] Entered excited case in triggerEmotionAnimation');
         const excitedTl = gsap.timeline({
-          onComplete: () => gsap.set(char, { rotation: 0 }),
+          onComplete: () => {
+            gsap.set(char, { rotation: 0 });
+          },
         });
         excitedTl.to(char, { y: -70, rotation: 360, duration: 0.5, ease: 'power2.out' });
         excitedTl.to(char, { y: -70, rotation: 360, duration: 0.3 });
@@ -400,7 +409,9 @@ export default function AntyV3() {
               y: 0,
               duration: 0.35,
               ease: 'power2.in',
-              onComplete: () => gsap.set(char, { rotationY: 0 }),
+              onComplete: () => {
+                gsap.set(char, { rotationY: 0 });
+              },
             });
           }
         }, 1100);
@@ -670,6 +681,53 @@ export default function AntyV3() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [expression, isChatOpen]);
+
+  // Click outside handler for search mode
+  useEffect(() => {
+    if (!searchActive) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      const searchBarEl = searchBarRef.current;
+      const target = event.target as Node;
+
+      // Ignore if clicking on search bar or Anty brackets
+      if (searchBarEl?.contains(target)) return;
+
+      morphToCharacter();
+    };
+
+    // Delay listener to prevent immediate closure from trigger click
+    const timerId = setTimeout(() => {
+      document.addEventListener('mousedown', handleClickOutside);
+    }, 100);
+
+    return () => {
+      clearTimeout(timerId);
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [searchActive]);
+
+  // Keyboard handlers for search mode
+  useEffect(() => {
+    if (!searchActive) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        morphToCharacter();
+        setSearchValue(''); // Clear on exit
+      }
+
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        console.log('Search query:', searchValue);
+        // Future: trigger search functionality
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [searchActive, searchValue]);
 
   // Animate the glow with ghostly, randomized movement
   useEffect(() => {
@@ -1102,6 +1160,117 @@ export default function AntyV3() {
     }
   };
 
+  // Morph Anty character to search bar
+  const morphToSearchBar = () => {
+    setSearchActive(true);
+
+    const tl = gsap.timeline({
+      onComplete: () => {
+        searchInputRef.current?.focus();
+      }
+    });
+
+    const leftBody = antyRef.current?.leftBodyRef?.current;
+    const rightBody = antyRef.current?.rightBodyRef?.current;
+    const leftEye = antyRef.current?.leftEyeRef?.current;
+    const rightEye = antyRef.current?.rightEyeRef?.current;
+    const searchBar = searchBarRef.current;
+
+    if (!leftBody || !rightBody || !searchBar) return;
+
+    // STEP 1: Eyes fade out (150ms) - happens first
+    if (leftEye && rightEye) {
+      tl.to([leftEye, rightEye], {
+        opacity: 0,
+        duration: 0.15,
+        ease: 'power2.in'
+      }, 0);
+    }
+
+    // STEP 2: Body halves separate, scale down, move to corners (500ms)
+    // Left half moves to top-left corner of search bar
+    tl.to(leftBody, {
+      x: -311, // Half of search bar width (642/2) + bracket offset
+      y: -35,  // Half of search bar height (69/2)
+      scale: 0.14, // Scale from ~160px to ~22px
+      rotation: 0, // Lock rotation during morph
+      duration: 0.5,
+      ease: 'power2.inOut'
+    }, 0.15);
+
+    // Right half moves to bottom-right corner
+    tl.to(rightBody, {
+      x: 311,
+      y: 35,
+      scale: 0.14,
+      rotation: 0,
+      duration: 0.5,
+      ease: 'power2.inOut'
+    }, 0.15);
+
+    // STEP 3: Search bar fades in (300ms) - overlaps with body movement
+    tl.fromTo(searchBar, {
+      opacity: 0,
+      scale: 0.95
+    }, {
+      opacity: 1,
+      scale: 1,
+      duration: 0.3,
+      ease: 'power2.out'
+    }, 0.35);
+
+    // STEP 4: Large glow appears (400ms in)
+    tl.call(() => {
+      antyRef.current?.showSearchGlow?.();
+    }, [], 0.4);
+  };
+
+  // Morph search bar back to Anty character
+  const morphToCharacter = () => {
+    setSearchActive(false);
+
+    const tl = gsap.timeline();
+
+    const leftBody = antyRef.current?.leftBodyRef?.current;
+    const rightBody = antyRef.current?.rightBodyRef?.current;
+    const leftEye = antyRef.current?.leftEyeRef?.current;
+    const rightEye = antyRef.current?.rightEyeRef?.current;
+    const searchBar = searchBarRef.current;
+
+    if (!leftBody || !rightBody || !searchBar) return;
+
+    // STEP 1: Search bar fades out (200ms)
+    tl.to(searchBar, {
+      opacity: 0,
+      scale: 0.95,
+      duration: 0.2,
+      ease: 'power2.in'
+    }, 0);
+
+    // STEP 2: Glow hides (immediately)
+    tl.call(() => {
+      antyRef.current?.hideSearchGlow?.();
+    }, [], 0);
+
+    // STEP 3: Halves return to center and scale up (500ms)
+    tl.to([leftBody, rightBody], {
+      x: 0,
+      y: 0,
+      scale: 1,
+      duration: 0.5,
+      ease: 'back.out(1.7)' // Bouncy return
+    }, 0.15);
+
+    // STEP 4: Eyes fade back in (200ms)
+    if (leftEye && rightEye) {
+      tl.to([leftEye, rightEye], {
+        opacity: 1,
+        duration: 0.2,
+        ease: 'power2.out'
+      }, 0.5);
+    }
+  };
+
   const handleButtonClick = (button: ButtonName) => {
     const characterElement = characterRef.current;
     if (!characterElement) return;
@@ -1254,6 +1423,11 @@ export default function AntyV3() {
         }, 2300);
         scheduleExpressionReset(4000);
         break;
+
+      case 'search':
+        // Trigger search mode morph animation
+        morphToSearchBar();
+        break;
     }
   };
 
@@ -1327,6 +1501,7 @@ export default function AntyV3() {
                   stats={stats}
                   expression={expression}
                   isSuperMode={isSuperMode}
+                  searchMode={searchActive}
                   onSpontaneousExpression={(expr) => {
                     // Only trigger spontaneous looks when in idle state
                     if (expression !== 'idle') return;
@@ -1337,6 +1512,13 @@ export default function AntyV3() {
                       scheduleExpressionReset(1000);
                     }
                   }}
+                />
+                <AntySearchBar
+                  active={searchActive}
+                  value={searchValue}
+                  onChange={setSearchValue}
+                  inputRef={searchInputRef}
+                  barRef={searchBarRef}
                 />
               </div>
 

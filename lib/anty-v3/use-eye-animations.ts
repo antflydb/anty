@@ -96,10 +96,10 @@ const debugLog = {
 // ===========================
 
 interface UseEyeAnimationsProps {
-  leftEyeRef: React.RefObject<HTMLDivElement>;
-  rightEyeRef: React.RefObject<HTMLDivElement>;
-  leftEyePathRef: React.RefObject<SVGPathElement>;
-  rightEyePathRef: React.RefObject<SVGPathElement>;
+  leftEyeRef: React.RefObject<HTMLDivElement | null>;
+  rightEyeRef: React.RefObject<HTMLDivElement | null>;
+  leftEyePathRef: React.RefObject<SVGPathElement | null>;
+  rightEyePathRef: React.RefObject<SVGPathElement | null>;
   expression: ExpressionName;
   isOff: boolean;
 }

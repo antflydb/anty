@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
+import { useRef, useEffect, forwardRef, useImperativeHandle, useState } from 'react';
 import gsap from 'gsap';
 import { type Particle, type ParticleType, PARTICLE_CONFIGS } from '@/lib/anty-v3/animation-state';
 
@@ -12,6 +12,8 @@ interface AntyParticleCanvasProps {
 
 export interface ParticleCanvasHandle {
   spawnParticle: (type: ParticleType, x: number, y: number, color?: string) => void;
+  showSearchGlow: () => void;
+  hideSearchGlow: () => void;
 }
 
 /**
@@ -22,6 +24,7 @@ export const AntyParticleCanvas = forwardRef<ParticleCanvasHandle, AntyParticleC
   ({ particles, width = 400, height = 400 }, ref) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const particlesRef = useRef<Particle[]>(particles);
+    const [searchGlowActive, setSearchGlowActive] = useState(false);
 
     // Update particles ref when prop changes
     useEffect(() => {
@@ -64,6 +67,12 @@ export const AntyParticleCanvas = forwardRef<ParticleCanvasHandle, AntyParticleC
 
         particlesRef.current = [...particlesRef.current, newParticle];
       },
+      showSearchGlow: () => {
+        setSearchGlowActive(true);
+      },
+      hideSearchGlow: () => {
+        setSearchGlowActive(false);
+      },
     }));
 
     // Setup canvas rendering with GSAP ticker
@@ -86,6 +95,18 @@ export const AntyParticleCanvas = forwardRef<ParticleCanvasHandle, AntyParticleC
       const updateParticles = (time: number, deltaTime: number) => {
         // Clear canvas
         ctx.clearRect(0, 0, width, height);
+
+        // Draw search glow if active (behind particles)
+        if (searchGlowActive) {
+          const centerX = width / 2;
+          const centerY = height / 2;
+          const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, 350);
+          gradient.addColorStop(0, 'rgba(229, 237, 255, 0.4)');
+          gradient.addColorStop(0.5, 'rgba(229, 237, 255, 0.2)');
+          gradient.addColorStop(1, 'rgba(229, 237, 255, 0)');
+          ctx.fillStyle = gradient;
+          ctx.fillRect(0, 0, width, height);
+        }
 
         // Update and draw particles
         const dt = deltaTime / 1000; // Convert to seconds

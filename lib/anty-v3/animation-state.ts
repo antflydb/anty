@@ -24,7 +24,7 @@ export type ExpressionName =
   | 'off';       // Logo state - triangle eyes, no animations
 
 // Button names for interactive responses
-export type ButtonName = 'feed' | 'play' | 'chat' | 'moods';
+export type ButtonName = 'feed' | 'play' | 'chat' | 'moods' | 'search';
 
 // Particle types for canvas rendering
 export type ParticleType = 'heart' | 'sparkle' | 'sweat' | 'zzz' | 'confetti';

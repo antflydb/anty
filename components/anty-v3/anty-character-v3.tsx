@@ -45,6 +45,7 @@ interface AntyCharacterV3Props {
   className?: string;
   size?: number;
   isSuperMode?: boolean;
+  searchMode?: boolean;
 }
 
 export interface AntyCharacterHandle {
@@ -52,12 +53,14 @@ export interface AntyCharacterHandle {
   spawnSparkle?: (x: number, y: number, color?: string) => void;
   spawnLoveHearts?: () => void;
   spawnConfetti?: (x: number, y: number, count?: number) => void;
-  leftBodyRef?: React.RefObject<HTMLDivElement>;
-  rightBodyRef?: React.RefObject<HTMLDivElement>;
-  leftEyeRef?: React.RefObject<HTMLDivElement>;
-  rightEyeRef?: React.RefObject<HTMLDivElement>;
-  leftEyePathRef?: React.RefObject<SVGPathElement>;
-  rightEyePathRef?: React.RefObject<SVGPathElement>;
+  showSearchGlow?: () => void;
+  hideSearchGlow?: () => void;
+  leftBodyRef?: React.RefObject<HTMLDivElement | null>;
+  rightBodyRef?: React.RefObject<HTMLDivElement | null>;
+  leftEyeRef?: React.RefObject<HTMLDivElement | null>;
+  rightEyeRef?: React.RefObject<HTMLDivElement | null>;
+  leftEyePathRef?: React.RefObject<SVGPathElement | null>;
+  rightEyePathRef?: React.RefObject<SVGPathElement | null>;
 }
 
 /**
@@ -74,6 +77,7 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
   className = '',
   size = 160,
   isSuperMode = false,
+  searchMode = false,
 }, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const characterRef = useRef<HTMLDivElement>(null);
@@ -365,6 +369,16 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
         }, i * 15); // 15ms stagger
       }
     },
+    showSearchGlow: () => {
+      if (canvasRef.current && canvasRef.current.showSearchGlow) {
+        canvasRef.current.showSearchGlow();
+      }
+    },
+    hideSearchGlow: () => {
+      if (canvasRef.current && canvasRef.current.hideSearchGlow) {
+        canvasRef.current.hideSearchGlow();
+      }
+    },
     leftEyeRef,
     rightEyeRef,
     leftEyePathRef,
@@ -434,6 +448,12 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
         gsap.killTweensOf([character, shadow]);
         gsap.set(character, { y: 0, rotation: 0, scale: 1 });
         gsap.set(shadow, { scaleX: 0, scaleY: 0, opacity: 0 });
+        return;
+      }
+
+      // Don't animate when in search mode - character is being morphed
+      if (searchMode) {
+        gsap.killTweensOf([character, shadow]);
         return;
       }
 
