@@ -32,9 +32,10 @@ interface ExpressionMenuInternalProps extends ExpressionMenuProps {
   onClose: () => void;
   buttonRef: React.RefObject<HTMLButtonElement | null>;
   isChatOpen?: boolean;
+  isSearchActive?: boolean;
 }
 
-export function ExpressionMenu({ onExpressionSelect, currentExpression, isExpanded, onClose, buttonRef, isChatOpen }: ExpressionMenuInternalProps) {
+export function ExpressionMenu({ onExpressionSelect, currentExpression, isExpanded, onClose, buttonRef, isChatOpen, isSearchActive }: ExpressionMenuInternalProps) {
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Click outside to close
@@ -62,8 +63,8 @@ export function ExpressionMenu({ onExpressionSelect, currentExpression, isExpand
   // Keyboard hotkeys
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Disable all keyboard shortcuts when chat is open
-      if (isChatOpen) {
+      // Disable all keyboard shortcuts when chat or search is open
+      if (isChatOpen || isSearchActive) {
         return;
       }
 
@@ -81,7 +82,7 @@ export function ExpressionMenu({ onExpressionSelect, currentExpression, isExpand
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onExpressionSelect, isChatOpen]);
+  }, [onExpressionSelect, isChatOpen, isSearchActive]);
 
   const handleExpressionClick = (expression: ExpressionName) => {
     onExpressionSelect(expression);
@@ -128,9 +129,8 @@ export function ExpressionMenu({ onExpressionSelect, currentExpression, isExpand
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                <span className="text-xl">{expr.emoji}</span>
-                <span className="text-[10px] text-gray-600 font-medium whitespace-nowrap">{expr.label}</span>
                 <Kbd className="text-[9px] px-1 py-0.5">{expr.hotkey}</Kbd>
+                <span className="text-xl">{expr.emoji}</span>
               </motion.button>
             ))}
           </div>

@@ -91,7 +91,13 @@ export default function AntyV3() {
   const [searchActive, setSearchActive] = useState(false);
   const [searchValue, setSearchValue] = useState('');
   const searchBarRef = useRef<HTMLDivElement>(null);
+  const searchBorderRef = useRef<HTMLDivElement>(null);
+  const searchBorderGradientRef = useRef<HTMLDivElement>(null);
+  const searchPlaceholderRef = useRef<HTMLDivElement>(null);
+  const searchKbdRef = useRef<HTMLDivElement>(null);
+  const searchGlowRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const morphingRef = useRef<boolean>(false);
 
   // Helper function to clear any pending expression reset
   const clearExpressionReset = () => {
@@ -307,21 +313,21 @@ export default function AntyV3() {
           });
         }, 200);
 
-        // Confetti celebration
-        if (antyRef.current?.spawnConfetti) {
-          console.log('[EXCITED] Triggering confetti for excited emotion');
-          createTrackedTimeout(() => {
-            const xOffset = isChatOpen ? -192 : 0;
-            const centerX = window.innerWidth / 2 + xOffset;
-            const centerY = window.innerHeight / 2 - 220;
+        // Confetti celebration (disabled, but capability preserved)
+        // if (antyRef.current?.spawnConfetti) {
+        //   console.log('[EXCITED] Triggering confetti for excited emotion');
+        //   createTrackedTimeout(() => {
+        //     const xOffset = isChatOpen ? -192 : 0;
+        //     const centerX = window.innerWidth / 2 + xOffset;
+        //     const centerY = window.innerHeight / 2 - 220;
 
-            console.log('[EXCITED] Calling spawnConfetti with:', { centerX, centerY });
-            // Large confetti explosion for excited
-            antyRef.current?.spawnConfetti?.(centerX, centerY, 40);
-          }, 300); // Slightly delayed after jump starts
-        } else {
-          console.warn('[EXCITED] No spawnConfetti method available');
-        }
+        //     console.log('[EXCITED] Calling spawnConfetti with:', { centerX, centerY });
+        //     // Large confetti explosion for excited
+        //     antyRef.current?.spawnConfetti?.(centerX, centerY, 40);
+        //   }, 300); // Slightly delayed after jump starts
+        // } else {
+        //   console.warn('[EXCITED] No spawnConfetti method available');
+        // }
 
         scheduleExpressionReset(1350);
         break;
@@ -641,8 +647,8 @@ export default function AntyV3() {
   // Keyboard controls
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Disable all keyboard shortcuts when chat is open
-      if (isChatOpen) {
+      // Disable all keyboard shortcuts when chat or search is open
+      if (isChatOpen || searchActive) {
         return;
       }
 
@@ -680,7 +686,7 @@ export default function AntyV3() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [expression, isChatOpen]);
+  }, [expression, isChatOpen, searchActive]);
 
   // Click outside handler for search mode
   useEffect(() => {
@@ -707,6 +713,25 @@ export default function AntyV3() {
     };
   }, [searchActive]);
 
+  // Command+K to toggle search mode
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Check for Command+K (Mac) or Ctrl+K (Windows/Linux)
+      if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
+        event.preventDefault();
+        if (searchActive) {
+          morphToCharacter();
+          setSearchValue(''); // Clear on exit
+        } else {
+          morphToSearchBar();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [searchActive]);
+
   // Keyboard handlers for search mode
   useEffect(() => {
     if (!searchActive) return;
@@ -731,12 +756,12 @@ export default function AntyV3() {
 
   // Animate the glow with ghostly, randomized movement
   useEffect(() => {
-    // Only animate in idle mode when glow exists
-    if (gameMode !== 'idle' || !glowRef.current) return;
+    // Only animate in idle mode when glow exists and not in search mode
+    if (gameMode !== 'idle' || !glowRef.current || searchActive) return;
 
     const animateGhostly = () => {
-      // Check if we're still in idle mode and glow still exists
-      if (gameMode !== 'idle' || !glowRef.current) return;
+      // Check if we're still in idle mode and glow still exists and not searching
+      if (gameMode !== 'idle' || !glowRef.current || searchActive) return;
 
       // Random parameters for each animation cycle
       const randomY = gsap.utils.random(-8, -16);
@@ -754,7 +779,7 @@ export default function AntyV3() {
         ease: 'sine.inOut',
         onComplete: () => {
           // Check again before return animation
-          if (gameMode !== 'idle' || !glowRef.current) return;
+          if (gameMode !== 'idle' || !glowRef.current || searchActive) return;
 
           // Return to base state with different random values
           const returnDuration = gsap.utils.random(2, 3.2);
@@ -778,7 +803,7 @@ export default function AntyV3() {
         gsap.killTweensOf(glowRef.current);
       }
     };
-  }, [gameMode]);
+  }, [gameMode, searchActive]);
 
   // Cleanup heart timers on unmount
   useEffect(() => {
@@ -814,15 +839,15 @@ export default function AntyV3() {
       setIsSuperMode(true);
       superModeCooldownRef.current = true; // Set cooldown to prevent re-triggering
 
-      // Confetti celebration for super mode
-      if (antyRef.current?.spawnConfetti) {
-        const centerX = window.innerWidth / 2;
-        const centerY = window.innerHeight / 2;
-        console.log('[SUPER MODE] Triggering confetti:', { centerX, centerY });
-        antyRef.current.spawnConfetti(centerX, centerY, 60); // Big celebration
-      } else {
-        console.warn('[SUPER MODE] No spawnConfetti method available');
-      }
+      // Confetti celebration for super mode (disabled, but capability preserved)
+      // if (antyRef.current?.spawnConfetti) {
+      //   const centerX = window.innerWidth / 2;
+      //   const centerY = window.innerHeight / 2;
+      //   console.log('[SUPER MODE] Triggering confetti:', { centerX, centerY });
+      //   antyRef.current.spawnConfetti(centerX, centerY, 60); // Big celebration
+      // } else {
+      //   console.warn('[SUPER MODE] No spawnConfetti method available');
+      // }
 
       // Create the iconic pulsing growth animation
       const superTl = gsap.timeline();
@@ -1162,11 +1187,19 @@ export default function AntyV3() {
 
   // Morph Anty character to search bar
   const morphToSearchBar = () => {
+    // Prevent multiple simultaneous morphs
+    if (morphingRef.current) {
+      console.log('[SEARCH] Already morphing, ignoring');
+      return;
+    }
+
+    morphingRef.current = true;
     console.log('[SEARCH] Opening search mode');
     setSearchActive(true);
 
     const tl = gsap.timeline({
       onComplete: () => {
+        morphingRef.current = false;
         searchInputRef.current?.focus();
       }
     });
@@ -1177,156 +1210,511 @@ export default function AntyV3() {
     const rightEye = antyRef.current?.rightEyeRef?.current;
     const searchBar = searchBarRef.current;
     const shadow = document.getElementById('anty-shadow');
+    const innerGlow = document.querySelector('.inner-glow') as HTMLElement;
+    const outerGlow = glowRef.current;
 
-    console.log('[SEARCH] Elements:', { leftBody: !!leftBody, rightBody: !!rightBody, searchBar: !!searchBar, shadow: !!shadow });
+    console.log('[SEARCH] Elements:', {
+      leftBody: !!leftBody,
+      rightBody: !!rightBody,
+      searchBar: !!searchBar,
+      shadow: !!shadow,
+      innerGlow: !!innerGlow,
+      outerGlow: !!outerGlow
+    });
 
     if (!leftBody || !rightBody || !searchBar) return;
 
-    // STEP 1: Eyes and shadow fade out (150ms) - happens first
-    const fadeTargets = [leftEye, rightEye, shadow].filter(Boolean);
-    console.log('[SEARCH] Fading out', fadeTargets.length, 'elements');
+    // CRITICAL: Kill ALL idle animations including character container
+    const character = leftBody.parentElement; // Get character container
+    if (character) {
+      gsap.killTweensOf(character);
+      // Reset character container transforms to default
+      gsap.set(character, { x: 0, y: 0, rotation: 0, scale: 1 });
+    }
+    gsap.killTweensOf([leftBody, rightBody, shadow]);
+
+    // CRITICAL: Reset bracket positions to 0 before starting
+    gsap.set([leftBody, rightBody], { x: 0, y: 0, scale: 1, rotation: 0 });
+
+    // Kill any ongoing animations on eyes, glows, and shadow to prevent conflicts
+    // Set everything to their starting states immediately
+    if (leftEye) {
+      gsap.killTweensOf(leftEye);
+      gsap.set(leftEye, { opacity: 1 }); // Eyes start visible
+    }
+    if (rightEye) {
+      gsap.killTweensOf(rightEye);
+      gsap.set(rightEye, { opacity: 1 }); // Eyes start visible
+    }
+
+    // Set glows and shadow to 0 immediately (don't animate)
+    if (innerGlow) {
+      gsap.killTweensOf(innerGlow);
+      gsap.set(innerGlow, { opacity: 0 });
+    }
+    if (outerGlow) {
+      gsap.killTweensOf(outerGlow);
+      gsap.set(outerGlow, { opacity: 0 });
+    }
+    if (shadow) {
+      gsap.killTweensOf(shadow);
+      gsap.set(shadow, { opacity: 0, scaleX: 1, scaleY: 1 });
+    }
+
+    // STEP 1: Body halves separate, scale down, move to corners
+    // DYNAMIC CALCULATION: Position brackets to align outer edges with search bar corners
+    const BRACKET_SCALE = 0.14;
+
+    // CRITICAL: Set search bar to final scale (1.0) BEFORE reading position
+    // Otherwise we'll read the position at scale 0.95 and calculations will be wrong
+    gsap.set(searchBar, { scale: 1, opacity: 0 });
+
+    // Get actual search bar position (at final scale)
+    const searchBarRect = searchBar.getBoundingClientRect();
+
+    // Get current bracket sizes (BEFORE scaling)
+    const leftBracketRect = leftBody.getBoundingClientRect();
+    const rightBracketRect = rightBody.getBoundingClientRect();
+
+    const leftBracketSize = leftBracketRect.width;
+    const rightBracketSize = rightBracketRect.width;
+
+    const scaledLeftBracketSize = leftBracketSize * BRACKET_SCALE;
+    const scaledRightBracketSize = rightBracketSize * BRACKET_SCALE;
+
+    // Get CURRENT center positions of brackets (including their inset positioning)
+    // These are viewport-relative positions
+    const leftCurrentCenterX = leftBracketRect.left + (leftBracketRect.width / 2);
+    const leftCurrentCenterY = leftBracketRect.top + (leftBracketRect.height / 2);
+    const rightCurrentCenterX = rightBracketRect.left + (rightBracketRect.width / 2);
+    const rightCurrentCenterY = rightBracketRect.top + (rightBracketRect.height / 2);
+
+    // Calculate target bracket centers (so OUTER EDGES align with search bar)
+    // After scaling to 0.14, the bracket will be scaledBracketSize wide
+    // We want the outer edges to touch the search bar edges
+
+    // Left bracket: outer edges at search bar's top-left
+    // So center should be scaledBracketSize/2 IN from search bar edges
+    const leftTargetCenterX = searchBarRect.left + (scaledLeftBracketSize / 2);
+    const leftTargetCenterY = searchBarRect.top + (scaledLeftBracketSize / 2);
+
+    // Right bracket: outer edges at search bar's bottom-right
+    const rightTargetCenterX = searchBarRect.right - (scaledRightBracketSize / 2);
+    const rightTargetCenterY = searchBarRect.bottom - (scaledRightBracketSize / 2);
+
+    // GSAP transforms are ADDITIVE to current position
+    // But we need to account for scale changing the effective center
+    // When scale changes from 1.0 to 0.14, the center point moves
+    // Calculate transforms to move the SCALED bracket center to target
+    const leftTransformX = leftTargetCenterX - leftCurrentCenterX;
+    const leftTransformY = leftTargetCenterY - leftCurrentCenterY;
+    const rightTransformX = rightTargetCenterX - rightCurrentCenterX;
+    const rightTransformY = rightTargetCenterY - rightCurrentCenterY;
+
+    console.log('[MORPH] v7 - Direct from bracket positions:', {
+      leftBracket: { size: leftBracketSize, scaledSize: scaledLeftBracketSize, currentCenter: { x: leftCurrentCenterX, y: leftCurrentCenterY }, targetCenter: { x: leftTargetCenterX, y: leftTargetCenterY } },
+      rightBracket: { size: rightBracketSize, scaledSize: scaledRightBracketSize, currentCenter: { x: rightCurrentCenterX, y: rightCurrentCenterY }, targetCenter: { x: rightTargetCenterX, y: rightTargetCenterY } },
+      transforms: { left: { x: leftTransformX, y: leftTransformY }, right: { x: rightTransformX, y: rightTransformY } }
+    });
+
+    // Set z-index on character container AND brackets to ensure they're above search bar
+    const characterContainer = leftBody.parentElement;
+    gsap.set(characterContainer, { zIndex: 10 }); // Higher than search bar (zIndex: 2)
+    gsap.set([leftBody, rightBody], {
+      zIndex: 3,
+      transformOrigin: '50% 50%' // Ensure scaling happens from center
+    });
+
+    // Anticipation: slight squash down (80ms)
+    tl.to([leftBody, rightBody], {
+      y: 5,
+      scaleY: 0.92,
+      scaleX: 1.08,
+      duration: 0.08,
+      ease: 'power2.in'
+    }, 0);
+
+    // Eyes fade out during anticipation and move up with the leap
+    const fadeTargets = [leftEye, rightEye].filter(Boolean);
     if (fadeTargets.length > 0) {
       tl.to(fadeTargets, {
         opacity: 0,
+        y: -18, // Move up with the leap
         duration: 0.15,
-        ease: 'power2.in'
+        ease: 'power1.in',
+        overwrite: true
       }, 0);
     }
 
-    // STEP 2: Body halves separate, scale down, move to corners (500ms)
-    // Left half moves to top-left corner of search bar
-    tl.to(leftBody, {
-      x: -321, // Search bar half-width (642/2)
-      y: -34.5, // Search bar half-height (69/2)
-      scale: 0.14, // Scale from ~160px to ~22px
-      rotation: 0, // Lock rotation during morph
-      duration: 0.5,
-      ease: 'power2.inOut'
-    }, 0.15);
-
-    // Right half moves to bottom-right corner
-    tl.to(rightBody, {
-      x: 321,
-      y: 34.5,
-      scale: 0.14,
-      rotation: 0,
-      duration: 0.5,
-      ease: 'power2.inOut'
-    }, 0.15);
-
-    // STEP 3: Search bar fades in (300ms) - overlaps with body movement
-    tl.fromTo(searchBar, {
-      opacity: 0,
-      scale: 0.95
-    }, {
-      opacity: 1,
-      scale: 1,
-      duration: 0.3,
+    // Leap up with stretch (120ms)
+    tl.to([leftBody, rightBody], {
+      y: -25,
+      scaleY: 1.1,
+      scaleX: 0.95,
+      duration: 0.12,
       ease: 'power2.out'
-    }, 0.35);
+    }, 0.08);
 
-    // STEP 4: Large glow appears (400ms in)
+    // Morph out to corners while in the air (350ms)
+    tl.to(leftBody, {
+      x: leftTransformX,
+      y: leftTransformY,
+      scale: BRACKET_SCALE,
+      scaleX: BRACKET_SCALE,
+      scaleY: BRACKET_SCALE,
+      rotation: 0,
+      duration: 0.35,
+      ease: 'power2.inOut',
+      overwrite: 'all'
+    }, 0.2);
+
+    tl.to(rightBody, {
+      x: rightTransformX,
+      y: rightTransformY,
+      scale: BRACKET_SCALE,
+      scaleX: BRACKET_SCALE,
+      scaleY: BRACKET_SCALE,
+      rotation: 0,
+      duration: 0.35,
+      ease: 'power2.inOut',
+      overwrite: 'all'
+    }, 0.2);
+
+    // STEP 3: Search bar fades in (250ms) - during morph
+    // Note: We already set scale to 1 above for position calculation
+    tl.to(searchBar, {
+      opacity: 1,
+      duration: 0.25,
+      ease: 'power1.out'
+    }, 0.2);
+
+    // STEP 3.5: Animated gradient border fades in and starts rotating
+    const searchBorderGradient = searchBorderGradientRef.current;
+    if (searchBorderGradient) {
+      gsap.set(searchBorderGradient, { opacity: 0 });
+
+      tl.to(searchBorderGradient, {
+        opacity: 1,
+        duration: 0.3,
+        ease: 'power1.out'
+      }, 0.45); // Delayed to sync with bracket arrival
+
+      // Start continuous gradient rotation (separate from timeline)
+      tl.call(() => {
+        const rotationAnim = { deg: 0 };
+        gsap.to(rotationAnim, {
+          deg: 360,
+          duration: 4,
+          ease: 'none',
+          repeat: -1,
+          onUpdate: () => {
+            if (searchBorderGradient) {
+              searchBorderGradient.style.background = `linear-gradient(white, white) padding-box, conic-gradient(from ${rotationAnim.deg}deg, #E5EDFF 0%, #C7D2FE 25%, #D8B4FE 50%, #C7D2FE 75%, #E5EDFF 100%) border-box`;
+            }
+          }
+        });
+      }, [], 0.75);
+    }
+
+    // STEP 3.75: Placeholder reveals with subtle blur and upward drift (180ms)
+    const searchPlaceholder = searchPlaceholderRef.current;
+    if (searchPlaceholder) {
+      // Set initial state
+      gsap.set(searchPlaceholder, {
+        opacity: 0,
+        filter: 'blur(6px)',
+        y: 4,
+      });
+
+      tl.to(searchPlaceholder, {
+        opacity: 1,
+        filter: 'blur(0px)',
+        y: 0,
+        duration: 0.18,
+        ease: 'power2.out'
+      }, 0.42); // Start just before border
+    }
+
+    // STEP 3.76: CMD+K indicator reveals with same animation
+    const searchKbd = searchKbdRef.current;
+    if (searchKbd) {
+      // Set initial state
+      gsap.set(searchKbd, {
+        opacity: 0,
+        filter: 'blur(6px)',
+        y: 4,
+      });
+
+      tl.to(searchKbd, {
+        opacity: 1,
+        filter: 'blur(0px)',
+        y: 0,
+        duration: 0.18,
+        ease: 'power2.out'
+      }, 0.42); // Same timing as placeholder
+    }
+
+    // STEP 3.77: AI gradient glow fades in
+    const searchGlow = searchGlowRef.current;
+    if (searchGlow) {
+      gsap.set(searchGlow, { opacity: 0, scale: 0.95 });
+
+      // Fade in
+      tl.to(searchGlow, {
+        opacity: 1,
+        scale: 1,
+        duration: 0.4,
+        ease: 'power2.out'
+      }, 0.45); // Sync with border
+
+      // Start continuous breathing animation separately (not on timeline)
+      tl.call(() => {
+        gsap.to(searchGlow, {
+          scale: 1.12,
+          opacity: 0.7,
+          duration: 2,
+          ease: 'sine.inOut',
+          repeat: -1,
+          yoyo: true
+        });
+      }, [], 0.85);
+    }
+
+    // STEP 4: Large glow appears (mid-morph)
     tl.call(() => {
       antyRef.current?.showSearchGlow?.();
-    }, [], 0.4);
+    }, [], 0.25);
   };
 
   // Morph search bar back to Anty character
   const morphToCharacter = () => {
-    setSearchActive(false);
+    // Prevent multiple simultaneous morphs
+    if (morphingRef.current) {
+      console.log('[SEARCH] Already morphing, ignoring close');
+      return;
+    }
 
-    const tl = gsap.timeline();
+    morphingRef.current = true;
+    // DON'T set searchActive(false) yet - wait until animation completes
+    // Otherwise idle animation will start during the morph and interfere
+
+    const tl = gsap.timeline({
+      onComplete: () => {
+        morphingRef.current = false;
+        // NOW set searchActive to false so idle animation can start
+        setSearchActive(false);
+      }
+    });
 
     const leftBody = antyRef.current?.leftBodyRef?.current;
     const rightBody = antyRef.current?.rightBodyRef?.current;
     const leftEye = antyRef.current?.leftEyeRef?.current;
     const rightEye = antyRef.current?.rightEyeRef?.current;
     const searchBar = searchBarRef.current;
+    const searchBorder = searchBorderRef.current;
     const shadow = document.getElementById('anty-shadow');
+    const innerGlow = document.querySelector('.inner-glow') as HTMLElement;
+    const outerGlow = glowRef.current;
 
     if (!leftBody || !rightBody || !searchBar) return;
 
-    // STEP 1: Search bar fades out (200ms)
+    // Kill any ongoing animations on ALL elements to ensure clean close
+    const character = leftBody.parentElement;
+    if (character) {
+      gsap.killTweensOf(character);
+    }
+    gsap.killTweensOf([leftBody, rightBody, searchBar]);
+
+    // Set starting states for close animation
+    if (leftEye) {
+      gsap.killTweensOf(leftEye);
+      gsap.set(leftEye, { opacity: 0 }); // Eyes start hidden (keep current y position from opening)
+    }
+    if (rightEye) {
+      gsap.killTweensOf(rightEye);
+      gsap.set(rightEye, { opacity: 0 }); // Eyes start hidden (keep current y position from opening)
+    }
+    if (shadow) {
+      gsap.killTweensOf(shadow);
+      gsap.set(shadow, { opacity: 0, scaleX: 1, scaleY: 1 }); // Shadow starts hidden
+    }
+    if (innerGlow) {
+      gsap.killTweensOf(innerGlow);
+      gsap.set(innerGlow, { opacity: 0 }); // Glows start hidden
+    }
+    if (outerGlow) {
+      gsap.killTweensOf(outerGlow);
+      gsap.set(outerGlow, { opacity: 0 }); // Glows start hidden
+    }
+    const searchBorderGradient = searchBorderGradientRef.current;
+    if (searchBorderGradient) {
+      gsap.killTweensOf(searchBorderGradient);
+      gsap.set(searchBorderGradient, { opacity: 0 }); // Reset border gradient
+    }
+    const searchPlaceholder = searchPlaceholderRef.current;
+    if (searchPlaceholder) {
+      gsap.killTweensOf(searchPlaceholder);
+      gsap.set(searchPlaceholder, { opacity: 0 }); // Reset placeholder
+    }
+    const searchKbd = searchKbdRef.current;
+    if (searchKbd) {
+      gsap.killTweensOf(searchKbd);
+      gsap.set(searchKbd, { opacity: 0 }); // Reset kbd
+    }
+    const searchGlow = searchGlowRef.current;
+    if (searchGlow) {
+      gsap.killTweensOf(searchGlow);
+      gsap.set(searchGlow, { opacity: 0, scale: 1 }); // Reset glow
+    }
+
+    // STEP 0.5: Anticipation - slight scale up before closing (100ms)
     tl.to(searchBar, {
-      opacity: 0,
-      scale: 0.95,
-      duration: 0.2,
-      ease: 'power2.in'
+      scale: 1.05,
+      duration: 0.1,
+      ease: 'power1.out'
     }, 0);
 
-    // STEP 2: Glow hides (immediately)
+    // STEP 1: Search bar fades out (250ms)
+    tl.to(searchBar, {
+      opacity: 0,
+      scale: 0.93,
+      duration: 0.25,
+      ease: 'power2.in'
+    }, 0.1);
+
+    // STEP 1.5: Search glow crossfades with orb glows (longer fade out for smooth transition)
+    if (searchGlow) {
+      tl.to(searchGlow, {
+        opacity: 0,
+        scale: 0.85,
+        duration: 0.4,
+        ease: 'power1.out'
+      }, 0.15); // Start fading at 150ms, completes at 550ms (big overlap with orbs at 350ms)
+    }
+
+    // STEP 2: Hide search glow canvas effect
     tl.call(() => {
       antyRef.current?.hideSearchGlow?.();
     }, [], 0);
 
-    // STEP 3: Halves return to center and scale up (500ms)
+    // STEP 3: Halves return to center and scale up with tiny leap
+    // Also clear z-index from character container
+    const characterContainer = leftBody.parentElement;
+    if (characterContainer) {
+      gsap.set(characterContainer, { clearProps: 'zIndex' });
+    }
+
+    // Snap back to center with upward leap (280ms)
     tl.to([leftBody, rightBody], {
       x: 0,
-      y: 0,
+      y: -25,
       scale: 1,
-      duration: 0.5,
-      ease: 'back.out(1.7)' // Bouncy return
-    }, 0.15);
+      scaleX: 0.95,
+      scaleY: 1.1,
+      duration: 0.28,
+      ease: 'power2.out',
+      clearProps: 'zIndex'
+    }, 0.2);
 
-    // STEP 4: Eyes and shadow fade back in (200ms)
-    // Animate eyes separately from shadow (different opacity values)
+    // Settle down to rest (180ms)
+    tl.to([leftBody, rightBody], {
+      y: 0,
+      scaleX: 1,
+      scaleY: 1,
+      duration: 0.18,
+      ease: 'power2.in'
+    }, 0.46);
+
+    // Eyes fade in and move down WITH the body settle to look attached
     if (leftEye && rightEye) {
+      // Set starting position at the same height as the leap
+      gsap.set([leftEye, rightEye], { y: -18 });
+
       tl.to([leftEye, rightEye], {
         opacity: 1,
-        duration: 0.2,
-        ease: 'power2.out'
-      }, 0.5);
+        y: 0, // Move down to normal position
+        duration: 0.18, // Same duration as body settle
+        ease: 'power2.in' // Same easing as body settle
+      }, 0.46); // Start when body starts settling
     }
+
     if (shadow) {
       tl.to(shadow, {
         opacity: 0.7,
-        duration: 0.2,
-        ease: 'power2.out'
-      }, 0.5);
+        scaleX: 1,
+        scaleY: 1,
+        duration: 0.22,
+        ease: 'power1.out'
+      }, 0.6); // Delayed more
     }
+
+    const orbTargets = [innerGlow, outerGlow].filter(Boolean);
+    if (orbTargets.length > 0) {
+      tl.to(orbTargets, {
+        opacity: 1,
+        duration: 0.3, // Slower fade
+        ease: 'power1.out'
+      }, 0.35);
+    }
+
+    // CRITICAL: Force final states when timeline completes to ensure idle state is correct
+    tl.call(() => {
+      if (leftEye) gsap.set(leftEye, { opacity: 1, y: 0 });
+      if (rightEye) gsap.set(rightEye, { opacity: 1, y: 0 });
+      if (shadow) gsap.set(shadow, { opacity: 0.7, scaleX: 1, scaleY: 1 });
+      if (innerGlow) gsap.set(innerGlow, { opacity: 1 });
+      if (outerGlow) gsap.set(outerGlow, { opacity: 1 });
+      gsap.set([leftBody, rightBody], { x: 0, y: 0, scale: 1, rotation: 0, scaleX: 1, scaleY: 1 });
+    }, [], 0.61);
   };
 
   const handleButtonClick = (button: ButtonName) => {
     const characterElement = characterRef.current;
     if (!characterElement) return;
 
-    // Kill any existing animations and clear pending timers to prevent animation stacking
-    gsap.killTweensOf(characterElement);
-    clearExpressionReset();
-    if (animationTimerRef.current) {
-      clearTimeout(animationTimerRef.current);
-      animationTimerRef.current = null;
-    }
+    // Special handling for search button - don't reset eyes if closing search
+    // Let morphToCharacter handle the animation
+    const isClosingSearch = button === 'search' && searchActive;
 
-    // Reset eyes to idle position if they're stuck in look-left/look-right
-    if (antyRef.current?.leftEyeRef?.current && antyRef.current?.rightEyeRef?.current) {
-      const leftEye = antyRef.current.leftEyeRef.current;
-      const rightEye = antyRef.current.rightEyeRef.current;
-      const leftPath = antyRef.current.leftEyePathRef?.current;
-      const rightPath = antyRef.current.rightEyePathRef?.current;
-
-      // Kill any ongoing eye animations
-      gsap.killTweensOf([leftEye, rightEye]);
-      if (leftPath && rightPath) {
-        gsap.killTweensOf([leftPath, rightPath]);
+    if (!isClosingSearch) {
+      // Kill any existing animations and clear pending timers to prevent animation stacking
+      gsap.killTweensOf(characterElement);
+      clearExpressionReset();
+      if (animationTimerRef.current) {
+        clearTimeout(animationTimerRef.current);
+        animationTimerRef.current = null;
       }
 
-      // Reset eyes to idle state
-      gsap.set([leftEye, rightEye], {
-        height: 44.52, // IDLE_HEIGHT
-        width: 18.63,  // IDLE_WIDTH
-        scaleY: 1,
-        scaleX: 1,
-        x: 0,
-        y: 0,
-      });
+      // Reset eyes to idle position if they're stuck in look-left/look-right
+      if (antyRef.current?.leftEyeRef?.current && antyRef.current?.rightEyeRef?.current) {
+        const leftEye = antyRef.current.leftEyeRef.current;
+        const rightEye = antyRef.current.rightEyeRef.current;
+        const leftPath = antyRef.current.leftEyePathRef?.current;
+        const rightPath = antyRef.current.rightEyePathRef?.current;
 
-      // Reset SVG paths to idle shape
-      if (leftPath && rightPath) {
-        const IDLE_PATH = "M1.15413e-10 11.6436C-2.8214e-05 5.21301 5.21305 -5.88744e-05 11.6437 5.01528e-10C18.0742 5.88744e-05 23.2872 5.21305 23.2872 11.6436V44.0092C23.2872 50.4398 18.0742 55.6528 11.6437 55.6528C5.21315 55.6528 0.000170216 50.4398 0.000142003 44.0093L1.15413e-10 11.6436Z";
-        gsap.set([leftPath, rightPath], {
-          attr: { d: IDLE_PATH }
+        // Kill any ongoing eye animations
+        gsap.killTweensOf([leftEye, rightEye]);
+        if (leftPath && rightPath) {
+          gsap.killTweensOf([leftPath, rightPath]);
+        }
+
+        // Reset eyes to idle state
+        gsap.set([leftEye, rightEye], {
+          height: 44.52, // IDLE_HEIGHT
+          width: 18.63,  // IDLE_WIDTH
+          scaleY: 1,
+          scaleX: 1,
+          x: 0,
+          y: 0,
         });
+
+        // Reset SVG paths to idle shape
+        if (leftPath && rightPath) {
+          const IDLE_PATH = "M1.15413e-10 11.6436C-2.8214e-05 5.21301 5.21305 -5.88744e-05 11.6437 5.01528e-10C18.0742 5.88744e-05 23.2872 5.21305 23.2872 11.6436V44.0092C23.2872 50.4398 18.0742 55.6528 11.6437 55.6528C5.21315 55.6528 0.000170216 50.4398 0.000142003 44.0093L1.15413e-10 11.6436Z";
+          gsap.set([leftPath, rightPath], {
+            attr: { d: IDLE_PATH }
+          });
+        }
       }
     }
 
@@ -1440,8 +1828,12 @@ export default function AntyV3() {
         break;
 
       case 'search':
-        // Trigger search mode morph animation
-        morphToSearchBar();
+        // Toggle search mode - if already open, close it (same as ESC)
+        if (searchActive) {
+          morphToCharacter();
+        } else {
+          morphToSearchBar();
+        }
         break;
     }
   };
@@ -1453,7 +1845,7 @@ export default function AntyV3() {
         <>
           <HeartMeter hearts={hearts} earnedHearts={earnedHearts} isOff={expression === 'off'} />
 
-          <div className="flex-1 flex items-center justify-center pb-12 relative">
+          <div className="flex-1 flex items-center justify-center pb-12 relative" style={{ paddingTop: '50px' }}>
             <div
               style={{
                 position: 'relative',
@@ -1534,6 +1926,11 @@ export default function AntyV3() {
                   onChange={setSearchValue}
                   inputRef={searchInputRef}
                   barRef={searchBarRef}
+                  borderRef={searchBorderRef}
+                  borderGradientRef={searchBorderGradientRef}
+                  placeholderRef={searchPlaceholderRef}
+                  kbdRef={searchKbdRef}
+                  glowRef={searchGlowRef}
                 />
               </div>
 
@@ -1567,6 +1964,7 @@ export default function AntyV3() {
         onClose={() => setIsExpressionMenuExpanded(false)}
         buttonRef={moodsButtonRef}
         isChatOpen={isChatOpen}
+        isSearchActive={searchActive}
         onExpressionSelect={(expr) => {
           // Clear any pending expression reset from previous states
           clearExpressionReset();
@@ -2277,19 +2675,19 @@ export default function AntyV3() {
               });
             }, 200);
 
-            // Confetti celebration
-            if (antyRef.current?.spawnConfetti) {
-              console.log('[EXCITED MENU] Triggering confetti from expression menu');
-              createTrackedTimeout(() => {
-                const centerX = window.innerWidth / 2;
-                const centerY = window.innerHeight / 2 - 220;
+            // Confetti celebration (disabled, but capability preserved)
+            // if (antyRef.current?.spawnConfetti) {
+            //   console.log('[EXCITED MENU] Triggering confetti from expression menu');
+            //   createTrackedTimeout(() => {
+            //     const centerX = window.innerWidth / 2;
+            //     const centerY = window.innerHeight / 2 - 220;
 
-                console.log('[EXCITED MENU] Calling spawnConfetti with:', { centerX, centerY });
-                antyRef.current?.spawnConfetti?.(centerX, centerY, 40);
-              }, 300);
-            } else {
-              console.warn('[EXCITED MENU] No spawnConfetti method available');
-            }
+            //     console.log('[EXCITED MENU] Calling spawnConfetti with:', { centerX, centerY });
+            //     antyRef.current?.spawnConfetti?.(centerX, centerY, 40);
+            //   }, 300);
+            // } else {
+            //   console.warn('[EXCITED MENU] No spawnConfetti method available');
+            // }
           }
 
           // Trigger shocked animation - MORE DRAMATIC!

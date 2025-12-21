@@ -485,7 +485,7 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
         tl.kill();
       };
     },
-    { scope: containerRef, dependencies: [isOff] }
+    { scope: containerRef, dependencies: [isOff, searchMode] }
   );
 
   // Track current expression in a ref to avoid recreating the scheduler
@@ -493,6 +493,12 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
   useEffect(() => {
     currentExpressionRef.current = expression;
   }, [expression]);
+
+  // Track searchMode in a ref to avoid recreating the scheduler
+  const searchModeRef = useRef(searchMode);
+  useEffect(() => {
+    searchModeRef.current = searchMode;
+  }, [searchMode]);
 
   // Store callbacks in refs to prevent scheduler recreation
   const performBlinkRef = useRef(performBlink);
@@ -519,9 +525,9 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
         gsap.delayedCall(delay, () => {
           if (!isActive) return;
 
-          // Only trigger behaviors when in idle state (check ref, not prop)
-          if (currentExpressionRef.current !== 'idle') {
-            // If not idle, wait another full delay period before checking again
+          // Only trigger behaviors when in idle state AND not in search mode
+          if (currentExpressionRef.current !== 'idle' || searchModeRef.current) {
+            // If not idle or in search mode, wait another full delay period before checking again
             scheduleRandomBehavior();
             return;
           }
