@@ -1265,10 +1265,17 @@ export default function AntyV3() {
     }, 0.15);
 
     // STEP 4: Eyes and shadow fade back in (200ms)
-    const showTargets = [leftEye, rightEye, shadow].filter(Boolean);
-    if (showTargets.length > 0) {
-      tl.to(showTargets, {
-        opacity: shadow ? 0.7 : 1, // Shadow uses 0.7 opacity
+    // Animate eyes separately from shadow (different opacity values)
+    if (leftEye && rightEye) {
+      tl.to([leftEye, rightEye], {
+        opacity: 1,
+        duration: 0.2,
+        ease: 'power2.out'
+      }, 0.5);
+    }
+    if (shadow) {
+      tl.to(shadow, {
+        opacity: 0.7,
         duration: 0.2,
         ease: 'power2.out'
       }, 0.5);
