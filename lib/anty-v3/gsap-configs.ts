@@ -27,7 +27,7 @@ export const idleAnimationConfig = {
   /** Breathing scale animation */
   breathe: {
     scaleMin: 1.0,
-    scaleMax: 1.02, // subtle breathing - matches legacy system
+    scaleMax: 1.0, // NO scale breathing for character - only shadow should scale
     duration: 2.5, // seconds - matches legacy system
     ease: 'sine.inOut',
   },

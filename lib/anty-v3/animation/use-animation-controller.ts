@@ -312,7 +312,7 @@ export function useAnimationController(
     // Power-off sequence (ON → OFF)
     if (!wasOff && isNowOff) {
       if (enableLogging) {
-        console.log('[useAnimationController] Power-off sequence: ON → OFF');
+        console.log('[useAnimationController] Power-off sequence: ON → OFF - CALLING POWER-OFF ANIMATION');
       }
 
       // Kill all animations
@@ -321,6 +321,37 @@ export function useAnimationController(
         idleTimelineRef.current = null;
       }
       controllerRef.current.killAll();
+
+      // CRITICAL FIX: Actually call the power-off animation!
+      const shadow = document.getElementById('anty-shadow');
+      if (elements.character && shadow) {
+        // Get glow elements
+        const innerGlow = document.querySelector('.inner-glow') as HTMLElement;
+        const glowElements = document.querySelectorAll('[class*="glow"]');
+        const outerGlow = Array.from(glowElements).find(el => !el.classList.contains('inner-glow')) as HTMLElement;
+
+        // Import the power-off animation function
+        const { createPowerOffAnimation } = require('@/lib/anty-v3/animation/definitions/transitions');
+
+        // Create and play power-off timeline
+        const powerOffTl = createPowerOffAnimation({
+          character: elements.character,
+          shadow: shadow,
+          innerGlow: innerGlow,
+          outerGlow: outerGlow,
+        });
+
+        powerOffTl.play();
+
+        if (enableLogging) {
+          console.log('[useAnimationController] Power-off animation started');
+        }
+      } else {
+        console.error('[useAnimationController] Power-off failed - missing elements', {
+          hasCharacter: !!elements.character,
+          hasShadow: !!shadow
+        });
+      }
     }
   }, [isOff, enableLogging]);
 
