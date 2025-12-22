@@ -7,6 +7,7 @@ import { AntySearchBar } from '@/components/anty-v3/anty-search-bar';
 import { ChatPanel } from '@/components/anty-chat';
 import type { ExpressionName } from '@/lib/anty-v3/animation-state';
 import type { AntyStats } from '@/lib/anty-v3/stat-system';
+import { USE_NEW_ANIMATION_CONTROLLER } from '@/lib/anty-v3/animation/feature-flags';
 
 export default function AntyV3() {
   // Add CSS animation for super mode hue shift
@@ -227,6 +228,25 @@ export default function AntyV3() {
     }
     lastAnimationTimeRef.current = now;
 
+    // Feature flag: Try new animation controller first
+    if (USE_NEW_ANIMATION_CONTROLLER && antyRef.current?.playEmotion) {
+      console.log('[ANIMATION] Using new controller for emotion:', expr);
+      const success = antyRef.current.playEmotion(expr, { isChatOpen });
+      if (success) {
+        // Update expression state for facial expressions
+        setExpression(expr);
+        console.log('[ANIMATION] New controller handled emotion successfully');
+        return;
+      } else {
+        console.log('[ANIMATION] New controller declined, falling back to legacy GSAP');
+      }
+    } else if (USE_NEW_ANIMATION_CONTROLLER) {
+      console.log('[ANIMATION] New controller enabled but playEmotion not available, using legacy');
+    } else {
+      console.log('[ANIMATION] Using legacy GSAP animation system');
+    }
+
+    // Legacy GSAP animation code below
     // Memory leak fix: Clear all previous animations before starting new ones
     clearExpressionReset();
     clearAllSparkles();
@@ -2045,6 +2065,18 @@ export default function AntyV3() {
   return (
     <div className="bg-white min-h-screen flex flex-col relative">
       <FPSMeter />
+
+      {/* Animation System Indicator - Development Only */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className={`fixed bottom-4 left-4 px-3 py-1.5 rounded-md text-xs font-medium opacity-70 z-50 ${
+          USE_NEW_ANIMATION_CONTROLLER
+            ? 'bg-green-100 text-green-700 border border-green-300'
+            : 'bg-blue-100 text-blue-700 border border-blue-300'
+        }`}>
+          {USE_NEW_ANIMATION_CONTROLLER ? 'NEW ANIMATION SYSTEM' : 'LEGACY ANIMATION SYSTEM'}
+        </div>
+      )}
+
       {gameMode === 'idle' ? (
         <>
           <HeartMeter hearts={hearts} earnedHearts={earnedHearts} isOff={expression === 'off'} />
@@ -2061,7 +2093,7 @@ export default function AntyV3() {
             >
               {/* Floating glow behind Anty - Layer 1 (inner, more saturated) */}
               <div
-                className="inner-glow absolute left-1/2 -translate-x-1/2"
+                className="inner-glow absolute left-1/2 -translate-x-1/2 -translate-y-1/2"
                 style={{
                   top: '80px',
                   width: '120px',
@@ -2070,7 +2102,6 @@ export default function AntyV3() {
                   opacity: 1,
                   background: 'linear-gradient(90deg, #C5D4FF 0%, #E0C5FF 100%)',
                   filter: 'blur(25px)',
-                  transform: 'translate(-50%, -50%)',
                   transformOrigin: 'center center',
                   pointerEvents: 'none',
                   zIndex: 0,
@@ -2097,7 +2128,7 @@ export default function AntyV3() {
               {/* Floating glow behind Anty - Layer 2 (outer, softer) */}
               <div
                 ref={glowRef}
-                className="absolute left-1/2 -translate-x-1/2"
+                className="absolute left-1/2 -translate-x-1/2 -translate-y-1/2"
                 style={{
                   top: '80px',
                   width: '170px',
@@ -2106,7 +2137,6 @@ export default function AntyV3() {
                   opacity: 1,
                   background: 'linear-gradient(90deg, #D5E2FF 0%, #EED5FF 100%)',
                   filter: 'blur(45px)',
-                  transform: 'translate(-50%, -50%)',
                   transformOrigin: 'center center',
                   pointerEvents: 'none',
                   zIndex: 0,

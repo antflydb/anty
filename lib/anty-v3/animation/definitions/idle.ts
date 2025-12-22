@@ -1,0 +1,80 @@
+/**
+ * Idle Animation Definitions
+ * Pure functions that create GSAP timelines for idle/breathing animations
+ */
+
+import gsap from 'gsap';
+import { idleAnimationConfig } from '../../gsap-configs';
+
+export interface IdleAnimationElements {
+  character: HTMLElement;
+  shadow: HTMLElement;
+}
+
+export interface IdleAnimationOptions {
+  /** Delay before starting animation (seconds) */
+  delay?: number;
+}
+
+/**
+ * Creates the idle breathing animation timeline
+ *
+ * Coordinates three synchronized animations:
+ * 1. Vertical floating (up/down motion)
+ * 2. Gentle rotation (synchronized with float)
+ * 3. Breathing scale (subtle size changes)
+ *
+ * Shadow inversely follows character movement (shrinks when character floats up)
+ *
+ * @param elements - Character and shadow DOM elements
+ * @param options - Optional delay configuration
+ * @returns GSAP timeline with infinite repeat
+ */
+export function createIdleAnimation(
+  elements: IdleAnimationElements,
+  options: IdleAnimationOptions = {}
+): gsap.core.Timeline {
+  const { character, shadow } = elements;
+  const { delay = 0.2 } = options;
+
+  const { float, rotation, breathe } = idleAnimationConfig;
+
+  // Create coordinated timeline with infinite repeat
+  const timeline = gsap.timeline({
+    repeat: -1,
+    yoyo: true,
+    delay,
+  });
+
+  // Character floats up with rotation and breathing
+  timeline.to(
+    character,
+    {
+      y: -float.amplitude, // Float up by amplitude (default: 12px)
+      rotation: rotation.degrees, // Gentle rotation (default: 2.5°)
+      scale: breathe.scaleMax, // Subtle breathing (default: 1.02)
+      duration: float.duration, // Smooth timing (default: 2.5s)
+      ease: float.ease, // Sine easing for smoothness
+    },
+    0 // Start at timeline beginning
+  );
+
+  // Shadow inversely follows character
+  // - Stays fixed on ground (no Y movement)
+  // - Only opacity and scale change
+  // - Shrinks and fades when character floats up
+  timeline.to(
+    shadow,
+    {
+      xPercent: -50, // Keep centered (static positioning)
+      scaleX: 0.7, // Shrink horizontally when character is up
+      scaleY: 0.55, // Shrink vertically when character is up
+      opacity: 0.2, // Fade when character is far
+      duration: float.duration,
+      ease: float.ease,
+    },
+    0 // Synchronized with character movement
+  );
+
+  return timeline;
+}

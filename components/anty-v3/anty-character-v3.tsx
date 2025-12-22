@@ -13,6 +13,13 @@ import { type AntyStats } from '@/lib/anty-v3/stat-system';
 import { AntyExpressionLayer } from './anty-expression-layer';
 import { AntyParticleCanvas, type ParticleCanvasHandle } from './anty-particle-canvas';
 import { useEyeAnimations } from '@/lib/anty-v3/use-eye-animations';
+import { useAnimationController } from '@/lib/anty-v3/animation/use-animation-controller';
+import { type EmotionType } from '@/lib/anty-v3/animation/types';
+import {
+  USE_NEW_ANIMATION_CONTROLLER,
+  ENABLE_ANIMATION_DEBUG_LOGS,
+  logAnimationEvent,
+} from '@/lib/anty-v3/animation/feature-flags';
 
 // Register GSAP plugin
 gsap.registerPlugin(useGSAP);
@@ -56,6 +63,7 @@ export interface AntyCharacterHandle {
   spawnConfetti?: (x: number, y: number, count?: number) => void;
   showSearchGlow?: () => void;
   hideSearchGlow?: () => void;
+  playEmotion?: (emotion: ExpressionName, options?: { isChatOpen?: boolean }) => boolean;
   leftBodyRef?: React.RefObject<HTMLDivElement | null>;
   rightBodyRef?: React.RefObject<HTMLDivElement | null>;
   leftEyeRef?: React.RefObject<HTMLDivElement | null>;
@@ -115,6 +123,68 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
     expression,
     isOff,
   });
+
+  // ============================================================================
+  // NEW ANIMATION CONTROLLER (Feature-Flagged)
+  // ============================================================================
+  // Note: Shadow element is in parent (page.tsx) with id="anty-shadow"
+  // We'll get it via DOM query since it's outside this component
+  const shadowElement = typeof document !== 'undefined' ? document.getElementById('anty-shadow') : null;
+
+  const animationController = useAnimationController(
+    {
+      container: containerRef.current,
+      character: characterRef.current,
+      shadow: shadowElement,
+      eyeLeft: leftEyeRef.current,
+      eyeRight: rightEyeRef.current,
+      // Note: leftEyePathRef and rightEyePathRef are SVG paths, not used by controller yet
+    },
+    {
+      enableLogging: ENABLE_ANIMATION_DEBUG_LOGS,
+      enableQueue: true,
+      maxQueueSize: 10,
+      defaultPriority: 2,
+      isOff,
+      searchMode,
+      autoStartIdle: USE_NEW_ANIMATION_CONTROLLER, // Only auto-start if new controller is enabled
+      onStateChange: (from, to) => {
+        if (ENABLE_ANIMATION_DEBUG_LOGS) {
+          logAnimationEvent('State Change', { from, to });
+        }
+      },
+    }
+  );
+
+  // Log controller initialization status
+  useEffect(() => {
+    if (ENABLE_ANIMATION_DEBUG_LOGS) {
+      logAnimationEvent('Controller Initialization', {
+        isReady: animationController.isReady,
+        currentState: animationController.getState(),
+        useNewController: USE_NEW_ANIMATION_CONTROLLER,
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [animationController.isReady]);
+
+  // Log when controller state changes based on props
+  useEffect(() => {
+    if (!ENABLE_ANIMATION_DEBUG_LOGS || !USE_NEW_ANIMATION_CONTROLLER) return;
+
+    logAnimationEvent('Props Changed', {
+      expression,
+      isOff,
+      searchMode,
+      controllerState: animationController.getState(),
+      controllerEmotion: animationController.getEmotion(),
+      isIdle: animationController.isIdle(),
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [expression, isOff, searchMode]);
+  // ============================================================================
+  // END NEW ANIMATION CONTROLLER
+  // ============================================================================
 
   // Wink behavior - show wink expression with subtle motion and particle burst
   const performWink = useCallback(() => {
@@ -383,11 +453,45 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
         canvasRef.current.hideSearchGlow();
       }
     },
+    playEmotion: (emotion: ExpressionName, options?: { isChatOpen?: boolean }) => {
+      // If new controller is enabled, use it
+      if (USE_NEW_ANIMATION_CONTROLLER && animationController.isReady) {
+        if (ENABLE_ANIMATION_DEBUG_LOGS) {
+          logAnimationEvent('playEmotion called via handle', { emotion, options });
+        }
+        // Map ExpressionName to EmotionType
+        // Only pass through emotions that are valid for the controller
+        const validEmotions: Record<string, EmotionType> = {
+          'happy': 'happy',
+          'excited': 'excited',
+          'sad': 'sad',
+          'angry': 'angry',
+          'shocked': 'shocked',
+          'spin': 'spin',
+        };
+
+        const emotionType = validEmotions[emotion];
+        if (emotionType) {
+          return animationController.playEmotion(emotionType, { priority: options?.isChatOpen ? 3 : 2 });
+        }
+
+        if (ENABLE_ANIMATION_DEBUG_LOGS) {
+          console.log('[NEW CONTROLLER] Emotion not supported:', emotion);
+        }
+        return false;
+      }
+
+      // Legacy fallback - just return false for now
+      if (ENABLE_ANIMATION_DEBUG_LOGS) {
+        console.log('[LEGACY] playEmotion not implemented in legacy system:', emotion);
+      }
+      return false;
+    },
     leftEyeRef,
     rightEyeRef,
     leftEyePathRef,
     rightEyePathRef,
-  }), [size]);
+  }), [size, animationController]);
 
   // Update expression when prop changes and trigger state-based animations
   // Note: GSAP-based eye animations (shocked, idea) are now handled in useEyeAnimations hook
@@ -441,8 +545,17 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
   }, [isSuperMode]);
 
   // Setup idle animations using GSAP (disabled when OFF)
+  // LEGACY SYSTEM: Only runs when USE_NEW_ANIMATION_CONTROLLER is false
   useGSAP(
     () => {
+      // Skip if new controller is enabled
+      if (USE_NEW_ANIMATION_CONTROLLER) {
+        if (ENABLE_ANIMATION_DEBUG_LOGS) {
+          console.log('[LEGACY IDLE] Skipping - new controller is enabled');
+        }
+        return;
+      }
+
       const character = characterRef.current;
       const shadow = document.getElementById('anty-shadow');
       if (!character || !shadow) return;
@@ -463,7 +576,7 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
 
       // Don't animate when in search mode - character is being morphed
       if (searchMode) {
-        console.log('[IDLE] Disabling idle animation - search mode active');
+        console.log('[LEGACY IDLE] Disabling idle animation - search mode active');
         gsap.killTweensOf([character, shadow]);
         return;
       }
@@ -472,7 +585,7 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
       // The wake-up animation in page.tsx will handle everything, and idle will restart
       // when this hook re-runs after wake-up completes (when expression changes to 'idle')
       if (isWakingUp) {
-        console.log('[IDLE] Skipping idle animation - wake-up in progress');
+        console.log('[LEGACY IDLE] Skipping idle animation - wake-up in progress');
         return;
       }
 
@@ -482,6 +595,8 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
       // Conditional delay: short on initial load, longer after wake-up
       const idleStartDelay = hasCompletedFirstAnimation.current ? 0.65 : 0.2;
       hasCompletedFirstAnimation.current = true; // Mark that animation has started
+
+      console.log('[LEGACY IDLE] Starting idle animation with delay:', idleStartDelay);
 
       // Smooth continuous floating with rotation and breathing
       // Using a single coordinated timeline for smoothness
@@ -515,7 +630,7 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
         tl.kill();
       };
     },
-    { scope: containerRef, dependencies: [isOff, searchMode] }
+    { scope: containerRef, dependencies: [isOff, searchMode, expression] }
   );
 
   // Track current expression in a ref to avoid recreating the scheduler
