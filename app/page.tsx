@@ -102,9 +102,12 @@ export default function AntyV3() {
   // Debug mode - shows boundary boxes around all elements
   const [debugMode, setDebugMode] = useState(false);
 
-  // Debug mode keyboard shortcut (D key)
+  // Debug mode keyboard shortcut (D key) - disabled in chat/search mode
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
+      // Disable D key in chat or search mode
+      if (isChatOpen || searchActive) return;
+
       if (e.key === 'd' || e.key === 'D') {
         setDebugMode(prev => !prev);
         console.log('[DEBUG MODE]', !debugMode ? 'ENABLED' : 'DISABLED');
@@ -112,7 +115,7 @@ export default function AntyV3() {
     };
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [debugMode]);
+  }, [debugMode, isChatOpen, searchActive]);
 
   // Sync debug boxes with element positions in real-time
   useEffect(() => {
@@ -278,6 +281,19 @@ export default function AntyV3() {
         excitedTl.to(char, { y: -18, duration: 0.15, ease: 'power2.out' });
         excitedTl.to(char, { y: 0, duration: 0.15, ease: 'power2.in' });
 
+        // Glows follow with 75% distance and 0.05s lag
+        const innerGlow = document.querySelector('.inner-glow') as HTMLElement;
+        const outerGlow = glowRef.current;
+        if (innerGlow && outerGlow) {
+          excitedTl.to([innerGlow, outerGlow], { y: -53, duration: 0.5, ease: 'power2.out' }, '-=0.45'); // 75% of -70, 0.05s lag
+          excitedTl.to([innerGlow, outerGlow], { y: -53, duration: 0.3 }, '-=0.25'); // Hold at apex, 0.05s lag
+          excitedTl.to([innerGlow, outerGlow], { y: 0, duration: 0.45, ease: 'power1.inOut' }, '-=0.40'); // Drop down, 0.05s lag
+          excitedTl.to([innerGlow, outerGlow], { y: -19, duration: 0.18, ease: 'power2.out' }, '-=0.13'); // 75% of -25, 0.05s lag
+          excitedTl.to([innerGlow, outerGlow], { y: 0, duration: 0.18, ease: 'power2.in' }, '-=0.13'); // Drop, 0.05s lag
+          excitedTl.to([innerGlow, outerGlow], { y: -14, duration: 0.15, ease: 'power2.out' }, '-=0.10'); // 75% of -18, 0.05s lag
+          excitedTl.to([innerGlow, outerGlow], { y: 0, duration: 0.15, ease: 'power2.in' }, '-=0.10'); // Final drop, 0.05s lag
+        }
+
         // FIREWORKS!
         const colors = ['#FF1493', '#00CED1', '#FFD700', '#FF69B4', '#7B68EE', '#00FF7F', '#FF6347', '#FF00FF', '#00FFFF'];
 
@@ -399,6 +415,13 @@ export default function AntyV3() {
 
         gsap.to(char, { y: -30, duration: 0.2, ease: 'power2.out' });
 
+        // Glows follow with 75% distance and 0.05s lag
+        const innerGlow = document.querySelector('.inner-glow') as HTMLElement;
+        const outerGlow = glowRef.current;
+        if (innerGlow && outerGlow) {
+          gsap.to([innerGlow, outerGlow], { y: -23, duration: 0.2, ease: 'power2.out' }, '+=0.05'); // 75% of -30, 0.05s lag
+        }
+
         if (leftBody && rightBody) {
           gsap.to(leftBody, { x: -15, y: -15, duration: 0.2, ease: 'back.out(2)' });
           gsap.to(rightBody, { x: 15, y: 15, duration: 0.2, ease: 'back.out(2)' });
@@ -415,31 +438,66 @@ export default function AntyV3() {
         createTrackedTimeout(() => {
           if (char) {
             gsap.to(char, { y: 0, rotation: 0, duration: 0.5, ease: 'power1.inOut' });
+            // Glows return with lag
+            const innerGlow = document.querySelector('.inner-glow') as HTMLElement;
+            const outerGlow = glowRef.current;
+            if (innerGlow && outerGlow) {
+              gsap.to([innerGlow, outerGlow], { y: 0, duration: 0.5, ease: 'power1.inOut', delay: 0.05 });
+            }
           }
         }, 1400);
         scheduleExpressionReset(1350);
         break;
       }
 
-      case 'sad':
+      case 'sad': {
         gsap.to(char, { y: 10, scale: 0.9, duration: 0.6, ease: 'power2.out' });
+        // Glows follow with 75% distance and 0.05s lag
+        const innerGlow = document.querySelector('.inner-glow') as HTMLElement;
+        const outerGlow = glowRef.current;
+        if (innerGlow && outerGlow) {
+          gsap.to([innerGlow, outerGlow], { y: 7.5, duration: 0.6, ease: 'power2.out', delay: 0.05 });
+        }
         createTrackedTimeout(() => {
           if (char) {
             gsap.to(char, { y: 0, scale: 1, duration: 0.4, ease: 'power2.in' });
+            // Glows return with lag
+            if (innerGlow && outerGlow) {
+              gsap.to([innerGlow, outerGlow], { y: 0, duration: 0.4, ease: 'power2.in', delay: 0.05 });
+            }
           }
         }, 1500);
         scheduleExpressionReset(2500);
         break;
+      }
 
       case 'angry': {
         const angryTl = gsap.timeline();
+        const innerGlow = document.querySelector('.inner-glow') as HTMLElement;
+        const outerGlow = glowRef.current;
+
+        // Move down
         angryTl.to(char, { y: 15, duration: 0.6, ease: 'power2.out' });
+        // Glows follow with 75% distance and 0.05s lag
+        if (innerGlow && outerGlow) {
+          angryTl.to([innerGlow, outerGlow], { y: 11.25, duration: 0.6, ease: 'power2.out' }, '-=0.55'); // 0.05s lag
+        }
+
+        // Shake horizontally 3 times
         for (let i = 0; i < 3; i++) {
           angryTl.to(char, { x: -8, duration: 0.8, ease: 'sine.inOut' });
           angryTl.to(char, { x: 8, duration: 0.8, ease: 'sine.inOut' });
         }
+
+        // Return to center horizontally
         angryTl.to(char, { x: 0, duration: 0.4, ease: 'sine.inOut' });
+
+        // Return to original position vertically
         angryTl.to(char, { y: 0, duration: 0.5, ease: 'power2.in' });
+        if (innerGlow && outerGlow) {
+          angryTl.to([innerGlow, outerGlow], { y: 0, duration: 0.5, ease: 'power2.in' }, '-=0.45'); // 0.05s lag
+        }
+
         scheduleExpressionReset(6000);
         break;
       }
@@ -453,8 +511,16 @@ export default function AntyV3() {
         const currentRotation = gsap.getProperty(char, 'rotationY') as number;
         const currentY = gsap.getProperty(char, 'y') as number;
 
+        // Get glow elements
+        const innerGlow = document.querySelector('.inner-glow') as HTMLElement;
+        const outerGlow = glowRef.current;
+
         if (Math.abs(currentY) < 60) {
           gsap.to(char, { y: -70, duration: 0.3, ease: 'power2.out' });
+          // Glows follow with 75% distance and 0.05s lag
+          if (innerGlow && outerGlow) {
+            gsap.to([innerGlow, outerGlow], { y: -52.5, duration: 0.3, ease: 'power2.out', delay: 0.05 });
+          }
         }
 
         gsap.to(char, {
@@ -479,6 +545,15 @@ export default function AntyV3() {
                 gsap.set(char, { rotationY: 0 });
               },
             });
+            // Glows descend with lag
+            if (innerGlow && outerGlow) {
+              gsap.to([innerGlow, outerGlow], {
+                y: 0,
+                duration: 0.35,
+                ease: 'power2.in',
+                delay: 0.05,
+              });
+            }
           }
         }, 1100);
         scheduleExpressionReset(1500);
@@ -1240,30 +1315,30 @@ export default function AntyV3() {
       },
     });
 
-    // 1b. Glows jump up with Anty and scale back to normal (with 0.03s trail)
+    // 1b. Glows jump up with Anty and scale back to normal (75% distance, 0.05s lag)
     if (innerGlow && outerGlow) {
       wakeUpTl.to([innerGlow, outerGlow], {
-        y: -45,  // Match character jump
+        y: -34,  // 75% of character jump (-45 * 0.75)
         scale: 1,  // Reset from 0.65 to 1
         duration: 0.2,
         ease: 'power2.out',
-      }, '-=0.17'); // Start 0.03s after character (0.2 - 0.03 = 0.17)
+      }, '-=0.15'); // Start 0.05s after character (0.2 - 0.05 = 0.15)
 
       // 1c. Glows hang at apex
       wakeUpTl.to([innerGlow, outerGlow], {
-        y: -45,
+        y: -34,  // 75% of character position
         scale: 1,
         duration: 0.05,
         ease: 'none',
-      }, '-=0.02'); // Start 0.03s after character
+      }, '-=0.00'); // Start 0.05s after character (already accounted for)
 
-      // 2. Glows drop with Anty
+      // 2. Glows drop with Anty (75% distance, 0.05s lag)
       wakeUpTl.to([innerGlow, outerGlow], {
         y: 0,  // Reset to original position
         scale: 1,
         duration: 0.3,
         ease: 'power2.in',
-      }, '-=0.27'); // Start 0.03s after character (0.3 - 0.03 = 0.27)
+      }, '-=0.25'); // Start 0.05s after character (0.3 - 0.05 = 0.25)
 
       // 3. Fade glows opacity in (parallel with movement)
       wakeUpTl.to([innerGlow, outerGlow], {

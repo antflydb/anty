@@ -104,6 +104,7 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
   const superGlowRef = useRef<HTMLDivElement>(null);
   const superGlowTimelineRef = useRef<gsap.core.Timeline | null>(null); // Memory leak fix
   const previousIsOffRef = useRef<boolean>(isOff); // Track previous OFF state
+  const hasCompletedFirstAnimation = useRef<boolean>(false); // Track if first animation has run
 
   // Use unified eye animation system
   const { performBlink, performDoubleBlink, allowBlinkingRef } = useEyeAnimations({
@@ -478,8 +479,9 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
       // Kill any existing idle animations before starting new ones
       gsap.killTweensOf([character, shadow]);
 
-      // Wait 1.65 seconds before starting idle breathing to allow any transitions
-      const idleStartDelay = 1.65;
+      // Conditional delay: short on initial load, longer after wake-up
+      const idleStartDelay = hasCompletedFirstAnimation.current ? 0.65 : 0.2;
+      hasCompletedFirstAnimation.current = true; // Mark that animation has started
 
       // Smooth continuous floating with rotation and breathing
       // Using a single coordinated timeline for smoothness
