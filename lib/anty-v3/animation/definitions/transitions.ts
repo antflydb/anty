@@ -50,10 +50,20 @@ export function createWakeUpAnimation(
   }
 
   // Setup - restore opacity and set will-change for GPU optimization
+  // CRITICAL: Set initial states BEFORE starting timeline
   gsap.set(character, {
     opacity: 1,
     scale: 0.65, // Start small
+    y: 0, // Start at ground
     willChange: 'transform',
+  });
+
+  // CRITICAL: Shadow MUST start at zero scale and opacity (not 0.65!)
+  gsap.set(shadow, {
+    xPercent: -50,
+    scaleX: 0,
+    scaleY: 0,
+    opacity: 0,
   });
 
   // Phase 1: Jump up to apex (0.2s) - controlled rise
@@ -63,15 +73,6 @@ export function createWakeUpAnimation(
     duration: 0.2,
     ease: 'power2.out',
     force3D: true,
-    onStart: () => {
-      // Shadow starts at zero scale and opacity
-      gsap.set(shadow, {
-        xPercent: -50,
-        scaleX: 0,
-        scaleY: 0,
-        opacity: 0,
-      });
-    },
   });
 
   // Glows jump up with character at 75% distance (0.05s lag)
@@ -84,7 +85,7 @@ export function createWakeUpAnimation(
         duration: 0.2,
         ease: 'power2.out',
       },
-      `-=${0.2 - GLOW_LAG_SECONDS}` // Start 0.05s after character
+      `-=${0.2 - GLOW_LAG_SECONDS}` // Start 0.05s after character (at 0.15)
     );
   }
 
@@ -105,7 +106,7 @@ export function createWakeUpAnimation(
         duration: 0.05,
         ease: 'none',
       },
-      '-=0.05' // Already lagged, maintain position
+      '-=0.00' // Already lagged from previous animation
     );
   }
 
@@ -128,7 +129,7 @@ export function createWakeUpAnimation(
         duration: 0.3,
         ease: 'power2.in',
       },
-      `-=${0.3 - GLOW_LAG_SECONDS}` // Start 0.05s after character
+      `-=${0.3 - GLOW_LAG_SECONDS}` // Start 0.05s after character (at 0.25)
     );
 
     // Fade glows opacity in (parallel with movement)
@@ -158,18 +159,24 @@ export function createWakeUpAnimation(
     '-=0.4' // Start during landing (0.4s before end)
   );
 
+  // CRITICAL: Ensure rotation starts at 0° after wake-up for clean idle start
+  timeline.set(character, { rotation: 0 }, '>');
+
   return timeline;
 }
 
 /**
  * Creates power-off animation (ON → OFF transition)
  *
- * Simple fade-out with scale down:
- * - Character scales down to 0.65
- * - Opacity fades to 0.45 (dim logo state)
- * - Shadow and glows fade out completely
+ * Dramatic three-phase choreography matching legacy system:
+ * 1. Climb up (0.5s) - controlled rise to y: -60
+ * 2. SNAP down HARD (0.1s) - explosive drop to y: 50, scale: 0.65 with expo.in easing
+ * 3. Fade out (0.05-0.06s) - character to 0.45 opacity, glows/shadow to 0
  *
- * Duration: ~0.4s
+ * Shadow shrinks to 0.65 (NOT zero) and stays on ground
+ * Glows follow character movement and fade out
+ *
+ * Total duration: ~0.66s
  *
  * @param elements - Character, shadow, and optional glow elements
  * @returns GSAP timeline for power-off animation
@@ -188,40 +195,81 @@ export function createPowerOffAnimation(
     gsap.killTweensOf(glowElements);
   }
 
-  // Fade out and scale down character
+  // Phase 1: Climb up (0.5s) - eyes stay as idle during this
   timeline.to(character, {
-    opacity: 0.45, // Dim logo state
-    scale: 0.65,
-    duration: 0.4,
+    y: -60,
+    duration: 0.5,
     ease: 'power2.out',
   });
 
-  // Fade out shadow completely and shrink to zero
+  // Phase 2: SNAP down HARD - super fast shrink to 65% (0.1s)
+  timeline.to(character, {
+    y: 50,
+    scale: 0.65,
+    duration: 0.1, // Even faster - 100ms snap
+    ease: 'expo.in', // Exponential acceleration for dramatic snap
+  });
+
+  // Phase 2b: Glows follow character down (same timing, same ease)
+  if (glowElements.length > 0) {
+    timeline.to(
+      glowElements,
+      {
+        y: 50,
+        scale: 0.65,
+        duration: 0.1,
+        ease: 'expo.in',
+      },
+      '-=0.1' // Start at the same time as the character snap
+    );
+  }
+
+  // Phase 2c: Shadow shrinks but stays on ground (no Y movement)
+  // CRITICAL: Shadow shrinks to 0.65, NOT to zero!
   timeline.to(
     shadow,
     {
-      opacity: 0,
-      scaleX: 0, // Shrink to zero (not 0.65)
-      scaleY: 0, // Shrink to zero (not 0.65)
-      duration: 0.4,
-      ease: 'power2.out',
+      xPercent: -50, // Keep centered (static, not animated)
+      scaleX: 0.65,
+      scaleY: 0.65,
+      duration: 0.1,
+      ease: 'expo.in',
     },
-    '<' // Parallel with character
+    '-=0.1' // Parallel with character snap
   );
 
-  // Fade out glows completely
+  // Phase 3: Fade character to transparent IMMEDIATELY after snap (0.05s)
+  timeline.to(character, {
+    opacity: 0.45, // Dim logo state
+    duration: 0.05, // Lightning fast - 50ms
+    ease: 'power2.in',
+  });
+
+  // Phase 3b: Fade out background glows and shadow at the same time (0.06s)
   if (glowElements.length > 0) {
     timeline.to(
       glowElements,
       {
         opacity: 0,
-        scale: 0.65,
-        duration: 0.4,
-        ease: 'power2.out',
+        duration: 0.06, // Lightning fast - 60ms
+        ease: 'power2.in',
       },
-      '<' // Parallel with character
+      '-=0.05' // Start slightly before character fade finishes
     );
   }
+
+  timeline.to(
+    shadow,
+    {
+      opacity: 0,
+      duration: 0.06, // Lightning fast - 60ms
+      ease: 'power2.in',
+    },
+    '-=0.06' // Parallel with glows
+  );
+
+  // CRITICAL: Freeze rotation at 0° for logo state
+  timeline.set(character, { rotation: 0 }, '>');
 
   return timeline;
 }

@@ -267,8 +267,13 @@ export function useAnimationController(
           }
 
           // MANUALLY create idle timeline (controller.startIdle has wrong signature)
+          // Add 0.65s delay to match legacy system
           if (autoStartIdle && elements.character && shadow) {
-            const idleTl = gsap.timeline({ repeat: -1, yoyo: true });
+            const idleTl = gsap.timeline({
+              repeat: -1,
+              yoyo: true,
+              delay: 0.65 // Match legacy system delay after wake-up
+            });
 
             // Get config values
             const { float, rotation, breathe } = idleAnimationConfig;
@@ -295,7 +300,7 @@ export function useAnimationController(
             idleTimelineRef.current = idleTl;
 
             if (enableLogging) {
-              console.log('[useAnimationController] Idle animation started');
+              console.log('[useAnimationController] Idle animation started with 0.65s delay');
             }
           }
         });
