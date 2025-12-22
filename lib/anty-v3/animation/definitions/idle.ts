@@ -50,10 +50,10 @@ export function createIdleAnimation(
   timeline.to(
     character,
     {
-      y: -float.amplitude, // Float up by amplitude (default: 12px)
-      rotation: rotation.degrees, // Gentle rotation (default: 2.5°)
-      scale: breathe.scaleMax, // Subtle breathing (default: 1.02)
-      duration: float.duration, // Smooth timing (default: 2.5s)
+      y: -float.amplitude, // Float up by amplitude (12px)
+      rotation: rotation.degrees, // Gentle rotation (2°)
+      scale: breathe.scaleMax, // Subtle breathing (1.02)
+      duration: float.duration, // Smooth timing (2.5s)
       ease: float.ease, // Sine easing for smoothness
     },
     0 // Start at timeline beginning

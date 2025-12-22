@@ -15,20 +15,20 @@ export const idleAnimationConfig = {
   /** Vertical floating animation */
   float: {
     amplitude: 12, // pixels
-    duration: 3.7, // seconds
+    duration: 2.5, // seconds - matches legacy system
     ease: 'sine.inOut',
   },
   /** Gentle rotation synchronized with float */
   rotation: {
-    degrees: 2.5, // ±degrees
-    duration: 3.7, // seconds
+    degrees: 2, // ±degrees - matches legacy system
+    duration: 2.5, // seconds - matches legacy system
     ease: 'sine.inOut',
   },
   /** Breathing scale animation */
   breathe: {
-    scaleMin: 0.98,
-    scaleMax: 1.0,
-    duration: 4, // seconds
+    scaleMin: 1.0,
+    scaleMax: 1.02, // subtle breathing - matches legacy system
+    duration: 2.5, // seconds - matches legacy system
     ease: 'sine.inOut',
   },
 } as const;

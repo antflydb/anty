@@ -17,9 +17,9 @@
  * When false: Uses legacy AnimationStateMachine
  * When true: Uses new AnimationController
  *
- * Set to false initially for safety during development.
+ * ENABLED: Animation controller bugs have been fixed.
  */
-export const USE_NEW_ANIMATION_CONTROLLER = false;
+export const USE_NEW_ANIMATION_CONTROLLER = true;
 
 /**
  * Enable validation mode where both systems run in parallel

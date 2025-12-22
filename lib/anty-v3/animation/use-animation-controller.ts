@@ -16,6 +16,7 @@ import {
   type AnimationOptions,
   isEmotionType,
 } from './types';
+import { idleAnimationConfig } from '../gsap-configs';
 
 /**
  * Elements required by the animation controller
@@ -269,13 +270,16 @@ export function useAnimationController(
           if (autoStartIdle && elements.character && shadow) {
             const idleTl = gsap.timeline({ repeat: -1, yoyo: true });
 
+            // Get config values
+            const { float, rotation, breathe } = idleAnimationConfig;
+
             // Character floats up
             idleTl.to(elements.character, {
-              y: -12,
-              rotation: 2,
-              scale: 1.02,
-              duration: 2.5,
-              ease: 'sine.inOut',
+              y: -float.amplitude,
+              rotation: rotation.degrees,
+              scale: breathe.scaleMax,
+              duration: float.duration,
+              ease: float.ease,
             }, 0);
 
             // Shadow shrinks (inverse relationship)
@@ -284,8 +288,8 @@ export function useAnimationController(
               scaleX: 0.7,
               scaleY: 0.55,
               opacity: 0.2,
-              duration: 2.5,
-              ease: 'sine.inOut',
+              duration: float.duration,
+              ease: float.ease,
             }, 0);
 
             idleTimelineRef.current = idleTl;
@@ -366,24 +370,28 @@ export function useAnimationController(
     // Create idle timeline
     const tl = gsap.timeline({ repeat: -1, yoyo: true });
 
+    // Get config values
+    const { float, rotation, breathe } = idleAnimationConfig;
+
     // Add basic idle animations if elements are available
     if (elements.character) {
       tl.to(elements.character, {
-        y: -12,
-        rotation: 2,
-        scale: 1.02,
-        duration: 2.5,
-        ease: 'sine.inOut',
+        y: -float.amplitude,
+        rotation: rotation.degrees,
+        scale: breathe.scaleMax,
+        duration: float.duration,
+        ease: float.ease,
       }, 0);
     }
 
     if (elements.shadow) {
       tl.to(elements.shadow, {
+        xPercent: -50,
         scaleX: 0.7,
         scaleY: 0.55,
         opacity: 0.2,
-        duration: 2.5,
-        ease: 'sine.inOut',
+        duration: float.duration,
+        ease: float.ease,
       }, 0);
     }
 
@@ -509,24 +517,28 @@ export function useAnimationController(
     // Create new idle timeline
     const tl = gsap.timeline({ repeat: -1, yoyo: true });
 
+    // Get config values
+    const { float, rotation, breathe } = idleAnimationConfig;
+
     // Add basic idle animations
     if (elements.character) {
       tl.to(elements.character, {
-        y: -12,
-        rotation: 2,
-        scale: 1.02,
-        duration: 2.5,
-        ease: 'sine.inOut',
+        y: -float.amplitude,
+        rotation: rotation.degrees,
+        scale: breathe.scaleMax,
+        duration: float.duration,
+        ease: float.ease,
       }, 0);
     }
 
     if (elements.shadow) {
       tl.to(elements.shadow, {
+        xPercent: -50,
         scaleX: 0.7,
         scaleY: 0.55,
         opacity: 0.2,
-        duration: 2.5,
-        ease: 'sine.inOut',
+        duration: float.duration,
+        ease: float.ease,
       }, 0);
     }
 
