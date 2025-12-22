@@ -58,11 +58,11 @@ export function createWakeUpAnimation(
     willChange: 'transform',
   });
 
-  // CRITICAL: Shadow MUST start at zero scale and opacity (not 0.65!)
+  // CRITICAL: Shadow starts at 0.65 scale (OFF state) and grows to 1.0
   gsap.set(shadow, {
     xPercent: -50,
-    scaleX: 0,
-    scaleY: 0,
+    scaleX: 0.65, // Start at OFF state scale
+    scaleY: 0.65, // Start at OFF state scale
     opacity: 0,
   });
 
