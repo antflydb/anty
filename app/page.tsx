@@ -99,6 +99,66 @@ export default function AntyV3() {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const morphingRef = useRef<boolean>(false);
 
+  // Debug mode - shows boundary boxes around all elements
+  const [debugMode, setDebugMode] = useState(false);
+
+  // Debug mode keyboard shortcut (D key)
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.key === 'd' || e.key === 'D') {
+        setDebugMode(prev => !prev);
+        console.log('[DEBUG MODE]', !debugMode ? 'ENABLED' : 'DISABLED');
+      }
+    };
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [debugMode]);
+
+  // Sync debug boxes with element positions in real-time
+  useEffect(() => {
+    if (!debugMode) return;
+
+    let animationFrameId: number;
+
+    const updateDebugBoxes = () => {
+      const shadow = document.getElementById('anty-shadow');
+      const innerGlow = document.querySelector('.inner-glow') as HTMLElement;
+      const outerGlow = glowRef.current;
+
+      const shadowDebug = document.getElementById('debug-shadow');
+      const innerGlowDebug = document.getElementById('debug-inner-glow');
+      const outerGlowDebug = document.getElementById('debug-outer-glow');
+
+      if (shadow && shadowDebug) {
+        const transform = window.getComputedStyle(shadow).transform;
+        shadowDebug.style.transform = transform;
+        shadowDebug.style.opacity = window.getComputedStyle(shadow).opacity;
+      }
+
+      if (innerGlow && innerGlowDebug) {
+        const transform = window.getComputedStyle(innerGlow).transform;
+        innerGlowDebug.style.transform = transform;
+        innerGlowDebug.style.opacity = window.getComputedStyle(innerGlow).opacity;
+      }
+
+      if (outerGlow && outerGlowDebug) {
+        const transform = window.getComputedStyle(outerGlow).transform;
+        outerGlowDebug.style.transform = transform;
+        outerGlowDebug.style.opacity = window.getComputedStyle(outerGlow).opacity;
+      }
+
+      animationFrameId = requestAnimationFrame(updateDebugBoxes);
+    };
+
+    updateDebugBoxes();
+
+    return () => {
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+      }
+    };
+  }, [debugMode]);
+
   // Helper function to clear any pending expression reset
   const clearExpressionReset = () => {
     if (expressionResetTimerRef.current) {
@@ -719,6 +779,10 @@ export default function AntyV3() {
       // Check for Command+K (Mac) or Ctrl+K (Windows/Linux)
       if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
         event.preventDefault();
+        // Close chat if open
+        if (isChatOpen) {
+          setIsChatOpen(false);
+        }
         if (searchActive) {
           morphToCharacter();
           setSearchValue(''); // Clear on exit
@@ -726,11 +790,21 @@ export default function AntyV3() {
           morphToSearchBar();
         }
       }
+      // Command+L to toggle chat
+      if ((event.metaKey || event.ctrlKey) && event.key === 'l') {
+        event.preventDefault();
+        // Close search if open
+        if (searchActive) {
+          morphToCharacter();
+          setSearchValue('');
+        }
+        setIsChatOpen(prev => !prev);
+      }
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [searchActive]);
+  }, [searchActive, isChatOpen]);
 
   // Keyboard handlers for search mode
   useEffect(() => {
@@ -1166,22 +1240,49 @@ export default function AntyV3() {
       },
     });
 
-    // Fade glows back in (parallel with jump)
+    // 1b. Glows jump up with Anty and scale back to normal (with 0.03s trail)
     if (innerGlow && outerGlow) {
-      gsap.to([innerGlow, outerGlow], {
-        opacity: 1,
-        duration: 0.5,
+      wakeUpTl.to([innerGlow, outerGlow], {
+        y: -45,  // Match character jump
+        scale: 1,  // Reset from 0.65 to 1
+        duration: 0.2,
         ease: 'power2.out',
-      });
+      }, '-=0.17'); // Start 0.03s after character (0.2 - 0.03 = 0.17)
+
+      // 1c. Glows hang at apex
+      wakeUpTl.to([innerGlow, outerGlow], {
+        y: -45,
+        scale: 1,
+        duration: 0.05,
+        ease: 'none',
+      }, '-=0.02'); // Start 0.03s after character
+
+      // 2. Glows drop with Anty
+      wakeUpTl.to([innerGlow, outerGlow], {
+        y: 0,  // Reset to original position
+        scale: 1,
+        duration: 0.3,
+        ease: 'power2.in',
+      }, '-=0.27'); // Start 0.03s after character (0.3 - 0.03 = 0.27)
+
+      // 3. Fade glows opacity in (parallel with movement)
+      wakeUpTl.to([innerGlow, outerGlow], {
+        opacity: 1,
+        duration: 0.6,  // Slower fade-in
+        ease: 'power1.in',  // Ease in for gradual start
+      }, '-=0.4'); // Start during jump
     }
 
-    // Shadow pops back immediately
+    // Shadow grows back to full size and fades in (no Y movement - it stays on ground)
     if (shadow) {
-      gsap.set(shadow, {
-        scaleX: 1,
-        scaleY: 1,
-        opacity: 0.7,
-      });
+      wakeUpTl.to(shadow, {
+        xPercent: -50,  // Keep centered (static, not animated)
+        scaleX: 1,  // Grow from 0.65 to 1
+        scaleY: 1,  // Grow from 0.65 to 1
+        opacity: 0.7,  // Fade from 0 to 0.7
+        duration: 0.6,  // Longer duration for smoother fade
+        ease: 'power2.out',
+      }, '-=0.4'); // Start during landing
     }
   };
 
@@ -1258,7 +1359,7 @@ export default function AntyV3() {
     }
     if (shadow) {
       gsap.killTweensOf(shadow);
-      gsap.set(shadow, { opacity: 0, scaleX: 1, scaleY: 1 });
+      gsap.set(shadow, { xPercent: -50, opacity: 0, scaleX: 1, scaleY: 1 });
     }
 
     // STEP 1: Body halves separate, scale down, move to corners
@@ -1536,7 +1637,7 @@ export default function AntyV3() {
     }
     if (shadow) {
       gsap.killTweensOf(shadow);
-      gsap.set(shadow, { opacity: 0, scaleX: 1, scaleY: 1 }); // Shadow starts hidden
+      gsap.set(shadow, { xPercent: -50, opacity: 0, scaleX: 1, scaleY: 1 }); // Shadow starts hidden
     }
     if (innerGlow) {
       gsap.killTweensOf(innerGlow);
@@ -1614,26 +1715,26 @@ export default function AntyV3() {
       gsap.set(characterContainer, { clearProps: 'zIndex' });
     }
 
-    // Snap back to center with upward leap (280ms) - starts after search bar fades
+    // Snap back to center with upward leap (250ms) - smooth snap
     tl.to([leftBody, rightBody], {
       x: 0,
       y: -25,
       scale: 1,
       scaleX: 0.95,
       scaleY: 1.1,
-      duration: 0.28,
+      duration: 0.25,
       ease: 'power2.out',
       clearProps: 'zIndex'
-    }, 0.35); // Start after search bar fade completes
+    }, 0.3); // Start after search bar fades
 
-    // Settle down to rest (180ms)
+    // Settle down to rest (170ms)
     tl.to([leftBody, rightBody], {
       y: 0,
       scaleX: 1,
       scaleY: 1,
-      duration: 0.18,
+      duration: 0.17,
       ease: 'power2.in'
-    }, 0.63); // 0.35 + 0.28
+    }, 0.55); // 0.3 + 0.25
 
     // Eyes fade in and move down WITH the body settle to look attached
     if (leftEye && rightEye) {
@@ -1643,9 +1744,9 @@ export default function AntyV3() {
       tl.to([leftEye, rightEye], {
         opacity: 1,
         y: 0, // Move down to normal position
-        duration: 0.18, // Same duration as body settle
+        duration: 0.17, // Same duration as body settle
         ease: 'power2.in' // Same easing as body settle
-      }, 0.63); // Start when body starts settling
+      }, 0.55); // Start when body starts settling
     }
 
     if (shadow) {
@@ -1655,7 +1756,7 @@ export default function AntyV3() {
         scaleY: 1,
         duration: 0.22,
         ease: 'power1.out'
-      }, 0.77); // After settle completes (0.63 + 0.18 = 0.81, start a bit before)
+      }, 0.67); // After settle completes (0.55 + 0.17 = 0.72, start a bit before)
     }
 
     // Orb glows fade in as brackets close and settle
@@ -1665,14 +1766,14 @@ export default function AntyV3() {
         opacity: 1,
         duration: 0.25,
         ease: 'power1.out'
-      }, 0.7); // Start during settle phase, ramp up as brackets come together
+      }, 0.6); // Start during settle phase, ramp up as brackets come together
     }
 
     // CRITICAL: Force final states when timeline completes to ensure idle state is correct
     tl.call(() => {
       if (leftEye) gsap.set(leftEye, { opacity: 1, y: 0 });
       if (rightEye) gsap.set(rightEye, { opacity: 1, y: 0 });
-      if (shadow) gsap.set(shadow, { opacity: 0.7, scaleX: 1, scaleY: 1 });
+      if (shadow) gsap.set(shadow, { xPercent: -50, opacity: 0.7, scaleX: 1, scaleY: 1 });
       if (innerGlow) gsap.set(innerGlow, { opacity: 1 });
       if (outerGlow) gsap.set(outerGlow, { opacity: 1 });
       if (searchBorderGradient) gsap.set(searchBorderGradient, { opacity: 0 });
@@ -1680,7 +1781,7 @@ export default function AntyV3() {
       if (searchKbd) gsap.set(searchKbd, { opacity: 0, filter: 'blur(0px)', y: 0 });
       if (searchGlow) gsap.set(searchGlow, { opacity: 0, scale: 1 });
       gsap.set([leftBody, rightBody], { x: 0, y: 0, scale: 1, rotation: 0, scaleX: 1, scaleY: 1 });
-    }, [], 0.81); // After body settle completes (0.63 + 0.18)
+    }, [], 0.72); // After body settle completes (0.55 + 0.17)
   };
 
   const handleButtonClick = (button: ButtonName) => {
@@ -1741,11 +1842,20 @@ export default function AntyV3() {
 
     switch (button) {
       case 'chat':
-        // Open chat panel
-        setIsChatOpen(true);
-        // Trigger happy animation when opening chat
-        setExpression('happy');
-        scheduleExpressionReset(2000);
+        // Close search if open
+        if (searchActive) {
+          morphToCharacter();
+          setSearchValue('');
+        }
+        // Toggle chat panel
+        setIsChatOpen(prev => {
+          // Only trigger happy animation when opening chat
+          if (!prev) {
+            setExpression('happy');
+            scheduleExpressionReset(2000);
+          }
+          return !prev;
+        });
         break;
 
       case 'moods':
@@ -1843,6 +1953,10 @@ export default function AntyV3() {
         break;
 
       case 'search':
+        // Close chat if open
+        if (isChatOpen) {
+          setIsChatOpen(false);
+        }
         // Toggle search mode - if already open, close it (same as ESC)
         if (searchActive) {
           morphToCharacter();
@@ -1888,6 +2002,23 @@ export default function AntyV3() {
                 }}
               />
 
+              {/* Debug overlay for inner glow */}
+              {debugMode && (
+                <div
+                  id="debug-inner-glow"
+                  className="absolute left-1/2 pointer-events-none"
+                  style={{
+                    top: '80px',
+                    width: '120px',
+                    height: '90px',
+                    borderRadius: '50%',
+                    border: '3px solid cyan',
+                    transform: 'translate(-50%, -50%)',
+                    zIndex: 9999,
+                  }}
+                />
+              )}
+
               {/* Floating glow behind Anty - Layer 2 (outer, softer) */}
               <div
                 ref={glowRef}
@@ -1907,6 +2038,23 @@ export default function AntyV3() {
                 }}
               />
 
+              {/* Debug overlay for outer glow */}
+              {debugMode && (
+                <div
+                  id="debug-outer-glow"
+                  className="absolute left-1/2 pointer-events-none"
+                  style={{
+                    top: '80px',
+                    width: '170px',
+                    height: '130px',
+                    borderRadius: '50%',
+                    border: '3px solid magenta',
+                    transform: 'translate(-50%, -50%)',
+                    zIndex: 9999,
+                  }}
+                />
+              )}
+
               {/* Anty character in idle mode */}
               <div
                 ref={characterRef}
@@ -1924,6 +2072,7 @@ export default function AntyV3() {
                   expression={expression}
                   isSuperMode={isSuperMode}
                   searchMode={searchActive}
+                  debugMode={debugMode}
                   onSpontaneousExpression={(expr) => {
                     // Only trigger spontaneous looks when in idle state
                     if (expression !== 'idle') return;
@@ -1966,10 +2115,33 @@ export default function AntyV3() {
                 }}
                 id="anty-shadow"
               />
+
+              {/* Debug overlay for shadow */}
+              {debugMode && (
+                <div
+                  id="debug-shadow"
+                  className="absolute pointer-events-none"
+                  style={{
+                    left: '50%',
+                    bottom: '0px',
+                    width: '160px',
+                    height: '40px',
+                    border: '3px solid red',
+                    borderRadius: '50%',
+                    zIndex: 9999,
+                  }}
+                />
+              )}
             </div>
           </div>
 
-          <div className="action-buttons">
+          <div
+            className="action-buttons"
+            style={{
+              transition: 'transform 0.3s ease-out',
+              transform: isChatOpen ? 'translateX(-192px)' : 'translateX(0)',
+            }}
+          >
             <ActionButtonsV3 onButtonClick={handleButtonClick} isOff={expression === 'off'} moodsButtonRef={moodsButtonRef} />
           </div>
 
@@ -2024,6 +2196,7 @@ export default function AntyV3() {
 
             // Create OFF animation timeline
             const offTl = gsap.timeline();
+            const shadow = document.getElementById('anty-shadow');
 
             // 1. Climb up (0.5s) - eyes stay as idle during this
             offTl.to(character, {
@@ -2034,11 +2207,30 @@ export default function AntyV3() {
 
             // 2. SNAP down HARD - super fast shrink to 65% (35% smaller)
             offTl.to(character, {
-              y: 0,
+              y: 50,
               scale: 0.65,
               duration: 0.1, // Even faster - 100ms snap
               ease: 'expo.in', // Exponential acceleration for dramatic snap
             });
+
+            // 2b. Glows follow Anty down (same timing, same ease)
+            offTl.to([innerGlow, outerGlow], {
+              y: 50,
+              scale: 0.65,
+              duration: 0.1,
+              ease: 'expo.in',
+            }, '-=0.1'); // Start at the same time as the character snap
+
+            // 2c. Shadow shrinks but stays on ground (no Y movement)
+            if (shadow) {
+              offTl.to(shadow, {
+                xPercent: -50, // Keep centered (static, not animated)
+                scaleX: 0.65,
+                scaleY: 0.65,
+                duration: 0.1,
+                ease: 'expo.in',
+              }, '-=0.1');
+            }
 
             // Change expression RIGHT at the very end of snap (super late)
             setTimeout(() => setExpression('off'), 590);
@@ -2054,7 +2246,6 @@ export default function AntyV3() {
 
             // Fade out background glows and shadow at the same time (super fast)
             setTimeout(() => {
-              const shadow = document.getElementById('anty-shadow');
               gsap.to([innerGlow, outerGlow, shadow], {
                 opacity: 0,
                 duration: 0.06, // Lightning fast - 60ms
@@ -3460,6 +3651,7 @@ export default function AntyV3() {
 
               // Create OFF animation timeline
               const offTl = gsap.timeline();
+              const shadow = document.getElementById('anty-shadow');
 
               // 1. Climb up (0.5s) - eyes stay as idle during this
               offTl.to(character, {
@@ -3470,11 +3662,30 @@ export default function AntyV3() {
 
               // 2. SNAP down HARD - super fast shrink to 65% (35% smaller)
               offTl.to(character, {
-                y: 0,
+                y: 50,
                 scale: 0.65,
                 duration: 0.1, // Even faster - 100ms snap
                 ease: 'expo.in', // Exponential acceleration for dramatic snap
               });
+
+              // 2b. Glows follow Anty down (same timing, same ease)
+              offTl.to([innerGlow, outerGlow], {
+                y: 50,
+                scale: 0.65,
+                duration: 0.1,
+                ease: 'expo.in',
+              }, '-=0.1'); // Start at the same time as the character snap
+
+              // 2c. Shadow shrinks but stays on ground (no Y movement)
+              if (shadow) {
+                offTl.to(shadow, {
+                  xPercent: -50, // Keep centered (static, not animated)
+                  scaleX: 0.65,
+                  scaleY: 0.65,
+                  duration: 0.1,
+                  ease: 'expo.in',
+                }, '-=0.1');
+              }
 
               // Change expression RIGHT at the very end of snap (super late)
               setTimeout(() => setExpression('off'), 590);
@@ -3490,7 +3701,6 @@ export default function AntyV3() {
 
               // Fade out background glows and shadow at the same time (super fast)
               setTimeout(() => {
-                const shadow = document.getElementById('anty-shadow');
                 gsap.to([innerGlow, outerGlow, shadow], {
                   opacity: 0,
                   duration: 0.06, // Lightning fast - 60ms

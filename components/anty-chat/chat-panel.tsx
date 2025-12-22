@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Send, Loader2, Key, ChevronDown, ChevronUp } from 'lucide-react';
+import { X, Send, Loader2, Key, ChevronDown, ChevronUp, MoreVertical } from 'lucide-react';
 import { AntyChat, type ChatMessage } from '@/lib/chat/openai-client';
 import { mapEmotionToExpression, stripEmotionTags } from '@/lib/chat/emotion-mapper';
 import type { ExpressionName } from '@/lib/anty-v3/animation-state';
@@ -30,8 +30,11 @@ export function ChatPanel({ isOpen, onClose, onEmotion }: ChatPanelProps) {
   const [apiKey, setApiKey] = useState('');
   const [showApiKeyInput, setShowApiKeyInput] = useState(true);
   const [chatClient, setChatClient] = useState<AntyChat | null>(null);
+  const [showMenu, setShowMenu] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -45,6 +48,44 @@ export function ChatPanel({ isOpen, onClose, onEmotion }: ChatPanelProps) {
     }
   }, [isOpen, showApiKeyInput]);
 
+  // Click outside to close menu
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setShowMenu(false);
+      }
+    };
+
+    if (showMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showMenu]);
+
+  // Click outside to close panel
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (panelRef.current && !panelRef.current.contains(event.target as Node)) {
+        onClose();
+      }
+    };
+
+    if (isOpen) {
+      // Delay adding listener to avoid closing immediately on open
+      const timer = setTimeout(() => {
+        document.addEventListener('mousedown', handleClickOutside);
+      }, 100);
+
+      return () => {
+        clearTimeout(timer);
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [isOpen, onClose]);
+
   // Load API key from localStorage
   useEffect(() => {
     const storedKey = localStorage.getItem('anty-chat-api-key');
@@ -54,6 +95,24 @@ export function ChatPanel({ isOpen, onClose, onEmotion }: ChatPanelProps) {
       setShowApiKeyInput(false);
     }
   }, []);
+
+  // ESC key to close chat
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isOpen) {
+        event.preventDefault();
+        onClose();
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('keydown', handleKeyDown);
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, onClose]);
 
   const handleSetApiKey = () => {
     if (!apiKey.trim()) return;
@@ -200,6 +259,7 @@ export function ChatPanel({ isOpen, onClose, onEmotion }: ChatPanelProps) {
     setChatClient(null);
     setShowApiKeyInput(true);
     setMessages([]);
+    setShowMenu(false);
   };
 
   const toggleDebugInfo = (messageId: string) => {
@@ -218,24 +278,38 @@ export function ChatPanel({ isOpen, onClose, onEmotion }: ChatPanelProps) {
 
           {/* Panel */}
           <motion.div
+            ref={panelRef}
             initial={{ x: '100%' }}
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className="fixed right-0 top-0 bottom-0 w-full sm:w-96 bg-white shadow-2xl z-50 flex flex-col"
+            className="fixed right-[10px] top-[10px] bottom-[10px] w-full sm:w-96 bg-white shadow-2xl z-50 flex flex-col rounded-2xl"
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b">
-              <h2 className="text-lg font-semibold text-gray-900">Chat with Anty</h2>
+            <div className="flex items-center justify-between p-4">
+              <h2 className="text-lg font-semibold text-gray-900 pl-2">Anty Chat</h2>
               <div className="flex items-center gap-2">
                 {!showApiKeyInput && (
-                  <button
-                    onClick={handleClearApiKey}
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                    title="Change API Key"
-                  >
-                    <Key className="w-4 h-4 text-gray-600" />
-                  </button>
+                  <div className="relative" ref={menuRef}>
+                    <button
+                      onClick={() => setShowMenu(!showMenu)}
+                      className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                      title="Menu"
+                    >
+                      <MoreVertical className="w-5 h-5 text-gray-600" />
+                    </button>
+                    {showMenu && (
+                      <div className="absolute right-0 top-full mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-10">
+                        <button
+                          onClick={handleClearApiKey}
+                          className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                        >
+                          <Key className="w-4 h-4" />
+                          Change API Key
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 )}
                 <button
                   onClick={onClose}
@@ -262,13 +336,13 @@ export function ChatPanel({ isOpen, onClose, onEmotion }: ChatPanelProps) {
                     onChange={(e) => setApiKey(e.target.value)}
                     onKeyPress={handleKeyPress}
                     placeholder="sk-..."
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8B5CF6] focus:border-transparent"
                   />
                 </div>
                 <button
                   onClick={handleSetApiKey}
                   disabled={!apiKey.trim()}
-                  className="w-full px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="w-full px-4 py-2 bg-[#8B5CF6] text-white rounded-lg hover:bg-[#7C3AED] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   Start Chatting
                 </button>
@@ -278,7 +352,7 @@ export function ChatPanel({ isOpen, onClose, onEmotion }: ChatPanelProps) {
                     href="https://platform.openai.com/api-keys"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-orange-500 hover:underline"
+                    className="text-[#8B5CF6] hover:underline"
                   >
                     Get one here
                   </a>
@@ -298,11 +372,11 @@ export function ChatPanel({ isOpen, onClose, onEmotion }: ChatPanelProps) {
                       <div
                         className={`max-w-[80%] rounded-lg px-4 py-2 ${
                           message.role === 'user'
-                            ? 'bg-orange-500 text-white'
+                            ? 'bg-[#8B5CF6] text-white'
                             : 'bg-gray-100 text-gray-900'
-                        } ${message.role === 'assistant' && (message.emotion || message.rawContent) ? 'cursor-pointer hover:shadow-md transition-shadow' : ''}`}
+                        } ${message.role === 'assistant' && message.emotion ? 'cursor-pointer hover:shadow-md transition-shadow' : ''}`}
                         onClick={() => {
-                          if (message.role === 'assistant' && (message.emotion || message.rawContent)) {
+                          if (message.role === 'assistant' && message.emotion) {
                             toggleDebugInfo(message.id);
                           }
                         }}
@@ -315,38 +389,12 @@ export function ChatPanel({ isOpen, onClose, onEmotion }: ChatPanelProps) {
                           })}
                         </p>
 
-                        {/* Debug info section - only for assistant messages */}
-                        {message.role === 'assistant' && message.showDebug && (message.emotion || message.rawContent) && (
+                        {/* Debug info section - only show emotion for assistant messages */}
+                        {message.role === 'assistant' && message.showDebug && message.emotion && (
                           <div className="mt-2 pt-2 border-t border-gray-300">
-                            <div className="flex items-center gap-1 text-xs text-gray-600 mb-1">
-                              {message.showDebug ? (
-                                <ChevronUp className="w-3 h-3" />
-                              ) : (
-                                <ChevronDown className="w-3 h-3" />
-                              )}
-                              <span className="font-medium">Debug Info</span>
+                            <div className="text-xs text-gray-600">
+                              <span className="font-medium">Emotion:</span> {message.emotion}
                             </div>
-                            {message.emotion && (
-                              <div className="text-xs text-gray-600 mb-1">
-                                <span className="font-medium">Emotion:</span> {message.emotion}
-                              </div>
-                            )}
-                            {message.rawContent && (
-                              <div className="text-xs text-gray-600">
-                                <span className="font-medium">Raw:</span>
-                                <pre className="mt-1 p-2 bg-gray-200 rounded text-[10px] overflow-x-auto whitespace-pre-wrap break-words">
-                                  {message.rawContent}
-                                </pre>
-                              </div>
-                            )}
-                          </div>
-                        )}
-
-                        {/* Show collapse hint for messages with debug info */}
-                        {message.role === 'assistant' && !message.showDebug && (message.emotion || message.rawContent) && (
-                          <div className="flex items-center gap-1 text-xs text-gray-500 mt-1 opacity-50">
-                            <ChevronDown className="w-3 h-3" />
-                            <span>Click to see debug info</span>
                           </div>
                         )}
                       </div>
@@ -363,8 +411,8 @@ export function ChatPanel({ isOpen, onClose, onEmotion }: ChatPanelProps) {
                 </div>
 
                 {/* Input */}
-                <div className="p-4 border-t">
-                  <div className="flex gap-2">
+                <div className="p-4">
+                  <div className="relative">
                     <input
                       ref={inputRef}
                       type="text"
@@ -373,14 +421,18 @@ export function ChatPanel({ isOpen, onClose, onEmotion }: ChatPanelProps) {
                       onKeyPress={handleKeyPress}
                       placeholder="Type a message..."
                       disabled={isLoading}
-                      className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:opacity-50"
+                      className="w-full pl-4 pr-12 py-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[#8B5CF6] focus:border-transparent disabled:opacity-50 placeholder:text-[#D4D3D3]"
                     />
                     <button
                       onClick={handleSend}
                       disabled={!input.trim() || isLoading}
-                      className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className={`absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full disabled:cursor-not-allowed transition-colors ${
+                        !input.trim() || isLoading
+                          ? 'bg-gray-200 text-gray-600 opacity-30'
+                          : 'bg-[#8B5CF6] text-white hover:bg-[#7C3AED]'
+                      }`}
                     >
-                      <Send className="w-5 h-5" />
+                      <Send className="w-4 h-4" />
                     </button>
                   </div>
                 </div>

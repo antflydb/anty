@@ -46,6 +46,7 @@ interface AntyCharacterV3Props {
   size?: number;
   isSuperMode?: boolean;
   searchMode?: boolean;
+  debugMode?: boolean;
 }
 
 export interface AntyCharacterHandle {
@@ -78,6 +79,7 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
   size = 160,
   isSuperMode = false,
   searchMode = false,
+  debugMode = false,
 }, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const characterRef = useRef<HTMLDivElement>(null);
@@ -101,6 +103,7 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
 
   const superGlowRef = useRef<HTMLDivElement>(null);
   const superGlowTimelineRef = useRef<gsap.core.Timeline | null>(null); // Memory leak fix
+  const previousIsOffRef = useRef<boolean>(isOff); // Track previous OFF state
 
   // Use unified eye animation system
   const { performBlink, performDoubleBlink, allowBlinkingRef } = useEyeAnimations({
@@ -443,6 +446,12 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
       const shadow = document.getElementById('anty-shadow');
       if (!character || !shadow) return;
 
+      // Check if we're transitioning from OFF to ON (wake-up animation is running)
+      const isWakingUp = previousIsOffRef.current === true && isOff === false;
+
+      // Update the ref FIRST (before any early returns)
+      previousIsOffRef.current = isOff;
+
       // Don't animate when OFF - kill any existing animations and reset to neutral
       if (isOff) {
         gsap.killTweensOf([character, shadow]);
@@ -458,9 +467,27 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
         return;
       }
 
+      // If we're waking up, DON'T start idle breathing yet - let wake-up complete first
+      // The wake-up animation in page.tsx will handle everything, and idle will restart
+      // when this hook re-runs after wake-up completes (when expression changes to 'idle')
+      if (isWakingUp) {
+        console.log('[IDLE] Skipping idle animation - wake-up in progress');
+        return;
+      }
+
+      // Kill any existing idle animations before starting new ones
+      gsap.killTweensOf([character, shadow]);
+
+      // Wait 1.65 seconds before starting idle breathing to allow any transitions
+      const idleStartDelay = 1.65;
+
       // Smooth continuous floating with rotation and breathing
       // Using a single coordinated timeline for smoothness
-      const tl = gsap.timeline({ repeat: -1, yoyo: true });
+      const tl = gsap.timeline({
+        repeat: -1,
+        yoyo: true,
+        delay: idleStartDelay // Wait for wake-up to finish
+      });
 
       // Character floats up
       tl.to(character, {
@@ -474,6 +501,7 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
       // Shadow scales down and fades when character floats up (inverse relationship)
       // Shadow stays FIXED on ground - only opacity and scale change
       tl.to(shadow, {
+        xPercent: -50, // Keep centered (static, not animated)
         scaleX: 0.7, // Shrink horizontally when character is up
         scaleY: 0.55, // Shrink vertically when character is up
         opacity: 0.2, // Fade out when character is far
@@ -749,6 +777,50 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
 
         {/* Expression overlay (for future expression changes) */}
         {/* <AntyExpressionLayer expression={currentExpression} size={size} /> */}
+
+        {/* Debug overlays for character body and eyes */}
+        {debugMode && (
+          <>
+            {/* Character body debug box */}
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                border: '3px solid lime',
+                zIndex: 9999,
+              }}
+            />
+
+            {/* Left eye debug box - matches the eye container position */}
+            {!isOff && !isHappy && !isAngry && !isSad && (
+              <div
+                className="absolute pointer-events-none"
+                style={{
+                  top: '33.41%',
+                  left: '31.63%',
+                  right: '56.72%',
+                  bottom: '38.76%',
+                  border: '2px solid yellow',
+                  zIndex: 9999,
+                }}
+              />
+            )}
+
+            {/* Right eye debug box - matches the eye container position */}
+            {!isOff && !isHappy && !isAngry && !isSad && (
+              <div
+                className="absolute pointer-events-none"
+                style={{
+                  top: '33.41%',
+                  left: '57.36%',
+                  right: '31%',
+                  bottom: '38.76%',
+                  border: '2px solid orange',
+                  zIndex: 9999,
+                }}
+              />
+            )}
+          </>
+        )}
       </div>
     </div>
   );
