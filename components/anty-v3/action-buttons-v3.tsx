@@ -11,10 +11,10 @@ interface ActionButtonsV3Props {
 
 const buttons: Array<{ name: ButtonName; svg: string; alt: string }> = [
   { name: 'chat', svg: '/button-chat.svg', alt: 'Chat' },
+  { name: 'search', svg: '/button-search.svg', alt: 'Answer' },
   { name: 'moods', svg: '/button-moods.svg', alt: 'Moods' },
-  { name: 'play', svg: '/button-play.svg', alt: 'Play' },
   { name: 'feed', svg: '/button-eat.svg', alt: 'Eat' },
-  { name: 'search', svg: '/button-search.svg', alt: 'Search' },
+  { name: 'play', svg: '/button-play.svg', alt: 'Play' },
 ];
 
 export function ActionButtonsV3({ onButtonClick, isOff, moodsButtonRef }: ActionButtonsV3Props) {
@@ -32,12 +32,19 @@ export function ActionButtonsV3({ onButtonClick, isOff, moodsButtonRef }: Action
           animate={
             isOff
               ? {
-                  y: 100,
+                  y: 80,
                   opacity: 0,
                   transition: {
-                    delay: index * 0.08, // Cascade: each button delayed by 80ms
-                    duration: 0.4,
-                    ease: 'easeIn',
+                    y: {
+                      delay: index * 0.03, // Super fast cascade: 30ms spacing
+                      duration: 0.2,
+                      ease: 'easeIn',
+                    },
+                    opacity: {
+                      delay: index * 0.03 + 0.02, // Fade starts almost immediately (20ms after)
+                      duration: 0.1,
+                      ease: 'linear',
+                    }
                   },
                 }
               : {

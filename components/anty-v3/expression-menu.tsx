@@ -100,8 +100,8 @@ export function ExpressionMenu({ onExpressionSelect, currentExpression, isExpand
         if (menuRef.current) {
           const menuWidth = menuRef.current.offsetWidth;
           setPosition({
-            bottom: window.innerHeight - rect.top + 10,
-            left: rect.left + rect.width / 2 - menuWidth / 2, // Center the menu
+            bottom: window.innerHeight - rect.top + 10, // Position above button
+            left: rect.left + rect.width / 2 - menuWidth / 2, // Center over button
           });
         }
       }, 0);

@@ -1549,62 +1549,72 @@ export default function AntyV3() {
     const searchBorderGradient = searchBorderGradientRef.current;
     if (searchBorderGradient) {
       gsap.killTweensOf(searchBorderGradient);
-      gsap.set(searchBorderGradient, { opacity: 0 }); // Reset border gradient
     }
     const searchPlaceholder = searchPlaceholderRef.current;
     if (searchPlaceholder) {
       gsap.killTweensOf(searchPlaceholder);
-      gsap.set(searchPlaceholder, { opacity: 0 }); // Reset placeholder
     }
     const searchKbd = searchKbdRef.current;
     if (searchKbd) {
       gsap.killTweensOf(searchKbd);
-      gsap.set(searchKbd, { opacity: 0 }); // Reset kbd
     }
     const searchGlow = searchGlowRef.current;
     if (searchGlow) {
       gsap.killTweensOf(searchGlow);
-      gsap.set(searchGlow, { opacity: 0, scale: 1 }); // Reset glow
     }
 
-    // STEP 0.5: Anticipation - slight scale up before closing (100ms)
-    tl.to(searchBar, {
-      scale: 1.05,
-      duration: 0.1,
-      ease: 'power1.out'
-    }, 0);
+    // STEP 1: Border gradient fades out (inverse of fade in) - 150ms
+    if (searchBorderGradient) {
+      tl.to(searchBorderGradient, {
+        opacity: 0,
+        duration: 0.15,
+        ease: 'power1.in'
+      }, 0);
+    }
 
-    // STEP 1: Search bar fades out (250ms)
-    tl.to(searchBar, {
-      opacity: 0,
-      scale: 0.93,
-      duration: 0.25,
-      ease: 'power2.in'
-    }, 0.1);
+    // STEP 2: Placeholder and kbd blur out (inverse of blur in) - 150ms
+    const textElements = [searchPlaceholder, searchKbd].filter(Boolean);
+    if (textElements.length > 0) {
+      tl.to(textElements, {
+        opacity: 0,
+        filter: 'blur(6px)',
+        y: -4, // Slight upward drift (inverse of down)
+        duration: 0.15,
+        ease: 'power2.in'
+      }, 0);
+    }
 
-    // STEP 1.5: Search glow crossfades with orb glows (longer fade out for smooth transition)
+    // STEP 3: Search glow crossfades with orb glows
     if (searchGlow) {
       tl.to(searchGlow, {
         opacity: 0,
         scale: 0.85,
-        duration: 0.4,
+        duration: 0.35,
         ease: 'power1.out'
-      }, 0.15); // Start fading at 150ms, completes at 550ms (big overlap with orbs at 350ms)
+      }, 0.05);
     }
 
-    // STEP 2: Hide search glow canvas effect
+    // STEP 4: Search bar container fades out - 200ms
+    tl.to(searchBar, {
+      opacity: 0,
+      scale: 0.95,
+      duration: 0.2,
+      ease: 'power2.in'
+    }, 0.15);
+
+    // STEP 5: Hide search glow canvas effect
     tl.call(() => {
       antyRef.current?.hideSearchGlow?.();
     }, [], 0);
 
-    // STEP 3: Halves return to center and scale up with tiny leap
+    // STEP 6: Halves return to center and scale up with tiny leap
     // Also clear z-index from character container
     const characterContainer = leftBody.parentElement;
     if (characterContainer) {
       gsap.set(characterContainer, { clearProps: 'zIndex' });
     }
 
-    // Snap back to center with upward leap (280ms)
+    // Snap back to center with upward leap (280ms) - starts after search bar fades
     tl.to([leftBody, rightBody], {
       x: 0,
       y: -25,
@@ -1614,7 +1624,7 @@ export default function AntyV3() {
       duration: 0.28,
       ease: 'power2.out',
       clearProps: 'zIndex'
-    }, 0.2);
+    }, 0.35); // Start after search bar fade completes
 
     // Settle down to rest (180ms)
     tl.to([leftBody, rightBody], {
@@ -1623,7 +1633,7 @@ export default function AntyV3() {
       scaleY: 1,
       duration: 0.18,
       ease: 'power2.in'
-    }, 0.46);
+    }, 0.63); // 0.35 + 0.28
 
     // Eyes fade in and move down WITH the body settle to look attached
     if (leftEye && rightEye) {
@@ -1635,7 +1645,7 @@ export default function AntyV3() {
         y: 0, // Move down to normal position
         duration: 0.18, // Same duration as body settle
         ease: 'power2.in' // Same easing as body settle
-      }, 0.46); // Start when body starts settling
+      }, 0.63); // Start when body starts settling
     }
 
     if (shadow) {
@@ -1645,16 +1655,17 @@ export default function AntyV3() {
         scaleY: 1,
         duration: 0.22,
         ease: 'power1.out'
-      }, 0.6); // Delayed more
+      }, 0.77); // After settle completes (0.63 + 0.18 = 0.81, start a bit before)
     }
 
+    // Orb glows fade in as brackets close and settle
     const orbTargets = [innerGlow, outerGlow].filter(Boolean);
     if (orbTargets.length > 0) {
       tl.to(orbTargets, {
         opacity: 1,
-        duration: 0.3, // Slower fade
+        duration: 0.25,
         ease: 'power1.out'
-      }, 0.35);
+      }, 0.7); // Start during settle phase, ramp up as brackets come together
     }
 
     // CRITICAL: Force final states when timeline completes to ensure idle state is correct
@@ -1664,8 +1675,12 @@ export default function AntyV3() {
       if (shadow) gsap.set(shadow, { opacity: 0.7, scaleX: 1, scaleY: 1 });
       if (innerGlow) gsap.set(innerGlow, { opacity: 1 });
       if (outerGlow) gsap.set(outerGlow, { opacity: 1 });
+      if (searchBorderGradient) gsap.set(searchBorderGradient, { opacity: 0 });
+      if (searchPlaceholder) gsap.set(searchPlaceholder, { opacity: 0, filter: 'blur(0px)', y: 0 });
+      if (searchKbd) gsap.set(searchKbd, { opacity: 0, filter: 'blur(0px)', y: 0 });
+      if (searchGlow) gsap.set(searchGlow, { opacity: 0, scale: 1 });
       gsap.set([leftBody, rightBody], { x: 0, y: 0, scale: 1, rotation: 0, scaleX: 1, scaleY: 1 });
-    }, [], 0.61);
+    }, [], 0.81); // After body settle completes (0.63 + 0.18)
   };
 
   const handleButtonClick = (button: ButtonName) => {
