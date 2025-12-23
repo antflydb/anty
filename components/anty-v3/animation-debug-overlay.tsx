@@ -94,6 +94,7 @@ export function AnimationDebugOverlay({
   const [currentMotionLabel, setCurrentMotionLabel] = useState<string>('IDLE');
   const motionStartTimeRef = useRef<number>(Date.now());
   const isMotionActiveRef = useRef<boolean>(false);
+  const lastProcessedMotionRef = useRef<string>(''); // Prevent duplicate processing
 
   // Pre-motion buffer for capturing lead-in frames
   const PRE_MOTION_BUFFER = useRef<Array<{ x: number; y: number; shadow: number }>>([]);
@@ -265,6 +266,11 @@ export function AnimationDebugOverlay({
       return parts[1] || 'IDLE'; // Extract emotion name (e.g., "EXCITED")
     }
 
+    // Normalize "CONTROLLER: Idle animation" to "IDLE"
+    if (seq.includes('Idle animation') || seq.includes('idle')) {
+      return 'IDLE';
+    }
+
     // Remove random action suffixes like "+ BLINK" or "+ Look-right-random"
     // This handles both "IDLE + BLINK" and "IDLE + Look-right-random" formats
     return seq.split(' + ')[0];
@@ -323,7 +329,7 @@ export function AnimationDebugOverlay({
   useEffect(() => {
     const interval = setInterval(() => {
       const timeSinceLastMove = Date.now() - lastMoveTime;
-      const shouldBeFrozen = timeSinceLastMove > 3000;
+      const shouldBeFrozen = timeSinceLastMove > 6000;
 
       const isOffMode = currentSequence === 'OFF' || currentSequence.includes('Power-off') || currentSequence.includes('logo');
       const isSearchMode = currentSequence.includes('SEARCH') || currentSequence.includes('search');
@@ -332,7 +338,7 @@ export function AnimationDebugOverlay({
         // Check if frozen alert already exists
         const hasFrozenAlert = alerts.some(a => a.type === 'frozen' && Date.now() - a.timestamp < 10000);
         if (!hasFrozenAlert) {
-          addAlert('frozen', 'FROZEN DETECTED', 'No Y movement for 3+ seconds', {
+          addAlert('frozen', 'FROZEN DETECTED', 'No Y movement for 6+ seconds', {
             sequence: currentSequence,
             yPosition: debugData.y.toFixed(1),
           });
@@ -353,7 +359,7 @@ export function AnimationDebugOverlay({
 
   // Track base sequence to avoid restarting timer on random actions
   const currentBaseSequence = getBaseSequence(currentSequence);
-  const [trackedBaseSequence, setTrackedBaseSequence] = useState(currentBaseSequence);
+  const [trackedBaseSequence, setTrackedBaseSequence] = useState('');
 
   // IDLE validation tracker - 5 second monitoring
   useEffect(() => {
@@ -384,24 +390,34 @@ export function AnimationDebugOverlay({
         const sizeTolerance = 1.5;
 
         const rotationValid =
-          Math.abs(currentMinMax.rotationMin - EXPECTED_IDLE.rotationMin) <= rotationTolerance &&
-          Math.abs(currentMinMax.rotationMax - EXPECTED_IDLE.rotationMax) <= rotationTolerance;
+          currentMinMax.rotationMin >= (EXPECTED_IDLE.rotationMin - rotationTolerance) &&
+          currentMinMax.rotationMin <= (EXPECTED_IDLE.rotationMin + rotationTolerance) &&
+          currentMinMax.rotationMax >= (EXPECTED_IDLE.rotationMax - rotationTolerance) &&
+          currentMinMax.rotationMax <= (EXPECTED_IDLE.rotationMax + rotationTolerance);
 
         const scaleValid =
-          Math.abs(currentMinMax.scaleMin - EXPECTED_IDLE.scaleMin) <= scaleTolerance &&
-          Math.abs(currentMinMax.scaleMax - EXPECTED_IDLE.scaleMax) <= scaleTolerance;
+          currentMinMax.scaleMin >= (EXPECTED_IDLE.scaleMin - scaleTolerance) &&
+          currentMinMax.scaleMin <= (EXPECTED_IDLE.scaleMin + scaleTolerance) &&
+          currentMinMax.scaleMax >= (EXPECTED_IDLE.scaleMax - scaleTolerance) &&
+          currentMinMax.scaleMax <= (EXPECTED_IDLE.scaleMax + scaleTolerance);
 
         const widthValid =
-          Math.abs(currentMinMax.widthMin - EXPECTED_IDLE.widthMin) <= sizeTolerance &&
-          Math.abs(currentMinMax.widthMax - EXPECTED_IDLE.widthMax) <= sizeTolerance;
+          currentMinMax.widthMin >= (EXPECTED_IDLE.widthMin - sizeTolerance) &&
+          currentMinMax.widthMin <= (EXPECTED_IDLE.widthMin + sizeTolerance) &&
+          currentMinMax.widthMax >= (EXPECTED_IDLE.widthMax - sizeTolerance) &&
+          currentMinMax.widthMax <= (EXPECTED_IDLE.widthMax + sizeTolerance);
 
         const heightValid =
-          Math.abs(currentMinMax.heightMin - EXPECTED_IDLE.heightMin) <= sizeTolerance &&
-          Math.abs(currentMinMax.heightMax - EXPECTED_IDLE.heightMax) <= sizeTolerance;
+          currentMinMax.heightMin >= (EXPECTED_IDLE.heightMin - sizeTolerance) &&
+          currentMinMax.heightMin <= (EXPECTED_IDLE.heightMin + sizeTolerance) &&
+          currentMinMax.heightMax >= (EXPECTED_IDLE.heightMax - sizeTolerance) &&
+          currentMinMax.heightMax <= (EXPECTED_IDLE.heightMax + sizeTolerance);
 
         const shadowValid =
-          Math.abs(currentMinMax.shadowWidthMin - EXPECTED_IDLE.shadowMin) <= sizeTolerance &&
-          Math.abs(currentMinMax.shadowWidthMax - EXPECTED_IDLE.shadowMax) <= sizeTolerance;
+          currentMinMax.shadowWidthMin >= (EXPECTED_IDLE.shadowMin - sizeTolerance) &&
+          currentMinMax.shadowWidthMin <= (EXPECTED_IDLE.shadowMin + sizeTolerance) &&
+          currentMinMax.shadowWidthMax >= (EXPECTED_IDLE.shadowMax - sizeTolerance) &&
+          currentMinMax.shadowWidthMax <= (EXPECTED_IDLE.shadowMax + sizeTolerance);
 
         const isValid = rotationValid && scaleValid && widthValid && heightValid && shadowValid;
 
@@ -466,6 +482,11 @@ export function AnimationDebugOverlay({
 
   // Interruption detection
   useEffect(() => {
+    // Skip motion lifecycle events (these are internal, not interruptions)
+    if (currentSequence.startsWith('MOTION_START:') || currentSequence.startsWith('MOTION_COMPLETE:')) {
+      return;
+    }
+
     // Normalize sequence names to detect actual sequence changes
     const normalizeForInterruption = (seq: string) => {
       const base = seq.split(' + ')[0].toUpperCase();
@@ -528,39 +549,57 @@ export function AnimationDebugOverlay({
   const handleMotionComplete = useCallback((label: string) => {
     if (!showPositionTracker) return;
 
-    const duration = Date.now() - motionStartTimeRef.current;
+    // Prevent duplicate processing - check if motion is already inactive
+    if (!isMotionActiveRef.current) {
+      console.log(`[PositionTracker] ⚠️ Skipping duplicate MOTION_COMPLETE for ${label}`);
+      return;
+    }
 
-    // Use functional setState to access current position history without dependency
+    // IMMEDIATELY mark motion as inactive to prevent race conditions
+    isMotionActiveRef.current = false;
+
+    console.log(`[PositionTracker] ✅ Motion COMPLETE: ${label}`);
+
+    // Use a local flag to ensure we only create ONE snapshot even if setState callback fires multiple times
+    let snapshotCreated = false;
+
+    // Clear position history and capture data SYNCHRONOUSLY
     setPositionHistory(currentHistory => {
-      console.log(`[PositionTracker] Motion COMPLETE: ${label} (${duration}ms, ${currentHistory.length} frames)`);
-
-      // Only create snapshot if we have meaningful data
-      if (currentHistory.length < 20) {
-        console.warn('[PositionTracker] Insufficient data, skipping snapshot');
-        isMotionActiveRef.current = false;
-        return currentHistory; // Return unchanged
+      // Guard against React calling this callback multiple times
+      if (snapshotCreated) {
+        console.log(`[PositionTracker] ⚠️ Skipping duplicate setState callback for ${label}`);
+        return [];
       }
 
-      // Create snapshot card with ACTUAL motion label
+      console.log(`[PositionTracker] Captured ${currentHistory.length} frames for ${label}`);
+
+      // Check if we have enough data
+      if (currentHistory.length < 20) {
+        console.warn(`[PositionTracker] Insufficient data for ${label}: ${currentHistory.length} frames`);
+        PRE_MOTION_BUFFER.current = [];
+        setCurrentMotionLabel('IDLE');
+        return [];
+      }
+
+      // Mark snapshot as created BEFORE scheduling it
+      snapshotCreated = true;
+
+      // Create snapshot INSIDE this callback so we have access to currentHistory
       const cardId = `p${cardIdCounter.current++}`;
+      const capturedData = [...currentHistory];
 
-      setSnapshotCards(prevCards => [
-        ...prevCards,
-        {
-          id: cardId,
-          sequence: label, // Use actual label from motion event
-          data: [...currentHistory],
-        }
-      ]);
+      // Schedule snapshot creation for next tick (avoids nested setState warning)
+      requestAnimationFrame(() => {
+        setSnapshotCards(prevCards => [
+          ...prevCards,
+          { id: cardId, sequence: label, data: capturedData }
+        ]);
+        console.log(`[PositionTracker] ✨ Created snapshot ${cardId}: ${label} (${capturedData.length} frames)`);
+      });
 
-      console.log(`[PositionTracker] Created snapshot: ${cardId} "${label}"`);
-
-      // Reset for next animation
-      isMotionActiveRef.current = false;
+      // Clear for next animation
       PRE_MOTION_BUFFER.current = [];
       setCurrentMotionLabel('IDLE');
-
-      // Clear position history
       return [];
     });
   }, [showPositionTracker]);
@@ -569,16 +608,38 @@ export function AnimationDebugOverlay({
   useEffect(() => {
     if (!currentSequence || !showPositionTracker) return;
 
-    console.log('[PositionTracker] Received currentSequence:', currentSequence);
+    // Deduplicate - skip if we already processed this exact sequence
+    if (currentSequence === lastProcessedMotionRef.current) {
+      console.log('[PositionTracker] 🔄 Already processed:', currentSequence);
+      return;
+    }
+
+    console.log('[PositionTracker] 📨 Received currentSequence:', currentSequence);
 
     // Parse motion event messages from controller
     if (currentSequence.startsWith('MOTION_START:')) {
       const label = currentSequence.replace('MOTION_START:', '');
+      // Reset deduplication when new motion starts - allows new emotion to process
+      lastProcessedMotionRef.current = `MOTION_START:${label}`;
+      console.log('[PositionTracker] 🟢 Processing MOTION_START:', label);
       handleMotionStart(label);
     } else if (currentSequence.startsWith('MOTION_COMPLETE:')) {
       const parts = currentSequence.replace('MOTION_COMPLETE:', '').split(':');
       const label = parts[0];
+
+      // Deduplicate based on label only (ignore duration)
+      const dedupeKey = `MOTION_COMPLETE:${label}`;
+      if (lastProcessedMotionRef.current === dedupeKey) {
+        console.log('[PositionTracker] ⚠️ Skipping duplicate MOTION_COMPLETE for:', label);
+        return;
+      }
+
+      lastProcessedMotionRef.current = dedupeKey;
+      console.log('[PositionTracker] 🔴 Processing MOTION_COMPLETE:', label, 'Full sequence:', currentSequence);
       handleMotionComplete(label);
+    } else {
+      // Don't reset for non-motion sequences to maintain deduplication
+      console.log('[PositionTracker] ℹ️ Non-motion sequence:', currentSequence);
     }
   }, [currentSequence, showPositionTracker, handleMotionStart, handleMotionComplete]);
 
@@ -852,7 +913,7 @@ export function AnimationDebugOverlay({
     <>
       <div
         ref={mainDebugRef}
-        className="fixed bg-black/70 text-white p-4 rounded-lg font-mono text-xs z-50 min-w-[280px] border-2 border-green-500/50"
+        className="fixed bg-black/70 text-white p-4 rounded-lg font-mono text-xs z-50 w-[300px] border-2 border-green-500/50"
         style={{
           left: `${position.x}px`,
           top: `${position.y}px`,
@@ -963,20 +1024,29 @@ export function AnimationDebugOverlay({
         <div className="mt-3 pt-2 border-t border-green-400/30">
           <div className="flex items-center justify-between text-[10px] mb-2">
             <span className="text-gray-400">MIN/MAX Tracking:</span>
-            {idleValidationState !== 'none' && (
-              <div className="flex items-center gap-1">
-                <span className="text-cyan-300">Idle</span>
-                {idleValidationState === 'tracking' && (
+            <div className="flex items-center gap-1">
+              {idleValidationState === 'none' && (
+                <span className="text-gray-500">—</span>
+              )}
+              {idleValidationState === 'tracking' && (
+                <>
+                  <span className="text-cyan-300">Idle</span>
                   <span className="text-yellow-300 animate-pulse">...</span>
-                )}
-                {idleValidationState === 'valid' && (
+                </>
+              )}
+              {idleValidationState === 'valid' && (
+                <>
+                  <span className="text-cyan-300">Idle</span>
                   <span className="text-green-400">✓</span>
-                )}
-                {idleValidationState === 'invalid' && (
+                </>
+              )}
+              {idleValidationState === 'invalid' && (
+                <>
+                  <span className="text-cyan-300">Idle</span>
                   <span className="text-red-400">✗</span>
-                )}
-              </div>
-            )}
+                </>
+              )}
+            </div>
           </div>
           <div className="space-y-1 text-[10px]">
             <div className="flex justify-between">
@@ -1026,7 +1096,7 @@ export function AnimationDebugOverlay({
 
         <div className="mt-3 pt-2 border-t border-green-400/30">
           <div className="text-gray-400 text-[10px] mb-1">Current Sequence:</div>
-          <div className="text-green-400 font-bold text-sm break-words">
+          <div className="text-green-400 font-bold text-sm break-words max-w-full overflow-wrap-anywhere">
             {debugData.currentSequence}
             {randomAction && (
               <span className="text-cyan-400"> + {randomAction}</span>

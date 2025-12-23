@@ -28,6 +28,7 @@ export class AnimationController {
   // Timeline tracking
   private activeTimelines = new Map<string, TimelineRef>();
   private idleTimeline: gsap.core.Timeline | null = null;
+  private idleElements: (Element | string)[] = [];
 
   // Animation queue
   private queue: QueuedAnimation[] = [];
@@ -86,6 +87,9 @@ export class AnimationController {
       console.log('[AnimationController] Starting idle animation');
     }
 
+    // Store idle elements for later re-acquisition
+    this.idleElements = elements;
+
     // Transition to idle state
     if (!this.stateMachine.transition(AnimationState.IDLE)) {
       if (this.config.enableLogging) {
@@ -136,8 +140,10 @@ export class AnimationController {
   pauseIdle(): void {
     if (this.idleTimeline && this.idleTimeline.isActive()) {
       this.idleTimeline.pause();
+      // Release elements so other animations can use them
+      this.elementRegistry.releaseByOwner('idle');
       if (this.config.enableLogging) {
-        console.log('[AnimationController] Paused idle animation');
+        console.log('[AnimationController] Paused idle animation and released elements');
       }
     }
   }
@@ -147,9 +153,14 @@ export class AnimationController {
    */
   resumeIdle(): void {
     if (this.idleTimeline && !this.idleTimeline.isActive()) {
+      // Re-acquire elements for idle
+      this.idleElements.forEach(element => {
+        this.elementRegistry.acquire(element, 'idle', this.idleTimeline!, true);
+      });
+
       this.idleTimeline.resume();
       if (this.config.enableLogging) {
-        console.log('[AnimationController] Resumed idle animation');
+        console.log('[AnimationController] Resumed idle animation and re-acquired elements');
       }
     }
   }
@@ -196,6 +207,18 @@ export class AnimationController {
       return false;
     }
 
+    // Kill any existing emotion timelines before starting new one
+    for (const [id, ref] of this.activeTimelines.entries()) {
+      if (id.startsWith('emotion-')) {
+        if (this.config.enableLogging) {
+          console.log(`[AnimationController] Killing previous emotion: ${id}`);
+        }
+        ref.timeline.kill();
+        this.elementRegistry.releaseByOwner(id);
+        this.activeTimelines.delete(id);
+      }
+    }
+
     // Transition to emotion state
     if (!this.stateMachine.transition(AnimationState.EMOTION, force)) {
       if (this.config.enableLogging) {
@@ -233,6 +256,11 @@ export class AnimationController {
 
     this.currentEmotion = emotion;
 
+    // CRITICAL: Clear any existing callbacks from timeline creation to prevent duplicates
+    timeline.eventCallback('onStart', null);
+    timeline.eventCallback('onComplete', null);
+    timeline.eventCallback('onInterrupt', null);
+
     // Setup callbacks
     const animationStartTime = Date.now();
 
@@ -256,8 +284,8 @@ export class AnimationController {
       this.activeTimelines.delete(animationId);
       this.elementRegistry.releaseByOwner(animationId);
 
-      // Return to idle
-      this.stateMachine.transition(AnimationState.IDLE);
+      // Return to idle (force transition to bypass priority check)
+      this.stateMachine.transition(AnimationState.IDLE, true);
       this.resumeIdle();
 
       // Process queue
@@ -355,9 +383,9 @@ export class AnimationController {
       this.activeTimelines.delete(animationId);
       this.elementRegistry.releaseByOwner(animationId);
 
-      // Return to idle if not already there
+      // Return to idle if not already there (force transition to bypass priority check)
       if (state !== AnimationState.IDLE) {
-        this.stateMachine.transition(AnimationState.IDLE);
+        this.stateMachine.transition(AnimationState.IDLE, true);
         this.resumeIdle();
       }
 

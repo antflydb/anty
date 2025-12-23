@@ -49,6 +49,7 @@ interface AntyCharacterV3Props {
   expression?: ExpressionName;
   onButtonClick?: (button: ButtonName) => void;
   onSpontaneousExpression?: (expression: ExpressionName) => void;
+  onEmotionComplete?: (emotion: string) => void;
   className?: string;
   size?: number;
   isSuperMode?: boolean;
@@ -85,6 +86,7 @@ export interface AntyCharacterHandle {
 export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Props>(({
   expression = 'idle',
   onSpontaneousExpression,
+  onEmotionComplete,
   className = '',
   size = 160,
   isSuperMode = false,
@@ -142,6 +144,8 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
       shadow: shadowElement,
       eyeLeft: leftEyeRef.current,
       eyeRight: rightEyeRef.current,
+      leftBody: leftBodyRef.current,
+      rightBody: rightBodyRef.current,
       // Note: leftEyePathRef and rightEyePathRef are SVG paths, not used by controller yet
     },
     {
@@ -162,6 +166,18 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
         }
       },
       onAnimationSequenceChange: onAnimationSequenceChange, // Pass through to controller
+      callbacks: {
+        onEmotionMotionComplete: (emotion, timelineId, duration) => {
+          if (ENABLE_ANIMATION_DEBUG_LOGS) {
+            logAnimationEvent('Emotion Motion Complete', { emotion, timelineId, duration });
+          }
+          // Notify parent that emotion animation has completed
+          console.log(`[AntyCharacterV3] Emotion ${emotion} motion complete, calling onEmotionComplete:`, !!onEmotionComplete);
+          if (onEmotionComplete) {
+            onEmotionComplete(emotion);
+          }
+        },
+      },
     }
   );
 
@@ -514,6 +530,38 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
     // Performance fix: Removed 5 separate setState calls for isHappy, isAngry, isSad, isOff
     // These are now computed values, reducing re-renders from 5+ to 1
   }, [expression, performWink]);
+
+  // Track last processed expression to prevent infinite loops
+  const lastProcessedExpression = useRef<ExpressionName | ''>('');
+
+  // Play emotion animation when expression changes (new controller only)
+  useEffect(() => {
+    if (!USE_NEW_ANIMATION_CONTROLLER || !animationController.isReady) return;
+    if (isOff) return; // Don't play emotions when powered off
+
+    // Only trigger if expression actually changed
+    if (expression === lastProcessedExpression.current) return;
+
+    // Map ExpressionName to EmotionType
+    const validEmotions: Record<string, EmotionType> = {
+      'happy': 'happy',
+      'excited': 'excited',
+      'sad': 'sad',
+      'angry': 'angry',
+      'shocked': 'shocked',
+      'spin': 'spin',
+    };
+
+    const emotionType = validEmotions[expression];
+    if (emotionType) {
+      lastProcessedExpression.current = expression;
+      if (ENABLE_ANIMATION_DEBUG_LOGS) {
+        logAnimationEvent('Expression changed → playEmotion', { expression, emotionType });
+      }
+      animationController.playEmotion(emotionType, { priority: 2 });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [expression, isOff]);
 
   // Super mode glow animation
   useEffect(() => {

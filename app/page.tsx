@@ -2234,6 +2234,13 @@ export default function AntyV3() {
                       scheduleExpressionReset(1000);
                     }
                   }}
+                  onEmotionComplete={(emotion) => {
+                    // Reset expression to idle when animation completes
+                    if (USE_NEW_ANIMATION_CONTROLLER) {
+                      console.log(`[page.tsx] Emotion ${emotion} → idle`);
+                      setExpression('idle');
+                    }
+                  }}
                 />
                 <AntySearchBar
                   active={searchActive}
@@ -3564,21 +3571,21 @@ export default function AntyV3() {
           if (expr === 'off') {
             // Don't auto-return to idle
           } else if (expr === 'spin') {
-            scheduleExpressionReset(1500);
+            if (!USE_NEW_ANIMATION_CONTROLLER) scheduleExpressionReset(1500);
           } else if (expr === 'angry') {
             // Angry animation handles eye change internally via timeline
             // Don't auto-return to idle
           } else if (expr === 'sad') {
-            scheduleExpressionReset(5500);
+            if (!USE_NEW_ANIMATION_CONTROLLER) scheduleExpressionReset(5500);
           } else if (expr === 'idea') {
-            scheduleExpressionReset(2300);
+            if (!USE_NEW_ANIMATION_CONTROLLER) scheduleExpressionReset(2300);
           } else if (expr === 'nod') {
-            scheduleExpressionReset(1200);
+            if (!USE_NEW_ANIMATION_CONTROLLER) scheduleExpressionReset(1200);
           } else if (expr === 'headshake') {
-            scheduleExpressionReset(900);
+            if (!USE_NEW_ANIMATION_CONTROLLER) scheduleExpressionReset(900);
           } else if (expr === 'look-left' || expr === 'look-right') {
             // Look animations hold briefly then return to idle
-            scheduleExpressionReset(800);
+            if (!USE_NEW_ANIMATION_CONTROLLER) scheduleExpressionReset(800);
           } else if (expr === 'lookaround') {
             // Lookaround: deliberate left-center-right-center, then quick darting
             const sequence: { expression: ExpressionName; delay: number }[] = [
@@ -3628,7 +3635,11 @@ export default function AntyV3() {
 
             // Don't schedule reset - the sequence handles returning to idle
           } else {
-            scheduleExpressionReset(1350);
+            // When using new animation controller, don't auto-reset
+            // The controller handles returning to idle via onEmotionMotionComplete
+            if (!USE_NEW_ANIMATION_CONTROLLER) {
+              scheduleExpressionReset(1350);
+            }
           }
         }}
       />

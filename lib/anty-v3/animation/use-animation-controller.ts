@@ -5,7 +5,7 @@
  * Manages lifecycle, initialization, and state synchronization.
  */
 
-import { useRef, useEffect, useCallback } from 'react';
+import { useRef, useEffect, useCallback, useMemo } from 'react';
 import gsap from 'gsap';
 import { AnimationController } from './controller';
 import {
@@ -17,6 +17,7 @@ import {
   isEmotionType,
 } from './types';
 import { idleAnimationConfig } from '../gsap-configs';
+import { createEmotionAnimation } from './definitions/emotions';
 
 /**
  * Elements required by the animation controller
@@ -40,6 +41,10 @@ export interface AnimationElements {
   glow?: HTMLElement | null;
   /** Search bar */
   searchBar?: HTMLElement | null;
+  /** Left body */
+  leftBody?: HTMLElement | null;
+  /** Right body */
+  rightBody?: HTMLElement | null;
   /** Custom elements */
   [key: string]: HTMLElement | null | undefined;
 }
@@ -185,7 +190,14 @@ export function useAnimationController(
         }
         // Notify position tracker that motion actually completed
         onAnimationSequenceChange?.(`MOTION_COMPLETE:${emotion.toUpperCase()}:${duration}`);
+
+        // Call BOTH the callback from options AND any parent callback
         callbacks.onEmotionMotionComplete?.(emotion, timelineId, duration);
+
+        // Reset to IDLE after a brief delay (allows position tracker to capture MOTION_COMPLETE)
+        setTimeout(() => {
+          onAnimationSequenceChange?.('CONTROLLER: Idle animation');
+        }, 100);
       },
     };
 
@@ -459,11 +471,11 @@ export function useAnimationController(
       }, 0);
     }
 
-    // Register idle with controller
-    const idleElements = [
+    // Register idle with controller (deduplicate to avoid double acquisition)
+    const idleElements = Array.from(new Set([
       elements.character,
       elements.shadow,
-    ].filter(Boolean) as Element[];
+    ].filter(Boolean))) as Element[];
 
     controllerRef.current.startIdle(tl, idleElements);
     idleTimelineRef.current = tl;
@@ -498,15 +510,15 @@ export function useAnimationController(
         console.log(`[useAnimationController] Playing emotion: ${emotion}`);
       }
 
-      // Create timeline for emotion
-      const tl = gsap.timeline();
+      // Create timeline for emotion with animations
+      const tl = createEmotionAnimation(emotion, elements);
 
-      // Collect elements for this emotion
-      const emotionElements = [
+      // Collect elements for this emotion (deduplicate to avoid double acquisition)
+      const emotionElements = Array.from(new Set([
         elements.character,
         elements.eyeLeft,
         elements.eyeRight,
-      ].filter(Boolean) as Element[];
+      ].filter(Boolean))) as Element[];
 
       return controllerRef.current.playEmotion(emotion, tl, emotionElements, animationOptions);
     },
@@ -700,7 +712,8 @@ export function useAnimationController(
     return controllerRef.current.getDebugInfo();
   }, []);
 
-  return {
+  // CRITICAL: Memoize return object to prevent useEffect re-firing in consumers
+  return useMemo(() => ({
     playEmotion,
     transitionTo,
     startIdle,
@@ -712,5 +725,5 @@ export function useAnimationController(
     isIdle: isIdleActive,
     getDebugInfo,
     isReady: isReady.current,
-  };
+  }), [playEmotion, transitionTo, startIdle, pause, resume, killAll, getState, getEmotion, isIdleActive, getDebugInfo]);
 }

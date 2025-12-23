@@ -33,6 +33,7 @@ export type EmotionType =
   | 'sad'
   | 'angry'
   | 'surprised'
+  | 'shocked'
   | 'confused'
   | 'thinking'
   | 'excited'
@@ -42,7 +43,8 @@ export type EmotionType =
   | 'error'
   | 'success'
   | 'loading'
-  | 'celebrate';
+  | 'celebrate'
+  | 'spin';
 
 /**
  * Search mode types for search-specific animations
@@ -539,6 +541,7 @@ export function isEmotionType(value: string): value is EmotionType {
     'sad',
     'angry',
     'surprised',
+    'shocked',
     'confused',
     'thinking',
     'excited',
@@ -549,6 +552,7 @@ export function isEmotionType(value: string): value is EmotionType {
     'success',
     'loading',
     'celebrate',
+    'spin',
   ];
   return emotions.includes(value as EmotionType);
 }
