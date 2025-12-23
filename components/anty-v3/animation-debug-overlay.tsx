@@ -52,10 +52,51 @@ export function AnimationDebugOverlay({
 
   const [isLive, setIsLive] = useState(true);
 
-  // Draggable state
+  // Draggable state for main debug panel
   const [position, setPosition] = useState({ x: 16, y: 80 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+
+  // Position tracker experimental feature - MUST BE DECLARED BEFORE USE IN useEffect
+  const [showPositionTracker, setShowPositionTracker] = useState(true); // Default to enabled
+  const [positionHistory, setPositionHistory] = useState<Array<{ x: number; y: number; shadow: number }>>([]);
+  const [snapshotCards, setSnapshotCards] = useState<Array<{
+    id: string;
+    sequence: string;
+    data: Array<{ x: number; y: number; shadow: number }>;
+  }>>([]);
+  const cardIdCounter = useRef(0);
+  const [isHoveringSnapshots, setIsHoveringSnapshots] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const currentBaseSequenceRef = useRef<string>('IDLE');
+  const pendingSnapshotRef = useRef(false);
+
+  // Baseline position (0,0,0) - set when tracker starts or manually
+  const [baselinePosition, setBaselinePosition] = useState<{ x: number; y: number } | null>(null);
+
+  // Simple tracking - always record, snapshot on sequence change with timing
+  const lastSequenceChangeTime = useRef<number>(Date.now());
+  const MIN_SEQUENCE_DURATION = 1500; // Animations must run at least 1.5s before switching
+
+  // Draggable state for position tracker
+  // Position equidistant from right edge as debug menu is from left edge
+  const mainDebugRef = useRef<HTMLDivElement>(null);
+  const trackerRef = useRef<HTMLDivElement>(null);
+  const [trackerPosition, setTrackerPosition] = useState(() => {
+    return { x: 0, y: 80 }; // Will be positioned via CSS when not dragged
+  });
+  const [isTrackerDragging, setIsTrackerDragging] = useState(false);
+  const [trackerDragOffset, setTrackerDragOffset] = useState({ x: 0, y: 0 });
+  const [maxTrackerHeight, setMaxTrackerHeight] = useState(600);
+  const [trackerWasDragged, setTrackerWasDragged] = useState(false);
+
+  // Update max tracker height based on main debug panel height
+  useEffect(() => {
+    if (mainDebugRef.current) {
+      const mainHeight = mainDebugRef.current.offsetHeight;
+      setMaxTrackerHeight(mainHeight);
+    }
+  }, [position]); // Update when main panel position changes (which might affect height)
 
   // Frozen detection state
   const [lastY, setLastY] = useState(0);
@@ -125,8 +166,9 @@ export function AnimationDebugOverlay({
   // Clear alerts when debug menu is closed (component unmounts)
   useEffect(() => {
     return () => {
-      // Clear localStorage on unmount (when debug mode is exited)
+      // Clear localStorage and alerts on unmount (when debug mode is exited)
       localStorage.setItem('anty-debug-alerts', JSON.stringify([]));
+      setAlerts([]);
     };
   }, []);
 
@@ -204,6 +246,13 @@ export function AnimationDebugOverlay({
       yMin: Infinity,
       yMax: -Infinity,
     });
+  };
+
+  // Helper to get base sequence without random action suffixes
+  const getBaseSequence = (seq: string) => {
+    // Remove random action suffixes like "+ BLINK" or "+ Look-right-random"
+    // This handles both "IDLE + BLINK" and "IDLE + Look-right-random" formats
+    return seq.split(' + ')[0];
   };
 
   // Detect sequence changes and log transition
@@ -289,18 +338,21 @@ export function AnimationDebugOverlay({
 
   // IDLE validation tracker - 5 second monitoring
   useEffect(() => {
-    // Clear any existing timer when sequence changes
-    if (idleValidationTimer) {
+    const baseSequence = getBaseSequence(currentSequence);
+
+    // Clear any existing timer when sequence changes (but not for random actions)
+    if (idleValidationTimer && baseSequence !== 'IDLE') {
       clearTimeout(idleValidationTimer);
       setIdleValidationTimer(null);
     }
 
-    if (currentSequence === 'IDLE') {
-      // Start tracking
-      setIdleValidationState('tracking');
+    if (baseSequence === 'IDLE') {
+      // Only start tracking if not already tracking (don't restart for random actions)
+      if (!idleValidationTimer) {
+        setIdleValidationState('tracking');
 
-      // Set 5-second timer
-      const timer = setTimeout(() => {
+        // Set 5-second timer
+        const timer = setTimeout(() => {
         // Validate using ref to get latest minMax values
         const currentMinMax = minMaxRef.current;
         const rotationTolerance = 0.15;
@@ -372,9 +424,10 @@ export function AnimationDebugOverlay({
             }
           }
         }
-      }, 5000);
+        }, 5000);
 
-      setIdleValidationTimer(timer);
+        setIdleValidationTimer(timer);
+      }
     } else {
       setIdleValidationState('none');
     }
@@ -389,12 +442,25 @@ export function AnimationDebugOverlay({
 
   // Interruption detection
   useEffect(() => {
-    if (prevSequence !== currentSequence) {
+    // Normalize sequence names to detect actual sequence changes
+    const normalizeForInterruption = (seq: string) => {
+      const base = seq.split(' + ')[0].toUpperCase();
+      // Treat all LOOKAROUND sub-sequences as "LOOKAROUND"
+      if (base === 'LOOKAROUND' || base === 'LOOK-LEFT' || base === 'LOOK-RIGHT') {
+        return 'LOOKAROUND';
+      }
+      return base;
+    };
+
+    const normalizedCurrent = normalizeForInterruption(currentSequence);
+    const normalizedPrev = normalizeForInterruption(prevSequence);
+
+    if (normalizedPrev !== normalizedCurrent) {
       const duration = Date.now() - sequenceStartTime;
 
       // Check if animation was interrupted (less than expected duration)
       // Most animations should run for at least 500ms
-      if (duration < 500 && prevSequence !== 'IDLE' && currentSequence !== 'IDLE') {
+      if (duration < 500 && normalizedPrev !== 'IDLE' && normalizedCurrent !== 'IDLE') {
         const hasInterruptionAlert = alerts.some(
           a => a.type === 'interruption' && Date.now() - a.timestamp < 5000
         );
@@ -417,12 +483,28 @@ export function AnimationDebugOverlay({
     }
   }, [currentSequence, prevSequence, sequenceStartTime, alerts]);
 
-  // Mouse handlers for dragging
+  // Mouse handlers for main debug panel dragging
   const handleMouseDown = (e: React.MouseEvent) => {
     setIsDragging(true);
     setDragOffset({
       x: e.clientX - position.x,
       y: e.clientY - position.y,
+    });
+  };
+
+  // Mouse handlers for tracker dragging
+  const handleTrackerMouseDown = (e: React.MouseEvent) => {
+    // Get current position from the element if we're in default (bottom-right) mode
+    if (trackerRef.current && !trackerWasDragged) {
+      const rect = trackerRef.current.getBoundingClientRect();
+      setTrackerPosition({ x: rect.left, y: rect.top });
+    }
+
+    setIsTrackerDragging(true);
+    setTrackerWasDragged(true);
+    setTrackerDragOffset({
+      x: e.clientX - (trackerRef.current?.getBoundingClientRect().left || trackerPosition.x),
+      y: e.clientY - (trackerRef.current?.getBoundingClientRect().top || trackerPosition.y),
     });
   };
 
@@ -434,13 +516,20 @@ export function AnimationDebugOverlay({
           y: e.clientY - dragOffset.y,
         });
       }
+      if (isTrackerDragging) {
+        setTrackerPosition({
+          x: e.clientX - trackerDragOffset.x,
+          y: e.clientY - trackerDragOffset.y,
+        });
+      }
     };
 
     const handleMouseUp = () => {
       setIsDragging(false);
+      setIsTrackerDragging(false);
     };
 
-    if (isDragging) {
+    if (isDragging || isTrackerDragging) {
       window.addEventListener('mousemove', handleMouseMove);
       window.addEventListener('mouseup', handleMouseUp);
     }
@@ -449,7 +538,7 @@ export function AnimationDebugOverlay({
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDragging, dragOffset]);
+  }, [isDragging, isTrackerDragging, dragOffset, trackerDragOffset]);
 
   useEffect(() => {
     let animationFrameId: number;
@@ -518,6 +607,85 @@ export function AnimationDebugOverlay({
         timestamp: Date.now(),
       });
 
+      // Update position history for tracker with immediate snapshot on sequence change
+      if (showPositionTracker) {
+        // Set baseline on first run if not already set
+        if (!baselinePosition) {
+          setBaselinePosition({ x: centerX, y: centerY });
+        }
+
+        // Calculate deviation from baseline (0,0,0 system)
+        // Y is inverted: negative deviation = moving down (higher Y), positive = moving up (lower Y)
+        const deviation = baselinePosition
+          ? { x: centerX - baselinePosition.x, y: baselinePosition.y - centerY, shadow: shadowRect.width }
+          : { x: 0, y: 0, shadow: shadowRect.width };
+
+        // Get clean sequence name
+        const getCleanSequenceName = (seq: string) => {
+          const upper = seq.toUpperCase();
+          const base = seq.split(' + ')[0].toUpperCase();
+
+          // Ignore random overlays - keep current sequence
+          if (upper.includes(' + BLINK') || upper.includes('-RANDOM') || upper.includes('+ BLINK')) {
+            return currentBaseSequenceRef.current || 'IDLE';
+          }
+
+          // Normalize LOOKAROUND sequences ONLY when part of intentional lookaround
+          if (base === 'LOOKAROUND') {
+            return 'LOOKAROUND';
+          }
+
+          // LOOK-LEFT and LOOK-RIGHT appearing alone are random actions, keep current sequence
+          if (base === 'LOOK-LEFT' || base === 'LOOK-RIGHT') {
+            return currentBaseSequenceRef.current || 'IDLE';
+          }
+
+          return base;
+        };
+
+        const currentSeqName = getCleanSequenceName(currentSequence);
+        const previousSeqName = currentBaseSequenceRef.current || 'IDLE';
+
+        // Always accumulate data
+        setPositionHistory(prev => [...prev, deviation]);
+
+        // Check if sequence actually changed
+        if (currentSeqName !== previousSeqName) {
+          const timeSinceLastChange = Date.now() - lastSequenceChangeTime.current;
+
+          // Only create snapshot if enough time has passed (prevents splitting)
+          if (timeSinceLastChange > MIN_SEQUENCE_DURATION && positionHistory.length > 20) {
+            if (!pendingSnapshotRef.current) {
+              pendingSnapshotRef.current = true;
+              const cardId = `p${cardIdCounter.current}`;
+              cardIdCounter.current += 1;
+
+              // Create snapshot of previous sequence
+              setSnapshotCards(prevCards => [
+                ...prevCards,
+                {
+                  id: cardId,
+                  sequence: previousSeqName,
+                  data: positionHistory,
+                }
+              ]);
+
+              // Start fresh for new sequence
+              setPositionHistory([deviation]);
+              currentBaseSequenceRef.current = currentSeqName;
+              lastSequenceChangeTime.current = Date.now();
+
+              setTimeout(() => {
+                pendingSnapshotRef.current = false;
+              }, 100);
+            }
+          } else {
+            // Too soon, just update the sequence name
+            currentBaseSequenceRef.current = currentSeqName;
+          }
+        }
+      }
+
       // Update min/max tracking
       setMinMax(prev => ({
         rotationMin: Math.min(prev.rotationMin, rotation),
@@ -549,7 +717,7 @@ export function AnimationDebugOverlay({
         cancelAnimationFrame(animationFrameId);
       }
     };
-  }, [characterRef, shadowRef, currentSequence, lastY]);
+  }, [characterRef, shadowRef, currentSequence, lastY, showPositionTracker]);
 
   // Alert styling by type
   const getAlertStyle = (type: DebugAlert['type']) => {
@@ -565,16 +733,86 @@ export function AnimationDebugOverlay({
     }
   };
 
+  // Render position plot with chronological stacking (left = oldest, right = newest)
+  const renderPositionPlot = (data: Array<{ x: number; y: number; shadow: number }>, width = 280, height = 80, isLive = false) => {
+    if (data.length < 2) {
+      return (
+        <div className="flex items-center justify-center h-full text-gray-500 text-[10px]">
+          Collecting data...
+        </div>
+      );
+    }
+
+    // Calculate bounds for y-axis (position)
+    const yValues = data.map(d => d.y);
+    const yMin = Math.min(...yValues);
+    const yMax = Math.max(...yValues);
+    const yRange = yMax - yMin || 1;
+
+    // Calculate bounds for shadow (normalize to same scale as position for overlay)
+    const shadowValues = data.map(d => d.shadow);
+    const shadowMin = Math.min(...shadowValues);
+    const shadowMax = Math.max(...shadowValues);
+    const shadowRange = shadowMax - shadowMin || 1;
+
+    // Map data to SVG coordinates
+    const padding = 5;
+    const plotWidth = width - padding * 2;
+    const plotHeight = height - padding * 2;
+
+    // Always stretch data across full width so waveform is visible
+    // First point at left edge, newest at right edge
+    const positionPoints = data.map((d, i) => {
+      const x = ((i / (data.length - 1)) * plotWidth) + padding;
+      const y = ((1 - (d.y - yMin) / yRange) * plotHeight) + padding;
+      return { x, y };
+    });
+
+    const shadowPoints = data.map((d, i) => {
+      const x = ((i / (data.length - 1)) * plotWidth) + padding;
+      // Normalize shadow to same vertical range as position
+      const y = ((1 - (d.shadow - shadowMin) / shadowRange) * plotHeight) + padding;
+      return { x, y };
+    });
+
+    const positionPathD = positionPoints.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+    const shadowPathD = shadowPoints.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+
+    return (
+      <svg width={width} height={height} className="bg-black/30">
+        {/* Grid lines */}
+        <line x1={padding} y1={height / 2} x2={width - padding} y2={height / 2}
+          stroke="#444" strokeWidth="1" strokeDasharray="2,2" />
+        <line x1={width / 2} y1={padding} x2={width / 2} y2={height - padding}
+          stroke="#444" strokeWidth="1" strokeDasharray="2,2" />
+
+        {/* Shadow plot line (underneath) - red to match shadow debug outline */}
+        <path d={shadowPathD} fill="none" stroke="red" strokeWidth="1.5" opacity="0.6" />
+
+        {/* Position plot line - matches Anty's bounding box color (lime) */}
+        <path d={positionPathD} fill="none" stroke="lime" strokeWidth="2" />
+
+        {/* Current point */}
+        {positionPoints.length > 0 && (
+          <circle cx={positionPoints[positionPoints.length - 1].x} cy={positionPoints[positionPoints.length - 1].y}
+            r="3" fill="lime" />
+        )}
+      </svg>
+    );
+  };
+
   return (
-    <div
-      className="fixed bg-black/70 text-white p-4 rounded-lg font-mono text-xs z-50 min-w-[280px] border-2 border-green-500/50"
-      style={{
-        left: `${position.x}px`,
-        top: `${position.y}px`,
-        cursor: isDragging ? 'grabbing' : 'grab',
-      }}
-      onMouseDown={handleMouseDown}
-    >
+    <>
+      <div
+        ref={mainDebugRef}
+        className="fixed bg-black/70 text-white p-4 rounded-lg font-mono text-xs z-50 min-w-[280px] border-2 border-green-500/50"
+        style={{
+          left: `${position.x}px`,
+          top: `${position.y}px`,
+          cursor: isDragging ? 'grabbing' : 'grab',
+        }}
+        onMouseDown={handleMouseDown}
+      >
       <div className="flex items-center justify-between mb-3 border-b border-green-400/30 pb-2">
         <div className="flex flex-col gap-1">
           <span className="text-green-400 font-bold">ANIMATION DEBUG</span>
@@ -777,8 +1015,133 @@ export function AnimationDebugOverlay({
           >
             📥 DOWNLOAD
           </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowPositionTracker(!showPositionTracker);
+              if (showPositionTracker) {
+                // Reset on close
+                setPositionHistory([]);
+                setSnapshotCards([]);
+                cardIdCounter.current = 0;
+                setTrackerWasDragged(false); // Reset to default position next time
+                setBaselinePosition(null); // Reset baseline
+              }
+            }}
+            className={`px-2 py-1 text-[10px] font-bold rounded ${
+              showPositionTracker
+                ? 'bg-cyan-600 text-white'
+                : 'bg-gray-600 text-white'
+            } hover:opacity-80 transition-opacity`}
+            title="Position Tracker"
+          >
+            📊
+          </button>
         </div>
       </div>
-    </div>
+      </div>
+
+      {/* Position Tracker Panel */}
+      {showPositionTracker && (
+        <div
+          ref={trackerRef}
+          className="fixed bg-black/70 text-white rounded-lg font-mono text-xs z-50 w-[280px] border-2 border-cyan-500/50 flex flex-col"
+          style={{
+            left: trackerWasDragged ? `${trackerPosition.x}px` : undefined,
+            top: trackerWasDragged ? `${trackerPosition.y}px` : '80px', // Align with debug panel top
+            right: !trackerWasDragged ? '16px' : undefined,
+            cursor: isTrackerDragging ? 'grabbing' : 'grab',
+            maxHeight: `${maxTrackerHeight}px`,
+          }}
+        >
+          {/* Header - draggable */}
+          <div
+            className="p-3 pb-2 border-b border-cyan-400/30 cursor-grab"
+            onMouseDown={handleTrackerMouseDown}
+          >
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-cyan-400 font-bold text-[10px]">POSITION TRACKER</span>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setBaselinePosition({ x: debugData.x, y: debugData.y });
+                  setPositionHistory([]);
+                  setSnapshotCards([]);
+                  cardIdCounter.current = 0;
+                  currentBaseSequenceRef.current = getBaseSequence(currentSequence);
+                }}
+                className="px-1.5 py-0.5 text-[9px] font-bold rounded bg-purple-600 text-white hover:opacity-80 transition-opacity"
+                title="Reset baseline to current position"
+              >
+                🎯 RESET
+              </button>
+            </div>
+            <div className="text-[9px] text-gray-400">
+              Deviation from baseline (Δx, Δy)
+            </div>
+          </div>
+
+          {/* Scrollable content area - stack from bottom upward */}
+          <div
+            ref={scrollContainerRef}
+            className="overflow-y-auto flex-1 p-3 pt-2 scroll-smooth flex flex-col justify-end"
+            style={{
+              scrollbarWidth: 'thin',
+              scrollbarColor: '#0891b2 rgba(0,0,0,0.5)',
+            }}
+            onMouseDown={(e) => e.stopPropagation()}
+            onMouseEnter={() => setIsHoveringSnapshots(true)}
+            onMouseLeave={() => setIsHoveringSnapshots(false)}
+          >
+            {/* Snapshot cards - oldest to newest, stacking upward */}
+            {snapshotCards.map((card, index) => {
+              // Opacity based on distance from live (last card): nearest = 60%, then 45%, 30%, 15%, 0%
+              const distanceFromLive = snapshotCards.length - index;
+              let opacity = 1.0; // Default full opacity when hovering
+              if (!isHoveringSnapshots) {
+                if (distanceFromLive === 1) opacity = 0.6; // Nearest to live
+                else if (distanceFromLive === 2) opacity = 0.45;
+                else if (distanceFromLive === 3) opacity = 0.3;
+                else if (distanceFromLive === 4) opacity = 0.15;
+                else opacity = 0; // More than 4 cards away from live
+              }
+
+              return (
+                <div
+                  key={card.id}
+                  className="mb-2 bg-black/50 p-2 rounded border border-cyan-500/30 transition-opacity duration-200"
+                  style={{ opacity }}
+                >
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-cyan-300 text-[9px] font-bold">{card.sequence}</span>
+                    <span className="text-gray-500 text-[8px] font-mono">{card.id}</span>
+                  </div>
+                  <div className="w-full">
+                    {renderPositionPlot(card.data, 256, 60, false)}
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Current live plot - always at bottom */}
+            <div className="bg-black/50 p-2 rounded border border-cyan-400">
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-cyan-300 text-[9px] font-bold">{getBaseSequence(currentSequence)}</span>
+                <span className="text-cyan-400 text-[8px]">● LIVE</span>
+              </div>
+              {baselinePosition && positionHistory.length > 0 && (
+                <div className="text-[8px] text-gray-400 mb-1 font-mono flex gap-2">
+                  <span className="inline-block w-[60px]">Δx: <span className="inline-block w-[35px] text-right">{(Math.abs(positionHistory[positionHistory.length - 1].x) < 0.05 ? 0 : positionHistory[positionHistory.length - 1].x).toFixed(1)}px</span></span>
+                  <span className="inline-block w-[60px]">Δy: <span className="inline-block w-[35px] text-right">{(Math.abs(positionHistory[positionHistory.length - 1].y) < 0.05 ? 0 : positionHistory[positionHistory.length - 1].y).toFixed(1)}px</span></span>
+                </div>
+              )}
+              <div className="w-full">
+                {renderPositionPlot(positionHistory, 256, 60, true)}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
