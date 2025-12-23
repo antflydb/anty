@@ -256,12 +256,16 @@ export class AnimationController {
 
     this.currentEmotion = emotion;
 
+    // CRITICAL FIX: Pause timeline immediately to prevent auto-play before callbacks are set
+    // GSAP timelines auto-play by default, which can cause onStart to fire before callbacks are registered
+    timeline.pause();
+
     // CRITICAL: Clear any existing callbacks from timeline creation to prevent duplicates
     timeline.eventCallback('onStart', null);
     timeline.eventCallback('onComplete', null);
     timeline.eventCallback('onInterrupt', null);
 
-    // Setup callbacks
+    // Setup callbacks BEFORE playing timeline
     const animationStartTime = Date.now();
 
     timeline.eventCallback('onStart', () => {
@@ -310,6 +314,9 @@ export class AnimationController {
     });
 
     this.callbacks.onStart?.(AnimationState.EMOTION, emotion);
+
+    // CRITICAL: Now play the timeline after all callbacks are set
+    timeline.play();
 
     return true;
   }
