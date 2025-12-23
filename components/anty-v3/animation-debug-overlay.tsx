@@ -44,7 +44,14 @@ export function AnimationDebugOverlay({
         return;
       }
 
-      const characterStyle = window.getComputedStyle(characterRef.current);
+      // Find the actual character element that gets animated (has class "relative w-full h-full")
+      const actualCharacter = characterRef.current.querySelector('.relative.w-full.h-full') as HTMLElement;
+      if (!actualCharacter) {
+        animationFrameId = requestAnimationFrame(updateDebugData);
+        return;
+      }
+
+      const characterStyle = window.getComputedStyle(actualCharacter);
       const shadowStyle = window.getComputedStyle(shadowRef.current);
 
       // Parse transform matrix to get rotation
@@ -70,7 +77,7 @@ export function AnimationDebugOverlay({
       }
 
       // Get dimensions
-      const charRect = characterRef.current.getBoundingClientRect();
+      const charRect = actualCharacter.getBoundingClientRect();
       const shadowRect = shadowRef.current.getBoundingClientRect();
 
       setDebugData({
