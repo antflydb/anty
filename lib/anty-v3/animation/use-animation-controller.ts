@@ -171,6 +171,22 @@ export function useAnimationController(
         callbacks.onStateChange?.(from, to);
         onStateChange?.(from, to);
       },
+      onEmotionMotionStart: (emotion, timelineId) => {
+        if (enableLogging) {
+          console.log(`[useAnimationController] Emotion motion START: ${emotion}`);
+        }
+        // Notify position tracker via special sequence message
+        onAnimationSequenceChange?.(`MOTION_START:${emotion.toUpperCase()}`);
+        callbacks.onEmotionMotionStart?.(emotion, timelineId);
+      },
+      onEmotionMotionComplete: (emotion, timelineId, duration) => {
+        if (enableLogging) {
+          console.log(`[useAnimationController] Emotion motion COMPLETE: ${emotion} (${duration}ms)`);
+        }
+        // Notify position tracker that motion actually completed
+        onAnimationSequenceChange?.(`MOTION_COMPLETE:${emotion.toUpperCase()}:${duration}`);
+        callbacks.onEmotionMotionComplete?.(emotion, timelineId, duration);
+      },
     };
 
     // Create controller

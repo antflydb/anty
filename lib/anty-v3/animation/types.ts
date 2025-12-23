@@ -486,6 +486,10 @@ export interface AnimationCallbacks {
   onQueueProcess?: (animation: QueuedAnimation) => void;
   /** Called on error */
   onError?: (error: Error) => void;
+  /** Called when emotion GSAP timeline actually starts (motion begins) */
+  onEmotionMotionStart?: (emotion: EmotionType, timelineId: string) => void;
+  /** Called when emotion GSAP timeline actually completes (motion ends) */
+  onEmotionMotionComplete?: (emotion: EmotionType, timelineId: string, duration: number) => void;
 }
 
 /**

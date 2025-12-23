@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 
 interface AnimationDebugData {
   rotation: number;
@@ -89,6 +89,15 @@ export function AnimationDebugOverlay({
   const [trackerDragOffset, setTrackerDragOffset] = useState({ x: 0, y: 0 });
   const [maxTrackerHeight, setMaxTrackerHeight] = useState(600);
   const [trackerWasDragged, setTrackerWasDragged] = useState(false);
+
+  // Motion lifecycle tracking
+  const [currentMotionLabel, setCurrentMotionLabel] = useState<string>('IDLE');
+  const motionStartTimeRef = useRef<number>(Date.now());
+  const isMotionActiveRef = useRef<boolean>(false);
+
+  // Pre-motion buffer for capturing lead-in frames
+  const PRE_MOTION_BUFFER = useRef<Array<{ x: number; y: number; shadow: number }>>([]);
+  const MAX_BUFFER_SIZE = 60; // ~1s at 60fps
 
   // Update max tracker height based on main debug panel height
   useEffect(() => {
@@ -336,17 +345,26 @@ export function AnimationDebugOverlay({
     minMaxRef.current = minMax;
   }, [minMax]);
 
+  // Track base sequence to avoid restarting timer on random actions
+  const currentBaseSequence = getBaseSequence(currentSequence);
+  const [trackedBaseSequence, setTrackedBaseSequence] = useState(currentBaseSequence);
+
   // IDLE validation tracker - 5 second monitoring
   useEffect(() => {
-    const baseSequence = getBaseSequence(currentSequence);
+    // Only run when BASE sequence changes, not when random actions are added
+    if (currentBaseSequence === trackedBaseSequence) {
+      return;
+    }
+
+    setTrackedBaseSequence(currentBaseSequence);
 
     // Clear any existing timer when sequence changes (but not for random actions)
-    if (idleValidationTimer && baseSequence !== 'IDLE') {
+    if (idleValidationTimer && currentBaseSequence !== 'IDLE') {
       clearTimeout(idleValidationTimer);
       setIdleValidationTimer(null);
     }
 
-    if (baseSequence === 'IDLE') {
+    if (currentBaseSequence === 'IDLE') {
       // Only start tracking if not already tracking (don't restart for random actions)
       if (!idleValidationTimer) {
         setIdleValidationState('tracking');
@@ -437,7 +455,7 @@ export function AnimationDebugOverlay({
         clearTimeout(idleValidationTimer);
       }
     };
-  }, [currentSequence]);
+  }, [currentBaseSequence, trackedBaseSequence]);
 
 
   // Interruption detection
@@ -482,6 +500,73 @@ export function AnimationDebugOverlay({
       setSequenceStartTime(Date.now());
     }
   }, [currentSequence, prevSequence, sequenceStartTime, alerts]);
+
+  // Motion lifecycle event handlers for position tracker
+  const handleMotionStart = useCallback((label: string) => {
+    if (!showPositionTracker) return;
+
+    console.log(`[PositionTracker] Motion START: ${label}`);
+
+    isMotionActiveRef.current = true;
+    motionStartTimeRef.current = Date.now();
+    setCurrentMotionLabel(label);
+
+    // Initialize position history with buffered pre-motion frames
+    // This captures lead-in motion (prefer extra IDLE on action cards)
+    const bufferedStart = [...PRE_MOTION_BUFFER.current];
+    setPositionHistory(bufferedStart);
+
+    console.log(`[PositionTracker] Buffered ${bufferedStart.length} lead-in frames`);
+  }, [showPositionTracker]);
+
+  const handleMotionComplete = useCallback((label: string) => {
+    if (!showPositionTracker) return;
+
+    const duration = Date.now() - motionStartTimeRef.current;
+    console.log(`[PositionTracker] Motion COMPLETE: ${label} (${duration}ms, ${positionHistory.length} frames)`);
+
+    // Only create snapshot if we have meaningful data
+    if (positionHistory.length < 20) {
+      console.warn('[PositionTracker] Insufficient data, skipping snapshot');
+      isMotionActiveRef.current = false;
+      return;
+    }
+
+    // Create snapshot card with ACTUAL motion label
+    const cardId = `p${cardIdCounter.current++}`;
+
+    setSnapshotCards(prevCards => [
+      ...prevCards,
+      {
+        id: cardId,
+        sequence: label, // Use actual label from motion event
+        data: [...positionHistory],
+      }
+    ]);
+
+    console.log(`[PositionTracker] Created snapshot: ${cardId} "${label}"`);
+
+    // Reset for next animation
+    isMotionActiveRef.current = false;
+    PRE_MOTION_BUFFER.current = [];
+    setPositionHistory([]);
+    setCurrentMotionLabel('IDLE');
+  }, [showPositionTracker, positionHistory]);
+
+  // Listen for motion lifecycle events from controller
+  useEffect(() => {
+    if (!currentSequence || !showPositionTracker) return;
+
+    // Parse motion event messages from controller
+    if (currentSequence.startsWith('MOTION_START:')) {
+      const label = currentSequence.replace('MOTION_START:', '');
+      handleMotionStart(label);
+    } else if (currentSequence.startsWith('MOTION_COMPLETE:')) {
+      const parts = currentSequence.replace('MOTION_COMPLETE:', '').split(':');
+      const label = parts[0];
+      handleMotionComplete(label);
+    }
+  }, [currentSequence, showPositionTracker, handleMotionStart, handleMotionComplete]);
 
   // Mouse handlers for main debug panel dragging
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -607,7 +692,7 @@ export function AnimationDebugOverlay({
         timestamp: Date.now(),
       });
 
-      // Update position history for tracker with immediate snapshot on sequence change
+      // Update position history for tracker - NEW MOTION-EVENT-DRIVEN SYSTEM
       if (showPositionTracker) {
         // Set baseline on first run if not already set
         if (!baselinePosition) {
@@ -620,68 +705,16 @@ export function AnimationDebugOverlay({
           ? { x: centerX - baselinePosition.x, y: baselinePosition.y - centerY, shadow: shadowRect.width }
           : { x: 0, y: 0, shadow: shadowRect.width };
 
-        // Get clean sequence name
-        const getCleanSequenceName = (seq: string) => {
-          const upper = seq.toUpperCase();
-          const base = seq.split(' + ')[0].toUpperCase();
-
-          // Ignore random overlays - keep current sequence
-          if (upper.includes(' + BLINK') || upper.includes('-RANDOM') || upper.includes('+ BLINK')) {
-            return currentBaseSequenceRef.current || 'IDLE';
-          }
-
-          // Normalize LOOKAROUND sequences ONLY when part of intentional lookaround
-          if (base === 'LOOKAROUND') {
-            return 'LOOKAROUND';
-          }
-
-          // LOOK-LEFT and LOOK-RIGHT appearing alone are random actions, keep current sequence
-          if (base === 'LOOK-LEFT' || base === 'LOOK-RIGHT') {
-            return currentBaseSequenceRef.current || 'IDLE';
-          }
-
-          return base;
-        };
-
-        const currentSeqName = getCleanSequenceName(currentSequence);
-        const previousSeqName = currentBaseSequenceRef.current || 'IDLE';
-
-        // Always accumulate data
+        // Always accumulate data to position history
         setPositionHistory(prev => [...prev, deviation]);
 
-        // Check if sequence actually changed
-        if (currentSeqName !== previousSeqName) {
-          const timeSinceLastChange = Date.now() - lastSequenceChangeTime.current;
+        // Maintain circular pre-motion buffer (rolling window of recent frames)
+        if (positionHistory.length > 0) {
+          PRE_MOTION_BUFFER.current.push(deviation);
 
-          // Only create snapshot if enough time has passed (prevents splitting)
-          if (timeSinceLastChange > MIN_SEQUENCE_DURATION && positionHistory.length > 20) {
-            if (!pendingSnapshotRef.current) {
-              pendingSnapshotRef.current = true;
-              const cardId = `p${cardIdCounter.current}`;
-              cardIdCounter.current += 1;
-
-              // Create snapshot of previous sequence
-              setSnapshotCards(prevCards => [
-                ...prevCards,
-                {
-                  id: cardId,
-                  sequence: previousSeqName,
-                  data: positionHistory,
-                }
-              ]);
-
-              // Start fresh for new sequence
-              setPositionHistory([deviation]);
-              currentBaseSequenceRef.current = currentSeqName;
-              lastSequenceChangeTime.current = Date.now();
-
-              setTimeout(() => {
-                pendingSnapshotRef.current = false;
-              }, 100);
-            }
-          } else {
-            // Too soon, just update the sequence name
-            currentBaseSequenceRef.current = currentSeqName;
+          // Keep buffer at max size (circular)
+          if (PRE_MOTION_BUFFER.current.length > MAX_BUFFER_SIZE) {
+            PRE_MOTION_BUFFER.current.shift();
           }
         }
       }
@@ -1126,7 +1159,7 @@ export function AnimationDebugOverlay({
             {/* Current live plot - always at bottom */}
             <div className="bg-black/50 p-2 rounded border border-cyan-400">
               <div className="flex justify-between items-center mb-1">
-                <span className="text-cyan-300 text-[9px] font-bold">{getBaseSequence(currentSequence)}</span>
+                <span className="text-cyan-300 text-[9px] font-bold">{currentMotionLabel}</span>
                 <span className="text-cyan-400 text-[8px]">● LIVE</span>
               </div>
               {baselinePosition && positionHistory.length > 0 && (

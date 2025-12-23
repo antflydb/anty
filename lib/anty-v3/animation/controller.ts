@@ -234,9 +234,22 @@ export class AnimationController {
     this.currentEmotion = emotion;
 
     // Setup callbacks
-    timeline.eventCallback('onComplete', () => {
+    const animationStartTime = Date.now();
+
+    timeline.eventCallback('onStart', () => {
       if (this.config.enableLogging) {
-        console.log(`[AnimationController] Emotion ${emotion} completed`);
+        console.log(`[AnimationController] Emotion ${emotion} motion START`);
+      }
+
+      // Notify that GSAP motion has actually started
+      this.callbacks.onEmotionMotionStart?.(emotion, animationId);
+    });
+
+    timeline.eventCallback('onComplete', () => {
+      const duration = Date.now() - animationStartTime;
+
+      if (this.config.enableLogging) {
+        console.log(`[AnimationController] Emotion ${emotion} completed (${duration}ms)`);
       }
 
       // Cleanup
@@ -250,6 +263,8 @@ export class AnimationController {
       // Process queue
       this.processQueue();
 
+      // Notify that GSAP motion has actually completed
+      this.callbacks.onEmotionMotionComplete?.(emotion, animationId, duration);
       this.callbacks.onComplete?.(AnimationState.EMOTION, emotion);
       options.onComplete?.();
     });
