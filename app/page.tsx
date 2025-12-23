@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import gsap from 'gsap';
 import { AntyCharacterV3, ActionButtonsV3, HeartMeter, ExpressionMenu, PowerButton, FlappyGame, FPSMeter, type ButtonName, type AntyCharacterHandle, type EarnedHeart } from '@/components/anty-v3';
 import { AntySearchBar } from '@/components/anty-v3/anty-search-bar';
+import { AnimationDebugOverlay } from '@/components/anty-v3/animation-debug-overlay';
 import { ChatPanel } from '@/components/anty-chat';
 import type { ExpressionName } from '@/lib/anty-v3/animation-state';
 import type { AntyStats } from '@/lib/anty-v3/stat-system';
@@ -102,6 +103,9 @@ export default function AntyV3() {
 
   // Debug mode - shows boundary boxes around all elements
   const [debugMode, setDebugMode] = useState(false);
+
+  // Animation sequence tracking for debug overlay
+  const [currentAnimationSequence, setCurrentAnimationSequence] = useState<string>('IDLE');
 
   // Debug mode keyboard shortcut (D key) - disabled in chat/search mode
   useEffect(() => {
@@ -1261,6 +1265,8 @@ export default function AntyV3() {
 
   // Reusable wake-up animation when returning from OFF state
   const performWakeUpAnimation = () => {
+    setCurrentAnimationSequence('MANUAL WAKE-UP ANIMATION (performWakeUpAnimation)');
+
     const characterElement = characterRef.current;
     if (!characterElement) return;
 
@@ -1332,6 +1338,7 @@ export default function AntyV3() {
       force3D: true,
       onComplete: () => {
         gsap.set(characterElement, { willChange: 'auto' });
+        setCurrentAnimationSequence('IDLE');
       },
     });
 
@@ -3614,6 +3621,7 @@ export default function AntyV3() {
             clearExpressionReset();
 
             // Handle returning from OFF with WOOHOOO leap to life!!!
+            setCurrentAnimationSequence('POWER BUTTON: Wake-up triggered');
             performWakeUpAnimation();
 
             setExpression(onExpression);
@@ -3623,6 +3631,7 @@ export default function AntyV3() {
           } else {
             // Turn off - let AnimationController handle animation
             clearExpressionReset();
+            setCurrentAnimationSequence('POWER BUTTON: Power-off triggered (Controller should handle)');
             setExpression('off'); // Controller will trigger power-off animation via isOff state
           }
         }}
@@ -3637,6 +3646,15 @@ export default function AntyV3() {
           triggerEmotionAnimation(emotion, isChatOpen);
         }}
       />
+
+      {/* Animation Debug Overlay - LIVE real-time data */}
+      {debugMode && characterRef.current && (
+        <AnimationDebugOverlay
+          characterRef={characterRef}
+          shadowRef={{ current: document.getElementById('anty-shadow') as HTMLDivElement }}
+          currentSequence={currentAnimationSequence}
+        />
+      )}
 
       {/* White fade overlay for classy transition - always rendered */}
       <div
