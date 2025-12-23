@@ -557,6 +557,8 @@ export function AnimationDebugOverlay({
   useEffect(() => {
     if (!currentSequence || !showPositionTracker) return;
 
+    console.log('[PositionTracker] Received currentSequence:', currentSequence);
+
     // Parse motion event messages from controller
     if (currentSequence.startsWith('MOTION_START:')) {
       const label = currentSequence.replace('MOTION_START:', '');

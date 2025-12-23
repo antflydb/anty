@@ -191,6 +191,33 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [expression, isOff, searchMode]);
+
+  // Play emotion when expression prop changes (NEW CONTROLLER ONLY)
+  useEffect(() => {
+    if (!USE_NEW_ANIMATION_CONTROLLER) return;
+    if (!animationController.isReady) return;
+    if (isOff) return; // Don't play emotions when powered off
+    if (searchMode) return; // Don't play emotions in search mode
+
+    // Map expression names to emotion types
+    const emotionMap: Record<string, EmotionType> = {
+      'happy': 'happy',
+      'excited': 'excited',
+      'sad': 'sad',
+      'angry': 'angry',
+      'shocked': 'shocked',
+      'spin': 'spin',
+    };
+
+    const emotion = emotionMap[expression];
+    if (emotion) {
+      if (ENABLE_ANIMATION_DEBUG_LOGS) {
+        console.log(`[AntyCharacterV3] Playing emotion: ${emotion} (from expression: ${expression})`);
+      }
+      animationController.playEmotion(emotion);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [expression, isOff, searchMode, animationController.isReady]);
   // ============================================================================
   // END NEW ANIMATION CONTROLLER
   // ============================================================================
