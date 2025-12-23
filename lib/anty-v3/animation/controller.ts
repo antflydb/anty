@@ -230,11 +230,11 @@ export class AnimationController {
     // Pause idle
     this.pauseIdle();
 
-    // Acquire elements
+    // Acquire elements (force=true since we just killed previous owner)
     const animationId = `emotion-${emotion}-${Date.now()}`;
     let acquiredAll = true;
     elements.forEach(element => {
-      if (!this.elementRegistry.acquire(element, animationId, timeline, force)) {
+      if (!this.elementRegistry.acquire(element, animationId, timeline, true)) {
         acquiredAll = false;
       }
     });
