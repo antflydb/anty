@@ -78,6 +78,9 @@ export function createEmotionAnimation(
     case 'excited': {
       // Epic jump with 360° rotation and multi-bounce landing
 
+      // CRITICAL: Reset rotation to 0 before starting to avoid additive rotation issues
+      gsap.set(character, { rotation: 0 });
+
       // 1. Jump up with 360° spin (0.5s)
       timeline.to(character, {
         y: -70,
@@ -99,11 +102,12 @@ export function createEmotionAnimation(
         );
       }
 
-      // 2. Hold at apex (0.3s)
+      // 2. Hold at apex (0.3s) - maintain 360° rotation
       timeline.to(character, {
         y: -70,
         rotation: 360,
         duration: 0.3,
+        ease: 'none', // No easing for hold
       });
 
       if (glowElements.length > 0) {
