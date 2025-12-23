@@ -1024,7 +1024,23 @@ export function AnimationDebugOverlay({
         <div className="mt-3 pt-2 border-t border-green-400/30">
           <div className="flex items-center justify-between text-[10px] mb-2">
             <span className="text-gray-400">MIN/MAX Tracking:</span>
-            <div className="flex items-center gap-1">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                // Reset validation state and min/max values
+                setIdleValidationState('none');
+                resetMinMax();
+                // Clear existing timer if any
+                if (idleValidationTimer) {
+                  clearTimeout(idleValidationTimer);
+                  setIdleValidationTimer(null);
+                }
+                // Force recheck by resetting tracked sequence
+                setTrackedBaseSequence('');
+              }}
+              className="flex items-center gap-1 px-2 py-1 rounded hover:bg-white/10 transition-colors cursor-pointer"
+              title="Click to reset and recheck"
+            >
               {idleValidationState === 'none' && (
                 <span className="text-gray-500">—</span>
               )}
@@ -1046,7 +1062,7 @@ export function AnimationDebugOverlay({
                   <span className="text-red-400">✗</span>
                 </>
               )}
-            </div>
+            </button>
           </div>
           <div className="space-y-1 text-[10px]">
             <div className="flex justify-between">
