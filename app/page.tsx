@@ -108,6 +108,9 @@ export default function AntyV3() {
   // Animation sequence tracking for debug overlay
   const [currentAnimationSequence, setCurrentAnimationSequence] = useState<string>('IDLE');
   const [lastRandomAction, setLastRandomAction] = useState<string>('');
+  const [animationSource, setAnimationSource] = useState<string>(
+    USE_NEW_ANIMATION_CONTROLLER ? 'controller' : 'legacy'
+  );
 
   // Track expression changes and update debug sequence
   useEffect(() => {
@@ -119,6 +122,15 @@ export default function AntyV3() {
       setCurrentAnimationSequence(expression.toUpperCase());
     }
   }, [expression]);
+
+  // Track search mode for debug overlay
+  useEffect(() => {
+    if (searchActive) {
+      setCurrentAnimationSequence('SEARCH MODE');
+    } else if (!searchActive && expression === 'idle') {
+      setCurrentAnimationSequence('IDLE');
+    }
+  }, [searchActive, expression]);
 
   // Debug mode keyboard shortcut (D key) - disabled in chat/search mode
   useEffect(() => {
@@ -248,6 +260,7 @@ export default function AntyV3() {
     // Feature flag: Try new animation controller first
     if (USE_NEW_ANIMATION_CONTROLLER && antyRef.current?.playEmotion) {
       console.log('[ANIMATION] Using new controller for emotion:', expr);
+      setAnimationSource('controller');
       const success = antyRef.current.playEmotion(expr, { isChatOpen });
       if (success) {
         // Update expression state for facial expressions
@@ -256,11 +269,14 @@ export default function AntyV3() {
         return;
       } else {
         console.log('[ANIMATION] New controller declined, falling back to legacy GSAP');
+        setAnimationSource('legacy');
       }
     } else if (USE_NEW_ANIMATION_CONTROLLER) {
       console.log('[ANIMATION] New controller enabled but playEmotion not available, using legacy');
+      setAnimationSource('legacy');
     } else {
       console.log('[ANIMATION] Using legacy GSAP animation system');
+      setAnimationSource('legacy');
     }
 
     // Legacy GSAP animation code below
@@ -1279,6 +1295,7 @@ export default function AntyV3() {
   // Reusable wake-up animation when returning from OFF state
   const performWakeUpAnimation = () => {
     setCurrentAnimationSequence('MANUAL WAKE-UP ANIMATION (performWakeUpAnimation)');
+    setAnimationSource('manual');
 
     const characterElement = characterRef.current;
     if (!characterElement) return;
@@ -3668,6 +3685,7 @@ export default function AntyV3() {
           shadowRef={{ current: document.getElementById('anty-shadow') as HTMLDivElement }}
           currentSequence={currentAnimationSequence}
           randomAction={lastRandomAction}
+          animationSource={animationSource}
         />
       )}
 
