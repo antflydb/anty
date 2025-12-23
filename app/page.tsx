@@ -113,24 +113,26 @@ export default function AntyV3() {
   );
 
   // Track expression changes and update debug sequence
-  useEffect(() => {
-    if (expression === 'off') {
-      setCurrentAnimationSequence('OFF');
-    } else if (expression === 'idle') {
-      setCurrentAnimationSequence('IDLE');
-    } else {
-      setCurrentAnimationSequence(expression.toUpperCase());
-    }
-  }, [expression]);
+  // DISABLED: Animation controller now sends motion events directly via onAnimationSequenceChange
+  // useEffect(() => {
+  //   if (expression === 'off') {
+  //     setCurrentAnimationSequence('OFF');
+  //   } else if (expression === 'idle') {
+  //     setCurrentAnimationSequence('IDLE');
+  //   } else {
+  //     setCurrentAnimationSequence(expression.toUpperCase());
+  //   }
+  // }, [expression]);
 
   // Track search mode for debug overlay
-  useEffect(() => {
-    if (searchActive) {
-      setCurrentAnimationSequence('SEARCH MODE');
-    } else if (!searchActive && expression === 'idle') {
-      setCurrentAnimationSequence('IDLE');
-    }
-  }, [searchActive, expression]);
+  // DISABLED: Animation controller now sends motion events directly via onAnimationSequenceChange
+  // useEffect(() => {
+  //   if (searchActive) {
+  //     setCurrentAnimationSequence('SEARCH MODE');
+  //   } else if (!searchActive && expression === 'idle') {
+  //     setCurrentAnimationSequence('IDLE');
+  //   }
+  // }, [searchActive, expression]);
 
   // Debug mode keyboard shortcut (D key) - disabled in chat/search mode
   useEffect(() => {
