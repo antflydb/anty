@@ -529,35 +529,41 @@ export function AnimationDebugOverlay({
     if (!showPositionTracker) return;
 
     const duration = Date.now() - motionStartTimeRef.current;
-    console.log(`[PositionTracker] Motion COMPLETE: ${label} (${duration}ms, ${positionHistory.length} frames)`);
 
-    // Only create snapshot if we have meaningful data
-    if (positionHistory.length < 20) {
-      console.warn('[PositionTracker] Insufficient data, skipping snapshot');
-      isMotionActiveRef.current = false;
-      return;
-    }
+    // Use functional setState to access current position history without dependency
+    setPositionHistory(currentHistory => {
+      console.log(`[PositionTracker] Motion COMPLETE: ${label} (${duration}ms, ${currentHistory.length} frames)`);
 
-    // Create snapshot card with ACTUAL motion label
-    const cardId = `p${cardIdCounter.current++}`;
-
-    setSnapshotCards(prevCards => [
-      ...prevCards,
-      {
-        id: cardId,
-        sequence: label, // Use actual label from motion event
-        data: [...positionHistory],
+      // Only create snapshot if we have meaningful data
+      if (currentHistory.length < 20) {
+        console.warn('[PositionTracker] Insufficient data, skipping snapshot');
+        isMotionActiveRef.current = false;
+        return currentHistory; // Return unchanged
       }
-    ]);
 
-    console.log(`[PositionTracker] Created snapshot: ${cardId} "${label}"`);
+      // Create snapshot card with ACTUAL motion label
+      const cardId = `p${cardIdCounter.current++}`;
 
-    // Reset for next animation
-    isMotionActiveRef.current = false;
-    PRE_MOTION_BUFFER.current = [];
-    setPositionHistory([]);
-    setCurrentMotionLabel('IDLE');
-  }, [showPositionTracker, positionHistory]);
+      setSnapshotCards(prevCards => [
+        ...prevCards,
+        {
+          id: cardId,
+          sequence: label, // Use actual label from motion event
+          data: [...currentHistory],
+        }
+      ]);
+
+      console.log(`[PositionTracker] Created snapshot: ${cardId} "${label}"`);
+
+      // Reset for next animation
+      isMotionActiveRef.current = false;
+      PRE_MOTION_BUFFER.current = [];
+      setCurrentMotionLabel('IDLE');
+
+      // Clear position history
+      return [];
+    });
+  }, [showPositionTracker]);
 
   // Listen for motion lifecycle events from controller
   useEffect(() => {
