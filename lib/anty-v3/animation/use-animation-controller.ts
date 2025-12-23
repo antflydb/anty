@@ -50,6 +50,8 @@ export interface AnimationElements {
 export interface UseAnimationControllerOptions extends ControllerConfig {
   /** Callback when state changes */
   onStateChange?: (from: AnimationState, to: AnimationState) => void;
+  /** Callback when animation sequence changes (for debug tracking) */
+  onAnimationSequenceChange?: (sequence: string) => void;
   /** Whether character is powered off */
   isOff?: boolean;
   /** Whether in search mode */
@@ -132,6 +134,7 @@ export function useAnimationController(
     defaultPriority = 2,
     callbacks = {},
     onStateChange,
+    onAnimationSequenceChange,
     isOff = false,
     searchMode = false,
     autoStartIdle = true,
@@ -234,6 +237,9 @@ export function useAnimationController(
         console.log('[useAnimationController] Wake-up sequence: OFF → ON - CALLING WAKE-UP ANIMATION');
       }
 
+      // Notify debug overlay
+      onAnimationSequenceChange?.('CONTROLLER: Wake-up (OFF → ON)');
+
       // Kill any existing animations
       if (idleTimelineRef.current) {
         idleTimelineRef.current.kill();
@@ -302,6 +308,9 @@ export function useAnimationController(
             if (enableLogging) {
               console.log('[useAnimationController] Idle animation started with 0.65s delay');
             }
+
+            // Notify debug overlay
+            onAnimationSequenceChange?.('CONTROLLER: Idle animation');
           }
         });
 
@@ -319,6 +328,9 @@ export function useAnimationController(
       if (enableLogging) {
         console.log('[useAnimationController] Power-off sequence: ON → OFF - CALLING POWER-OFF ANIMATION');
       }
+
+      // Notify debug overlay
+      onAnimationSequenceChange?.('CONTROLLER: Power-off (ON → OFF)');
 
       // Kill all animations
       if (idleTimelineRef.current) {

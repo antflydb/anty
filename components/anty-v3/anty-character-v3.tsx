@@ -159,6 +159,7 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
           onAnimationSequenceChange(`CONTROLLER: ${from} → ${to}`);
         }
       },
+      onAnimationSequenceChange: onAnimationSequenceChange, // Pass through to controller
     }
   );
 
