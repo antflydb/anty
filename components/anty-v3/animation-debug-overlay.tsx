@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 
 interface AnimationDebugData {
   rotation: number;
+  scale: number;
   width: number;
   height: number;
   shadowWidth: number;
@@ -24,6 +25,7 @@ export function AnimationDebugOverlay({
 }: AnimationDebugOverlayProps) {
   const [debugData, setDebugData] = useState<AnimationDebugData>({
     rotation: 0,
+    scale: 1,
     width: 0,
     height: 0,
     shadowWidth: 0,
@@ -48,14 +50,22 @@ export function AnimationDebugOverlay({
       // Parse transform matrix to get rotation
       const transform = characterStyle.transform;
       let rotation = 0;
+      let scale = 1;
 
       if (transform && transform !== 'none') {
-        const matrix = transform.match(/matrix\(([^)]+)\)/);
-        if (matrix) {
-          const values = matrix[1].split(', ');
-          const a = parseFloat(values[0]);
-          const b = parseFloat(values[1]);
+        const match = transform.match(/matrix\(([^)]+)\)/);
+        if (match) {
+          const parts = match[1].split(', ');
+          const a = parseFloat(parts[0]);
+          const b = parseFloat(parts[1]);
+          const c = parseFloat(parts[2]);
+          const d = parseFloat(parts[3]);
+
+          // Calculate rotation from matrix
           rotation = Math.atan2(b, a) * (180 / Math.PI);
+
+          // Calculate scale from matrix
+          scale = Math.sqrt(a * a + b * b);
         }
       }
 
@@ -65,6 +75,7 @@ export function AnimationDebugOverlay({
 
       setDebugData({
         rotation: rotation,
+        scale: scale,
         width: charRect.width,
         height: charRect.height,
         shadowWidth: shadowRect.width,
@@ -102,29 +113,36 @@ export function AnimationDebugOverlay({
 
       <div className="space-y-2">
         <div className="flex justify-between items-center">
-          <span className="text-gray-400">Anty Rotation:</span>
-          <span className="text-yellow-300 font-bold tabular-nums">
-            {debugData.rotation.toFixed(2)}°
+          <span className="text-gray-400">Rotation:</span>
+          <span className={`font-bold tabular-nums ${Math.abs(debugData.rotation) > 0.1 ? 'text-orange-400' : 'text-green-400'}`}>
+            {debugData.rotation.toFixed(3)}°
           </span>
         </div>
 
         <div className="flex justify-between items-center">
-          <span className="text-gray-400">Anty Width:</span>
+          <span className="text-gray-400">Scale:</span>
           <span className="text-yellow-300 font-bold tabular-nums">
+            {debugData.scale.toFixed(4)}
+          </span>
+        </div>
+
+        <div className="flex justify-between items-center">
+          <span className="text-gray-400">Width:</span>
+          <span className="text-blue-300 font-bold tabular-nums">
             {debugData.width.toFixed(1)}px
           </span>
         </div>
 
         <div className="flex justify-between items-center">
-          <span className="text-gray-400">Anty Height:</span>
-          <span className="text-yellow-300 font-bold tabular-nums">
+          <span className="text-gray-400">Height:</span>
+          <span className="text-blue-300 font-bold tabular-nums">
             {debugData.height.toFixed(1)}px
           </span>
         </div>
 
         <div className="flex justify-between items-center">
           <span className="text-gray-400">Shadow Width:</span>
-          <span className="text-yellow-300 font-bold tabular-nums">
+          <span className="text-purple-300 font-bold tabular-nums">
             {debugData.shadowWidth.toFixed(1)}px
           </span>
         </div>

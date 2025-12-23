@@ -2185,6 +2185,9 @@ export default function AntyV3() {
                   isSuperMode={isSuperMode}
                   searchMode={searchActive}
                   debugMode={debugMode}
+                  onAnimationSequenceChange={(sequence) => {
+                    setCurrentAnimationSequence(sequence);
+                  }}
                   onSpontaneousExpression={(expr) => {
                     // Only trigger spontaneous looks when in idle state
                     if (expression !== 'idle') return;

@@ -54,6 +54,7 @@ interface AntyCharacterV3Props {
   isSuperMode?: boolean;
   searchMode?: boolean;
   debugMode?: boolean;
+  onAnimationSequenceChange?: (sequence: string) => void;
 }
 
 export interface AntyCharacterHandle {
@@ -88,6 +89,7 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
   isSuperMode = false,
   searchMode = false,
   debugMode = false,
+  onAnimationSequenceChange,
 }, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const characterRef = useRef<HTMLDivElement>(null);
@@ -151,6 +153,10 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
       onStateChange: (from, to) => {
         if (ENABLE_ANIMATION_DEBUG_LOGS) {
           logAnimationEvent('State Change', { from, to });
+        }
+        // Update animation sequence for debug overlay
+        if (onAnimationSequenceChange) {
+          onAnimationSequenceChange(`CONTROLLER: ${from} → ${to}`);
         }
       },
     }
