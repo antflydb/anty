@@ -257,8 +257,14 @@ export function AnimationDebugOverlay({
     });
   };
 
-  // Helper to get base sequence without random action suffixes
+  // Helper to get base sequence without random action suffixes or motion event prefixes
   const getBaseSequence = (seq: string) => {
+    // Handle motion event messages first
+    if (seq.startsWith('MOTION_START:') || seq.startsWith('MOTION_COMPLETE:')) {
+      const parts = seq.split(':');
+      return parts[1] || 'IDLE'; // Extract emotion name (e.g., "EXCITED")
+    }
+
     // Remove random action suffixes like "+ BLINK" or "+ Look-right-random"
     // This handles both "IDLE + BLINK" and "IDLE + Look-right-random" formats
     return seq.split(' + ')[0];
