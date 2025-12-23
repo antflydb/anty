@@ -5,6 +5,7 @@ import gsap from 'gsap';
 import { AntyCharacterV3, ActionButtonsV3, HeartMeter, ExpressionMenu, PowerButton, FlappyGame, FPSMeter, type ButtonName, type AntyCharacterHandle, type EarnedHeart } from '@/components/anty-v3';
 import { AntySearchBar } from '@/components/anty-v3/anty-search-bar';
 import { AnimationDebugOverlay } from '@/components/anty-v3/animation-debug-overlay';
+import { EyeDebugBoxes } from '@/components/anty-v3/eye-debug-boxes';
 import { ChatPanel } from '@/components/anty-chat';
 import type { ExpressionName } from '@/lib/anty-v3/animation-state';
 import type { AntyStats } from '@/lib/anty-v3/stat-system';
@@ -106,6 +107,18 @@ export default function AntyV3() {
 
   // Animation sequence tracking for debug overlay
   const [currentAnimationSequence, setCurrentAnimationSequence] = useState<string>('IDLE');
+  const [lastRandomAction, setLastRandomAction] = useState<string>('');
+
+  // Track expression changes and update debug sequence
+  useEffect(() => {
+    if (expression === 'off') {
+      setCurrentAnimationSequence('OFF');
+    } else if (expression === 'idle') {
+      setCurrentAnimationSequence('IDLE');
+    } else {
+      setCurrentAnimationSequence(expression.toUpperCase());
+    }
+  }, [expression]);
 
   // Debug mode keyboard shortcut (D key) - disabled in chat/search mode
   useEffect(() => {
@@ -1936,10 +1949,9 @@ export default function AntyV3() {
       }
     }
 
-    // If coming from OFF state, WOOHOOO leap to life first!!!
+    // If coming from OFF state, let AnimationController handle wake-up
     if (expression === 'off') {
-      performWakeUpAnimation();
-      setExpression('idle');
+      setExpression('idle'); // Controller will trigger wake-up animation via isOff change
     }
 
     switch (button) {
@@ -2188,6 +2200,11 @@ export default function AntyV3() {
                   onAnimationSequenceChange={(sequence) => {
                     setCurrentAnimationSequence(sequence);
                   }}
+                  onRandomAction={(action) => {
+                    setLastRandomAction(action);
+                    // Clear after 2 seconds
+                    setTimeout(() => setLastRandomAction(''), 2000);
+                  }}
                   onSpontaneousExpression={(expr) => {
                     // Only trigger spontaneous looks when in idle state
                     if (expression !== 'idle') return;
@@ -2277,10 +2294,8 @@ export default function AntyV3() {
             return;
           }
 
-          // Handle returning from OFF with WOOHOOO leap to life!!!
-          if (expression === 'off' && expr !== 'off' && characterRef.current && glowRef.current) {
-            performWakeUpAnimation();
-
+          // Handle returning from OFF - let AnimationController handle wake-up
+          if (expression === 'off' && expr !== 'off') {
             // Special handling for shocked: go to idle first, then shocked
             if (expr === 'shocked') {
               setExpression('idle');
@@ -3623,10 +3638,7 @@ export default function AntyV3() {
             // Clear any pending expression reset
             clearExpressionReset();
 
-            // Handle returning from OFF with WOOHOOO leap to life!!!
-            setCurrentAnimationSequence('POWER BUTTON: Wake-up triggered');
-            performWakeUpAnimation();
-
+            // Let AnimationController handle wake-up animation via isOff state change
             setExpression(onExpression);
 
             // Return to idle after a brief moment
@@ -3634,7 +3646,6 @@ export default function AntyV3() {
           } else {
             // Turn off - let AnimationController handle animation
             clearExpressionReset();
-            setCurrentAnimationSequence('POWER BUTTON: Power-off triggered (Controller should handle)');
             setExpression('off'); // Controller will trigger power-off animation via isOff state
           }
         }}
@@ -3656,6 +3667,15 @@ export default function AntyV3() {
           characterRef={characterRef}
           shadowRef={{ current: document.getElementById('anty-shadow') as HTMLDivElement }}
           currentSequence={currentAnimationSequence}
+          randomAction={lastRandomAction}
+        />
+      )}
+
+      {/* Eye Debug Boxes - Track secondary eye element transformations */}
+      {debugMode && antyRef.current?.leftEyeRef && antyRef.current?.rightEyeRef && (
+        <EyeDebugBoxes
+          leftEyeRef={antyRef.current.leftEyeRef as React.RefObject<HTMLDivElement>}
+          rightEyeRef={antyRef.current.rightEyeRef as React.RefObject<HTMLDivElement>}
         />
       )}
 

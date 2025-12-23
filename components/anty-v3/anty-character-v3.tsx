@@ -55,6 +55,7 @@ interface AntyCharacterV3Props {
   searchMode?: boolean;
   debugMode?: boolean;
   onAnimationSequenceChange?: (sequence: string) => void;
+  onRandomAction?: (action: string) => void;
 }
 
 export interface AntyCharacterHandle {
@@ -90,6 +91,7 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
   searchMode = false,
   debugMode = false,
   onAnimationSequenceChange,
+  onRandomAction,
 }, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const characterRef = useRef<HTMLDivElement>(null);
@@ -689,19 +691,23 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
           if (random < 0.2) {
             // 20% chance of double blink
             performDoubleBlinkRef.current();
+            onRandomAction?.('DOUBLE BLINK');
           } else if (random < 0.9) {
             // 70% chance of single blink
             performBlinkRef.current();
+            onRandomAction?.('BLINK');
           } else if (random < 0.95) {
             // 5% chance of look left (rare)
             if (onSpontaneousExpressionRef.current) {
               onSpontaneousExpressionRef.current('look-left');
             }
+            onRandomAction?.('LOOK LEFT');
           } else {
             // 5% chance of look right (rare)
             if (onSpontaneousExpressionRef.current) {
               onSpontaneousExpressionRef.current('look-right');
             }
+            onRandomAction?.('LOOK RIGHT');
           }
 
           // Schedule next behavior (minimum 5 seconds from now)
@@ -914,34 +920,64 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
               }}
             />
 
-            {/* Left eye debug box - matches the eye container position */}
+            {/* Left eye center tracker - Yellow plus */}
             {!isOff && !isHappy && !isAngry && !isSad && (
-              <div
-                className="absolute pointer-events-none"
-                style={{
-                  top: '33.41%',
-                  left: '31.63%',
-                  right: '56.72%',
-                  bottom: '38.76%',
-                  border: '2px solid yellow',
-                  zIndex: 9999,
-                }}
-              />
+              <>
+                {/* Horizontal line */}
+                <div
+                  className="absolute pointer-events-none"
+                  style={{
+                    top: 'calc(33.41% + 13.915% - 1px)',
+                    left: 'calc(31.63% + 5.825% - 7px)',
+                    width: '12px',
+                    height: '2px',
+                    backgroundColor: 'yellow',
+                    zIndex: 9999,
+                  }}
+                />
+                {/* Vertical line */}
+                <div
+                  className="absolute pointer-events-none"
+                  style={{
+                    top: 'calc(33.41% + 13.915% - 6px)',
+                    left: 'calc(31.63% + 5.825% - 2px)',
+                    width: '2px',
+                    height: '12px',
+                    backgroundColor: 'yellow',
+                    zIndex: 9999,
+                  }}
+                />
+              </>
             )}
 
-            {/* Right eye debug box - matches the eye container position */}
+            {/* Right eye center tracker - Orange plus */}
             {!isOff && !isHappy && !isAngry && !isSad && (
-              <div
-                className="absolute pointer-events-none"
-                style={{
-                  top: '33.41%',
-                  left: '57.36%',
-                  right: '31%',
-                  bottom: '38.76%',
-                  border: '2px solid orange',
-                  zIndex: 9999,
-                }}
-              />
+              <>
+                {/* Horizontal line */}
+                <div
+                  className="absolute pointer-events-none"
+                  style={{
+                    top: 'calc(33.41% + 13.915% - 1px)',
+                    left: 'calc(57.36% + 5.82% - 7px)',
+                    width: '12px',
+                    height: '2px',
+                    backgroundColor: 'orange',
+                    zIndex: 9999,
+                  }}
+                />
+                {/* Vertical line */}
+                <div
+                  className="absolute pointer-events-none"
+                  style={{
+                    top: 'calc(33.41% + 13.915% - 6px)',
+                    left: 'calc(57.36% + 5.82% - 2px)',
+                    width: '2px',
+                    height: '12px',
+                    backgroundColor: 'orange',
+                    zIndex: 9999,
+                  }}
+                />
+              </>
             )}
           </>
         )}
