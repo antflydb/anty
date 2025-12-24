@@ -7,7 +7,7 @@ export function FPSMeter() {
   const [isVisible, setIsVisible] = useState(false);
   const frameCountRef = useRef(0);
   const lastTimeRef = useRef(performance.now());
-  const animationFrameRef = useRef<number>();
+  const animationFrameRef = useRef<number | undefined>(undefined);
 
   useEffect(() => {
     const updateFPS = () => {

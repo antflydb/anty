@@ -4,14 +4,14 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Power } from 'lucide-react';
 import { Kbd } from '@/components/ui/kbd';
-import type { ExpressionName } from '@/lib/anty-v3/animation-state';
+import type { EmotionType } from '@/lib/anty-v3/animation/types';
 
 interface ExpressionMenuProps {
-  onExpressionSelect: (expression: ExpressionName) => void;
-  currentExpression: ExpressionName;
+  onExpressionSelect: (expression: EmotionType | 'idle' | 'off') => void;
+  currentExpression: EmotionType | 'idle' | 'off';
 }
 
-const EXPRESSIONS: { name: ExpressionName; emoji: string; label: string; hotkey: string }[] = [
+const EXPRESSIONS: { name: EmotionType; emoji: string; label: string; hotkey: string }[] = [
   { name: 'happy', emoji: '😊', label: 'Happy', hotkey: '1' },
   { name: 'excited', emoji: '🎉', label: 'Excited', hotkey: '2' },
   { name: 'spin', emoji: '🌀', label: 'Spin', hotkey: '3' },
@@ -84,7 +84,7 @@ export function ExpressionMenu({ onExpressionSelect, currentExpression, isExpand
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [onExpressionSelect, isChatOpen, isSearchActive]);
 
-  const handleExpressionClick = (expression: ExpressionName) => {
+  const handleExpressionClick = (expression: EmotionType) => {
     onExpressionSelect(expression);
     // Don't auto-collapse - keep menu open
   };

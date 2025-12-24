@@ -5,23 +5,17 @@
  * Use these in development to verify both systems work correctly.
  */
 
-import type { ExpressionName } from '@/lib/anty-v3/animation-state';
 import type { EmotionType } from './types';
 import type { UseAnimationControllerReturn } from './use-animation-controller';
-import type { LegacyEyeAnimations } from './migration-helper';
-import {
-  mapExpressionToEmotion,
-  mapEmotionToExpression,
-} from './migration-helper';
 
 // ===========================
 // Test Suites
 // ===========================
 
 /**
- * All testable expressions
+ * All testable emotions (EmotionType values)
  */
-export const TEST_EXPRESSIONS: ExpressionName[] = [
+export const TEST_EXPRESSIONS: Array<EmotionType | 'idle' | 'off'> = [
   'idle',
   'happy',
   'excited',
@@ -34,9 +28,9 @@ export const TEST_EXPRESSIONS: ExpressionName[] = [
 ];
 
 /**
- * Expressions that map to emotions
+ * Emotions that can be directly tested
  */
-export const MAPPED_EXPRESSIONS: ExpressionName[] = [
+export const MAPPED_EXPRESSIONS: Array<EmotionType | 'idle'> = [
   'idle',
   'happy',
   'excited',
@@ -48,19 +42,25 @@ export const MAPPED_EXPRESSIONS: ExpressionName[] = [
 ];
 
 /**
- * All emotions
+ * All emotions (from actual EmotionType definition)
  */
 export const TEST_EMOTIONS: EmotionType[] = [
-  'neutral',
   'happy',
-  'excited',
-  'surprised',
-  'playful',
-  'angry',
   'sad',
-  'curious',
+  'angry',
+  'surprised',
+  'shocked',
+  'confused',
   'thinking',
-  'confident',
+  'excited',
+  'tired',
+  'searching',
+  'found',
+  'error',
+  'success',
+  'loading',
+  'celebrate',
+  'spin',
 ];
 
 // ===========================
@@ -68,49 +68,17 @@ export const TEST_EMOTIONS: EmotionType[] = [
 // ===========================
 
 /**
- * Test that expression → emotion → expression mapping is consistent
+ * @deprecated Mapping tests removed - EmotionType now used throughout
  */
 export function testMappingRoundTrip(): void {
-  console.group('🧪 Testing Expression ↔ Emotion Mapping');
-
-  let passed = 0;
-  let failed = 0;
-
-  for (const expression of MAPPED_EXPRESSIONS) {
-    const emotion = mapExpressionToEmotion(expression);
-    if (!emotion) {
-      console.warn(`❌ ${expression} → null (no mapping)`);
-      failed++;
-      continue;
-    }
-
-    const backToExpression = mapEmotionToExpression(emotion);
-
-    if (backToExpression === expression) {
-      console.log(`✅ ${expression} → ${emotion} → ${backToExpression}`);
-      passed++;
-    } else {
-      console.warn(`⚠️  ${expression} → ${emotion} → ${backToExpression} (changed)`);
-      failed++;
-    }
-  }
-
-  console.log(`\nResults: ${passed} passed, ${failed} failed`);
-  console.groupEnd();
+  console.warn('testMappingRoundTrip is deprecated - EmotionType now used throughout');
 }
 
 /**
- * Show all expression mappings
+ * @deprecated Mapping tests removed - EmotionType now used throughout
  */
 export function showAllMappings(): void {
-  console.group('📋 All Expression → Emotion Mappings');
-
-  for (const expression of TEST_EXPRESSIONS) {
-    const emotion = mapExpressionToEmotion(expression);
-    console.log(`${expression.padEnd(12)} → ${emotion ?? '(none)'}`);
-  }
-
-  console.groupEnd();
+  console.warn('showAllMappings is deprecated - EmotionType now used throughout');
 }
 
 // ===========================
@@ -192,27 +160,10 @@ export async function testStateTransitions(
 // ===========================
 
 /**
- * Test legacy system blink functionality
+ * @deprecated Legacy system removed
  */
-export async function testLegacyBlinks(
-  legacy: LegacyEyeAnimations,
-  delayMs: number = 500
-): Promise<void> {
-  console.group('👁️  Testing Legacy System Blinks');
-
-  console.log('Testing single blink...');
-  legacy.triggerBlink();
-  await new Promise(resolve => setTimeout(resolve, delayMs));
-
-  console.log('Testing double blink...');
-  legacy.triggerDoubleBlink();
-  await new Promise(resolve => setTimeout(resolve, delayMs));
-
-  console.log('Testing reset...');
-  legacy.resetEyeAnimations();
-
-  console.log('✅ Legacy blink tests complete');
-  console.groupEnd();
+export async function testLegacyBlinks(): Promise<void> {
+  console.warn('testLegacyBlinks is deprecated - legacy system removed');
 }
 
 // ===========================
@@ -220,38 +171,10 @@ export async function testLegacyBlinks(
 // ===========================
 
 /**
- * Compare performance of old vs new system
+ * @deprecated Legacy comparison removed
  */
-export async function comparePerformance(
-  legacy: LegacyEyeAnimations | null,
-  newSystem: UseAnimationControllerReturn | null,
-  iterations: number = 10
-): Promise<void> {
-  console.group(`⚡ Performance Comparison (${iterations} iterations)`);
-
-  // Test legacy system
-  if (legacy) {
-    const start = performance.now();
-    for (let i = 0; i < iterations; i++) {
-      legacy.triggerBlink();
-      await new Promise(resolve => setTimeout(resolve, 200));
-    }
-    const legacyTime = performance.now() - start;
-    console.log(`Legacy System: ${legacyTime.toFixed(2)}ms total, ${(legacyTime / iterations).toFixed(2)}ms avg`);
-  }
-
-  // Test new system
-  if (newSystem && newSystem.isReady) {
-    const start = performance.now();
-    for (let i = 0; i < iterations; i++) {
-      newSystem.playEmotion('happy');
-      await new Promise(resolve => setTimeout(resolve, 200));
-    }
-    const newTime = performance.now() - start;
-    console.log(`New System:    ${newTime.toFixed(2)}ms total, ${(newTime / iterations).toFixed(2)}ms avg`);
-  }
-
-  console.groupEnd();
+export async function comparePerformance(): Promise<void> {
+  console.warn('comparePerformance is deprecated - legacy system removed');
 }
 
 /**
@@ -305,14 +228,10 @@ export function validateStateConsistency(
  * Run all tests
  */
 export async function runAllTests(
-  legacy: LegacyEyeAnimations | null,
+  _legacy: null,
   newSystem: UseAnimationControllerReturn | null
 ): Promise<void> {
   console.log('🚀 Running Full Test Suite\n');
-
-  // Mapping tests
-  testMappingRoundTrip();
-  showAllMappings();
 
   // Wait a bit
   await new Promise(resolve => setTimeout(resolve, 1000));
@@ -324,18 +243,6 @@ export async function runAllTests(
     validateStateConsistency(newSystem);
   } else {
     console.warn('⚠️  Skipping new system tests (not ready)');
-  }
-
-  // Legacy system tests
-  if (legacy) {
-    await testLegacyBlinks(legacy, 500);
-  } else {
-    console.warn('⚠️  Skipping legacy system tests (not available)');
-  }
-
-  // Comparison
-  if (legacy && newSystem && newSystem.isReady) {
-    await comparePerformance(legacy, newSystem, 5);
   }
 
   console.log('\n✅ All tests complete!');
@@ -357,12 +264,7 @@ export function printDebugInfo(controller: UseAnimationControllerReturn): void {
   const info = controller.getDebugInfo();
 
   console.group('🐛 Animation Controller Debug Info');
-  console.log('State:', info.state);
-  console.log('Emotion:', info.emotion);
-  console.log('Is Idle:', info.isIdle);
-  console.log('Idle Paused:', info.idlePaused);
-  console.log('Queue Length:', info.queueLength);
-  console.log('Queued Items:', info.queuedItems);
+  console.log('Debug Info:', info);
   console.groupEnd();
 }
 

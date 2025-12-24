@@ -1,9 +1,9 @@
-import type { ExpressionName } from '../anty-v3/animation-state';
+import type { EmotionType } from '../anty-v3/animation/types';
 
 /**
- * Maps emotion tags from chat responses to Anty's expression names
+ * Maps emotion tags from chat responses to Anty's emotion types
  */
-export function mapEmotionToExpression(emotion: string | undefined): ExpressionName | null {
+export function mapEmotionToExpression(emotion: string | undefined): EmotionType | null {
   if (!emotion) {
     return null;
   }
@@ -11,7 +11,7 @@ export function mapEmotionToExpression(emotion: string | undefined): ExpressionN
   const emotionLower = emotion.toLowerCase();
 
   // Direct mappings
-  const emotionMap: Record<string, ExpressionName> = {
+  const emotionMap: Record<string, EmotionType> = {
     'happy': 'happy',
     'excited': 'excited',
     'shocked': 'shocked',

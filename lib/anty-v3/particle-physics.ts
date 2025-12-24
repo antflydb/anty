@@ -122,6 +122,7 @@ export function createParticle(
     opacity: 1.0,
     scale: randomInRange(0.6, 1.0),
     rotation: randomInRange(0, 360),
+    rotationSpeed: randomInRange(config.rotationSpeed.min, config.rotationSpeed.max),
   };
 }
 

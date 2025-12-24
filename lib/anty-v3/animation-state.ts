@@ -1,27 +1,19 @@
 /**
  * Animation State Types for Anty V3
  * Defines types for GSAP-powered animation system
+ *
+ * @deprecated This file is being phased out in favor of the unified type system in animation/types.ts
+ * Use EmotionType from '@/lib/anty-v3/animation/types' instead of ExpressionName
  */
 
 import type { AntyStats } from '@/lib/anty-v3/stat-system';
+import type { EmotionType } from '@/lib/anty-v3/animation/types';
 
-// Expression names - only expressions with visual assets
-export type ExpressionName =
-  | 'idle'       // Default vertical pill eyes
-  | 'happy'      // Smiling eyes
-  | 'excited'    // Smiling eyes with flip/jump animation and fireworks
-  | 'spin'       // Happy eyes with Y-axis spin jump
-  | 'shocked'    // Wide eyes with brackets moving apart
-  | 'wink'       // Half-closed right eye + closed left eye
-  | 'angry'      // Downward curved eyes with stern animation
-  | 'sad'        // Upward curved eyes with gentle droop animation
-  | 'idea'       // Eyes look up with lightbulb moment
-  | 'lookaround' // Look left and right in sequence
-  | 'look-left'  // Eyes look left - bunched closer, contracted, moved left
-  | 'look-right' // Eyes look right - bunched closer, contracted, moved right
-  | 'nod'        // Vertical head nod (yes/affirm)
-  | 'headshake'  // Horizontal head shake (no/deny)
-  | 'off';       // Logo state - triangle eyes, no animations
+/**
+ * @deprecated Use EmotionType | 'idle' | 'off' from '@/lib/anty-v3/animation/types' instead
+ * This type alias is maintained for backwards compatibility during migration
+ */
+export type ExpressionName = EmotionType | 'idle' | 'off';
 
 // Button names for interactive responses
 export type ButtonName = 'feed' | 'play' | 'chat' | 'moods' | 'search';

@@ -7,9 +7,9 @@ import { AntySearchBar } from '@/components/anty-v3/anty-search-bar';
 import { AnimationDebugOverlay } from '@/components/anty-v3/animation-debug-overlay';
 import { EyeDebugBoxes } from '@/components/anty-v3/eye-debug-boxes';
 import { ChatPanel } from '@/components/anty-chat';
-import type { ExpressionName } from '@/lib/anty-v3/animation-state';
+import type { EmotionType } from '@/lib/anty-v3/animation/types';
 import type { AntyStats } from '@/lib/anty-v3/stat-system';
-import { USE_NEW_ANIMATION_CONTROLLER } from '@/lib/anty-v3/animation/feature-flags';
+import { USE_NEW_ANIMATION_CONTROLLER, ENABLE_ANIMATION_DEBUG_LOGS } from '@/lib/anty-v3/animation/feature-flags';
 
 export default function AntyV3() {
   // Add CSS animation for super mode hue shift
@@ -53,16 +53,11 @@ export default function AntyV3() {
   }, [gameHighScore]);
 
   const [hearts, setHearts] = useState(3);
-  const [expression, setExpressionInternal] = useState<ExpressionName>('idle');
+  const [expression, setExpressionInternal] = useState<EmotionType | 'idle' | 'off'>('idle');
   const [isExpressionMenuExpanded, setIsExpressionMenuExpanded] = useState(false);
 
-  // Wrapped setExpression with logging
-  const setExpression = (newExpr: ExpressionName) => {
-    setExpressionInternal((prevExpression) => {
-      console.log(`setExpression called: ${prevExpression} → ${newExpr} at ${Date.now()}`);
-      console.trace('setExpression call stack');
-      return newExpr;
-    });
+  const setExpression = (newExpr: EmotionType | 'idle' | 'off') => {
+    setExpressionInternal(newExpr);
   };
 
   const [stats, setStats] = useState<AntyStats>({
@@ -108,31 +103,6 @@ export default function AntyV3() {
   // Animation sequence tracking for debug overlay
   const [currentAnimationSequence, setCurrentAnimationSequence] = useState<string>('IDLE');
   const [lastRandomAction, setLastRandomAction] = useState<string>('');
-  const [animationSource, setAnimationSource] = useState<string>(
-    USE_NEW_ANIMATION_CONTROLLER ? 'controller' : 'legacy'
-  );
-
-  // Track expression changes and update debug sequence
-  // DISABLED: Animation controller now sends motion events directly via onAnimationSequenceChange
-  // useEffect(() => {
-  //   if (expression === 'off') {
-  //     setCurrentAnimationSequence('OFF');
-  //   } else if (expression === 'idle') {
-  //     setCurrentAnimationSequence('IDLE');
-  //   } else {
-  //     setCurrentAnimationSequence(expression.toUpperCase());
-  //   }
-  // }, [expression]);
-
-  // Track search mode for debug overlay
-  // DISABLED: Animation controller now sends motion events directly via onAnimationSequenceChange
-  // useEffect(() => {
-  //   if (searchActive) {
-  //     setCurrentAnimationSequence('SEARCH MODE');
-  //   } else if (!searchActive && expression === 'idle') {
-  //     setCurrentAnimationSequence('IDLE');
-  //   }
-  // }, [searchActive, expression]);
 
   // Debug mode keyboard shortcut (D key) - disabled in chat/search mode
   useEffect(() => {
@@ -142,7 +112,9 @@ export default function AntyV3() {
 
       if (e.key === 'd' || e.key === 'D') {
         setDebugMode(prev => !prev);
-        console.log('[DEBUG MODE]', !debugMode ? 'ENABLED' : 'DISABLED');
+        if (ENABLE_ANIMATION_DEBUG_LOGS) {
+          console.log('[DEBUG MODE]', !debugMode ? 'ENABLED' : 'DISABLED');
+        }
       }
     };
     window.addEventListener('keydown', handleKeyPress);
@@ -199,16 +171,22 @@ export default function AntyV3() {
     if (expressionResetTimerRef.current) {
       clearTimeout(expressionResetTimerRef.current);
       expressionResetTimerRef.current = null;
-      console.log('[EXPRESSION TIMER] Cleared pending reset');
+      if (ENABLE_ANIMATION_DEBUG_LOGS) {
+        console.log('[EXPRESSION TIMER] Cleared pending reset');
+      }
     }
   };
 
   // Helper function to schedule expression reset to idle
   const scheduleExpressionReset = (delayMs: number) => {
     clearExpressionReset(); // Clear any existing timeout first
-    console.log(`[EXPRESSION TIMER] Scheduling reset to idle in ${delayMs}ms`);
+    if (ENABLE_ANIMATION_DEBUG_LOGS) {
+      console.log(`[EXPRESSION TIMER] Scheduling reset to idle in ${delayMs}ms`);
+    }
     expressionResetTimerRef.current = setTimeout(() => {
-      console.log('[EXPRESSION TIMER] Executing scheduled reset to idle');
+      if (ENABLE_ANIMATION_DEBUG_LOGS) {
+        console.log('[EXPRESSION TIMER] Executing scheduled reset to idle');
+      }
       setExpression('idle');
       expressionResetTimerRef.current = null;
     }, delayMs);
@@ -249,588 +227,44 @@ export default function AntyV3() {
   }, []);
 
   // Centralized emotion animation trigger - reused by chat and expression menu
-  const triggerEmotionAnimation = (expr: ExpressionName, isChatOpen = false) => {
+  const triggerEmotionAnimation = (expr: EmotionType | 'idle' | 'off', isChatOpen = false) => {
     // Memory leak fix: Add debounce to prevent animation spam
     const now = Date.now();
     const ANIMATION_COOLDOWN = 300; // ms
     if (now - lastAnimationTimeRef.current < ANIMATION_COOLDOWN) {
-      console.log('[ANIMATION] Ignoring rapid trigger - cooldown active');
+      if (ENABLE_ANIMATION_DEBUG_LOGS) {
+        console.log('[ANIMATION] Ignoring rapid trigger - cooldown active');
+      }
       return;
     }
     lastAnimationTimeRef.current = now;
 
-    // Feature flag: Try new animation controller first
+    // Use animation controller
     if (USE_NEW_ANIMATION_CONTROLLER && antyRef.current?.playEmotion) {
-      console.log('[ANIMATION] Using new controller for emotion:', expr);
-      setAnimationSource('controller');
+      // Filter out non-emotion states
+      if (expr === 'idle' || expr === 'off') {
+        if (ENABLE_ANIMATION_DEBUG_LOGS) {
+          console.log('[ANIMATION] Skipping non-emotion state:', expr);
+        }
+        setExpression(expr);
+        return;
+      }
+
+      if (ENABLE_ANIMATION_DEBUG_LOGS) {
+        console.log('[ANIMATION] Using controller for emotion:', expr);
+      }
       const success = antyRef.current.playEmotion(expr, { isChatOpen });
       if (success) {
         // Update expression state for facial expressions
         setExpression(expr);
-        console.log('[ANIMATION] New controller handled emotion successfully');
-        return;
+        if (ENABLE_ANIMATION_DEBUG_LOGS) {
+          console.log('[ANIMATION] Controller handled emotion successfully');
+        }
       } else {
-        console.log('[ANIMATION] New controller declined, falling back to legacy GSAP');
-        setAnimationSource('legacy');
+        console.warn('[ANIMATION] Controller declined emotion:', expr);
       }
-    } else if (USE_NEW_ANIMATION_CONTROLLER) {
-      console.log('[ANIMATION] New controller enabled but playEmotion not available, using legacy');
-      setAnimationSource('legacy');
     } else {
-      console.log('[ANIMATION] Using legacy GSAP animation system');
-      setAnimationSource('legacy');
-    }
-
-    // Legacy GSAP animation code below
-    // Memory leak fix: Clear all previous animations before starting new ones
-    clearExpressionReset();
-    clearAllSparkles();
-    clearAllAnimationTimers();
-
-    setExpression(expr);
-
-    if (!characterRef.current) return;
-
-    const char = characterRef.current;
-
-    // Kill existing animations
-    gsap.killTweensOf(char);
-    if (antyRef.current?.leftBodyRef?.current) {
-      gsap.killTweensOf(antyRef.current.leftBodyRef.current);
-      gsap.set(antyRef.current.leftBodyRef.current, { x: 0, y: 0 });
-    }
-    if (antyRef.current?.rightBodyRef?.current) {
-      gsap.killTweensOf(antyRef.current.rightBodyRef.current);
-      gsap.set(antyRef.current.rightBodyRef.current, { x: 0, y: 0 });
-    }
-    if (spinDescentTimerRef.current) {
-      clearTimeout(spinDescentTimerRef.current);
-      spinDescentTimerRef.current = null;
-    }
-    gsap.set(char, { rotation: 0, y: 0, rotationY: 0, scale: 1 });
-
-    switch (expr) {
-      case 'happy':
-        gsap.to(char, {
-          rotation: 10,
-          duration: 0.15,
-          ease: 'power1.inOut',
-          yoyo: true,
-          repeat: 5,
-        });
-        scheduleExpressionReset(1350);
-        break;
-
-      case 'excited': {
-        console.log('[EXCITED CASE] Entered excited case in triggerEmotionAnimation');
-        const excitedTl = gsap.timeline({
-          onComplete: () => {
-            gsap.set(char, { rotation: 0 });
-          },
-        });
-        excitedTl.to(char, { y: -70, rotation: 360, duration: 0.5, ease: 'power2.out' });
-        excitedTl.to(char, { y: -70, rotation: 360, duration: 0.3 });
-        excitedTl.to(char, { y: 0, duration: 0.45, ease: 'power1.inOut' });
-        excitedTl.to(char, { y: -25, duration: 0.18, ease: 'power2.out' });
-        excitedTl.to(char, { y: 0, duration: 0.18, ease: 'power2.in' });
-        excitedTl.to(char, { y: -18, duration: 0.15, ease: 'power2.out' });
-        excitedTl.to(char, { y: 0, duration: 0.15, ease: 'power2.in' });
-
-        // Glows follow with 75% distance and 0.05s lag
-        const innerGlow = document.querySelector('.inner-glow') as HTMLElement;
-        const outerGlow = glowRef.current;
-        if (innerGlow && outerGlow) {
-          excitedTl.to([innerGlow, outerGlow], { y: -53, duration: 0.5, ease: 'power2.out' }, '-=0.45'); // 75% of -70, 0.05s lag
-          excitedTl.to([innerGlow, outerGlow], { y: -53, duration: 0.3 }, '-=0.25'); // Hold at apex, 0.05s lag
-          excitedTl.to([innerGlow, outerGlow], { y: 0, duration: 0.45, ease: 'power1.inOut' }, '-=0.40'); // Drop down, 0.05s lag
-          excitedTl.to([innerGlow, outerGlow], { y: -19, duration: 0.18, ease: 'power2.out' }, '-=0.13'); // 75% of -25, 0.05s lag
-          excitedTl.to([innerGlow, outerGlow], { y: 0, duration: 0.18, ease: 'power2.in' }, '-=0.13'); // Drop, 0.05s lag
-          excitedTl.to([innerGlow, outerGlow], { y: -14, duration: 0.15, ease: 'power2.out' }, '-=0.10'); // 75% of -18, 0.05s lag
-          excitedTl.to([innerGlow, outerGlow], { y: 0, duration: 0.15, ease: 'power2.in' }, '-=0.10'); // Final drop, 0.05s lag
-        }
-
-        // FIREWORKS!
-        const colors = ['#FF1493', '#00CED1', '#FFD700', '#FF69B4', '#7B68EE', '#00FF7F', '#FF6347', '#FF00FF', '#00FFFF'];
-
-        createTrackedTimeout(() => {
-          // Adjust particle positions when chat is open (shift left by 192px to match Anty's position)
-          const xOffset = isChatOpen ? -192 : 0;
-          const burstPositions = [
-            { x: window.innerWidth / 2 - 120 + xOffset, y: window.innerHeight / 2 - 220 },
-            { x: window.innerWidth / 2 + 120 + xOffset, y: window.innerHeight / 2 - 200 },
-            { x: window.innerWidth / 2 + xOffset, y: window.innerHeight / 2 - 260 },
-          ];
-
-          burstPositions.forEach((pos, burstIndex) => {
-            createTrackedTimeout(() => {
-              const burstColor = colors[Math.floor(Math.random() * colors.length)];
-
-              // Main burst - 12 sparkles
-              for (let i = 0; i < 12; i++) {
-                const angle = (i / 12) * Math.PI * 2;
-                const radius = 100;
-                const offsetX = Math.cos(angle) * radius;
-                const offsetY = Math.sin(angle) * radius;
-
-                const sparkle = document.createElement('div');
-                sparkle.textContent = '✨';
-                sparkle.style.cssText = `
-                  position: fixed;
-                  left: ${pos.x}px;
-                  top: ${pos.y}px;
-                  font-size: 40px;
-                  pointer-events: none;
-                  z-index: 0;
-                  filter: drop-shadow(0 0 4px ${burstColor});
-                  will-change: transform, opacity;
-                `;
-                sparkleCleanupRef.current.add(sparkle); // Track for cleanup
-                document.body.appendChild(sparkle);
-
-                gsap.to(sparkle, {
-                  x: offsetX,
-                  y: offsetY,
-                  opacity: 0,
-                  duration: 1.2,
-                  ease: 'power2.out',
-                  onComplete: () => {
-                    sparkleCleanupRef.current.delete(sparkle);
-                    if (sparkle.parentNode) {
-                      document.body.removeChild(sparkle);
-                    }
-                  },
-                });
-              }
-
-              // Secondary smaller burst - 8 sparkles
-              createTrackedTimeout(() => {
-                for (let i = 0; i < 8; i++) {
-                  const angle = (i / 8) * Math.PI * 2 + 0.2;
-                  const radius = 60;
-                  const offsetX = Math.cos(angle) * radius;
-                  const offsetY = Math.sin(angle) * radius;
-
-                  const sparkle = document.createElement('div');
-                  sparkle.textContent = '✨';
-                  sparkle.style.cssText = `
-                    position: fixed;
-                    left: ${pos.x}px;
-                    top: ${pos.y}px;
-                    font-size: 24px;
-                    pointer-events: none;
-                    z-index: 0;
-                    filter: drop-shadow(0 0 3px ${burstColor});
-                    will-change: transform, opacity;
-                  `;
-                  sparkleCleanupRef.current.add(sparkle); // Track for cleanup
-                  document.body.appendChild(sparkle);
-
-                  gsap.to(sparkle, {
-                    x: offsetX,
-                    y: offsetY,
-                    opacity: 0,
-                    duration: 1,
-                    ease: 'power2.out',
-                    onComplete: () => {
-                      sparkleCleanupRef.current.delete(sparkle);
-                      if (sparkle.parentNode) {
-                        document.body.removeChild(sparkle);
-                      }
-                    },
-                  });
-                }
-              }, 80);
-            }, burstIndex * 120);
-          });
-        }, 200);
-
-        // Confetti celebration (disabled, but capability preserved)
-        // if (antyRef.current?.spawnConfetti) {
-        //   console.log('[EXCITED] Triggering confetti for excited emotion');
-        //   createTrackedTimeout(() => {
-        //     const xOffset = isChatOpen ? -192 : 0;
-        //     const centerX = window.innerWidth / 2 + xOffset;
-        //     const centerY = window.innerHeight / 2 - 220;
-
-        //     console.log('[EXCITED] Calling spawnConfetti with:', { centerX, centerY });
-        //     // Large confetti explosion for excited
-        //     antyRef.current?.spawnConfetti?.(centerX, centerY, 40);
-        //   }, 300); // Slightly delayed after jump starts
-        // } else {
-        //   console.warn('[EXCITED] No spawnConfetti method available');
-        // }
-
-        scheduleExpressionReset(1350);
-        break;
-      }
-
-      case 'shocked': {
-        const leftBody = antyRef.current?.leftBodyRef?.current;
-        const rightBody = antyRef.current?.rightBodyRef?.current;
-
-        gsap.to(char, { y: -30, duration: 0.2, ease: 'power2.out' });
-
-        // Glows follow with 75% distance and 0.05s lag
-        const innerGlow = document.querySelector('.inner-glow') as HTMLElement;
-        const outerGlow = glowRef.current;
-        if (innerGlow && outerGlow) {
-          gsap.to([innerGlow, outerGlow], { y: -23, duration: 0.2, ease: 'power2.out' }, '+=0.05'); // 75% of -30, 0.05s lag
-        }
-
-        if (leftBody && rightBody) {
-          gsap.to(leftBody, { x: -15, y: -15, duration: 0.2, ease: 'back.out(2)' });
-          gsap.to(rightBody, { x: 15, y: 15, duration: 0.2, ease: 'back.out(2)' });
-
-          const shakeTl = gsap.timeline({ repeat: 3, yoyo: true });
-          shakeTl.to(char, { rotation: 2, duration: 0.08, ease: 'power1.inOut' });
-
-          createTrackedTimeout(() => {
-            gsap.to(leftBody, { x: 0, y: 0, duration: 0.25, ease: 'elastic.out(1, 0.5)' });
-            gsap.to(rightBody, { x: 0, y: 0, duration: 0.25, ease: 'elastic.out(1, 0.5)' });
-          }, 1350);
-        }
-
-        createTrackedTimeout(() => {
-          if (char) {
-            gsap.to(char, { y: 0, rotation: 0, duration: 0.5, ease: 'power1.inOut' });
-            // Glows return with lag
-            const innerGlow = document.querySelector('.inner-glow') as HTMLElement;
-            const outerGlow = glowRef.current;
-            if (innerGlow && outerGlow) {
-              gsap.to([innerGlow, outerGlow], { y: 0, duration: 0.5, ease: 'power1.inOut', delay: 0.05 });
-            }
-          }
-        }, 1400);
-        scheduleExpressionReset(1350);
-        break;
-      }
-
-      case 'sad': {
-        gsap.to(char, { y: 10, scale: 0.9, duration: 0.6, ease: 'power2.out' });
-        // Glows follow with 75% distance and 0.05s lag
-        const innerGlow = document.querySelector('.inner-glow') as HTMLElement;
-        const outerGlow = glowRef.current;
-        if (innerGlow && outerGlow) {
-          gsap.to([innerGlow, outerGlow], { y: 7.5, duration: 0.6, ease: 'power2.out', delay: 0.05 });
-        }
-        createTrackedTimeout(() => {
-          if (char) {
-            gsap.to(char, { y: 0, scale: 1, duration: 0.4, ease: 'power2.in' });
-            // Glows return with lag
-            if (innerGlow && outerGlow) {
-              gsap.to([innerGlow, outerGlow], { y: 0, duration: 0.4, ease: 'power2.in', delay: 0.05 });
-            }
-          }
-        }, 1500);
-        scheduleExpressionReset(2500);
-        break;
-      }
-
-      case 'angry': {
-        const angryTl = gsap.timeline();
-        const innerGlow = document.querySelector('.inner-glow') as HTMLElement;
-        const outerGlow = glowRef.current;
-
-        // Move down
-        angryTl.to(char, { y: 15, duration: 0.6, ease: 'power2.out' });
-        // Glows follow with 75% distance and 0.05s lag
-        if (innerGlow && outerGlow) {
-          angryTl.to([innerGlow, outerGlow], { y: 11.25, duration: 0.6, ease: 'power2.out' }, '-=0.55'); // 0.05s lag
-        }
-
-        // Shake horizontally 3 times
-        for (let i = 0; i < 3; i++) {
-          angryTl.to(char, { x: -8, duration: 0.8, ease: 'sine.inOut' });
-          angryTl.to(char, { x: 8, duration: 0.8, ease: 'sine.inOut' });
-        }
-
-        // Return to center horizontally
-        angryTl.to(char, { x: 0, duration: 0.4, ease: 'sine.inOut' });
-
-        // Return to original position vertically
-        angryTl.to(char, { y: 0, duration: 0.5, ease: 'power2.in' });
-        if (innerGlow && outerGlow) {
-          angryTl.to([innerGlow, outerGlow], { y: 0, duration: 0.5, ease: 'power2.in' }, '-=0.45'); // 0.05s lag
-        }
-
-        scheduleExpressionReset(6000);
-        break;
-      }
-
-      case 'spin': {
-        if (spinDescentTimerRef.current) {
-          clearTimeout(spinDescentTimerRef.current);
-          spinDescentTimerRef.current = null;
-        }
-
-        const currentRotation = gsap.getProperty(char, 'rotationY') as number;
-        const currentY = gsap.getProperty(char, 'y') as number;
-
-        // Get glow elements
-        const innerGlow = document.querySelector('.inner-glow') as HTMLElement;
-        const outerGlow = glowRef.current;
-
-        if (Math.abs(currentY) < 60) {
-          gsap.to(char, { y: -70, duration: 0.3, ease: 'power2.out' });
-          // Glows follow with 75% distance and 0.05s lag
-          if (innerGlow && outerGlow) {
-            gsap.to([innerGlow, outerGlow], { y: -52.5, duration: 0.3, ease: 'power2.out', delay: 0.05 });
-          }
-        }
-
-        gsap.to(char, {
-          rotationY: currentRotation + 720,
-          duration: 1.1,
-          ease: 'back.out(1.2)',
-          onComplete: () => {
-            const finalRotation = gsap.getProperty(char, 'rotationY') as number;
-            gsap.set(char, { rotationY: finalRotation % 360 });
-          },
-        });
-
-        spinDescentTimerRef.current = setTimeout(() => {
-          if (char) {
-            const finalRotation = gsap.getProperty(char, 'rotationY') as number;
-            gsap.set(char, { rotationY: finalRotation % 360 });
-            gsap.to(char, {
-              y: 0,
-              duration: 0.35,
-              ease: 'power2.in',
-              onComplete: () => {
-                gsap.set(char, { rotationY: 0 });
-              },
-            });
-            // Glows descend with lag
-            if (innerGlow && outerGlow) {
-              gsap.to([innerGlow, outerGlow], {
-                y: 0,
-                duration: 0.35,
-                ease: 'power2.in',
-                delay: 0.05,
-              });
-            }
-          }
-        }, 1100);
-        scheduleExpressionReset(1500);
-        break;
-      }
-
-      case 'nod': {
-        // Nod animation (vertical yes motion)
-        const leftEye = antyRef.current?.leftEyeRef?.current;
-        const rightEye = antyRef.current?.rightEyeRef?.current;
-
-        if (leftEye && rightEye) {
-          gsap.killTweensOf([leftEye, rightEye]);
-          gsap.set([leftEye, rightEye], { scaleY: 1, y: 0 });
-        }
-
-        gsap.set(char, {
-          scale: 1,
-          rotation: 0,
-          y: 0,
-          rotationY: 0,
-          rotationX: 0,
-          transformPerspective: 600,
-        });
-
-        // Create nod timeline - rotate on X axis (up/down nod)
-        const nodTl = gsap.timeline();
-
-        // First nod - tilt forward with eyes contracting upward
-        nodTl.to(char, {
-          rotationX: -35,
-          y: 8,
-          duration: 0.15,
-          ease: 'power2.out',
-          transformPerspective: 600,
-        });
-        if (leftEye && rightEye) {
-          nodTl.to([leftEye, rightEye], {
-            scaleY: 0.85,
-            y: -4,
-            duration: 0.15,
-            ease: 'power2.out',
-          }, '<');
-        }
-
-        // Return to center
-        nodTl.to(char, {
-          rotationX: 0,
-          y: 0,
-          duration: 0.15,
-          ease: 'power2.inOut',
-        });
-        if (leftEye && rightEye) {
-          nodTl.to([leftEye, rightEye], {
-            scaleY: 1,
-            y: 0,
-            duration: 0.15,
-            ease: 'power2.inOut',
-          }, '<');
-        }
-
-        // Second nod - tilt forward
-        nodTl.to(char, {
-          rotationX: -35,
-          y: 8,
-          duration: 0.15,
-          ease: 'power2.out',
-        });
-        if (leftEye && rightEye) {
-          nodTl.to([leftEye, rightEye], {
-            scaleY: 0.85,
-            y: -4,
-            duration: 0.15,
-            ease: 'power2.out',
-          }, '<');
-        }
-
-        // Return to center
-        nodTl.to(char, {
-          rotationX: 0,
-          y: 0,
-          duration: 0.15,
-          ease: 'power2.inOut',
-        });
-        if (leftEye && rightEye) {
-          nodTl.to([leftEye, rightEye], {
-            scaleY: 1,
-            y: 0,
-            duration: 0.15,
-            ease: 'power2.inOut',
-          }, '<');
-        }
-
-        // Third nod - tilt forward
-        nodTl.to(char, {
-          rotationX: -35,
-          y: 8,
-          duration: 0.15,
-          ease: 'power2.out',
-        });
-        if (leftEye && rightEye) {
-          nodTl.to([leftEye, rightEye], {
-            scaleY: 0.85,
-            y: -4,
-            duration: 0.15,
-            ease: 'power2.out',
-          }, '<');
-        }
-
-        // Final return to neutral
-        nodTl.to(char, {
-          rotationX: 0,
-          y: 0,
-          duration: 0.2,
-          ease: 'power2.inOut',
-        });
-        if (leftEye && rightEye) {
-          nodTl.to([leftEye, rightEye], {
-            scaleY: 1,
-            y: 0,
-            duration: 0.2,
-            ease: 'power2.inOut',
-          }, '<');
-        }
-
-        scheduleExpressionReset(1350);
-        break;
-      }
-
-      case 'headshake': {
-        // Headshake animation (horizontal no motion)
-        const leftEye = antyRef.current?.leftEyeRef?.current;
-        const rightEye = antyRef.current?.rightEyeRef?.current;
-
-        if (leftEye && rightEye) {
-          gsap.killTweensOf([leftEye, rightEye]);
-          gsap.set([leftEye, rightEye], { scaleY: 1, y: 0 });
-        }
-
-        gsap.set(char, {
-          scale: 1,
-          rotation: 0,
-          y: 0,
-          rotationY: 0,
-          rotationX: 0,
-          transformPerspective: 600,
-        });
-
-        // Create headshake timeline - rotate on Y axis (left/right shake)
-        const headshakeTl = gsap.timeline();
-
-        // Contract eyes downward for the entire shake duration
-        if (leftEye && rightEye) {
-          headshakeTl.to([leftEye, rightEye], {
-            scaleY: 0.85,
-            y: 4,
-            duration: 0.18,
-            ease: 'power2.out',
-          }, 0);
-        }
-
-        // First shake - rotate left
-        headshakeTl.to(char, {
-          rotationY: -45,
-          duration: 0.18,
-          ease: 'power4.out',
-          transformPerspective: 600,
-        }, 0);
-
-        // Snap to right
-        headshakeTl.to(char, {
-          rotationY: 45,
-          duration: 0.2,
-          ease: 'power4.inOut',
-        });
-
-        // Snap back to left
-        headshakeTl.to(char, {
-          rotationY: -45,
-          duration: 0.2,
-          ease: 'power4.inOut',
-        });
-
-        // Snap to right
-        headshakeTl.to(char, {
-          rotationY: 45,
-          duration: 0.2,
-          ease: 'power4.inOut',
-        });
-
-        // Snap back to left
-        headshakeTl.to(char, {
-          rotationY: -45,
-          duration: 0.2,
-          ease: 'power4.inOut',
-        });
-
-        // Final return to neutral
-        headshakeTl.to(char, {
-          rotationY: 0,
-          duration: 0.22,
-          ease: 'power2.inOut',
-        });
-
-        // Return eyes to normal
-        if (leftEye && rightEye) {
-          headshakeTl.to([leftEye, rightEye], {
-            scaleY: 1,
-            y: 0,
-            duration: 0.22,
-            ease: 'power2.inOut',
-          }, '<');
-        }
-
-        scheduleExpressionReset(1400);
-        break;
-      }
-
-      default:
-        // For other expressions, just set them without special animations
-        scheduleExpressionReset(3000);
-        break;
+      console.warn('[ANIMATION] Controller not available for:', expr);
     }
   };
 
@@ -949,7 +383,6 @@ export default function AntyV3() {
 
       if (event.key === 'Enter') {
         event.preventDefault();
-        console.log('Search query:', searchValue);
         // Future: trigger search functionality
       }
     };
@@ -1297,7 +730,6 @@ export default function AntyV3() {
   // Reusable wake-up animation when returning from OFF state
   const performWakeUpAnimation = () => {
     setCurrentAnimationSequence('MANUAL WAKE-UP ANIMATION (performWakeUpAnimation)');
-    setAnimationSource('manual');
 
     const characterElement = characterRef.current;
     if (!characterElement) return;
@@ -1424,12 +856,16 @@ export default function AntyV3() {
   const morphToSearchBar = () => {
     // Prevent multiple simultaneous morphs
     if (morphingRef.current) {
-      console.log('[SEARCH] Already morphing, ignoring');
+      if (ENABLE_ANIMATION_DEBUG_LOGS) {
+        console.log('[SEARCH] Already morphing, ignoring');
+      }
       return;
     }
 
     morphingRef.current = true;
-    console.log('[SEARCH] Opening search mode');
+    if (ENABLE_ANIMATION_DEBUG_LOGS) {
+      console.log('[SEARCH] Opening search mode');
+    }
     setSearchActive(true);
 
     const tl = gsap.timeline({
@@ -1448,14 +884,16 @@ export default function AntyV3() {
     const innerGlow = document.querySelector('.inner-glow') as HTMLElement;
     const outerGlow = glowRef.current;
 
-    console.log('[SEARCH] Elements:', {
-      leftBody: !!leftBody,
-      rightBody: !!rightBody,
-      searchBar: !!searchBar,
-      shadow: !!shadow,
-      innerGlow: !!innerGlow,
-      outerGlow: !!outerGlow
-    });
+    if (ENABLE_ANIMATION_DEBUG_LOGS) {
+      console.log('[SEARCH] Elements:', {
+        leftBody: !!leftBody,
+        rightBody: !!rightBody,
+        searchBar: !!searchBar,
+        shadow: !!shadow,
+        innerGlow: !!innerGlow,
+        outerGlow: !!outerGlow
+      });
+    }
 
     if (!leftBody || !rightBody || !searchBar) return;
 
@@ -1546,11 +984,13 @@ export default function AntyV3() {
     const rightTransformX = rightTargetCenterX - rightCurrentCenterX;
     const rightTransformY = rightTargetCenterY - rightCurrentCenterY;
 
-    console.log('[MORPH] v7 - Direct from bracket positions:', {
-      leftBracket: { size: leftBracketSize, scaledSize: scaledLeftBracketSize, currentCenter: { x: leftCurrentCenterX, y: leftCurrentCenterY }, targetCenter: { x: leftTargetCenterX, y: leftTargetCenterY } },
-      rightBracket: { size: rightBracketSize, scaledSize: scaledRightBracketSize, currentCenter: { x: rightCurrentCenterX, y: rightCurrentCenterY }, targetCenter: { x: rightTargetCenterX, y: rightTargetCenterY } },
-      transforms: { left: { x: leftTransformX, y: leftTransformY }, right: { x: rightTransformX, y: rightTransformY } }
-    });
+    if (ENABLE_ANIMATION_DEBUG_LOGS) {
+      console.log('[MORPH] v7 - Direct from bracket positions:', {
+        leftBracket: { size: leftBracketSize, scaledSize: scaledLeftBracketSize, currentCenter: { x: leftCurrentCenterX, y: leftCurrentCenterY }, targetCenter: { x: leftTargetCenterX, y: leftTargetCenterY } },
+        rightBracket: { size: rightBracketSize, scaledSize: scaledRightBracketSize, currentCenter: { x: rightCurrentCenterX, y: rightCurrentCenterY }, targetCenter: { x: rightTargetCenterX, y: rightTargetCenterY } },
+        transforms: { left: { x: leftTransformX, y: leftTransformY }, right: { x: rightTransformX, y: rightTransformY } }
+      });
+    }
 
     // Set z-index on character container AND brackets to ensure they're above search bar
     const characterContainer = leftBody.parentElement;
@@ -1600,7 +1040,7 @@ export default function AntyV3() {
       rotation: 0,
       duration: 0.35,
       ease: 'power2.inOut',
-      overwrite: 'all'
+      overwrite: 'auto'
     }, 0.2);
 
     tl.to(rightBody, {
@@ -1612,7 +1052,7 @@ export default function AntyV3() {
       rotation: 0,
       duration: 0.35,
       ease: 'power2.inOut',
-      overwrite: 'all'
+      overwrite: 'auto'
     }, 0.2);
 
     // STEP 3: Search bar fades in (250ms) - during morph
@@ -1725,7 +1165,9 @@ export default function AntyV3() {
   const morphToCharacter = () => {
     // Prevent multiple simultaneous morphs
     if (morphingRef.current) {
-      console.log('[SEARCH] Already morphing, ignoring close');
+      if (ENABLE_ANIMATION_DEBUG_LOGS) {
+        console.log('[SEARCH] Already morphing, ignoring close');
+      }
       return;
     }
 
@@ -1753,34 +1195,11 @@ export default function AntyV3() {
 
     if (!leftBody || !rightBody || !searchBar) return;
 
-    // Kill any ongoing animations on ALL elements to ensure clean close
-    const character = leftBody.parentElement;
-    if (character) {
-      gsap.killTweensOf(character);
-    }
-    gsap.killTweensOf([leftBody, rightBody, searchBar]);
+    // Use animation controller to properly exit search mode and clean up
+    // This prevents the search/idle race condition that causes frozen states
+    antyRef.current?.exitSearchMode?.();
 
-    // Set starting states for close animation
-    if (leftEye) {
-      gsap.killTweensOf(leftEye);
-      gsap.set(leftEye, { opacity: 0 }); // Eyes start hidden (keep current y position from opening)
-    }
-    if (rightEye) {
-      gsap.killTweensOf(rightEye);
-      gsap.set(rightEye, { opacity: 0 }); // Eyes start hidden (keep current y position from opening)
-    }
-    if (shadow) {
-      gsap.killTweensOf(shadow);
-      gsap.set(shadow, { xPercent: -50, opacity: 0, scaleX: 1, scaleY: 1 }); // Shadow starts hidden
-    }
-    if (innerGlow) {
-      gsap.killTweensOf(innerGlow);
-      gsap.set(innerGlow, { opacity: 0 }); // Glows start hidden
-    }
-    if (outerGlow) {
-      gsap.killTweensOf(outerGlow);
-      gsap.set(outerGlow, { opacity: 0 }); // Glows start hidden
-    }
+    // Continue with search bar closing animations
     const searchBorderGradient = searchBorderGradientRef.current;
     if (searchBorderGradient) {
       gsap.killTweensOf(searchBorderGradient);
@@ -2237,7 +1656,9 @@ export default function AntyV3() {
                   onEmotionComplete={(emotion) => {
                     // Reset expression to idle when animation completes
                     if (USE_NEW_ANIMATION_CONTROLLER) {
-                      console.log(`[page.tsx] Emotion ${emotion} → idle`);
+                      if (ENABLE_ANIMATION_DEBUG_LOGS) {
+                        console.log(`[page.tsx] Emotion ${emotion} → idle`);
+                      }
                       setExpression('idle');
                     }
                   }}
@@ -2314,14 +1735,14 @@ export default function AntyV3() {
           // Clear any pending expression reset from previous states
           clearExpressionReset();
 
-          // Handle OFF - let AnimationController handle the animation
+          // Handle going TO OFF - let AnimationController handle the animation
           if (expr === 'off') {
             setExpression('off'); // Controller will trigger power-off animation via isOff state
             return;
           }
 
-          // Handle returning from OFF - let AnimationController handle wake-up
-          if (expression === 'off' && expr !== 'off') {
+          // Handle returning FROM OFF - let AnimationController handle wake-up
+          if (expression === 'off') {
             // Special handling for shocked: go to idle first, then shocked
             if (expr === 'shocked') {
               setExpression('idle');
@@ -3567,10 +2988,8 @@ export default function AntyV3() {
           }
 
           // Different timeout for different expressions
-          // OFF state never auto-returns to idle - user must manually change
-          if (expr === 'off') {
-            // Don't auto-return to idle
-          } else if (expr === 'spin') {
+          // Note: OFF state is handled earlier with early return
+          if (expr === 'spin') {
             if (!USE_NEW_ANIMATION_CONTROLLER) scheduleExpressionReset(1500);
           } else if (expr === 'angry') {
             // Angry animation handles eye change internally via timeline
@@ -3588,7 +3007,7 @@ export default function AntyV3() {
             if (!USE_NEW_ANIMATION_CONTROLLER) scheduleExpressionReset(800);
           } else if (expr === 'lookaround') {
             // Lookaround: deliberate left-center-right-center, then quick darting
-            const sequence: { expression: ExpressionName; delay: number }[] = [
+            const sequence: { expression: EmotionType | 'idle'; delay: number }[] = [
               { expression: 'look-left', delay: 0 },      // Look left
               { expression: 'idle', delay: 1000 },        // Back to center
               { expression: 'look-right', delay: 1000 },  // Look right
@@ -3663,7 +3082,7 @@ export default function AntyV3() {
         onToggle={() => {
           if (expression === 'off') {
             // Turn on - use happy as the default "on" expression
-            const onExpression: ExpressionName = 'happy';
+            const onExpression: EmotionType = 'happy';
 
             // Clear any pending expression reset
             clearExpressionReset();
@@ -3698,7 +3117,6 @@ export default function AntyV3() {
           shadowRef={{ current: document.getElementById('anty-shadow') as HTMLDivElement }}
           currentSequence={currentAnimationSequence}
           randomAction={lastRandomAction}
-          animationSource={animationSource}
         />
       )}
 

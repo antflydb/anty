@@ -121,24 +121,35 @@ export const particleConfigs = {
     lifetime: 2000, // milliseconds
     gravity: 0.5, // acceleration factor
     fadeStart: 0.6, // opacity fade starts at 60% of lifetime
+    rotationSpeed: { min: -45, max: 45 }, // degrees per second
   },
   sparkle: {
     velocity: { x: [-50, 50], y: [-60, -100] },
     lifetime: 1500, // milliseconds
     gravity: 0.3,
     fadeStart: 0.5, // opacity fade starts at 50% of lifetime
+    rotationSpeed: { min: -180, max: 180 }, // degrees per second
   },
   sweat: {
     velocity: { x: [-20, 20], y: [0, 20] },
     lifetime: 1200, // milliseconds
     gravity: 1.5, // falls faster
     fadeStart: 0.7,
+    rotationSpeed: { min: 0, max: 0 }, // no rotation
   },
   zzz: {
     velocity: { x: [10, 30], y: [-40, -60] },
     lifetime: 2500, // milliseconds
     gravity: -0.2, // floats up slowly
     fadeStart: 0.7,
+    rotationSpeed: { min: -20, max: 20 }, // degrees per second
+  },
+  confetti: {
+    velocity: { x: [-150, 150], y: [-300, -150] },
+    lifetime: 3000, // milliseconds
+    gravity: 1.5, // falls with gravity
+    fadeStart: 0.8,
+    rotationSpeed: { min: -360, max: 360 }, // degrees per second
   },
 } as const;
 

@@ -3,13 +3,14 @@
 import { useRef, useState } from 'react';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
-import { type ExpressionName, EXPRESSION_TRANSITIONS } from '@/lib/anty-v3/animation-state';
+import { EXPRESSION_TRANSITIONS } from '@/lib/anty-v3/animation-state';
+import type { EmotionType } from '@/lib/anty-v3/animation/types';
 
 // Register GSAP plugin
 gsap.registerPlugin(useGSAP);
 
 interface AntyExpressionLayerProps {
-  expression: ExpressionName;
+  expression: EmotionType | 'idle' | 'off';
   size?: number;
 }
 
@@ -19,8 +20,8 @@ interface AntyExpressionLayerProps {
  */
 export function AntyExpressionLayer({ expression, size = 160 }: AntyExpressionLayerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [currentExpression, setCurrentExpression] = useState<ExpressionName>(expression);
-  const [previousExpression, setPreviousExpression] = useState<ExpressionName | null>(null);
+  const [currentExpression, setCurrentExpression] = useState<EmotionType | 'idle' | 'off'>(expression);
+  const [previousExpression, setPreviousExpression] = useState<EmotionType | 'idle' | 'off' | null>(null);
 
   // Handle expression changes with GSAP crossfade
   useGSAP(() => {
@@ -109,7 +110,7 @@ function ExpressionAsset({
   size,
   isVisible,
 }: {
-  expression: ExpressionName;
+  expression: EmotionType | 'idle' | 'off';
   size: number;
   isVisible: boolean;
 }) {
@@ -171,7 +172,7 @@ function ExpressionAsset({
 /**
  * Determine transition speed based on expression change
  */
-function getTransitionSpeed(from: ExpressionName, to: ExpressionName): string {
+function getTransitionSpeed(from: EmotionType | 'idle' | 'off', to: EmotionType | 'idle' | 'off'): string {
   // Fast for quick expressions
   if (to === 'wink' || from === 'wink') return 'fast';
 
@@ -183,15 +184,15 @@ function getTransitionSpeed(from: ExpressionName, to: ExpressionName): string {
  * Get placeholder colors for expression (temporary)
  * Will be replaced with actual Figma SVG assets
  */
-function getExpressionPlaceholderColor(expression: ExpressionName): {
+function getExpressionPlaceholderColor(expression: EmotionType | 'idle' | 'off'): {
   body: string;
   eye: string;
 } {
-  const colorMap: Record<ExpressionName, { body: string; eye: string }> = {
+  const colorMap: Partial<Record<EmotionType | 'idle' | 'off', { body: string; eye: string }>> = {
     idle: { body: '#e0e0e0', eye: '#333333' },
     happy: { body: '#ffeb3b', eye: '#333333' },
     wink: { body: '#ffc107', eye: '#333333' },
   };
 
-  return colorMap[expression] || colorMap.idle;
+  return colorMap[expression] || colorMap.idle || { body: '#e0e0e0', eye: '#333333' };
 }

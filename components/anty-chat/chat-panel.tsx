@@ -5,12 +5,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Send, Loader2, Key, ChevronDown, ChevronUp, MoreVertical } from 'lucide-react';
 import { AntyChat, type ChatMessage } from '@/lib/chat/openai-client';
 import { mapEmotionToExpression, stripEmotionTags } from '@/lib/chat/emotion-mapper';
-import type { ExpressionName } from '@/lib/anty-v3/animation-state';
+import type { EmotionType } from '@/lib/anty-v3/animation/types';
 
 interface ChatPanelProps {
   isOpen: boolean;
   onClose: () => void;
-  onEmotion?: (emotion: ExpressionName) => void;
+  onEmotion?: (emotion: EmotionType) => void;
 }
 
 interface Message {

@@ -24,11 +24,10 @@ interface DebugAlert {
 }
 
 interface AnimationDebugOverlayProps {
-  characterRef: React.RefObject<HTMLDivElement>;
-  shadowRef: React.RefObject<HTMLDivElement>;
+  characterRef: React.RefObject<HTMLDivElement | null>;
+  shadowRef: React.RefObject<HTMLDivElement | null>;
   currentSequence?: string;
   randomAction?: string;
-  animationSource?: string; // 'controller' | 'legacy' | 'manual'
 }
 
 export function AnimationDebugOverlay({
@@ -36,7 +35,6 @@ export function AnimationDebugOverlay({
   shadowRef,
   currentSequence = 'IDLE',
   randomAction = '',
-  animationSource = 'unknown',
 }: AnimationDebugOverlayProps) {
   const [debugData, setDebugData] = useState<AnimationDebugData>({
     rotation: 0,
@@ -924,9 +922,6 @@ export function AnimationDebugOverlay({
       <div className="flex items-center justify-between mb-3 border-b border-green-400/30 pb-2">
         <div className="flex flex-col gap-1">
           <span className="text-green-400 font-bold">ANIMATION DEBUG</span>
-          <span className="text-gray-400 text-[10px]">
-            Source: <span className="text-cyan-300">{animationSource}</span>
-          </span>
         </div>
         <div className="flex items-center gap-2">
           {isFrozen && (

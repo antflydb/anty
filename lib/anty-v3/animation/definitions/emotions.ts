@@ -13,7 +13,7 @@ export interface EmotionAnimationElements {
   outerGlow?: HTMLElement;
 }
 
-export type EmotionType = 'happy' | 'excited' | 'sad' | 'angry' | 'shocked' | 'spin';
+export type EmotionType = 'happy' | 'excited' | 'sad' | 'angry' | 'shocked' | 'spin' | 'idea' | 'lookaround' | 'wink' | 'nod' | 'headshake' | 'look-left' | 'look-right';
 
 export interface EmotionAnimationOptions {
   /** Whether chat panel is open (affects particle positioning) */
@@ -495,6 +495,204 @@ export function createEmotionAnimation(
         );
       }
 
+      break;
+    }
+
+    case 'idea': {
+      // Subtle upward float with slight scale increase (lightbulb moment)
+      // This primarily animates the character body; eyes are handled separately
+
+      // 1. Float up slightly with scale increase (0.3s)
+      timeline.to(character, {
+        y: -15,
+        scale: 1.05,
+        duration: 0.3,
+        ease: 'power2.out',
+      });
+
+      if (glowElements.length > 0) {
+        timeline.to(
+          glowElements,
+          {
+            y: -15 * GLOW_DISTANCE_RATIO, // -11.25px
+            duration: 0.3,
+            ease: 'power2.out',
+          },
+          `-=${0.3 - GLOW_LAG_SECONDS}`
+        );
+      }
+
+      // 2. Hold position (1.2s)
+      timeline.to(character, {
+        y: -15,
+        scale: 1.05,
+        duration: 1.2,
+        ease: 'none',
+      });
+
+      if (glowElements.length > 0) {
+        timeline.to(
+          glowElements,
+          {
+            y: -15 * GLOW_DISTANCE_RATIO,
+            duration: 1.2,
+          },
+          `-=${1.2 - GLOW_LAG_SECONDS}`
+        );
+      }
+
+      // 3. Return to normal (0.4s)
+      timeline.to(character, {
+        y: 0,
+        scale: 1,
+        duration: 0.4,
+        ease: 'power2.in',
+      });
+
+      if (glowElements.length > 0) {
+        timeline.to(
+          glowElements,
+          {
+            y: 0,
+            duration: 0.4,
+            ease: 'power2.in',
+          },
+          `-=${0.4 - GLOW_LAG_SECONDS}`
+        );
+      }
+
+      break;
+    }
+
+    case 'lookaround': {
+      // Look left then right in sequence with rotation
+      // Character tilts/rotates as if looking around
+
+      // 1. Look left (rotate -8 degrees) with subtle movement (0.3s)
+      timeline.to(character, {
+        rotation: -8,
+        x: -10,
+        duration: 0.3,
+        ease: 'power2.out',
+      });
+
+      // 2. Hold left position (0.5s)
+      timeline.to(character, {
+        rotation: -8,
+        x: -10,
+        duration: 0.5,
+        ease: 'none',
+      });
+
+      // 3. Transition to right (rotate +8 degrees) (0.4s)
+      timeline.to(character, {
+        rotation: 8,
+        x: 10,
+        duration: 0.4,
+        ease: 'power2.inOut',
+      });
+
+      // 4. Hold right position (0.5s)
+      timeline.to(character, {
+        rotation: 8,
+        x: 10,
+        duration: 0.5,
+        ease: 'none',
+      });
+
+      // 5. Return to center (0.3s)
+      timeline.to(character, {
+        rotation: 0,
+        x: 0,
+        duration: 0.3,
+        ease: 'power2.in',
+      });
+
+      break;
+    }
+
+    case 'wink': {
+      // Wink animation - handled by eye controller
+      // Just add a subtle character tilt
+      timeline.to(character, {
+        rotation: -3,
+        y: -5,
+        duration: 0.15,
+        ease: 'power2.out',
+      });
+      timeline.to(character, {
+        rotation: -3,
+        y: -5,
+        duration: 0.4,
+      });
+      timeline.to(character, {
+        rotation: 0,
+        y: 0,
+        duration: 0.2,
+        ease: 'power2.out',
+      });
+      break;
+    }
+
+    case 'nod': {
+      // Nod animation - vertical head movement (yes/affirm)
+      timeline.to(character, {
+        y: 8,
+        duration: 0.2,
+        ease: 'power2.out',
+      });
+      timeline.to(character, {
+        y: -4,
+        duration: 0.2,
+        ease: 'power2.inOut',
+      });
+      timeline.to(character, {
+        y: 0,
+        duration: 0.2,
+        ease: 'power2.in',
+      });
+      break;
+    }
+
+    case 'headshake': {
+      // Headshake animation - horizontal head movement (no/deny)
+      timeline.to(character, {
+        x: -6,
+        duration: 0.2,
+        ease: 'power2.inOut',
+      });
+      timeline.to(character, {
+        x: 6,
+        duration: 0.2,
+        ease: 'power2.inOut',
+      });
+      timeline.to(character, {
+        x: -6,
+        duration: 0.2,
+        ease: 'power2.inOut',
+      });
+      timeline.to(character, {
+        x: 0,
+        duration: 0.2,
+        ease: 'power2.out',
+      });
+      break;
+    }
+
+    case 'look-left':
+    case 'look-right': {
+      // Look animations - handled by eye controller
+      // Just keep character still or add subtle rotation
+      timeline.to(character, {
+        rotation: emotion === 'look-left' ? -2 : 2,
+        duration: 0.25,
+        ease: 'power2.out',
+      });
+      timeline.to(character, {
+        rotation: 0,
+        duration: 0.25,
+        ease: 'power2.in',
+      });
       break;
     }
 

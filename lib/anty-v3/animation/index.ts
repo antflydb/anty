@@ -15,10 +15,9 @@ export * from './types';
 export { useAnimationController } from './use-animation-controller';
 export type { AnimationElements, UseAnimationControllerOptions, UseAnimationControllerReturn } from './use-animation-controller';
 
-// Feature Flags & Migration
+// Feature Flags
 export * from './feature-flags';
-export * from './migration-helper';
 
 // Development Tools (only import in dev)
-export { exposeDevTools, registerAnimationController, registerLegacyAnimations, useDevTools } from './dev-tools';
+export { exposeDevTools, registerAnimationController, useDevTools } from './dev-tools';
 export type { AntyAnimationDevTools } from './dev-tools';

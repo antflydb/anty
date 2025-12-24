@@ -33,7 +33,6 @@
  */
 
 import type { UseAnimationControllerReturn } from './use-animation-controller';
-import type { LegacyEyeAnimations } from './migration-helper';
 import {
   USE_NEW_ANIMATION_CONTROLLER,
   ENABLE_ANIMATION_VALIDATION,
@@ -41,7 +40,6 @@ import {
   logAnimationSystemInfo,
   getAnimationSystemType,
 } from './feature-flags';
-import { getMigrationStatus } from './migration-helper';
 import {
   runAllTests,
   testAllEmotions,
@@ -84,7 +82,6 @@ export interface AntyAnimationDevTools {
 
   // Direct access
   controller: UseAnimationControllerReturn | null;
-  legacy: LegacyEyeAnimations | null;
 
   // Version
   version: string;
@@ -98,7 +95,6 @@ interface SystemInfo {
     ENABLE_ANIMATION_DEBUG_LOGS: boolean;
   };
   controllerReady: boolean;
-  migrationStatus: ReturnType<typeof getMigrationStatus>;
 }
 
 // ===========================
@@ -106,7 +102,6 @@ interface SystemInfo {
 // ===========================
 
 let controllerInstance: UseAnimationControllerReturn | null = null;
-let legacyInstance: LegacyEyeAnimations | null = null;
 
 /**
  * Register the animation controller for dev tools access
@@ -120,17 +115,6 @@ export function registerAnimationController(
   }
 }
 
-/**
- * Register the legacy animation system for dev tools access
- */
-export function registerLegacyAnimations(
-  legacy: LegacyEyeAnimations
-): void {
-  legacyInstance = legacy;
-  if (typeof window !== 'undefined') {
-    console.log('✅ Legacy animations registered with dev tools');
-  }
-}
 
 /**
  * Create dev tools instance
@@ -147,7 +131,6 @@ function createDevTools(): AntyAnimationDevTools {
           ENABLE_ANIMATION_DEBUG_LOGS,
         },
         controllerReady: controllerInstance?.isReady ?? false,
-        migrationStatus: getMigrationStatus(controllerInstance),
       };
     },
 
@@ -157,11 +140,11 @@ function createDevTools(): AntyAnimationDevTools {
 
     // Testing
     runTests: async (): Promise<void> => {
-      if (!controllerInstance && !legacyInstance) {
+      if (!controllerInstance) {
         console.error('❌ No animation systems registered');
         return;
       }
-      await runAllTests(legacyInstance, controllerInstance);
+      await runAllTests(null, controllerInstance);
     },
 
     testEmotion: (emotion: string): void => {
@@ -251,7 +234,6 @@ function createDevTools(): AntyAnimationDevTools {
 
     // Direct access
     controller: controllerInstance,
-    legacy: legacyInstance,
 
     version: '1.0.0',
   };
@@ -308,8 +290,7 @@ export function exposeDevTools(): void {
  * React hook to automatically register controllers with dev tools
  */
 export function useDevTools(
-  controller: UseAnimationControllerReturn | null,
-  legacy: LegacyEyeAnimations | null = null
+  controller: UseAnimationControllerReturn | null
 ): void {
   if (typeof window === 'undefined') return;
   if (process.env.NODE_ENV !== 'development') return;
@@ -317,10 +298,6 @@ export function useDevTools(
   // Register on mount/update
   if (controller) {
     registerAnimationController(controller);
-  }
-
-  if (legacy) {
-    registerLegacyAnimations(legacy);
   }
 }
 
