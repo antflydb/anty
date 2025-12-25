@@ -23,7 +23,7 @@ export const TEST_EXPRESSIONS: Array<EmotionType | 'idle' | 'off'> = [
   'wink',
   'angry',
   'sad',
-  'idea',
+  'jump',
   'lookaround',
 ];
 
@@ -38,7 +38,7 @@ export const MAPPED_EXPRESSIONS: Array<EmotionType | 'idle'> = [
   'wink',
   'angry',
   'sad',
-  'idea',
+  'jump',
 ];
 
 /**

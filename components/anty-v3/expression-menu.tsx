@@ -19,7 +19,7 @@ const EXPRESSIONS: { name: EmotionType; emoji: string; label: string; hotkey: st
   { name: 'wink', emoji: '😉', label: 'Wink', hotkey: '5' },
   { name: 'angry', emoji: '😠', label: 'Angry', hotkey: '6' },
   { name: 'sad', emoji: '😢', label: 'Sad', hotkey: '7' },
-  { name: 'idea', emoji: '💡', label: 'Idea', hotkey: '8' },
+  { name: 'jump', emoji: '💡', label: 'Jump', hotkey: '8' },
   { name: 'lookaround', emoji: '👀', label: 'Look Around', hotkey: '9' },
   { name: 'nod', emoji: '👍', label: 'Nod', hotkey: '0' },
   { name: 'headshake', emoji: '👎', label: 'Headshake', hotkey: '-' },

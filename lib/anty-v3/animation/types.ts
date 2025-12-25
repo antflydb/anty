@@ -45,7 +45,7 @@ export type EmotionType =
   | 'loading'
   | 'celebrate'
   | 'spin'
-  | 'idea'
+  | 'jump'
   | 'lookaround'
   | 'wink'
   | 'nod'
@@ -145,6 +145,10 @@ export interface EmotionOptions {
   force?: boolean;
   /** Additional metadata for the emotion */
   metadata?: Record<string, unknown>;
+  /** For 'jump' emotion: whether to show lightbulb emoji (default: true) */
+  showLightbulb?: boolean;
+  /** For 'jump' emotion: use quicker descent timing for jump vs float (default: false) */
+  quickDescent?: boolean;
 }
 
 /**

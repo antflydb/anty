@@ -683,9 +683,14 @@ export function createEmotionAnimation(
       break;
     }
 
-    case 'idea': {
-      // Subtle upward float with slight scale increase (lightbulb moment)
+    case 'jump': {
+      // Jump animation with optional lightbulb emoji and configurable descent
+      // Options: showLightbulb (default true), quickDescent (default false)
       // Scale eyes up and lift them during the jump
+
+      const showLightbulb = options?.showLightbulb !== false; // Default true
+      const quickDescent = options?.quickDescent === true; // Default false
+      const descentDuration = quickDescent ? 0.2 : 0.4; // Quick jump vs float down
 
       // Eye animation - scale up slightly and lift
       if (eyeLeft && eyeRight) {
@@ -711,7 +716,7 @@ export function createEmotionAnimation(
           scaleX: 1,
           scaleY: 1,
           y: 0,
-          duration: 0.4,
+          duration: descentDuration,
           ease: 'power2.in',
         });
       }
@@ -755,11 +760,11 @@ export function createEmotionAnimation(
         );
       }
 
-      // 3. Return to normal (0.4s)
+      // 3. Return to normal (configurable duration based on quickDescent)
       timeline.to(character, {
         y: 0,
         scale: 1,
-        duration: 0.4,
+        duration: descentDuration,
         ease: 'power2.in',
       });
 
@@ -768,10 +773,10 @@ export function createEmotionAnimation(
           glowElements,
           {
             y: 0,
-            duration: 0.4,
+            duration: descentDuration,
             ease: 'power2.in',
           },
-          `-=${0.4 - GLOW_LAG_SECONDS}`
+          `-=${descentDuration - GLOW_LAG_SECONDS}`
         );
       }
 

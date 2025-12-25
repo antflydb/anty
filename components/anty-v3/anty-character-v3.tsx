@@ -482,7 +482,8 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
       'shocked': 'shocked',
       'spin': 'spin',
       'wink': 'wink',
-      'idea': 'idea',
+      'jump': 'jump',
+      'idea': 'jump', // Legacy alias
       'lookaround': 'lookaround',
       'nod': 'nod',
       'headshake': 'headshake',
