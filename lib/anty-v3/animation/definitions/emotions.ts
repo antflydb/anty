@@ -4,6 +4,9 @@
  */
 
 import gsap from 'gsap';
+import { createEyeAnimation, type EyeAnimationElements } from './eye-animations';
+import { EYE_SHAPES, EYE_DIMENSIONS } from './eye-shapes';
+import type { EmotionType } from '../types';
 
 export interface EmotionAnimationElements {
   character: HTMLElement;
@@ -11,9 +14,14 @@ export interface EmotionAnimationElements {
   rightBody?: HTMLElement;
   innerGlow?: HTMLElement;
   outerGlow?: HTMLElement;
+  // Eye elements
+  eyeLeft?: HTMLElement;
+  eyeRight?: HTMLElement;
+  eyeLeftPath?: SVGPathElement;
+  eyeRightPath?: SVGPathElement;
+  eyeLeftSvg?: SVGSVGElement;
+  eyeRightSvg?: SVGSVGElement;
 }
-
-export type EmotionType = 'happy' | 'excited' | 'sad' | 'angry' | 'shocked' | 'spin' | 'idea' | 'lookaround' | 'wink' | 'nod' | 'headshake' | 'look-left' | 'look-right';
 
 export interface EmotionAnimationOptions {
   /** Whether chat panel is open (affects particle positioning) */
@@ -50,7 +58,7 @@ export function createEmotionAnimation(
   elements: EmotionAnimationElements,
   options: EmotionAnimationOptions = {}
 ): gsap.core.Timeline {
-  const { character, leftBody, rightBody, innerGlow, outerGlow } = elements;
+  const { character, leftBody, rightBody, innerGlow, outerGlow, eyeLeft, eyeRight, eyeLeftPath, eyeRightPath, eyeLeftSvg, eyeRightSvg } = elements;
   const glowElements = [innerGlow, outerGlow].filter(Boolean) as HTMLElement[];
 
   const timeline = gsap.timeline({
@@ -59,11 +67,71 @@ export function createEmotionAnimation(
       if (emotion === 'excited') {
         gsap.set(character, { rotation: 0 });
       }
+
+      // Reset rotationY after spin animation (force to 0 for clean idle start)
+      if (emotion === 'spin') {
+        gsap.set(character, { rotationY: 0 });
+      }
+
+      // Reset eyes to IDLE shape after any emotion
+      // This ensures eyes return to neutral state when emotion completes
+      if (eyeLeft && eyeRight && eyeLeftPath && eyeRightPath && eyeLeftSvg && eyeRightSvg) {
+        const idlePath = EYE_SHAPES['IDLE'];
+        const idleDimensions = EYE_DIMENSIONS['IDLE'];
+
+        // Reset path to IDLE shape
+        gsap.set([eyeLeftPath, eyeRightPath], {
+          attr: { d: idlePath },
+        });
+
+        // Reset viewBox ONLY - no width/height
+        // Container stays fixed at 18.63×44.52px via CSS
+        gsap.set([eyeLeftSvg, eyeRightSvg], {
+          attr: { viewBox: idleDimensions.viewBox },
+        });
+
+        // Reset any scaling from shocked emotion
+        gsap.set([eyeLeft, eyeRight], {
+          scaleX: 1,
+          scaleY: 1,
+        });
+
+        // REMOVED: Container dimension reset - containers stay fixed at CSS defaults
+        // REMOVED: SVG width/height reset
+      }
     },
   });
 
   switch (emotion) {
     case 'happy': {
+      // Eye animation - merge into timeline at position 0
+      if (eyeLeft && eyeRight && eyeLeftPath && eyeRightPath && eyeLeftSvg && eyeRightSvg) {
+        const eyeTl = createEyeAnimation({
+          leftEye: eyeLeft,
+          rightEye: eyeRight,
+          leftEyePath: eyeLeftPath,
+          rightEyePath: eyeRightPath,
+          leftEyeSvg: eyeLeftSvg,
+          rightEyeSvg: eyeRightSvg,
+        }, 'HAPPY', { duration: 0.2 });
+
+        timeline.add(eyeTl, 0); // Add at start
+
+        // Move eyes up
+        timeline.to([eyeLeft, eyeRight], {
+          y: -10,
+          duration: 0.2,
+          ease: 'power2.out',
+        }, 0);
+
+        // Reset position at end
+        timeline.to([eyeLeft, eyeRight], {
+          y: 0,
+          duration: 0.15,
+          ease: 'power2.in',
+        });
+      }
+
       // Wiggle animation - rotation oscillation
       timeline.to(character, {
         rotation: 10,
@@ -76,6 +144,34 @@ export function createEmotionAnimation(
     }
 
     case 'excited': {
+      // Add happy eyes to excited emotion
+      if (eyeLeft && eyeRight && eyeLeftPath && eyeRightPath && eyeLeftSvg && eyeRightSvg) {
+        const eyeTl = createEyeAnimation({
+          leftEye: eyeLeft,
+          rightEye: eyeRight,
+          leftEyePath: eyeLeftPath,
+          rightEyePath: eyeRightPath,
+          leftEyeSvg: eyeLeftSvg,
+          rightEyeSvg: eyeRightSvg,
+        }, 'HAPPY', { duration: 0.2 });
+
+        timeline.add(eyeTl, 0);
+
+        // Move eyes up
+        timeline.to([eyeLeft, eyeRight], {
+          y: -10,
+          duration: 0.2,
+          ease: 'power2.out',
+        }, 0);
+
+        // Reset eyes at the end
+        timeline.to([eyeLeft, eyeRight], {
+          y: 0,
+          duration: 0.15,
+          ease: 'power2.in',
+        });
+      }
+
       // Epic jump with 360° rotation and multi-bounce landing
 
       // CRITICAL: Reset rotation to 0 before starting to avoid additive rotation issues
@@ -218,6 +314,34 @@ export function createEmotionAnimation(
     }
 
     case 'sad': {
+      // Eye animation - merge into timeline at position 0
+      if (eyeLeft && eyeRight && eyeLeftPath && eyeRightPath && eyeLeftSvg && eyeRightSvg) {
+        const eyeTl = createEyeAnimation({
+          leftEye: eyeLeft,
+          rightEye: eyeRight,
+          leftEyePath: eyeLeftPath,
+          rightEyePath: eyeRightPath,
+          leftEyeSvg: eyeLeftSvg,
+          rightEyeSvg: eyeRightSvg,
+        }, 'SAD', { duration: 0.2 });
+
+        timeline.add(eyeTl, 0); // Add at start
+
+        // Rotate eyes: left -15deg, right -15deg + flip (after morph completes)
+        timeline.to(eyeLeft, {
+          rotation: -15,
+          duration: 0.15,
+          ease: 'power2.out',
+        }, 0.2);
+
+        timeline.to(eyeRight, {
+          rotation: -15,
+          scaleX: -1, // Flip horizontally
+          duration: 0.15,
+          ease: 'power2.out',
+        }, 0.2);
+      }
+
       // Droop down with scale decrease
       timeline.to(character, {
         y: 10,
@@ -251,6 +375,16 @@ export function createEmotionAnimation(
         '+=0.9' // Wait 1.5s total before return (0.6s + 0.9s)
       );
 
+      // Reset eye rotations
+      if (eyeLeft && eyeRight) {
+        timeline.to([eyeLeft, eyeRight], {
+          rotation: 0,
+          scaleX: 1,
+          duration: 0.4,
+          ease: 'power2.in',
+        }, '-=0.4');
+      }
+
       if (glowElements.length > 0) {
         timeline.to(
           glowElements,
@@ -267,6 +401,34 @@ export function createEmotionAnimation(
     }
 
     case 'angry': {
+      // Eye animation - merge into timeline at position 0
+      if (eyeLeft && eyeRight && eyeLeftPath && eyeRightPath && eyeLeftSvg && eyeRightSvg) {
+        const eyeTl = createEyeAnimation({
+          leftEye: eyeLeft,
+          rightEye: eyeRight,
+          leftEyePath: eyeLeftPath,
+          rightEyePath: eyeRightPath,
+          leftEyeSvg: eyeLeftSvg,
+          rightEyeSvg: eyeRightSvg,
+        }, 'ANGRY', { duration: 0.2 });
+
+        timeline.add(eyeTl, 0); // Add at start
+
+        // Rotate eyes: left 20deg, right 20deg + flip (after morph completes)
+        timeline.to(eyeLeft, {
+          rotation: 20,
+          duration: 0.15,
+          ease: 'power2.out',
+        }, 0.2);
+
+        timeline.to(eyeRight, {
+          rotation: 20,
+          scaleX: -1, // Flip horizontally
+          duration: 0.15,
+          ease: 'power2.out',
+        }, 0.2);
+      }
+
       // Move down, then shake horizontally 3 times, then return
 
       // 1. Move down (0.6s)
@@ -316,6 +478,16 @@ export function createEmotionAnimation(
         ease: 'power2.in',
       });
 
+      // Reset eye rotations
+      if (eyeLeft && eyeRight) {
+        timeline.to([eyeLeft, eyeRight], {
+          rotation: 0,
+          scaleX: 1,
+          duration: 0.5,
+          ease: 'power2.in',
+        }, '-=0.5');
+      }
+
       if (glowElements.length > 0) {
         timeline.to(
           glowElements,
@@ -332,6 +504,16 @@ export function createEmotionAnimation(
     }
 
     case 'shocked': {
+      // Eye animation - scale eyes larger while keeping IDLE shape
+      if (eyeLeft && eyeRight) {
+        timeline.to([eyeLeft, eyeRight], {
+          scaleX: 1.4,
+          scaleY: 1.4,
+          duration: 0.2,
+          ease: 'power2.out',
+        }, 0); // Add at start
+      }
+
       // Jump with bracket separation
 
       // 1. Jump up (0.2s)
@@ -423,6 +605,16 @@ export function createEmotionAnimation(
         );
       }
 
+      // 6. Reset eye scale - start earlier to scale down with body descent
+      if (eyeLeft && eyeRight) {
+        timeline.to([eyeLeft, eyeRight], {
+          scaleX: 1,
+          scaleY: 1,
+          duration: 0.5,
+          ease: 'power2.in',
+        }, '-=0.5'); // Start when character descent starts
+      }
+
       break;
     }
 
@@ -453,32 +645,25 @@ export function createEmotionAnimation(
         }
       }
 
-      // 2. Spin 720° on Y-axis (1.1s)
+      // 2. Spin 360° on Y-axis (1.1s)
       timeline.to(
         character,
         {
-          rotationY: currentRotation + 720,
+          rotationY: currentRotation + 360,
           duration: 1.1,
           ease: 'back.out(1.2)',
-          onComplete: () => {
-            // Normalize rotation to 0-360 range
-            const finalRotation = gsap.getProperty(character, 'rotationY') as number;
-            gsap.set(character, { rotationY: finalRotation % 360 });
-          },
         },
         '-=0.3' // Overlaps with jump
       );
 
       // 3. Descend after spin (0.35s) - delayed 1.1s
+      // Rotation reset handled by timeline onComplete callback (line 72-74)
       timeline.to(
         character,
         {
           y: 0,
           duration: 0.35,
           ease: 'power2.in',
-          onComplete: () => {
-            gsap.set(character, { rotationY: 0 });
-          },
         },
         '+=0.8' // Total 1.1s from spin start
       );
@@ -500,7 +685,36 @@ export function createEmotionAnimation(
 
     case 'idea': {
       // Subtle upward float with slight scale increase (lightbulb moment)
-      // This primarily animates the character body; eyes are handled separately
+      // Scale eyes up and lift them during the jump
+
+      // Eye animation - scale up slightly and lift
+      if (eyeLeft && eyeRight) {
+        timeline.to([eyeLeft, eyeRight], {
+          scaleX: 1.15,
+          scaleY: 1.15,
+          y: -3,
+          duration: 0.3,
+          ease: 'power2.out',
+        }, 0);
+
+        // Hold scaled state
+        timeline.to([eyeLeft, eyeRight], {
+          scaleX: 1.15,
+          scaleY: 1.15,
+          y: -3,
+          duration: 1.2,
+          ease: 'none',
+        });
+
+        // Reset eyes
+        timeline.to([eyeLeft, eyeRight], {
+          scaleX: 1,
+          scaleY: 1,
+          y: 0,
+          duration: 0.4,
+          ease: 'power2.in',
+        });
+      }
 
       // 1. Float up slightly with scale increase (0.3s)
       timeline.to(character, {
@@ -508,7 +722,7 @@ export function createEmotionAnimation(
         scale: 1.05,
         duration: 0.3,
         ease: 'power2.out',
-      });
+      }, 0);
 
       if (glowElements.length > 0) {
         timeline.to(
@@ -612,7 +826,37 @@ export function createEmotionAnimation(
     }
 
     case 'wink': {
-      // Wink animation - handled by eye controller
+      // Eye animation - asymmetric wink (left eye winks, right eye stays idle)
+      if (eyeLeft && eyeRight && eyeLeftPath && eyeRightPath && eyeLeftSvg && eyeRightSvg) {
+        const eyeTl = createEyeAnimation({
+          leftEye: eyeLeft,
+          rightEye: eyeRight,
+          leftEyePath: eyeLeftPath,
+          rightEyePath: eyeRightPath,
+          leftEyeSvg: eyeLeftSvg,
+          rightEyeSvg: eyeRightSvg,
+        }, { left: 'HALF', right: 'CLOSED' }, { duration: 0.15 });
+
+        timeline.add(eyeTl, 0); // Add at start
+
+        // Stretch left eye (HALF) taller and top-align it
+        timeline.to(eyeLeft, {
+          scaleY: 1.25, // Stretch height by ~25%
+          y: -5, // Move up to top-align
+          duration: 0.15,
+          ease: 'power2.out',
+        }, 0);
+
+        // Reset left eye at end
+        timeline.to(eyeLeft, {
+          scaleY: 1,
+          y: 0,
+          duration: 0.15,
+          ease: 'power2.in',
+        });
+      }
+
+      // Wink animation - character tilt
       // Just add a subtle character tilt
       timeline.to(character, {
         rotation: -3,
@@ -681,7 +925,35 @@ export function createEmotionAnimation(
 
     case 'look-left':
     case 'look-right': {
-      // Look animations - handled by eye controller
+      // Eye animation - use LOOK shape and position horizontally
+      if (eyeLeft && eyeRight && eyeLeftPath && eyeRightPath && eyeLeftSvg && eyeRightSvg) {
+        const eyeTl = createEyeAnimation({
+          leftEye: eyeLeft,
+          rightEye: eyeRight,
+          leftEyePath: eyeLeftPath,
+          rightEyePath: eyeRightPath,
+          leftEyeSvg: eyeLeftSvg,
+          rightEyeSvg: eyeRightSvg,
+        }, 'LOOK', { duration: 0.2 });
+
+        timeline.add(eyeTl, 0);
+
+        // Position eyes horizontally
+        const xOffset = emotion === 'look-left' ? -3 : 3;
+        timeline.to([eyeLeft, eyeRight], {
+          x: xOffset,
+          duration: 0.2,
+          ease: 'power2.out',
+        }, 0);
+
+        // Reset position
+        timeline.to([eyeLeft, eyeRight], {
+          x: 0,
+          duration: 0.2,
+          ease: 'power2.in',
+        }, '+=0.3');
+      }
+
       // Just keep character still or add subtle rotation
       timeline.to(character, {
         rotation: emotion === 'look-left' ? -2 : 2,

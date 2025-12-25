@@ -100,6 +100,50 @@ createSearchMorphAnimation(direction, elements, callbacks?)
 4. Settle down (170ms)
 5. Character elements fade in
 
+### `eye-animations.ts`
+**Pure eye animation functions**
+
+```typescript
+createEyeAnimation(elements, shapeSpec, config?)
+createBlinkAnimation(elements, config?)
+createDoubleBlinkAnimation(elements, config?)
+createLookAnimation(elements, config)
+createReturnFromLookAnimation(elements, config?)
+```
+
+**Eye shape morphing:**
+- Morphs eye SVG paths and container dimensions
+- Supports asymmetric animations (left/right different shapes)
+- Used for: happy, angry, sad, wink, looking, off states
+
+**Blink animations:**
+- `createBlinkAnimation` - Single blink (0.1s close + 0.15s open)
+- `createDoubleBlinkAnimation` - Two quick blinks with pause
+
+**Look animations:**
+- Eyes morph from IDLE to LOOKING shape (shorter, wider)
+- Horizontal translation with bunching effect
+- Supports left/right directions
+
+**Supported eye shapes:**
+- `IDLE` - Default tall vertical pill
+- `LOOKING` - Shorter, wider pill (for look left/right)
+- `HAPPY_LEFT` / `HAPPY_RIGHT` - Curved bottom smile
+- `ANGRY_LEFT` - Sharp angled top
+- `SAD_LEFT` - Drooping bottom
+- `WINK_LEFT` - Closed horizontal line
+- `OFF_LEFT` - Angular triangular shape
+
+### `eye-shapes.ts`
+**Eye shape definitions**
+
+```typescript
+EYE_SHAPES // SVG path data for all eye shapes
+EYE_DIMENSIONS // ViewBox and dimensions for each shape
+```
+
+All eye shapes are designed to morph smoothly between states using GSAP.
+
 ## Usage Examples
 
 ### Basic Idle Animation
@@ -172,6 +216,49 @@ const timeline = createSearchMorphAnimation('in', {
 });
 
 timeline.play();
+```
+
+### Eye Animations
+```typescript
+import {
+  createEyeAnimation,
+  createBlinkAnimation,
+  createLookAnimation
+} from './definitions';
+
+// Morph eyes to happy shape
+const happyEyes = createEyeAnimation({
+  leftEyePath: leftEyePathRef.current,
+  rightEyePath: rightEyePathRef.current,
+  leftEyeSvg: leftEyeSvgRef.current,
+  rightEyeSvg: rightEyeSvgRef.current,
+}, 'HAPPY_LEFT', { duration: 0.3 });
+
+// Asymmetric animation (wink)
+const wink = createEyeAnimation({
+  leftEyePath: leftEyePathRef.current,
+  rightEyePath: rightEyePathRef.current,
+  leftEyeSvg: leftEyeSvgRef.current,
+  rightEyeSvg: rightEyeSvgRef.current,
+}, { left: 'WINK_LEFT', right: 'IDLE' });
+
+// Single blink
+const blink = createBlinkAnimation({
+  leftEye: leftEyeRef.current,
+  rightEye: rightEyeRef.current,
+});
+
+// Look left
+const lookLeft = createLookAnimation({
+  leftEye: leftEyeRef.current,
+  rightEye: rightEyeRef.current,
+  leftEyePath: leftEyePathRef.current,
+  rightEyePath: rightEyePathRef.current,
+  leftEyeSvg: leftEyeSvgRef.current,
+  rightEyeSvg: rightEyeSvgRef.current,
+}, { direction: 'left' });
+
+happyEyes.play();
 ```
 
 ## Design Principles

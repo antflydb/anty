@@ -260,7 +260,13 @@ export class AnimationController {
     // GSAP timelines auto-play by default, which can cause onStart to fire before callbacks are registered
     timeline.pause();
 
-    // CRITICAL: Clear any existing callbacks from timeline creation to prevent duplicates
+    // CRITICAL: Capture original callbacks from emotion timeline BEFORE clearing them
+    // This preserves eye reset and rotation cleanup logic from emotions.ts
+    const originalOnStart = timeline.eventCallback('onStart');
+    const originalOnComplete = timeline.eventCallback('onComplete');
+    const originalOnInterrupt = timeline.eventCallback('onInterrupt');
+
+    // Clear existing callbacks to prevent duplicates
     timeline.eventCallback('onStart', null);
     timeline.eventCallback('onComplete', null);
     timeline.eventCallback('onInterrupt', null);
@@ -273,6 +279,11 @@ export class AnimationController {
         console.log(`[AnimationController] Emotion ${emotion} motion START`);
       }
 
+      // Call original onStart callback if it exists
+      if (originalOnStart) {
+        originalOnStart.call(timeline);
+      }
+
       // Notify that GSAP motion has actually started
       this.callbacks.onEmotionMotionStart?.(emotion, animationId);
     });
@@ -282,6 +293,11 @@ export class AnimationController {
 
       if (this.config.enableLogging) {
         console.log(`[AnimationController] Emotion ${emotion} completed (${duration}ms)`);
+      }
+
+      // Call original onComplete callback FIRST (eye reset, rotation cleanup)
+      if (originalOnComplete) {
+        originalOnComplete.call(timeline);
       }
 
       // Cleanup
@@ -304,6 +320,17 @@ export class AnimationController {
     timeline.eventCallback('onInterrupt', () => {
       if (this.config.enableLogging) {
         console.log(`[AnimationController] Emotion ${emotion} interrupted`);
+      }
+
+      // Call original onInterrupt callback if exists
+      if (originalOnInterrupt) {
+        originalOnInterrupt.call(timeline);
+      }
+
+      // CRITICAL: Also call onComplete to reset eyes when interrupted
+      // When timeline.kill() is called, onComplete doesn't fire, but we still need eye reset
+      if (originalOnComplete) {
+        originalOnComplete.call(timeline);
       }
 
       // Cleanup

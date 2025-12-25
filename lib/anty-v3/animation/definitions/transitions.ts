@@ -4,12 +4,20 @@
  */
 
 import gsap from 'gsap';
+import { createEyeAnimation, type EyeAnimationElements } from './eye-animations';
 
 export interface TransitionAnimationElements {
   character: HTMLElement;
   shadow: HTMLElement;
   innerGlow?: HTMLElement;
   outerGlow?: HTMLElement;
+  // Eye elements for morphing
+  eyeLeft?: HTMLElement;
+  eyeRight?: HTMLElement;
+  eyeLeftPath?: SVGPathElement;
+  eyeRightPath?: SVGPathElement;
+  eyeLeftSvg?: SVGSVGElement;
+  eyeRightSvg?: SVGSVGElement;
 }
 
 /**
@@ -38,7 +46,7 @@ const GLOW_LAG_SECONDS = 0.05;
 export function createWakeUpAnimation(
   elements: TransitionAnimationElements
 ): gsap.core.Timeline {
-  const { character, shadow, innerGlow, outerGlow } = elements;
+  const { character, shadow, innerGlow, outerGlow, eyeLeft, eyeRight, eyeLeftPath, eyeRightPath, eyeLeftSvg, eyeRightSvg } = elements;
   const glowElements = [innerGlow, outerGlow].filter(Boolean) as HTMLElement[];
 
   const timeline = gsap.timeline();
@@ -108,6 +116,20 @@ export function createWakeUpAnimation(
       },
       '-=0.00' // Already lagged from previous animation
     );
+  }
+
+  // Morph eyes from OFF to IDLE
+  if (eyeLeft && eyeRight && eyeLeftPath && eyeRightPath && eyeLeftSvg && eyeRightSvg) {
+    const eyeTl = createEyeAnimation({
+      leftEye: eyeLeft,
+      rightEye: eyeRight,
+      leftEyePath: eyeLeftPath,
+      rightEyePath: eyeRightPath,
+      leftEyeSvg: eyeLeftSvg,
+      rightEyeSvg: eyeRightSvg,
+    }, 'IDLE', { duration: 0.3 });
+
+    timeline.add(eyeTl, 0.5); // Start after body wake begins
   }
 
   // Phase 3: Drop down faster (0.3s)
@@ -184,7 +206,7 @@ export function createWakeUpAnimation(
 export function createPowerOffAnimation(
   elements: TransitionAnimationElements
 ): gsap.core.Timeline {
-  const { character, shadow, innerGlow, outerGlow } = elements;
+  const { character, shadow, innerGlow, outerGlow, eyeLeft, eyeRight, eyeLeftPath, eyeRightPath, eyeLeftSvg, eyeRightSvg } = elements;
   const glowElements = [innerGlow, outerGlow].filter(Boolean) as HTMLElement[];
 
   const timeline = gsap.timeline();
@@ -201,6 +223,20 @@ export function createPowerOffAnimation(
     duration: 0.5,
     ease: 'power2.out',
   });
+
+  // Morph eyes to OFF (triangle) shape
+  if (eyeLeft && eyeRight && eyeLeftPath && eyeRightPath && eyeLeftSvg && eyeRightSvg) {
+    const eyeTl = createEyeAnimation({
+      leftEye: eyeLeft,
+      rightEye: eyeRight,
+      leftEyePath: eyeLeftPath,
+      rightEyePath: eyeRightPath,
+      leftEyeSvg: eyeLeftSvg,
+      rightEyeSvg: eyeRightSvg,
+    }, { left: 'OFF_LEFT', right: 'OFF_RIGHT' }, { duration: 0.3 });
+
+    timeline.add(eyeTl, 0); // Start at the beginning (during climb up)
+  }
 
   // Phase 2: SNAP down HARD - super fast shrink to 65% (0.1s)
   timeline.to(character, {

@@ -12,7 +12,6 @@ import {
 import { type AntyStats } from '@/lib/anty-v3/stat-system';
 import { AntyExpressionLayer } from './anty-expression-layer';
 import { AntyParticleCanvas, type ParticleCanvasHandle } from './anty-particle-canvas';
-import { useEyeAnimations } from '@/lib/anty-v3/use-eye-animations';
 import { useAnimationController } from '@/lib/anty-v3/animation/use-animation-controller';
 import { type EmotionType } from '@/lib/anty-v3/animation/types';
 import {
@@ -101,34 +100,22 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
   const rightEyeRef = useRef<HTMLDivElement>(null);
   const leftEyePathRef = useRef<SVGPathElement>(null);
   const rightEyePathRef = useRef<SVGPathElement>(null);
+  const leftEyeSvgRef = useRef<SVGSVGElement>(null);
+  const rightEyeSvgRef = useRef<SVGSVGElement>(null);
   const leftBodyRef = useRef<HTMLDivElement>(null);
   const rightBodyRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<ParticleCanvasHandle>(null);
 
   const [currentExpression, setCurrentExpression] = useState<ExpressionName>(expression);
   const [particles] = useState<Particle[]>([]);
-  const [isWinking, setIsWinking] = useState(false);
+  // isWinking state removed - morphing handles all expressions now
 
-  // Performance fix: Compute expression states instead of storing in state (reduces 5+ re-renders to 1)
-  const isHappy = expression === 'happy' || expression === 'excited';
-  const isAngry = expression === 'angry';
-  const isSad = expression === 'sad';
+  // Performance fix: Compute expression states instead of storing in state
   const isOff = expression === 'off';
 
   const superGlowRef = useRef<HTMLDivElement>(null);
   const superGlowTimelineRef = useRef<gsap.core.Timeline | null>(null); // Memory leak fix
-  const previousIsOffRef = useRef<boolean>(isOff); // Track previous OFF state
-  const hasCompletedFirstAnimation = useRef<boolean>(false); // Track if first animation has run
-
-  // Use unified eye animation system
-  const { performBlink, performDoubleBlink, allowBlinkingRef } = useEyeAnimations({
-    leftEyeRef,
-    rightEyeRef,
-    leftEyePathRef,
-    rightEyePathRef,
-    expression,
-    isOff,
-  });
+  // Legacy refs removed - no longer needed with AnimationController
 
   // ============================================================================
   // NEW ANIMATION CONTROLLER (Feature-Flagged)
@@ -144,9 +131,12 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
       shadow: shadowElement,
       eyeLeft: leftEyeRef.current,
       eyeRight: rightEyeRef.current,
+      eyeLeftPath: leftEyePathRef.current,
+      eyeRightPath: rightEyePathRef.current,
+      eyeLeftSvg: leftEyeSvgRef.current,
+      eyeRightSvg: rightEyeSvgRef.current,
       leftBody: leftBodyRef.current,
       rightBody: rightBodyRef.current,
-      // Note: leftEyePathRef and rightEyePathRef are SVG paths, not used by controller yet
     },
     {
       enableLogging: ENABLE_ANIMATION_DEBUG_LOGS,
@@ -211,54 +201,7 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
   // END NEW ANIMATION CONTROLLER
   // ============================================================================
 
-  // Wink behavior - show wink expression with subtle motion and particle burst
-  const performWink = useCallback(() => {
-    const character = characterRef.current;
-    if (!character) return;
-
-    // Set winking state
-    setIsWinking(true);
-
-    // Create timeline for wink animation
-    const winkTl = gsap.timeline({
-      onComplete: () => setIsWinking(false),
-    });
-
-    // Subtle tilt and bounce
-    winkTl.to(character, {
-      rotation: -3,
-      y: -5,
-      duration: 0.15,
-      ease: 'power2.out',
-    });
-
-    // Hold the wink
-    winkTl.to(character, {
-      rotation: -3,
-      y: -5,
-      duration: 0.4, // Hold for winky amount of time
-    });
-
-    // Return to normal
-    winkTl.to(character, {
-      rotation: 0,
-      y: 0,
-      duration: 0.2,
-      ease: 'power2.out',
-    });
-
-    // Spawn sparkle particles from right eye (winking eye)
-    // Canvas is 5x character size and centered, so offset positions accordingly
-    const canvasOffset = (size * 5) / 2;
-    if (canvasRef.current && canvasRef.current.spawnParticle) {
-      // Spawn 4 sparkles with slight delays for staggered effect
-      // Right eye is at approximately +22px from center horizontally, -20px vertically
-      setTimeout(() => canvasRef.current?.spawnParticle('sparkle', canvasOffset + 22, canvasOffset - 20), 0);
-      setTimeout(() => canvasRef.current?.spawnParticle('sparkle', canvasOffset + 27, canvasOffset - 15), 50);
-      setTimeout(() => canvasRef.current?.spawnParticle('sparkle', canvasOffset + 17, canvasOffset - 18), 100);
-      setTimeout(() => canvasRef.current?.spawnParticle('sparkle', canvasOffset + 24, canvasOffset - 22), 150);
-    }
-  }, [size]);
+  // Legacy performWink removed - wink is now handled by AnimationController
 
   // Expose particle spawning methods and refs to parent
   useImperativeHandle(ref, () => ({
@@ -518,29 +461,17 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
     rightEyePathRef,
   }), [size, animationController]);
 
-  // Update expression when prop changes and trigger state-based animations
-  // Note: GSAP-based eye animations (shocked, idea) are now handled in useEyeAnimations hook
+  // Update expression when prop changes
+  // All animations (including wink) are now handled by AnimationController
   useEffect(() => {
     setCurrentExpression(expression);
-
-    // Trigger wink animation when expression changes to 'wink'
-    if (expression === 'wink') {
-      performWink();
-    }
-    // Performance fix: Removed 5 separate setState calls for isHappy, isAngry, isSad, isOff
-    // These are now computed values, reducing re-renders from 5+ to 1
-  }, [expression, performWink]);
-
-  // Track last processed expression to prevent infinite loops
-  const lastProcessedExpression = useRef<ExpressionName | ''>('');
+  }, [expression]);
 
   // Play emotion animation when expression changes (new controller only)
+  // NOTE: Re-trigger blocker REMOVED - controller handles deduplication internally
   useEffect(() => {
     if (!USE_NEW_ANIMATION_CONTROLLER || !animationController.isReady) return;
     if (isOff) return; // Don't play emotions when powered off
-
-    // Only trigger if expression actually changed
-    if (expression === lastProcessedExpression.current) return;
 
     // Map ExpressionName to EmotionType
     const validEmotions: Record<string, EmotionType> = {
@@ -550,14 +481,21 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
       'angry': 'angry',
       'shocked': 'shocked',
       'spin': 'spin',
+      'wink': 'wink',
+      'idea': 'idea',
+      'lookaround': 'lookaround',
+      'nod': 'nod',
+      'headshake': 'headshake',
+      'look-left': 'look-left',
+      'look-right': 'look-right',
     };
 
     const emotionType = validEmotions[expression];
     if (emotionType) {
-      lastProcessedExpression.current = expression;
       if (ENABLE_ANIMATION_DEBUG_LOGS) {
         logAnimationEvent('Expression changed → playEmotion', { expression, emotionType });
       }
+      // Allow re-triggers - controller handles deduplication if needed
       animationController.playEmotion(emotionType, { priority: 2 });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -601,94 +539,7 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
     };
   }, [isSuperMode]);
 
-  // Setup idle animations using GSAP (disabled when OFF)
-  // LEGACY SYSTEM: Only runs when USE_NEW_ANIMATION_CONTROLLER is false
-  useGSAP(
-    () => {
-      // Skip if new controller is enabled
-      if (USE_NEW_ANIMATION_CONTROLLER) {
-        if (ENABLE_ANIMATION_DEBUG_LOGS) {
-          console.log('[LEGACY IDLE] Skipping - new controller is enabled');
-        }
-        return;
-      }
-
-      const character = characterRef.current;
-      const shadow = document.getElementById('anty-shadow');
-      if (!character || !shadow) return;
-
-      // Check if we're transitioning from OFF to ON (wake-up animation is running)
-      const isWakingUp = previousIsOffRef.current === true && isOff === false;
-
-      // Update the ref FIRST (before any early returns)
-      previousIsOffRef.current = isOff;
-
-      // Don't animate when OFF - kill any existing animations and reset to neutral
-      if (isOff) {
-        gsap.killTweensOf([character, shadow]);
-        gsap.set(character, { y: 0, rotation: 0, scale: 1 });
-        gsap.set(shadow, { scaleX: 0, scaleY: 0, opacity: 0 });
-        return;
-      }
-
-      // Don't animate when in search mode - character is being morphed
-      if (searchMode) {
-        console.log('[LEGACY IDLE] Disabling idle animation - search mode active');
-        gsap.killTweensOf([character, shadow]);
-        return;
-      }
-
-      // If we're waking up, DON'T start idle breathing yet - let wake-up complete first
-      // The wake-up animation in page.tsx will handle everything, and idle will restart
-      // when this hook re-runs after wake-up completes (when expression changes to 'idle')
-      if (isWakingUp) {
-        console.log('[LEGACY IDLE] Skipping idle animation - wake-up in progress');
-        return;
-      }
-
-      // Kill any existing idle animations before starting new ones
-      gsap.killTweensOf([character, shadow]);
-
-      // Conditional delay: short on initial load, longer after wake-up
-      const idleStartDelay = hasCompletedFirstAnimation.current ? 0.65 : 0.2;
-      hasCompletedFirstAnimation.current = true; // Mark that animation has started
-
-      console.log('[LEGACY IDLE] Starting idle animation with delay:', idleStartDelay);
-
-      // Smooth continuous floating with rotation and breathing
-      // Using a single coordinated timeline for smoothness
-      const tl = gsap.timeline({
-        repeat: -1,
-        yoyo: true,
-        delay: idleStartDelay // Wait for wake-up to finish
-      });
-
-      // Character floats up
-      tl.to(character, {
-        y: -12, // Float up 12px
-        rotation: 2, // Gentle rotation
-        scale: 1.02, // Subtle breathing
-        duration: 2.5, // Smooth 2.5s up
-        ease: 'sine.inOut', // Very smooth sine easing
-      }, 0);
-
-      // Shadow scales down and fades when character floats up (inverse relationship)
-      // Shadow stays FIXED on ground - only opacity and scale change
-      tl.to(shadow, {
-        xPercent: -50, // Keep centered (static, not animated)
-        scaleX: 0.7, // Shrink horizontally when character is up
-        scaleY: 0.55, // Shrink vertically when character is up
-        opacity: 0.2, // Fade out when character is far
-        duration: 2.5,
-        ease: 'sine.inOut',
-      }, 0);
-
-      return () => {
-        tl.kill();
-      };
-    },
-    { scope: containerRef, dependencies: [isOff, searchMode, expression] }
-  );
+  // Legacy idle animation removed - now handled by AnimationController
 
   // Track current expression in a ref to avoid recreating the scheduler
   const currentExpressionRef = useRef(expression);
@@ -702,18 +553,15 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
     searchModeRef.current = searchMode;
   }, [searchMode]);
 
-  // Store callbacks in refs to prevent scheduler recreation
-  const performBlinkRef = useRef(performBlink);
-  const performDoubleBlinkRef = useRef(performDoubleBlink);
+  // NOTE: Spontaneous blink scheduler removed - now built into idle animation in NEW system
+  // Spontaneous looking behaviors (look-left, look-right) handled separately
   const onSpontaneousExpressionRef = useRef(onSpontaneousExpression);
 
   useEffect(() => {
-    performBlinkRef.current = performBlink;
-    performDoubleBlinkRef.current = performDoubleBlink;
     onSpontaneousExpressionRef.current = onSpontaneousExpression;
-  }, [performBlink, performDoubleBlink, onSpontaneousExpression]);
+  }, [onSpontaneousExpression]);
 
-  // Setup spontaneous behaviors (random blinking and occasional looking)
+  // Setup spontaneous look behaviors (random looking left/right)
   // IMPORTANT: Empty dependencies to ensure only ONE scheduler is ever created
   useGSAP(
     () => {
@@ -722,7 +570,7 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
       const scheduleRandomBehavior = () => {
         if (!isActive) return;
 
-        const delay = gsap.utils.random(5, 12); // Random delay between 5-12 seconds (longer spacing)
+        const delay = gsap.utils.random(15, 30); // Random delay between 15-30 seconds (rare behaviors)
 
         gsap.delayedCall(delay, () => {
           if (!isActive) return;
@@ -736,29 +584,21 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
 
           const random = Math.random();
 
-          if (random < 0.2) {
-            // 20% chance of double blink
-            performDoubleBlinkRef.current();
-            onRandomAction?.('DOUBLE BLINK');
-          } else if (random < 0.9) {
-            // 70% chance of single blink
-            performBlinkRef.current();
-            onRandomAction?.('BLINK');
-          } else if (random < 0.95) {
-            // 5% chance of look left (rare)
+          if (random < 0.5) {
+            // 50% chance of look left
             if (onSpontaneousExpressionRef.current) {
               onSpontaneousExpressionRef.current('look-left');
             }
             onRandomAction?.('LOOK LEFT');
           } else {
-            // 5% chance of look right (rare)
+            // 50% chance of look right
             if (onSpontaneousExpressionRef.current) {
               onSpontaneousExpressionRef.current('look-right');
             }
             onRandomAction?.('LOOK RIGHT');
           }
 
-          // Schedule next behavior (minimum 5 seconds from now)
+          // Schedule next behavior (minimum 15 seconds from now)
           scheduleRandomBehavior();
         });
       };
@@ -773,29 +613,11 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
     { scope: containerRef, dependencies: [] }
   );
 
-  // Local SVG assets - no network requests, instant loading
+  // Body SVG assets - bracket shapes
   const img = "/anty-v3/body-right.svg"; // Right bracket body
   const img1 = "/anty-v3/body-left.svg"; // Left bracket body
-  const img2 = "/anty-v3/eye-idle.svg"; // IDLE eyes (vertical pills)
-  const eyeLooking = "/eye-looking.svg"; // LOOKING eyes (shorter, wider pills)
 
-  // Wink expression assets
-  const winkEye = "/anty-v3/eye-wink-right.svg"; // Wink half-closed right eye
-  const blinkLine = "/anty-v3/eye-wink-left.svg"; // Wink closed left eye line
-
-  // Happy expression assets
-  const happyEyeLeft = "/anty-v3/eye-happy-left.svg"; // Happy left eye
-  const happyEyeRight = "/anty-v3/eye-happy-right.svg"; // Happy right eye
-
-  // Angry expression assets
-  const angryEyeLeft = "/anty-v3/eye-angry-left.svg"; // Angry left eye
-  const angryEyeRight = "/anty-v3/eye-angry-right.svg"; // Angry right eye
-
-  // Sad expression uses angry eyes flipped with scaleY(-1)
-
-  // OFF state (logo) assets - localized
-  const logoEyeLeft = "/anty-v3/eye-logo-left.svg"; // Left triangle eye (EYE2)
-  const logoEyeRight = "/anty-v3/eye-logo-right.svg"; // Right triangle eye (EYE1)
+  // Eye assets removed - now using SVG morphing via AnimationController
 
   return (
     <div
@@ -843,115 +665,63 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
         <div ref={leftBodyRef} className="absolute inset-[0_13.15%_13.15%_0]">
           <img alt="" className="block max-w-none size-full" src={img1} />
         </div>
-        {/* Left eye - varies by expression */}
-        {isOff ? (
-          <div className="absolute inset-[33.28%_30.48%_32.74%_52.47%]">
-            <div className="absolute inset-[8.5%_0.09%_8.41%_4.94%]">
-              <img alt="" className="block max-w-none size-full" src={logoEyeLeft} />
-            </div>
-          </div>
-        ) : isWinking ? (
-          <div className="absolute inset-[36.13%_30.45%_45.8%_55.1%]">
-            <img alt="" className="block max-w-none size-full" src={blinkLine} />
-          </div>
-        ) : isHappy ? (
-          <div className="absolute inset-[33.42%_30.45%_48.51%_55.1%]">
-            <div className="absolute inset-[0_0_0.09%_0]">
-              <img alt="" className="block max-w-none size-full" src={happyEyeLeft} />
-            </div>
-          </div>
-        ) : isAngry ? (
-          <div className="absolute inset-[38%_28%_44%_50%]">
-            <img alt="" className="block max-w-none size-full" src={angryEyeLeft} />
-          </div>
-        ) : isSad ? (
-          <div className="absolute inset-[39%_30%_45%_51%]" style={{ transform: 'rotate(42deg) scale(0.85)' }}>
-            <img alt="" className="block max-w-none size-full" src={angryEyeLeft} />
-          </div>
-        ) : (
-          <div className="absolute flex inset-[33.41%_31.63%_38.76%_56.72%] items-center justify-center">
-            <div
-              ref={leftEyeRef}
-              className="flex-none flex items-center justify-center relative"
-              style={{
-                height: '44.52px',
-                width: '18.63px',
-                transformOrigin: 'center center',
-              }}
+        {/* Left eye - Always SVG, morphed by animation controller */}
+        <div className="absolute flex inset-[33.44%_31.21%_38.44%_56.29%] items-center justify-center">
+          <div
+            ref={leftEyeRef}
+            className="flex-none flex items-center justify-center relative"
+            style={{
+              height: '45px',
+              width: '20px',
+              transformOrigin: 'center center',
+            }}
+          >
+            <svg
+              ref={leftEyeSvgRef}
+              width="100%"
+              height="100%"
+              viewBox="0 0 20 45"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              style={{ display: 'block' }}
             >
-              <svg
-                preserveAspectRatio="none"
-                width="100%"
-                height="100%"
-                viewBox="0 0 26 55.6528"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                style={{ display: 'block' }}
-              >
-                <path
-                  ref={leftEyePathRef}
-                  d="M1.15413e-10 11.6436C-2.8214e-05 5.21301 5.21305 -5.88744e-05 11.6437 5.01528e-10C18.0742 5.88744e-05 23.2872 5.21305 23.2872 11.6436V44.0092C23.2872 50.4398 18.0742 55.6528 11.6437 55.6528C5.21315 55.6528 0.000170216 50.4398 0.000142003 44.0093L1.15413e-10 11.6436Z"
-                  fill="#052333"
-                />
-              </svg>
-            </div>
+              <path
+                ref={leftEyePathRef}
+                d="M1.00146e-10 35.5C-2.44505e-05 40.7467 4.47719 45 10.0001 45C15.5229 44.9999 20 40.7467 20 35.5V9.4999C20 4.25325 15.5229 0 10.0001 0C4.47727 0 0.000145614 4.25325 0.000121164 9.49992L1.00146e-10 35.5Z"
+                fill="#052333"
+              />
+            </svg>
           </div>
-        )}
+        </div>
 
-        {/* Right eye - varies by expression */}
-        {isOff ? (
-          <div className="absolute inset-[33.59%_53.09%_32.99%_30.15%]">
-            <div className="absolute inset-[8.55%_5.03%_8.64%_0.09%]">
-              <img alt="" className="block max-w-none size-full" src={logoEyeRight} />
-            </div>
-          </div>
-        ) : isWinking ? (
-          <div className="absolute inset-[46.07%_53.93%_45.8%_28%]">
-            <img alt="" className="block max-w-none size-full" src={winkEye} />
-          </div>
-        ) : isHappy ? (
-          <div className="absolute inset-[33.42%_55.74%_48.51%_29.81%]">
-            <div className="absolute inset-[0_0_0.09%_0]">
-              <img alt="" className="block max-w-none size-full" src={happyEyeRight} />
-            </div>
-          </div>
-        ) : isAngry ? (
-          <div className="absolute inset-[38%_50%_44%_28%]">
-            <img alt="" className="block max-w-none size-full" src={angryEyeRight} />
-          </div>
-        ) : isSad ? (
-          <div className="absolute inset-[39%_51%_45%_30%]" style={{ transform: 'rotate(-42deg) scale(0.85)' }}>
-            <img alt="" className="block max-w-none size-full" src={angryEyeRight} />
-          </div>
-        ) : (
-          <div className="absolute flex inset-[33.41%_57.36%_38.76%_31%] items-center justify-center">
-            <div
-              ref={rightEyeRef}
-              className="flex-none flex items-center justify-center relative"
-              style={{
-                height: '44.52px',
-                width: '18.63px',
-                transformOrigin: 'center center',
-              }}
+        {/* Right eye - Always SVG, morphed by animation controller */}
+        <div className="absolute flex inset-[33.44%_56.93%_38.44%_30.57%] items-center justify-center">
+          <div
+            ref={rightEyeRef}
+            className="flex-none flex items-center justify-center relative"
+            style={{
+              height: '45px',
+              width: '20px',
+              transformOrigin: 'center center',
+            }}
+          >
+            <svg
+              ref={rightEyeSvgRef}
+              width="100%"
+              height="100%"
+              viewBox="0 0 20 45"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              style={{ display: 'block' }}
             >
-              <svg
-                preserveAspectRatio="none"
-                width="100%"
-                height="100%"
-                viewBox="0 0 26 55.6528"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                style={{ display: 'block' }}
-              >
-                <path
-                  ref={rightEyePathRef}
-                  d="M1.15413e-10 11.6436C-2.8214e-05 5.21301 5.21305 -5.88744e-05 11.6437 5.01528e-10C18.0742 5.88744e-05 23.2872 5.21305 23.2872 11.6436V44.0092C23.2872 50.4398 18.0742 55.6528 11.6437 55.6528C5.21315 55.6528 0.000170216 50.4398 0.000142003 44.0093L1.15413e-10 11.6436Z"
-                  fill="#052333"
-                />
-              </svg>
-            </div>
+              <path
+                ref={rightEyePathRef}
+                d="M1.00146e-10 35.5C-2.44505e-05 40.7467 4.47719 45 10.0001 45C15.5229 44.9999 20 40.7467 20 35.5V9.4999C20 4.25325 15.5229 0 10.0001 0C4.47727 0 0.000145614 4.25325 0.000121164 9.49992L1.00146e-10 35.5Z"
+                fill="#052333"
+              />
+            </svg>
           </div>
-        )}
+        </div>
 
         {/* Expression overlay (for future expression changes) */}
         {/* <AntyExpressionLayer expression={currentExpression} size={size} /> */}
@@ -969,7 +739,7 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
             />
 
             {/* Left eye center tracker - Yellow plus */}
-            {!isOff && !isHappy && !isAngry && !isSad && (
+            {!isOff && (
               <>
                 {/* Horizontal line */}
                 <div
@@ -999,7 +769,7 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
             )}
 
             {/* Right eye center tracker - Orange plus */}
-            {!isOff && !isHappy && !isAngry && !isSad && (
+            {!isOff && (
               <>
                 {/* Horizontal line */}
                 <div

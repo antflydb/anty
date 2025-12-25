@@ -18,6 +18,8 @@ import {
 } from './types';
 import { idleAnimationConfig } from '../gsap-configs';
 import { createEmotionAnimation } from './definitions/emotions';
+import { createIdleAnimation } from './definitions/idle';
+import { createEyeAnimation } from './definitions/eye-animations';
 
 /**
  * Elements required by the animation controller
@@ -33,6 +35,14 @@ export interface AnimationElements {
   eyeLeft?: HTMLElement | null;
   /** Right eye */
   eyeRight?: HTMLElement | null;
+  /** Left eye SVG path */
+  eyeLeftPath?: SVGPathElement | null;
+  /** Right eye SVG path */
+  eyeRightPath?: SVGPathElement | null;
+  /** Left eye SVG container */
+  eyeLeftSvg?: SVGSVGElement | null;
+  /** Right eye SVG container */
+  eyeRightSvg?: SVGSVGElement | null;
   /** Left antenna */
   antennaLeft?: HTMLElement | null;
   /** Right antenna */
@@ -46,7 +56,7 @@ export interface AnimationElements {
   /** Right body */
   rightBody?: HTMLElement | null;
   /** Custom elements */
-  [key: string]: HTMLElement | null | undefined;
+  [key: string]: HTMLElement | SVGPathElement | SVGSVGElement | null | undefined;
 }
 
 /**
@@ -292,6 +302,13 @@ export function useAnimationController(
           shadow: shadow,
           innerGlow: innerGlow,
           outerGlow: outerGlow,
+          // Pass eye elements
+          eyeLeft: elements.eyeLeft || undefined,
+          eyeRight: elements.eyeRight || undefined,
+          eyeLeftPath: elements.eyeLeftPath || undefined,
+          eyeRightPath: elements.eyeRightPath || undefined,
+          eyeLeftSvg: elements.eyeLeftSvg || undefined,
+          eyeRightSvg: elements.eyeRightSvg || undefined,
         });
 
         // Start idle when wake-up completes
@@ -300,41 +317,28 @@ export function useAnimationController(
             console.log('[useAnimationController] Wake-up complete, manually starting idle');
           }
 
-          // MANUALLY create idle timeline (controller.startIdle has wrong signature)
-          // Add 0.65s delay to match legacy system
+          // Create idle timeline using createIdleAnimation with eye elements
+          // No delay - start immediately after wake-up completes
           if (autoStartIdle && elements.character && shadow) {
-            const idleTl = gsap.timeline({
-              repeat: -1,
-              yoyo: true,
-              delay: 0.65 // Match legacy system delay after wake-up
-            });
-
-            // Get config values
-            const { float, rotation, breathe } = idleAnimationConfig;
-
-            // Character floats up
-            idleTl.to(elements.character, {
-              y: -float.amplitude,
-              rotation: rotation.degrees,
-              scale: breathe.scaleMax,
-              duration: float.duration,
-              ease: float.ease,
-            }, 0);
-
-            // Shadow shrinks (inverse relationship)
-            idleTl.to(shadow, {
-              xPercent: -50,
-              scaleX: 0.7,
-              scaleY: 0.55,
-              opacity: 0.2,
-              duration: float.duration,
-              ease: float.ease,
-            }, 0);
+            const idleTl = createIdleAnimation(
+              {
+                character: elements.character,
+                shadow: shadow,
+                // Pass eye elements
+                eyeLeft: elements.eyeLeft || undefined,
+                eyeRight: elements.eyeRight || undefined,
+                eyeLeftPath: elements.eyeLeftPath || undefined,
+                eyeRightPath: elements.eyeRightPath || undefined,
+                eyeLeftSvg: elements.eyeLeftSvg || undefined,
+                eyeRightSvg: elements.eyeRightSvg || undefined,
+              },
+              { delay: 0 } // No delay - start immediately
+            );
 
             idleTimelineRef.current = idleTl;
 
             if (enableLogging) {
-              console.log('[useAnimationController] Idle animation started with 0.65s delay');
+              console.log('[useAnimationController] Idle animation started immediately');
             }
 
             // Notify debug overlay
@@ -384,6 +388,13 @@ export function useAnimationController(
           shadow: shadow,
           innerGlow: innerGlow,
           outerGlow: outerGlow,
+          // Pass eye elements
+          eyeLeft: elements.eyeLeft || undefined,
+          eyeRight: elements.eyeRight || undefined,
+          eyeLeftPath: elements.eyeLeftPath || undefined,
+          eyeRightPath: elements.eyeRightPath || undefined,
+          eyeLeftSvg: elements.eyeLeftSvg || undefined,
+          eyeRightSvg: elements.eyeRightSvg || undefined,
         });
 
         powerOffTl.play();
@@ -423,11 +434,34 @@ export function useAnimationController(
     // Exiting search mode
     if (wasSearching && !isNowSearching) {
       if (enableLogging) {
-        console.log('[useAnimationController] Exiting search mode - resuming idle');
+        console.log('[useAnimationController] Exiting search mode - restoring eyes and resuming idle');
       }
 
-      // Resume idle animation
-      controllerRef.current.resumeIdle();
+      // Restore eyes to IDLE before resuming idle
+      if (elements.eyeLeft && elements.eyeRight && elements.eyeLeftPath && elements.eyeRightPath && elements.eyeLeftSvg && elements.eyeRightSvg) {
+        // FIXED: Use static import instead of dynamic import for better performance
+        const restoreTl = createEyeAnimation(
+          {
+            leftEye: elements.eyeLeft,
+            rightEye: elements.eyeRight,
+            leftEyePath: elements.eyeLeftPath,
+            rightEyePath: elements.eyeRightPath,
+            leftEyeSvg: elements.eyeLeftSvg,
+            rightEyeSvg: elements.eyeRightSvg,
+          },
+          'IDLE',
+          { duration: 0.3 }
+        );
+
+        restoreTl.eventCallback('onComplete', () => {
+          controllerRef.current?.resumeIdle();
+        });
+
+        restoreTl.play();
+      } else {
+        // Fallback if eye elements are not available
+        controllerRef.current.resumeIdle();
+      }
     }
   }, [searchMode, enableLogging]);
 
@@ -443,33 +477,21 @@ export function useAnimationController(
       console.log('[useAnimationController] Auto-starting idle animation');
     }
 
-    // Create idle timeline
-    const tl = gsap.timeline({ repeat: -1, yoyo: true });
-
-    // Get config values
-    const { float, rotation, breathe } = idleAnimationConfig;
-
-    // Add basic idle animations if elements are available
-    if (elements.character) {
-      tl.to(elements.character, {
-        y: -float.amplitude,
-        rotation: rotation.degrees,
-        scale: breathe.scaleMax,
-        duration: float.duration,
-        ease: float.ease,
-      }, 0);
-    }
-
-    if (elements.shadow) {
-      tl.to(elements.shadow, {
-        xPercent: -50,
-        scaleX: 0.7,
-        scaleY: 0.55,
-        opacity: 0.2,
-        duration: float.duration,
-        ease: float.ease,
-      }, 0);
-    }
+    // Create idle timeline using createIdleAnimation with eye elements
+    const tl = createIdleAnimation(
+      {
+        character: elements.character!,
+        shadow: elements.shadow!,
+        // Pass eye elements
+        eyeLeft: elements.eyeLeft || undefined,
+        eyeRight: elements.eyeRight || undefined,
+        eyeLeftPath: elements.eyeLeftPath || undefined,
+        eyeRightPath: elements.eyeRightPath || undefined,
+        eyeLeftSvg: elements.eyeLeftSvg || undefined,
+        eyeRightSvg: elements.eyeRightSvg || undefined,
+      },
+      { delay: 0 }
+    );
 
     // Register idle with controller (deduplicate to avoid double acquisition)
     const idleElements = Array.from(new Set([
@@ -510,8 +532,30 @@ export function useAnimationController(
         console.log(`[useAnimationController] Playing emotion: ${emotion}`);
       }
 
-      // Create timeline for emotion with animations
-      const tl = createEmotionAnimation(emotion, elements);
+      // Get glow elements
+      const innerGlow = document.querySelector('.inner-glow') as HTMLElement;
+      const glowElements = document.querySelectorAll('[class*="glow"]');
+      const outerGlow = Array.from(glowElements).find(el => !el.classList.contains('inner-glow')) as HTMLElement;
+
+      // Create timeline for emotion with animations, passing eye elements
+      const tl = createEmotionAnimation(
+        emotion,
+        {
+          character: elements.character!,
+          leftBody: elements.leftBody || undefined,
+          rightBody: elements.rightBody || undefined,
+          innerGlow: innerGlow || undefined,
+          outerGlow: outerGlow || undefined,
+          // Pass eye elements
+          eyeLeft: elements.eyeLeft || undefined,
+          eyeRight: elements.eyeRight || undefined,
+          eyeLeftPath: elements.eyeLeftPath || undefined,
+          eyeRightPath: elements.eyeRightPath || undefined,
+          eyeLeftSvg: elements.eyeLeftSvg || undefined,
+          eyeRightSvg: elements.eyeRightSvg || undefined,
+        },
+        {} // EmotionAnimationOptions - currently no options needed
+      );
 
       // Collect elements for this emotion (deduplicate to avoid double acquisition)
       const emotionElements = Array.from(new Set([
@@ -590,33 +634,21 @@ export function useAnimationController(
       idleTimelineRef.current = null;
     }
 
-    // Create new idle timeline
-    const tl = gsap.timeline({ repeat: -1, yoyo: true });
-
-    // Get config values
-    const { float, rotation, breathe } = idleAnimationConfig;
-
-    // Add basic idle animations
-    if (elements.character) {
-      tl.to(elements.character, {
-        y: -float.amplitude,
-        rotation: rotation.degrees,
-        scale: breathe.scaleMax,
-        duration: float.duration,
-        ease: float.ease,
-      }, 0);
-    }
-
-    if (elements.shadow) {
-      tl.to(elements.shadow, {
-        xPercent: -50,
-        scaleX: 0.7,
-        scaleY: 0.55,
-        opacity: 0.2,
-        duration: float.duration,
-        ease: float.ease,
-      }, 0);
-    }
+    // Create new idle timeline using createIdleAnimation with eye elements
+    const tl = createIdleAnimation(
+      {
+        character: elements.character!,
+        shadow: elements.shadow!,
+        // Pass eye elements
+        eyeLeft: elements.eyeLeft || undefined,
+        eyeRight: elements.eyeRight || undefined,
+        eyeLeftPath: elements.eyeLeftPath || undefined,
+        eyeRightPath: elements.eyeRightPath || undefined,
+        eyeLeftSvg: elements.eyeLeftSvg || undefined,
+        eyeRightSvg: elements.eyeRightSvg || undefined,
+      },
+      { delay: 0 }
+    );
 
     // Register with controller
     const idleElements = [

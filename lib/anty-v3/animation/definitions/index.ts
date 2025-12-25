@@ -14,7 +14,6 @@ export {
 export {
   createEmotionAnimation,
   type EmotionAnimationElements,
-  type EmotionType,
   type EmotionAnimationOptions,
 } from './emotions';
 
@@ -39,3 +38,24 @@ export {
   type MorphDirection,
   type MorphAnimationCallbacks,
 } from './morph';
+
+// Eye animations
+export {
+  createEyeAnimation,
+  createBlinkAnimation,
+  createDoubleBlinkAnimation,
+  createLookAnimation,
+  createReturnFromLookAnimation,
+  type EyeAnimationElements,
+  type EyeAnimationConfig,
+  type BlinkAnimationConfig,
+  type LookAnimationConfig,
+  type EyeShapeSpec,
+} from './eye-animations';
+
+// Eye shapes
+export {
+  EYE_SHAPES,
+  EYE_DIMENSIONS,
+  type EyeShapeName,
+} from './eye-shapes';

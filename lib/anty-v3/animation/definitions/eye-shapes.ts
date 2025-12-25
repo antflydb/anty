@@ -1,0 +1,90 @@
+/**
+ * Eye Shape Definitions
+ * All eyes designed at 20px width baseline (except LOOK at 23px)
+ * All paths use M, C, C, V, C, C, L structure for smooth morphing
+ * Exported from Figma, flattened for consistent path structure
+ */
+
+export const EYE_SHAPES = {
+  // IDLE - Default tall pill shape (20×45)
+  // Base shape that all other eyes morph from/to
+  IDLE: "M1.00146e-10 35.5C-2.44505e-05 40.7467 4.47719 45 10.0001 45C15.5229 44.9999 20 40.7467 20 35.5V9.4999C20 4.25325 15.5229 0 10.0001 0C4.47727 0 0.000145614 4.25325 0.000121164 9.49992L1.00146e-10 35.5Z",
+
+  // HAPPY - Shorter with smile curve at bottom (20×24)
+  // Same structure as IDLE, bottom curves upward for smile
+  HAPPY: "M0 24C0 24 4.4771 21.5511 10 21.5511C15.5228 21.551 20 24 20 24V9.30604C20 4.16645 15.5229 0 10.0001 0C4.47727 0 0.000145614 4.16646 0.000121164 9.30605L0 24Z",
+
+  // LOOK - Wider, shorter pill for looking left/right (23×28)
+  // Will be positioned left or right in container
+  LOOK: "M1.15167e-10 17.36C-2.81181e-05 23.2363 5.14877 28.0001 11.5001 28C17.8513 27.9999 23 23.2363 23 17.36V10.6399C23 4.76364 17.8513 0 11.5001 0C5.14886 0 0.000167456 4.76364 0.000139339 10.6399L1.15167e-10 17.36Z",
+
+  // HALF - Half-height eye with flat bottom (20×24)
+  // Used for wink (one eye open, one half)
+  HALF: "M0 24C0 24 4.4771 24 10 24C15.5228 24 20 24 20 24V9.30604C20 4.16645 15.5229 0 10.0001 0C4.47727 0 0.000145614 4.16646 0.000121164 9.30605L0 24Z",
+
+  // CLOSED - Thin horizontal line for closed eyes (23×6)
+  // Used for blink and wink
+  CLOSED: "M1.15167e-10 3.36953C-2.81181e-05 5.24589 5.14877 5.00963 11.5001 5.00957C17.8513 5.00952 23 5.24585 23 3.36958V1.64947C23 -0.226791 17.8513 0.00957287 11.5001 0.00957287C5.14886 0.00957287 0.000167456 -0.226782 0.000139339 1.64949L1.15167e-10 3.36953Z",
+
+  // ANGRY - Flat top, curved bottom for angry brows (29×14)
+  // Rotated 20deg in animation for left eye, flipped+rotated for right
+  ANGRY: "M1.45211e-10 1.66985C-3.54533e-05 7.37468 6.49193 13.9994 14.5001 13.9993C22.5082 13.9993 29 7.37464 29 1.6699V0C29 0 22.5082 2.99931 14.5001 2.99931C6.49205 2.99931 0.000175688 1.94426e-05 0.000175688 1.94426e-05L1.45211e-10 1.66985Z",
+
+  // SAD - Flat top, curved droopy bottom (20×10)
+  // Rotated -15deg in animation for left eye, flipped+rotated for right
+  SAD: "M1.00146e-10 1.15162C-2.44505e-05 5.08599 4.47719 9.65473 10.0001 9.6547C15.5229 9.65466 20 5.08596 20 1.15166V0C20 0 15.5229 2.06849 10.0001 2.06849C4.47728 2.06849 0.000121164 1.34087e-05 0.000121164 1.34087e-05L1.00146e-10 1.15162Z",
+
+  // OFF/LOGO shapes - Triangular shapes for OFF state (these don't need to morph smoothly)
+  OFF_LEFT: "M32.2198 52.406C32.2083 56.025 27.8323 57.8295 25.2733 55.2705L1.19187 31.1895C-0.39728 29.6003 -0.397291 27.0238 1.19184 25.4347L25.4264 1.2001C27.9943 -1.36776 32.3845 0.458888 32.373 4.09038L32.2198 52.406Z",
+  OFF_RIGHT: "M0.149646 4.06437C0.161122 0.445336 4.53711 -1.35915 7.09619 1.19988L30.6157 24.719C32.2048 26.3081 32.2048 28.8846 30.6157 30.4738L6.94659 54.1429C4.37872 56.7108 -0.0114921 54.8841 2.26039e-05 51.2526L0.149646 4.06437Z",
+} as const;
+
+export const EYE_DIMENSIONS = {
+  IDLE: {
+    width: 20,
+    height: 45,
+    viewBox: "0 0 20 45",
+  },
+  HAPPY: {
+    width: 20,
+    height: 24,
+    viewBox: "0 0 20 24",
+  },
+  LOOK: {
+    width: 23,
+    height: 28,
+    viewBox: "0 0 23 28",
+  },
+  HALF: {
+    width: 20,
+    height: 24,
+    viewBox: "0 0 20 24",
+  },
+  CLOSED: {
+    width: 23,
+    height: 6,
+    viewBox: "0 0 23 6",
+  },
+  ANGRY: {
+    width: 29,
+    height: 14,
+    viewBox: "0 0 29 14",
+  },
+  SAD: {
+    width: 20,
+    height: 10,
+    viewBox: "0 0 20 10",
+  },
+  OFF_LEFT: {
+    width: 32.373,
+    height: 56.4703,
+    viewBox: "0 0 32.373 56.4703",
+  },
+  OFF_RIGHT: {
+    width: 31.8076,
+    height: 55.343,
+    viewBox: "0 0 31.8076 55.343",
+  },
+} as const;
+
+export type EyeShapeName = keyof typeof EYE_SHAPES;

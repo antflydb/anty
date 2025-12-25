@@ -44,7 +44,14 @@ export type EmotionType =
   | 'success'
   | 'loading'
   | 'celebrate'
-  | 'spin';
+  | 'spin'
+  | 'idea'
+  | 'lookaround'
+  | 'wink'
+  | 'nod'
+  | 'headshake'
+  | 'look-left'
+  | 'look-right';
 
 /**
  * Search mode types for search-specific animations
@@ -553,6 +560,13 @@ export function isEmotionType(value: string): value is EmotionType {
     'loading',
     'celebrate',
     'spin',
+    'idea',
+    'lookaround',
+    'wink',
+    'nod',
+    'headshake',
+    'look-left',
+    'look-right',
   ];
   return emotions.includes(value as EmotionType);
 }

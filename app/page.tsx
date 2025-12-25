@@ -1195,9 +1195,8 @@ export default function AntyV3() {
 
     if (!leftBody || !rightBody || !searchBar) return;
 
-    // Use animation controller to properly exit search mode and clean up
-    // This prevents the search/idle race condition that causes frozen states
-    antyRef.current?.exitSearchMode?.();
+    // Note: exitSearchMode was removed from animation controller
+    // Search mode cleanup is now handled automatically by the animation system
 
     // Continue with search bar closing animations
     const searchBorderGradient = searchBorderGradientRef.current;
@@ -1367,19 +1366,19 @@ export default function AntyV3() {
           gsap.killTweensOf([leftPath, rightPath]);
         }
 
-        // Reset eyes to idle state
+        // Reset eyes to idle state (NEW 20×45 dimensions)
         gsap.set([leftEye, rightEye], {
-          height: 44.52, // IDLE_HEIGHT
-          width: 18.63,  // IDLE_WIDTH
+          height: 45, // NEW IDLE_HEIGHT
+          width: 20,  // NEW IDLE_WIDTH
           scaleY: 1,
           scaleX: 1,
           x: 0,
           y: 0,
         });
 
-        // Reset SVG paths to idle shape
+        // Reset SVG paths to idle shape (NEW path)
         if (leftPath && rightPath) {
-          const IDLE_PATH = "M1.15413e-10 11.6436C-2.8214e-05 5.21301 5.21305 -5.88744e-05 11.6437 5.01528e-10C18.0742 5.88744e-05 23.2872 5.21305 23.2872 11.6436V44.0092C23.2872 50.4398 18.0742 55.6528 11.6437 55.6528C5.21315 55.6528 0.000170216 50.4398 0.000142003 44.0093L1.15413e-10 11.6436Z";
+          const IDLE_PATH = "M1.00146e-10 35.5C-2.44505e-05 40.7467 4.47719 45 10.0001 45C15.5229 44.9999 20 40.7467 20 35.5V9.4999C20 4.25325 15.5229 0 10.0001 0C4.47727 0 0.000145614 4.25325 0.000121164 9.49992L1.00146e-10 35.5Z";
           gsap.set([leftPath, rightPath], {
             attr: { d: IDLE_PATH }
           });
@@ -1525,12 +1524,22 @@ export default function AntyV3() {
 
       {/* Animation System Indicator - Development Only */}
       {process.env.NODE_ENV === 'development' && (
-        <div className={`fixed bottom-4 left-4 px-3 py-1.5 rounded-md text-xs font-medium opacity-70 z-50 ${
-          USE_NEW_ANIMATION_CONTROLLER
-            ? 'bg-green-100 text-green-700 border border-green-300'
-            : 'bg-blue-100 text-blue-700 border border-blue-300'
-        }`}>
-          {USE_NEW_ANIMATION_CONTROLLER ? 'NEW ANIMATION SYSTEM' : 'LEGACY ANIMATION SYSTEM'}
+        <div className="fixed bottom-4 left-4 z-50 space-y-1">
+          {/* Main system indicator */}
+          <div className={`px-3 py-1.5 rounded-md text-xs font-medium opacity-90 ${
+            USE_NEW_ANIMATION_CONTROLLER
+              ? 'bg-green-100 text-green-700 border border-green-300'
+              : 'bg-blue-100 text-blue-700 border border-blue-300'
+          }`}>
+            {USE_NEW_ANIMATION_CONTROLLER ? 'NEW ANIMATION SYSTEM' : 'LEGACY ANIMATION SYSTEM'}
+          </div>
+
+          {/* Eye rendering mode indicator - Always green after full migration */}
+          {USE_NEW_ANIMATION_CONTROLLER && (
+            <div className="px-3 py-1.5 rounded-md text-xs font-medium opacity-90 bg-green-100 text-green-700 border border-green-300">
+              👁️ SVG Morphing
+            </div>
+          )}
         </div>
       )}
 

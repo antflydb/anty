@@ -11,6 +11,7 @@ import gsap from 'gsap';
 export class ElementRegistry {
   private ownership = new Map<string, ElementOwnership>();
   private enableLogging: boolean;
+  private killingTimelines = new Set<gsap.core.Timeline>();
 
   constructor(enableLogging = false) {
     this.enableLogging = enableLogging;
@@ -128,13 +129,22 @@ export class ElementRegistry {
     toRelease.forEach(key => {
       const ownership = this.ownership.get(key);
       if (ownership) {
-        this.release(ownership.element);
+        // Kill timeline directly, then delete from map
+        if (ownership.timeline && ownership.timeline.isActive()) {
+          // Prevent re-entrant timeline.kill() calls to avoid stack overflow
+          if (!this.killingTimelines.has(ownership.timeline)) {
+            this.killingTimelines.add(ownership.timeline);
+            ownership.timeline.kill();
+            this.killingTimelines.delete(ownership.timeline);
+          }
+        }
+        this.ownership.delete(key);  // ✅ Direct deletion, no recursion
+
+        if (this.enableLogging) {
+          console.log(`[ElementRegistry] Released ${key} from ${ownership.owner}`);
+        }
       }
     });
-
-    if (this.enableLogging && toRelease.length > 0) {
-      console.log(`[ElementRegistry] Released ${toRelease.length} elements from ${owner}`);
-    }
   }
 
   /**
