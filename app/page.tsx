@@ -288,21 +288,11 @@ export default function AntyV3() {
         setExpression('look-right');
         scheduleExpressionReset(800);
       } else if (e.key === ' ' || e.key === 'Space') {
-        // Trigger jump animation
-        if (characterRef.current && expression !== 'off') {
-          const character = characterRef.current;
-
-          // Simple jump animation
-          const jumpTl = gsap.timeline();
-          jumpTl.to(character, {
-            y: -60,
-            duration: 0.3,
-            ease: 'power2.out',
-          });
-          jumpTl.to(character, {
-            y: 0,
-            duration: 0.3,
-            ease: 'power2.in',
+        // Trigger jump animation - use 'jump' emotion WITHOUT lightbulb, WITH quick descent
+        if (expression !== 'off' && antyRef.current?.playEmotion) {
+          antyRef.current.playEmotion('jump', {
+            showLightbulb: false,
+            quickDescent: true
           });
         }
       }
@@ -1429,44 +1419,14 @@ export default function AntyV3() {
         break;
 
       case 'feed':
-        // Epic feeding animation with particle burst!
-        // Create a dramatic timeline
-        const feedTl = gsap.timeline();
-
-        // Quick anticipation dip
-        feedTl.to(characterElement, {
-          y: 5,
-          scale: 0.95,
-          duration: 0.15,
-          ease: 'power2.in',
-        });
-
-        // Big satisfying bounce UP
-        feedTl.to(characterElement, {
-          y: -35,
-          scale: 1.1,
-          rotation: 0,
-          duration: 0.4,
-          ease: 'back.out(2)',
-        });
-
-        // HOLD at peak while food comes in
-        feedTl.to(characterElement, {
-          y: -35,
-          scale: 1.1,
-          duration: 1.25, // Hold for 1250ms while food arrives
-        });
-
-        // Descend and settle
-        feedTl.to(characterElement, {
-          y: 0,
-          scale: 1,
-          duration: 0.5,
-          ease: 'elastic.out(1, 0.5)',
-        });
-
-        // SPAWN FOOD IMMEDIATELY - will arrive during hover!
+        // Feeding animation - use 'jump' emotion WITHOUT lightbulb
+        // Spawn food particles immediately - will arrive during hover!
         antyRef.current?.spawnFeedingParticles();
+
+        // Use jump emotion (no lightbulb emoji)
+        if (antyRef.current?.playEmotion) {
+          antyRef.current.playEmotion('jump', { showLightbulb: false });
+        }
 
         // Update stats
         setStats((prev) => ({
