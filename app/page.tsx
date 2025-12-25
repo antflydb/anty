@@ -476,35 +476,10 @@ export default function AntyV3() {
       //   console.warn('[SUPER MODE] No spawnConfetti method available');
       // }
 
-      // Create the iconic pulsing growth animation
-      const superTl = gsap.timeline();
-
-      // Quick pulse sequence (like Mario's transformation)
-      superTl.to(character, {
-        scale: 1.15,
-        duration: 0.1,
-        ease: 'power1.out',
-      });
-      superTl.to(character, {
-        scale: 1.05,
-        duration: 0.1,
-        ease: 'power1.inOut',
-      });
-      superTl.to(character, {
-        scale: 1.2,
-        duration: 0.1,
-        ease: 'power1.out',
-      });
-      superTl.to(character, {
-        scale: 1.1,
-        duration: 0.1,
-        ease: 'power1.inOut',
-      });
-      superTl.to(character, {
-        scale: 1.45,
-        duration: 0.15,
-        ease: 'back.out(2)',
-      });
+      // Use AnimationController for super mode transformation
+      if (antyRef.current?.playEmotion) {
+        antyRef.current.playEmotion('super');
+      }
 
       // Spawn celebration sparkles during transformation
       setTimeout(() => {
@@ -521,12 +496,8 @@ export default function AntyV3() {
 
       // Stay SUPER for 15 seconds
       superModeTimerRef.current = setTimeout(() => {
-        // Shrink back to normal with a bounce
-        gsap.to(character, {
-          scale: 1,
-          duration: 0.4,
-          ease: 'elastic.out(1, 0.5)',
-        });
+        // Return to idle (AnimationController will handle scale reset via idle animation)
+        setExpression('idle');
         setIsSuperMode(false);
         superModeTimerRef.current = null;
 

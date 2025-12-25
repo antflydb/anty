@@ -51,7 +51,8 @@ export type EmotionType =
   | 'nod'
   | 'headshake'
   | 'look-left'
-  | 'look-right';
+  | 'look-right'
+  | 'super';
 
 /**
  * Search mode types for search-specific animations
@@ -574,6 +575,7 @@ export function isEmotionType(value: string): value is EmotionType {
     'headshake',
     'look-left',
     'look-right',
+    'super',
   ];
   return emotions.includes(value as EmotionType);
 }

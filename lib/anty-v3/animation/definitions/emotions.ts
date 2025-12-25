@@ -982,6 +982,61 @@ export function createEmotionAnimation(
       break;
     }
 
+    case 'super': {
+      // Super mode transformation - pulse growth animation (Mario-style)
+      // Quick pulse sequence with increasing sizes
+      timeline.to(character, {
+        scale: 1.15,
+        rotation: 0,
+        duration: 0.1,
+        ease: 'power1.out',
+      });
+      timeline.to(character, {
+        scale: 1.05,
+        duration: 0.1,
+        ease: 'power1.inOut',
+      });
+      timeline.to(character, {
+        scale: 1.2,
+        duration: 0.1,
+        ease: 'power1.out',
+      });
+      timeline.to(character, {
+        scale: 1.1,
+        duration: 0.1,
+        ease: 'power1.inOut',
+      });
+      timeline.to(character, {
+        scale: 1.45,
+        duration: 0.15,
+        ease: 'back.out(2)',
+      });
+
+      // Eyes scale up with character
+      if (eyeLeft && eyeRight) {
+        timeline.to([eyeLeft, eyeRight], {
+          scaleX: 1.1,
+          scaleY: 1.1,
+          duration: 0.55,
+          ease: 'back.out(2)',
+        }, 0);
+      }
+
+      if (glowElements.length > 0) {
+        timeline.to(
+          glowElements,
+          {
+            scale: 1.45,
+            duration: 0.55,
+            ease: 'back.out(2)',
+          },
+          0
+        );
+      }
+
+      break;
+    }
+
     default: {
       // No animation for unknown emotion types
       console.warn(`Unknown emotion type: ${emotion}`);

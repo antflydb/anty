@@ -57,6 +57,13 @@ export function createIdleAnimation(
     delay,
   });
 
+  // Reset character to base state immediately (important when coming from super mode)
+  gsap.set(character, {
+    scale: 1,
+    rotation: 0,
+    y: 0,
+  });
+
   // Set eyes to IDLE shape immediately (not animated, to avoid yoyo oscillation)
   if (eyeLeft && eyeRight && eyeLeftPath && eyeRightPath && eyeLeftSvg && eyeRightSvg) {
     const idleShape = 'IDLE';
@@ -72,6 +79,15 @@ export function createIdleAnimation(
     // Container stays fixed at 18.63×44.52px via CSS
     gsap.set([eyeLeftSvg, eyeRightSvg], {
       attr: { viewBox: idleDimensions.viewBox },
+    });
+
+    // Reset eye transforms
+    gsap.set([eyeLeft, eyeRight], {
+      scaleX: 1,
+      scaleY: 1,
+      rotation: 0,
+      x: 0,
+      y: 0,
     });
 
     // REMOVED: width/height properties - containers stay fixed at CSS defaults
