@@ -887,6 +887,12 @@ export default function AntyV3() {
 
     if (!leftBody || !rightBody || !searchBar) return;
 
+    // CRITICAL: Notify AnimationController BEFORE killing animations
+    // This releases all elements from ElementRegistry to prevent conflicts
+    if (antyRef.current?.killAll) {
+      antyRef.current.killAll();
+    }
+
     // CRITICAL: Kill ALL idle animations including character container
     const character = leftBody.parentElement; // Get character container
     if (character) {
@@ -1184,6 +1190,12 @@ export default function AntyV3() {
     const outerGlow = glowRef.current;
 
     if (!leftBody || !rightBody || !searchBar) return;
+
+    // CRITICAL: Notify AnimationController BEFORE killing animations
+    // This releases all elements from ElementRegistry to prevent conflicts
+    if (antyRef.current?.killAll) {
+      antyRef.current.killAll();
+    }
 
     // Note: exitSearchMode was removed from animation controller
     // Search mode cleanup is now handled automatically by the animation system
