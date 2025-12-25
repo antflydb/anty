@@ -686,30 +686,36 @@ export function createEmotionAnimation(
     case 'jump': {
       // Jump animation with optional lightbulb emoji and configurable descent
       // Options: showLightbulb (default true), quickDescent (default false)
-      // Scale eyes up and lift them during the jump
 
       const showLightbulb = options?.showLightbulb !== false; // Default true
       const quickDescent = options?.quickDescent === true; // Default false
-      const descentDuration = quickDescent ? 0.2 : 0.4; // Quick jump vs float down
 
-      // Eye animation - scale up slightly and lift
+      // Different jump heights based on use case
+      const jumpHeight = quickDescent ? -60 : -35; // Quick jump = higher, float = lower
+      const upDuration = quickDescent ? 0.3 : 0.4;
+      const holdDuration = quickDescent ? 0 : 1.2; // Quick jump has no hold
+      const descentDuration = quickDescent ? 0.3 : 0.5;
+
+      // Eye animation - scale up and lift during jump
       if (eyeLeft && eyeRight) {
         timeline.to([eyeLeft, eyeRight], {
           scaleX: 1.15,
           scaleY: 1.15,
-          y: -3,
-          duration: 0.3,
+          y: -5,
+          duration: upDuration,
           ease: 'power2.out',
         }, 0);
 
-        // Hold scaled state
-        timeline.to([eyeLeft, eyeRight], {
-          scaleX: 1.15,
-          scaleY: 1.15,
-          y: -3,
-          duration: 1.2,
-          ease: 'none',
-        });
+        // Hold if not quick jump
+        if (holdDuration > 0) {
+          timeline.to([eyeLeft, eyeRight], {
+            scaleX: 1.15,
+            scaleY: 1.15,
+            y: -5,
+            duration: holdDuration,
+            ease: 'none',
+          });
+        }
 
         // Reset eyes
         timeline.to([eyeLeft, eyeRight], {
@@ -721,51 +727,54 @@ export function createEmotionAnimation(
         });
       }
 
-      // 1. Float up slightly with scale increase (0.3s)
+      // 1. Jump up
       timeline.to(character, {
-        y: -15,
-        scale: 1.05,
-        duration: 0.3,
-        ease: 'power2.out',
+        y: jumpHeight,
+        scale: quickDescent ? 1 : 1.05,
+        rotation: 0,
+        duration: upDuration,
+        ease: quickDescent ? 'power2.out' : 'back.out(2)',
       }, 0);
 
       if (glowElements.length > 0) {
         timeline.to(
           glowElements,
           {
-            y: -15 * GLOW_DISTANCE_RATIO, // -11.25px
-            duration: 0.3,
-            ease: 'power2.out',
+            y: jumpHeight * GLOW_DISTANCE_RATIO,
+            duration: upDuration,
+            ease: quickDescent ? 'power2.out' : 'back.out(2)',
           },
-          `-=${0.3 - GLOW_LAG_SECONDS}`
+          `-=${upDuration - GLOW_LAG_SECONDS}`
         );
       }
 
-      // 2. Hold position (1.2s)
-      timeline.to(character, {
-        y: -15,
-        scale: 1.05,
-        duration: 1.2,
-        ease: 'none',
-      });
+      // 2. Hold at peak (only if not quick jump)
+      if (holdDuration > 0) {
+        timeline.to(character, {
+          y: jumpHeight,
+          scale: 1.05,
+          duration: holdDuration,
+          ease: 'none',
+        });
 
-      if (glowElements.length > 0) {
-        timeline.to(
-          glowElements,
-          {
-            y: -15 * GLOW_DISTANCE_RATIO,
-            duration: 1.2,
-          },
-          `-=${1.2 - GLOW_LAG_SECONDS}`
-        );
+        if (glowElements.length > 0) {
+          timeline.to(
+            glowElements,
+            {
+              y: jumpHeight * GLOW_DISTANCE_RATIO,
+              duration: holdDuration,
+            },
+            `-=${holdDuration - GLOW_LAG_SECONDS}`
+          );
+        }
       }
 
-      // 3. Return to normal (configurable duration based on quickDescent)
+      // 3. Descend
       timeline.to(character, {
         y: 0,
         scale: 1,
         duration: descentDuration,
-        ease: 'power2.in',
+        ease: quickDescent ? 'power2.in' : 'elastic.out(1, 0.5)',
       });
 
       if (glowElements.length > 0) {
@@ -774,7 +783,7 @@ export function createEmotionAnimation(
           {
             y: 0,
             duration: descentDuration,
-            ease: 'power2.in',
+            ease: quickDescent ? 'power2.in' : 'elastic.out(1, 0.5)',
           },
           `-=${descentDuration - GLOW_LAG_SECONDS}`
         );
