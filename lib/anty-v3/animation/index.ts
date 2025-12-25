@@ -21,3 +21,7 @@ export * from './feature-flags';
 // Development Tools (only import in dev)
 export { exposeDevTools, registerAnimationController, useDevTools } from './dev-tools';
 export type { AntyAnimationDevTools } from './dev-tools';
+
+// Debug Tracker (development only)
+export { debugTracker, interceptGSAP } from './debug-tracker';
+export type { AnimationSource, ActiveAnimation } from './debug-tracker';

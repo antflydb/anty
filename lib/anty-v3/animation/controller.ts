@@ -18,6 +18,7 @@ import {
 } from './types';
 import { ElementRegistry } from './element-registry';
 import { StateMachine } from './state-machine';
+import { debugTracker } from './debug-tracker';
 
 export class AnimationController {
   private stateMachine: StateMachine;
@@ -102,6 +103,7 @@ export class AnimationController {
     if (this.idleTimeline) {
       this.idleTimeline.kill();
       this.elementRegistry.releaseByOwner('idle');
+      debugTracker.untrack('idle');
     }
 
     // Acquire elements
@@ -120,6 +122,9 @@ export class AnimationController {
     this.idleTimeline = timeline;
     this.isIdleActive = true;
     this.currentEmotion = null;
+
+    // Track animation in debug system
+    debugTracker.trackController('idle', elements, timeline, timeline.duration());
 
     // Setup callbacks
     timeline.eventCallback('onComplete', () => {
@@ -256,6 +261,9 @@ export class AnimationController {
 
     this.currentEmotion = emotion;
 
+    // Track animation in debug system
+    debugTracker.trackController(animationId, elements, timeline, timeline.duration());
+
     // CRITICAL FIX: Pause timeline immediately to prevent auto-play before callbacks are set
     // GSAP timelines auto-play by default, which can cause onStart to fire before callbacks are registered
     timeline.pause();
@@ -303,6 +311,7 @@ export class AnimationController {
       // Cleanup
       this.activeTimelines.delete(animationId);
       this.elementRegistry.releaseByOwner(animationId);
+      debugTracker.untrack(animationId);
 
       // Return to idle (force transition to bypass priority check)
       this.stateMachine.transition(AnimationState.IDLE, true);
@@ -336,6 +345,7 @@ export class AnimationController {
       // Cleanup
       this.activeTimelines.delete(animationId);
       this.elementRegistry.releaseByOwner(animationId);
+      debugTracker.untrack(animationId);
 
       this.callbacks.onInterrupt?.(AnimationState.EMOTION, emotion);
     });
@@ -457,6 +467,9 @@ export class AnimationController {
     // Release all elements
     this.elementRegistry.releaseAll();
 
+    // Clear debug tracking
+    debugTracker.clear();
+
     // Clear queue
     this.queue = [];
 
@@ -539,6 +552,7 @@ export class AnimationController {
     queueSize: number;
     isIdleActive: boolean;
     currentEmotion: EmotionType | null;
+    tracker: ReturnType<typeof debugTracker.getDebugInfo>;
   } {
     return {
       state: this.stateMachine.getDebugInfo(),
@@ -547,6 +561,7 @@ export class AnimationController {
       queueSize: this.queue.length,
       isIdleActive: this.isIdleActive,
       currentEmotion: this.currentEmotion,
+      tracker: debugTracker.getDebugInfo(),
     };
   }
 
