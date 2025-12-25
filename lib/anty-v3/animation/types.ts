@@ -547,6 +547,9 @@ export interface AnimationOptions {
  * Type guard to check if a value is a valid emotion
  */
 export function isEmotionType(value: string): value is EmotionType {
+  // Legacy alias support
+  if (value === 'idea') return true; // 'idea' was renamed to 'jump'
+
   const emotions: EmotionType[] = [
     'happy',
     'sad',
@@ -564,7 +567,7 @@ export function isEmotionType(value: string): value is EmotionType {
     'loading',
     'celebrate',
     'spin',
-    'idea',
+    'jump',
     'lookaround',
     'wink',
     'nod',

@@ -342,10 +342,10 @@ export function createEmotionAnimation(
         }, 0.2);
       }
 
-      // Droop down with scale decrease
+      // Droop down (NO scale change - keep native size)
       timeline.to(character, {
         y: 10,
-        scale: 0.9,
+        rotation: 0,
         duration: 0.6,
         ease: 'power2.out',
       });
@@ -849,7 +849,7 @@ export function createEmotionAnimation(
           rightEyePath: eyeRightPath,
           leftEyeSvg: eyeLeftSvg,
           rightEyeSvg: eyeRightSvg,
-        }, { left: 'HALF', right: 'CLOSED' }, { duration: 0.15 });
+        }, { left: 'HALF', right: 'CLOSED' }, { duration: 0.25, ease: 'power1.inOut' });
 
         timeline.add(eyeTl, 0); // Add at start
 
@@ -857,16 +857,16 @@ export function createEmotionAnimation(
         timeline.to(eyeLeft, {
           scaleY: 1.25, // Stretch height by ~25%
           y: -5, // Move up to top-align
-          duration: 0.15,
-          ease: 'power2.out',
+          duration: 0.25,
+          ease: 'power1.inOut',
         }, 0);
 
         // Reset left eye at end
         timeline.to(eyeLeft, {
           scaleY: 1,
           y: 0,
-          duration: 0.15,
-          ease: 'power2.in',
+          duration: 0.25,
+          ease: 'power1.inOut',
         });
       }
 
@@ -875,8 +875,8 @@ export function createEmotionAnimation(
       timeline.to(character, {
         rotation: -3,
         y: -5,
-        duration: 0.15,
-        ease: 'power2.out',
+        duration: 0.25,
+        ease: 'power1.inOut',
       });
       timeline.to(character, {
         rotation: -3,
@@ -886,8 +886,8 @@ export function createEmotionAnimation(
       timeline.to(character, {
         rotation: 0,
         y: 0,
-        duration: 0.2,
-        ease: 'power2.out',
+        duration: 0.25,
+        ease: 'power1.inOut',
       });
       break;
     }
