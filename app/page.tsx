@@ -1355,37 +1355,8 @@ export default function AntyV3() {
         animationTimerRef.current = null;
       }
 
-      // Reset eyes to idle position if they're stuck in look-left/look-right
-      if (antyRef.current?.leftEyeRef?.current && antyRef.current?.rightEyeRef?.current) {
-        const leftEye = antyRef.current.leftEyeRef.current;
-        const rightEye = antyRef.current.rightEyeRef.current;
-        const leftPath = antyRef.current.leftEyePathRef?.current;
-        const rightPath = antyRef.current.rightEyePathRef?.current;
-
-        // Kill any ongoing eye animations
-        gsap.killTweensOf([leftEye, rightEye]);
-        if (leftPath && rightPath) {
-          gsap.killTweensOf([leftPath, rightPath]);
-        }
-
-        // Reset eyes to idle state (NEW 20×45 dimensions)
-        gsap.set([leftEye, rightEye], {
-          height: 45, // NEW IDLE_HEIGHT
-          width: 20,  // NEW IDLE_WIDTH
-          scaleY: 1,
-          scaleX: 1,
-          x: 0,
-          y: 0,
-        });
-
-        // Reset SVG paths to idle shape (NEW path)
-        if (leftPath && rightPath) {
-          const IDLE_PATH = "M1.00146e-10 35.5C-2.44505e-05 40.7467 4.47719 45 10.0001 45C15.5229 44.9999 20 40.7467 20 35.5V9.4999C20 4.25325 15.5229 0 10.0001 0C4.47727 0 0.000145614 4.25325 0.000121164 9.49992L1.00146e-10 35.5Z";
-          gsap.set([leftPath, rightPath], {
-            attr: { d: IDLE_PATH }
-          });
-        }
-      }
+      // AnimationController now handles all eye state management
+      // Eye resets happen automatically via emotion animations' onComplete callbacks
     }
 
     // If coming from OFF state, let AnimationController handle wake-up
