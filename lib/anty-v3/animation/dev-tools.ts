@@ -34,11 +34,8 @@
 
 import type { UseAnimationControllerReturn } from './use-animation-controller';
 import {
-  USE_NEW_ANIMATION_CONTROLLER,
-  ENABLE_ANIMATION_VALIDATION,
   ENABLE_ANIMATION_DEBUG_LOGS,
   logAnimationSystemInfo,
-  getAnimationSystemType,
 } from './feature-flags';
 import {
   runAllTests,
@@ -88,10 +85,8 @@ export interface AntyAnimationDevTools {
 }
 
 interface SystemInfo {
-  activeSystem: 'legacy' | 'new';
+  activeSystem: 'AnimationController';
   featureFlags: {
-    USE_NEW_ANIMATION_CONTROLLER: boolean;
-    ENABLE_ANIMATION_VALIDATION: boolean;
     ENABLE_ANIMATION_DEBUG_LOGS: boolean;
   };
   controllerReady: boolean;
@@ -124,10 +119,8 @@ function createDevTools(): AntyAnimationDevTools {
     // System Info
     getSystemInfo: (): SystemInfo => {
       return {
-        activeSystem: getAnimationSystemType(),
+        activeSystem: 'AnimationController',
         featureFlags: {
-          USE_NEW_ANIMATION_CONTROLLER,
-          ENABLE_ANIMATION_VALIDATION,
           ENABLE_ANIMATION_DEBUG_LOGS,
         },
         controllerReady: controllerInstance?.isReady ?? false,

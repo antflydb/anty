@@ -15,7 +15,6 @@ import { AntyParticleCanvas, type ParticleCanvasHandle } from './anty-particle-c
 import { useAnimationController } from '@/lib/anty-v3/animation/use-animation-controller';
 import { type EmotionType } from '@/lib/anty-v3/animation/types';
 import {
-  USE_NEW_ANIMATION_CONTROLLER,
   ENABLE_ANIMATION_DEBUG_LOGS,
   logAnimationEvent,
 } from '@/lib/anty-v3/animation/feature-flags';
@@ -117,8 +116,16 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
   const superGlowTimelineRef = useRef<gsap.core.Timeline | null>(null); // Memory leak fix
   // Legacy refs removed - no longer needed with AnimationController
 
+  // Force re-render when refs are populated (fixes initialization timing bug)
+  const [refsReady, setRefsReady] = useState(false);
+  useEffect(() => {
+    if (containerRef.current && characterRef.current && !refsReady) {
+      setRefsReady(true);
+    }
+  }, [refsReady]);
+
   // ============================================================================
-  // NEW ANIMATION CONTROLLER (Feature-Flagged)
+  // NEW ANIMATION CONTROLLER
   // ============================================================================
   // Note: Shadow element is in parent (page.tsx) with id="anty-shadow"
   // We'll get it via DOM query since it's outside this component
@@ -145,7 +152,7 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
       defaultPriority: 2,
       isOff,
       searchMode,
-      autoStartIdle: USE_NEW_ANIMATION_CONTROLLER, // Only auto-start if new controller is enabled
+      autoStartIdle: true,
       onStateChange: (from, to) => {
         if (ENABLE_ANIMATION_DEBUG_LOGS) {
           logAnimationEvent('State Change', { from, to });
@@ -177,7 +184,6 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
       logAnimationEvent('Controller Initialization', {
         isReady: animationController.isReady,
         currentState: animationController.getState(),
-        useNewController: USE_NEW_ANIMATION_CONTROLLER,
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -185,7 +191,7 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
 
   // Log when controller state changes based on props
   useEffect(() => {
-    if (!ENABLE_ANIMATION_DEBUG_LOGS || !USE_NEW_ANIMATION_CONTROLLER) return;
+    if (!ENABLE_ANIMATION_DEBUG_LOGS) return;
 
     logAnimationEvent('Props Changed', {
       expression,
@@ -422,45 +428,36 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
       }
     },
     playEmotion: (emotion: ExpressionName, options?: { isChatOpen?: boolean }) => {
-      // If new controller is enabled, use it
-      if (USE_NEW_ANIMATION_CONTROLLER && animationController.isReady) {
-        if (ENABLE_ANIMATION_DEBUG_LOGS) {
-          logAnimationEvent('playEmotion called via handle', { emotion, options });
-        }
-        // Map ExpressionName to EmotionType
-        // Only pass through emotions that are valid for the controller
-        const validEmotions: Record<string, EmotionType> = {
-          'happy': 'happy',
-          'excited': 'excited',
-          'sad': 'sad',
-          'angry': 'angry',
-          'shocked': 'shocked',
-          'spin': 'spin',
-          'wink': 'wink',
-          'jump': 'jump',
-          'idea': 'jump', // Legacy alias
-          'lookaround': 'lookaround',
-          'nod': 'nod',
-          'headshake': 'headshake',
-          'look-left': 'look-left',
-          'look-right': 'look-right',
-          'super': 'super',
-        };
-
-        const emotionType = validEmotions[emotion];
-        if (emotionType) {
-          return animationController.playEmotion(emotionType, { priority: options?.isChatOpen ? 3 : 2 });
-        }
-
-        if (ENABLE_ANIMATION_DEBUG_LOGS) {
-          console.log('[NEW CONTROLLER] Emotion not supported:', emotion);
-        }
-        return false;
+      if (ENABLE_ANIMATION_DEBUG_LOGS) {
+        logAnimationEvent('playEmotion called via handle', { emotion, options });
       }
 
-      // Legacy fallback - just return false for now
+      // Map ExpressionName to EmotionType
+      const validEmotions: Record<string, EmotionType> = {
+        'happy': 'happy',
+        'excited': 'excited',
+        'sad': 'sad',
+        'angry': 'angry',
+        'shocked': 'shocked',
+        'spin': 'spin',
+        'wink': 'wink',
+        'jump': 'jump',
+        'idea': 'jump', // Legacy alias
+        'lookaround': 'lookaround',
+        'nod': 'nod',
+        'headshake': 'headshake',
+        'look-left': 'look-left',
+        'look-right': 'look-right',
+        'super': 'super',
+      };
+
+      const emotionType = validEmotions[emotion];
+      if (emotionType) {
+        return animationController.playEmotion(emotionType, { priority: options?.isChatOpen ? 3 : 2 });
+      }
+
       if (ENABLE_ANIMATION_DEBUG_LOGS) {
-        console.log('[LEGACY] playEmotion not implemented in legacy system:', emotion);
+        console.log('[AnimationController] Emotion not supported:', emotion);
       }
       return false;
     },
@@ -479,7 +476,7 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
   // Play emotion animation when expression changes (new controller only)
   // NOTE: Re-trigger blocker REMOVED - controller handles deduplication internally
   useEffect(() => {
-    if (!USE_NEW_ANIMATION_CONTROLLER || !animationController.isReady) return;
+    if (!animationController.isReady) return;
     if (isOff) return; // Don't play emotions when powered off
 
     // Map ExpressionName to EmotionType

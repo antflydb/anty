@@ -9,7 +9,7 @@ import { EyeDebugBoxes } from '@/components/anty-v3/eye-debug-boxes';
 import { ChatPanel } from '@/components/anty-chat';
 import type { EmotionType } from '@/lib/anty-v3/animation/types';
 import type { AntyStats } from '@/lib/anty-v3/stat-system';
-import { USE_NEW_ANIMATION_CONTROLLER, ENABLE_ANIMATION_DEBUG_LOGS } from '@/lib/anty-v3/animation/feature-flags';
+import { ENABLE_ANIMATION_DEBUG_LOGS } from '@/lib/anty-v3/animation/feature-flags';
 
 export default function AntyV3() {
   // Add CSS animation for super mode hue shift
@@ -240,7 +240,7 @@ export default function AntyV3() {
     lastAnimationTimeRef.current = now;
 
     // Use animation controller
-    if (USE_NEW_ANIMATION_CONTROLLER && antyRef.current?.playEmotion) {
+    if (antyRef.current?.playEmotion) {
       // Filter out non-emotion states
       if (expr === 'idle' || expr === 'off') {
         if (ENABLE_ANIMATION_DEBUG_LOGS) {
@@ -1440,20 +1440,14 @@ export default function AntyV3() {
       {process.env.NODE_ENV === 'development' && (
         <div className="fixed bottom-4 left-4 z-50 space-y-1">
           {/* Main system indicator */}
-          <div className={`px-3 py-1.5 rounded-md text-xs font-medium opacity-90 ${
-            USE_NEW_ANIMATION_CONTROLLER
-              ? 'bg-green-100 text-green-700 border border-green-300'
-              : 'bg-blue-100 text-blue-700 border border-blue-300'
-          }`}>
-            {USE_NEW_ANIMATION_CONTROLLER ? 'NEW ANIMATION SYSTEM' : 'LEGACY ANIMATION SYSTEM'}
+          <div className="px-3 py-1.5 rounded-md text-xs font-medium opacity-90 bg-green-100 text-green-700 border border-green-300">
+            ANIMATION SYSTEM
           </div>
 
-          {/* Eye rendering mode indicator - Always green after full migration */}
-          {USE_NEW_ANIMATION_CONTROLLER && (
-            <div className="px-3 py-1.5 rounded-md text-xs font-medium opacity-90 bg-green-100 text-green-700 border border-green-300">
-              👁️ SVG Morphing
-            </div>
-          )}
+          {/* Eye rendering mode indicator */}
+          <div className="px-3 py-1.5 rounded-md text-xs font-medium opacity-90 bg-green-100 text-green-700 border border-green-300">
+            👁️ SVG Morphing
+          </div>
         </div>
       )}
 
@@ -1578,12 +1572,10 @@ export default function AntyV3() {
                   }}
                   onEmotionComplete={(emotion) => {
                     // Reset expression to idle when animation completes
-                    if (USE_NEW_ANIMATION_CONTROLLER) {
-                      if (ENABLE_ANIMATION_DEBUG_LOGS) {
-                        console.log(`[page.tsx] Emotion ${emotion} → idle`);
-                      }
-                      setExpression('idle');
+                    if (ENABLE_ANIMATION_DEBUG_LOGS) {
+                      console.log(`[page.tsx] Emotion ${emotion} → idle`);
                     }
+                    setExpression('idle');
                   }}
                 />
                 <AntySearchBar
