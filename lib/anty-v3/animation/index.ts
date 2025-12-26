@@ -3,10 +3,12 @@
  *
  * Core animation controller with FSM pattern for Anty V3.
  * Prevents animation conflicts, manages state transitions, and ensures idle always restarts.
+ *
+ * REFACTORED: Removed ElementRegistry and DebugTracker - they were overengineered.
+ * The controller now directly manages timelines without element locking.
  */
 
 export { AnimationController } from './controller';
-export { ElementRegistry } from './element-registry';
 export { StateMachine } from './state-machine';
 
 export * from './types';
@@ -22,6 +24,6 @@ export * from './feature-flags';
 export { exposeDevTools, registerAnimationController, useDevTools } from './dev-tools';
 export type { AntyAnimationDevTools } from './dev-tools';
 
-// Debug Tracker (development only)
-export { debugTracker, interceptGSAP } from './debug-tracker';
-export type { AnimationSource, ActiveAnimation } from './debug-tracker';
+// New simplified state machine and initialization
+export { SimpleStateMachine, type AnimationStateType } from './state';
+export { initializeCharacter, resetEyesToIdle, type CharacterElements, type InitializeOptions } from './initialize';

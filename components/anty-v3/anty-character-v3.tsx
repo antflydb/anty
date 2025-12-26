@@ -64,7 +64,8 @@ export interface AntyCharacterHandle {
   spawnConfetti?: (x: number, y: number, count?: number) => void;
   showSearchGlow?: () => void;
   hideSearchGlow?: () => void;
-  playEmotion?: (emotion: ExpressionName, options?: { isChatOpen?: boolean }) => boolean;
+  playEmotion?: (emotion: ExpressionName, options?: { isChatOpen?: boolean; showLightbulb?: boolean; quickDescent?: boolean }) => boolean;
+  killAll?: () => void;
   leftBodyRef?: React.RefObject<HTMLDivElement | null>;
   rightBodyRef?: React.RefObject<HTMLDivElement | null>;
   leftEyeRef?: React.RefObject<HTMLDivElement | null>;
@@ -454,6 +455,9 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
         console.log('[AnimationController] Emotion not supported:', emotion);
       }
       return false;
+    },
+    killAll: () => {
+      animationController.killAll();
     },
     leftEyeRef,
     rightEyeRef,

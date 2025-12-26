@@ -424,10 +424,10 @@ export function createLookAnimation(
   // Calculate direction multiplier
   const directionMultiplier = direction === 'left' ? -1 : 1;
 
-  // Morph eyes to LOOKING shape
+  // Morph eyes to LOOK shape
   const morphTimeline = createEyeAnimation(
     elements,
-    'LOOKING',
+    'LOOK',
     { duration, ease }
   );
   timeline.add(morphTimeline, 0);

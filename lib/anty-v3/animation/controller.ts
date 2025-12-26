@@ -4,6 +4,9 @@
  * Main controller using Finite State Machine pattern.
  * Manages animation state, prevents conflicts, queues animations,
  * and guarantees idle always restarts.
+ *
+ * REFACTORED: Removed ElementRegistry and DebugTracker dependencies.
+ * These were overengineered - element locking always used force=true anyway.
  */
 
 import gsap from 'gsap';
@@ -16,20 +19,16 @@ import {
   type ControllerConfig,
   type AnimationOptions,
 } from './types';
-import { ElementRegistry } from './element-registry';
 import { StateMachine } from './state-machine';
-import { debugTracker } from './debug-tracker';
 
 export class AnimationController {
   private stateMachine: StateMachine;
-  private elementRegistry: ElementRegistry;
   private callbacks: AnimationCallbacks;
   private config: Required<Omit<ControllerConfig, 'callbacks' | 'system'>>;
 
   // Timeline tracking
   private activeTimelines = new Map<string, TimelineRef>();
   private idleTimeline: gsap.core.Timeline | null = null;
-  private idleElements: (Element | string)[] = [];
 
   // Animation queue
   private queue: QueuedAnimation[] = [];
@@ -52,7 +51,6 @@ export class AnimationController {
     };
 
     this.stateMachine = new StateMachine(this.config.enableLogging);
-    this.elementRegistry = new ElementRegistry(this.config.enableLogging);
 
     if (this.config.enableLogging) {
       console.log('[AnimationController] Initialized', this.config);
@@ -88,9 +86,6 @@ export class AnimationController {
       console.log('[AnimationController] Starting idle animation');
     }
 
-    // Store idle elements for later re-acquisition
-    this.idleElements = elements;
-
     // Transition to idle state
     if (!this.stateMachine.transition(AnimationState.IDLE)) {
       if (this.config.enableLogging) {
@@ -102,29 +97,12 @@ export class AnimationController {
     // Kill existing idle timeline
     if (this.idleTimeline) {
       this.idleTimeline.kill();
-      this.elementRegistry.releaseByOwner('idle');
-      debugTracker.untrack('idle');
-    }
-
-    // Acquire elements
-    let acquiredAll = true;
-    elements.forEach(element => {
-      if (!this.elementRegistry.acquire(element, 'idle', timeline, true)) {
-        acquiredAll = false;
-      }
-    });
-
-    if (!acquiredAll && this.config.enableLogging) {
-      console.warn('[AnimationController] Some idle elements could not be acquired');
     }
 
     // Store timeline
     this.idleTimeline = timeline;
     this.isIdleActive = true;
     this.currentEmotion = null;
-
-    // Track animation in debug system
-    debugTracker.trackController('idle', elements, timeline, timeline.duration());
 
     // Setup callbacks
     timeline.eventCallback('onComplete', () => {
@@ -145,10 +123,8 @@ export class AnimationController {
   pauseIdle(): void {
     if (this.idleTimeline && this.idleTimeline.isActive()) {
       this.idleTimeline.pause();
-      // Release elements so other animations can use them
-      this.elementRegistry.releaseByOwner('idle');
       if (this.config.enableLogging) {
-        console.log('[AnimationController] Paused idle animation and released elements');
+        console.log('[AnimationController] Paused idle animation');
       }
     }
   }
@@ -158,14 +134,9 @@ export class AnimationController {
    */
   resumeIdle(): void {
     if (this.idleTimeline && !this.idleTimeline.isActive()) {
-      // Re-acquire elements for idle
-      this.idleElements.forEach(element => {
-        this.elementRegistry.acquire(element, 'idle', this.idleTimeline!, true);
-      });
-
       this.idleTimeline.resume();
       if (this.config.enableLogging) {
-        console.log('[AnimationController] Resumed idle animation and re-acquired elements');
+        console.log('[AnimationController] Resumed idle animation');
       }
     }
   }
@@ -176,7 +147,6 @@ export class AnimationController {
   killIdle(): void {
     if (this.idleTimeline) {
       this.idleTimeline.kill();
-      this.elementRegistry.releaseByOwner('idle');
       this.idleTimeline = null;
       this.isIdleActive = false;
       if (this.config.enableLogging) {
@@ -219,7 +189,6 @@ export class AnimationController {
           console.log(`[AnimationController] Killing previous emotion: ${id}`);
         }
         ref.timeline.kill();
-        this.elementRegistry.releaseByOwner(id);
         this.activeTimelines.delete(id);
       }
     }
@@ -235,18 +204,7 @@ export class AnimationController {
     // Pause idle
     this.pauseIdle();
 
-    // Acquire elements (force=true since we just killed previous owner)
     const animationId = `emotion-${emotion}-${Date.now()}`;
-    let acquiredAll = true;
-    elements.forEach(element => {
-      if (!this.elementRegistry.acquire(element, animationId, timeline, true)) {
-        acquiredAll = false;
-      }
-    });
-
-    if (!acquiredAll && this.config.enableLogging) {
-      console.warn(`[AnimationController] Some elements could not be acquired for ${emotion}`);
-    }
 
     // Store timeline
     this.activeTimelines.set(animationId, {
@@ -260,9 +218,6 @@ export class AnimationController {
     });
 
     this.currentEmotion = emotion;
-
-    // Track animation in debug system
-    debugTracker.trackController(animationId, elements, timeline, timeline.duration());
 
     // CRITICAL FIX: Pause timeline immediately to prevent auto-play before callbacks are set
     // GSAP timelines auto-play by default, which can cause onStart to fire before callbacks are registered
@@ -310,8 +265,6 @@ export class AnimationController {
 
       // Cleanup
       this.activeTimelines.delete(animationId);
-      this.elementRegistry.releaseByOwner(animationId);
-      debugTracker.untrack(animationId);
 
       // Return to idle (force transition to bypass priority check)
       this.stateMachine.transition(AnimationState.IDLE, true);
@@ -344,8 +297,6 @@ export class AnimationController {
 
       // Cleanup
       this.activeTimelines.delete(animationId);
-      this.elementRegistry.releaseByOwner(animationId);
-      debugTracker.untrack(animationId);
 
       this.callbacks.onInterrupt?.(AnimationState.EMOTION, emotion);
     });
@@ -398,11 +349,7 @@ export class AnimationController {
       this.pauseIdle();
     }
 
-    // Acquire elements
     const animationId = `${state}-${emotion || 'none'}-${Date.now()}`;
-    elements.forEach(element => {
-      this.elementRegistry.acquire(element, animationId, timeline, force);
-    });
 
     // Store timeline
     this.activeTimelines.set(animationId, {
@@ -425,7 +372,6 @@ export class AnimationController {
 
       // Cleanup
       this.activeTimelines.delete(animationId);
-      this.elementRegistry.releaseByOwner(animationId);
 
       // Return to idle if not already there (force transition to bypass priority check)
       if (state !== AnimationState.IDLE) {
@@ -463,12 +409,6 @@ export class AnimationController {
 
     // Kill idle
     this.killIdle();
-
-    // Release all elements
-    this.elementRegistry.releaseAll();
-
-    // Clear debug tracking
-    debugTracker.clear();
 
     // Clear queue
     this.queue = [];
@@ -547,21 +487,17 @@ export class AnimationController {
    */
   getDebugInfo(): {
     state: ReturnType<StateMachine['getDebugInfo']>;
-    elements: ReturnType<ElementRegistry['getDebugInfo']>;
     activeTimelines: number;
     queueSize: number;
     isIdleActive: boolean;
     currentEmotion: EmotionType | null;
-    tracker: ReturnType<typeof debugTracker.getDebugInfo>;
   } {
     return {
       state: this.stateMachine.getDebugInfo(),
-      elements: this.elementRegistry.getDebugInfo(),
       activeTimelines: this.activeTimelines.size,
       queueSize: this.queue.length,
       isIdleActive: this.isIdleActive,
       currentEmotion: this.currentEmotion,
-      tracker: debugTracker.getDebugInfo(),
     };
   }
 

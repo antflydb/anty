@@ -51,7 +51,7 @@ export function getExpressionLabel(expression: EmotionType | 'idle' | 'off'): st
     angry: 'Angry',
     sad: 'Sad',
     spin: 'Spinning',
-    idea: 'Idea',
+    jump: 'Idea', // 'idea' was renamed to 'jump'
     nod: 'Nodding',
     headshake: 'No',
     lookaround: 'Looking Around',

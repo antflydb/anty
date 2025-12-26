@@ -26,6 +26,10 @@ export interface EmotionAnimationElements {
 export interface EmotionAnimationOptions {
   /** Whether chat panel is open (affects particle positioning) */
   isChatOpen?: boolean;
+  /** For 'jump' emotion: whether to show lightbulb emoji (default: true) */
+  showLightbulb?: boolean;
+  /** For 'jump' emotion: use quicker descent timing (default: false) */
+  quickDescent?: boolean;
 }
 
 /**
