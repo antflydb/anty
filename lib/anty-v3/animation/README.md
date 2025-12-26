@@ -1,278 +1,323 @@
-# Animation Controller Infrastructure
+# Anty Animation System
 
-Core animation system using Finite State Machine (FSM) pattern to prevent animation conflicts and ensure smooth, predictable transitions.
+> **STATUS: Work in Progress**
+> Migrated from original GSAP demo. Core architecture is solid, but many emotion animations still have bugs (timing, eye positioning, etc.).
 
-## Architecture
+## Quick Reference for Debugging
 
-The animation system is built on three core components:
+### Where things are defined:
 
-### 1. **StateMachine** (`state-machine.ts`)
+| What | Where |
+|------|-------|
+| All emotions (data) | `definitions/emotions.ts` |
+| Eye shapes (SVG paths) | `definitions/eye-shapes.ts` |
+| Emotion interpreter | `definitions/emotion-interpreter.ts` |
+| Controller hook | `use-animation-controller.ts` |
+| Type definitions | `types.ts` |
 
-Validates and manages state transitions with priority-based interruption rules.
+### To add/modify an emotion:
 
-**States:**
-- `IDLE` - Default floating/breathing animation (priority: 1)
-- `TRANSITION` - Transitioning between states (priority: 2)
-- `MORPH` - Morphing between shapes (priority: 2)
-- `INTERACTION` - User interaction responses (priority: 3)
-- `EMOTION` - Emotional expressions (priority: 4)
-- `OFF` - Powered off state (priority: 0)
+Edit `definitions/emotions.ts` → find the emotion → change the config. That's it.
 
-**Key Features:**
-- Priority-based interruption (higher priority can interrupt lower)
-- Comprehensive transition rules validation
-- State history tracking for debugging
-- Prevents invalid state transitions
+### To debug an emotion:
 
-**Example:**
-```typescript
-const sm = new StateMachine(true); // enableLogging
+1. Check `EMOTION_CONFIGS[emotionName]` in `definitions/emotions.ts`
+2. Check eye shape in `EYE_SHAPES[shapeName]` in `definitions/eye-shapes.ts`
+3. Run with `ENABLE_ANIMATION_DEBUG_LOGS = true` in `feature-flags.ts`
 
-// Try to transition
-if (sm.transition(AnimationState.EMOTION)) {
-  console.log('Transitioned to EMOTION');
-}
+---
 
-// Check if can interrupt
-if (sm.canInterrupt(AnimationState.INTERACTION)) {
-  console.log('Can interrupt current state');
-}
+## Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  anty-character-v3.tsx                                          │
+│  - Renders DOM elements                                         │
+│  - Passes refs to controller                                    │
+│  - NO animation logic here                                      │
+└─────────────────────────────────────────────────────────────────┘
+                              │ refs
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  useAnimationController (use-animation-controller.ts)           │
+│  - React hook that wraps AnimationController                    │
+│  - Calls initializeCharacter() on mount                         │
+│  - Thin layer: just calls controller methods                    │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  AnimationController (controller.ts)                            │
+│  - Owns ALL animation state                                     │
+│  - Manages idle timeline                                        │
+│  - Coordinates emotions, transitions, morphs                    │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+          ┌───────────────────┼───────────────────┐
+          ▼                   ▼                   ▼
+┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐
+│ EMOTION_CONFIGS │ │ createIdle...   │ │ createMorph...  │
+│ (emotions.ts)   │ │ (idle.ts)       │ │ (morph.ts)      │
+│                 │ │                 │ │                 │
+│ Declarative     │ │ Idle float/     │ │ Search bar      │
+│ emotion data    │ │ breathe/blink   │ │ transformation  │
+└─────────────────┘ └─────────────────┘ └─────────────────┘
+          │
+          ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  interpretEmotionConfig (emotion-interpreter.ts)                │
+│  - Takes EmotionConfig data                                     │
+│  - Returns GSAP timeline                                        │
+│  - Generic: same code for all emotions                          │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-### 2. **ElementRegistry** (`element-registry.ts`)
+---
 
-Tracks element ownership to prevent conflicting animations on the same elements.
+## File Structure
 
-**Key Features:**
-- Element ownership tracking
-- Safe cleanup mechanisms
-- Force-acquire for high priority animations
-- Memory leak detection
-
-**Example:**
-```typescript
-const registry = new ElementRegistry(true); // enableLogging
-
-const timeline = gsap.timeline();
-const element = document.querySelector('.anty-body');
-
-// Acquire ownership
-if (registry.acquire(element, 'animation-id', timeline)) {
-  console.log('Acquired element');
-}
-
-// Release when done
-registry.release(element);
-
-// Or release all from an animation
-registry.releaseByOwner('animation-id');
+```
+animation/
+├── README.md                 # This file
+├── types.ts                  # All TypeScript types
+├── controller.ts             # AnimationController class
+├── use-animation-controller.ts  # React hook
+├── initialize.ts             # initializeCharacter() - sets initial GSAP state
+├── state.ts                  # SimpleStateMachine (minimal)
+├── constants.ts              # Timing constants, configs
+├── feature-flags.ts          # Debug flags
+├── dev-tools.ts              # Console debugging tools
+│
+└── definitions/
+    ├── emotions.ts           # All 14 emotions as declarative config
+    ├── emotion-interpreter.ts # Builds GSAP timelines from configs
+    ├── eye-shapes.ts         # SVG path data for eye morphs
+    ├── eye-animations.ts     # Eye morph utilities
+    ├── idle.ts               # Idle float/breathe/blink
+    ├── transitions.ts        # Wake-up, power-off
+    └── morph.ts              # Search bar transformation
 ```
 
-### 3. **AnimationController** (`controller.ts`)
+---
 
-Main orchestrator that coordinates state machine and element registry.
+## How Emotions Work
 
-**Key Features:**
-- Public API for animations
-- Animation queueing system
-- Idle animation management (always restarts)
-- Lifecycle callbacks
-- Debug information
+### 1. Emotion Config (definitions/emotions.ts)
 
-**Example:**
-```typescript
-import { AnimationController, AnimationState } from './animation';
-
-const controller = new AnimationController(
-  {
-    onStart: (state, emotion) => console.log(`Started ${state}`, emotion),
-    onComplete: (state, emotion) => console.log(`Completed ${state}`, emotion),
-    onStateChange: (from, to) => console.log(`${from} → ${to}`),
-  },
-  {
-    enableLogging: true,
-    enableQueue: true,
-    maxQueueSize: 10,
-    defaultPriority: 2,
-  }
-);
-
-// Start idle animation
-const idleTimeline = gsap.timeline({ repeat: -1 });
-// ... configure idle animation
-controller.startIdle(idleTimeline, [bodyElement, eyesElement]);
-
-// Play emotion
-const emotionTimeline = gsap.timeline();
-// ... configure emotion animation
-controller.playEmotion(
-  'happy',
-  emotionTimeline,
-  [bodyElement, eyesElement],
-  {
-    priority: 4,
-    force: false,
-    onComplete: () => console.log('Emotion done'),
-  }
-);
-
-// Get debug info
-const debug = controller.getDebugInfo();
-console.log(debug);
-```
-
-## State Transition Rules
-
-| From | To | Allowed | Priority |
-|------|----|---------| ---------|
-| IDLE | EMOTION | ✅ | 4 |
-| IDLE | INTERACTION | ✅ | 3 |
-| EMOTION | INTERACTION | ❌ | - |
-| EMOTION | EMOTION | ✅ | 4 |
-| * | OFF | ✅ | 0 |
-
-See `state-machine.ts` for complete transition matrix.
-
-## Animation Flow
-
-1. **Request Animation**: Call `playEmotion()` or `transitionTo()`
-2. **Check Priority**: StateMachine validates if new animation can interrupt current
-3. **Queue or Play**: If can't interrupt, queue the animation (if enabled)
-4. **Acquire Elements**: ElementRegistry locks elements to prevent conflicts
-5. **Execute Animation**: Timeline plays with lifecycle callbacks
-6. **Cleanup**: Release elements, return to idle, process queue
-
-## Idle Animation Guarantee
-
-The controller ensures idle animation **always restarts** after any animation completes:
+Emotions are defined as **data**, not code:
 
 ```typescript
-// Idle completion callback automatically triggers restart
-timeline.eventCallback('onComplete', () => {
-  this.isIdleActive = false;
-  this.callbacks.onComplete?.(AnimationState.IDLE);
-  // System will restart idle based on isIdleActive flag
-});
-```
-
-## Edge Cases Handled
-
-1. **Rapid Triggers**: Queue system prevents animation pile-up
-2. **Missing Elements**: Graceful degradation with warnings
-3. **Memory Leaks**: Element registry validates ownership age
-4. **Conflicting Animations**: Priority system ensures correct behavior
-5. **Interrupted Animations**: Proper cleanup via onInterrupt callbacks
-
-## Debugging
-
-Enable logging to see detailed state transitions and element tracking:
-
-```typescript
-const controller = new AnimationController({}, {
-  enableLogging: true,
-});
-
-// Logs will show:
-// [StateMachine] Transition: IDLE → EMOTION
-// [ElementRegistry] emotion-happy-123 acquired .anty-body
-// [AnimationController] Play emotion: happy (priority: 4)
-```
-
-Check debug info at any time:
-
-```typescript
-const debug = controller.getDebugInfo();
-console.log({
-  currentState: debug.state.currentState,
-  currentEmotion: debug.currentEmotion,
-  queueSize: debug.queueSize,
-  ownedElements: debug.elements.totalOwned,
-});
-```
-
-## Type Safety
-
-All types are exported from `types.ts`:
-
-```typescript
-import {
-  AnimationState,
-  EmotionType,
-  AnimationCallbacks,
-  AnimationOptions,
-  ControllerConfig,
-} from './animation/types';
-```
-
-## Memory Management
-
-The controller provides cleanup methods:
-
-```typescript
-// Kill all animations and cleanup
-controller.killAll();
-
-// Destroy controller (call in useEffect cleanup)
-controller.destroy();
-```
-
-## Testing
-
-Validate state machine rules:
-
-```typescript
-import { StateMachine } from './animation';
-
-const isValid = StateMachine.validateRules();
-console.log('Transition rules valid:', isValid);
-```
-
-## Integration Example
-
-```typescript
-// In React component
-const controllerRef = useRef<AnimationController>();
-
-useEffect(() => {
-  controllerRef.current = new AnimationController(
-    {
-      onStateChange: (from, to) => {
-        console.log(`State: ${from} → ${to}`);
-      },
+export const EMOTION_CONFIGS = {
+  happy: {
+    id: 'happy',
+    eyes: {
+      shape: 'HAPPY',           // Eye shape to morph to
+      duration: 0.2,            // Eye morph duration
+      yOffset: -10.5,           // Move eyes up (negative = up)
     },
-    { enableLogging: process.env.NODE_ENV === 'development' }
-  );
-
-  return () => {
-    controllerRef.current?.destroy();
-  };
-}, []);
-
-// Trigger animation
-const handleClick = () => {
-  const timeline = gsap.timeline();
-  // ... configure animation
-
-  controllerRef.current?.playEmotion(
-    'excited',
-    timeline,
-    [bodyEl, eyesEl],
-    { priority: 4 }
-  );
+    character: [                // Character animation phases
+      { props: { rotation: 10 }, duration: 0.15, ease: 'power1.inOut' },
+      { props: { rotation: -10 }, duration: 0.15, ease: 'power1.inOut' },
+      // ... wiggle pattern
+    ],
+    totalDuration: 0.9,
+  },
+  // ... 13 more emotions
 };
 ```
 
-## Performance
+### 2. Interpreter (definitions/emotion-interpreter.ts)
 
-- **Lightweight**: Minimal overhead, leverages GSAP's optimized engine
-- **No Memory Leaks**: Automatic cleanup and validation
-- **Queue Limits**: Configurable max queue size prevents unbounded growth
-- **Element Tracking**: O(1) lookup for ownership checks
+Generic function that builds GSAP timeline from config:
 
-## Future Enhancements
+```typescript
+function interpretEmotionConfig(config: EmotionConfig, elements): gsap.core.Timeline {
+  const timeline = gsap.timeline();
 
-- Priority override rules for special cases
-- Animation preloading/caching
-- Performance metrics tracking
-- Animation composition (parallel + sequential)
-- Gesture-based interruption rules
+  // Add eye animation
+  if (config.eyes) {
+    timeline.add(createEyeAnimation(...), 0);
+  }
+
+  // Add character phases
+  for (const phase of config.character) {
+    timeline.to(character, { ...phase.props, duration, ease });
+  }
+
+  return timeline;
+}
+```
+
+### 3. Available Emotions
+
+| Emotion | Description | Known Issues |
+|---------|-------------|--------------|
+| happy | Wiggle rotation | - |
+| excited | Jump + 360° spin + bounces | - |
+| sad | Droop down | Eye positioning may be off |
+| angry | Shake + drop | Eye rotation needs tuning |
+| shocked | Jump + bracket separation | - |
+| spin | Y-axis 720° spin | - |
+| jump | Jump up and down | Was "idea", renamed |
+| lookaround | Look left then right | - |
+| wink | Asymmetric eye close + tilt | Eye may be backwards |
+| nod | Vertical head bob | - |
+| headshake | Horizontal head shake | - |
+| look-left | Eyes look left | - |
+| look-right | Eyes look right | - |
+| super | Glow + float up | - |
+
+---
+
+## Eye System
+
+### Eye Shapes (definitions/eye-shapes.ts)
+
+```typescript
+export const EYE_SHAPES = {
+  IDLE: 'M... (SVG path)',      // Default tall pill
+  HAPPY: 'M... (SVG path)',     // Curved bottom (smile)
+  SAD: 'M... (SVG path)',       // Drooping
+  ANGRY: 'M... (SVG path)',     // Sharp angled
+  CLOSED: 'M... (SVG path)',    // Horizontal line (blink/wink)
+  HALF: 'M... (SVG path)',      // Half-closed
+  LOOK: 'M... (SVG path)',      // Shorter, wider (looking)
+  // ... OFF shapes for powered-off state
+};
+
+export const EYE_DIMENSIONS = {
+  IDLE: { width: 20, height: 45, viewBox: '0 0 20 45' },
+  // ... each shape has dimensions
+};
+```
+
+### Left/Right Convention
+
+**IMPORTANT:** Left/right are from **VIEWER's perspective**, not character's.
+
+- `leftEyeRef` = the eye on the LEFT side of the screen (viewer's left)
+- `rightEyeRef` = the eye on the RIGHT side of the screen (viewer's right)
+
+For asymmetric animations (like wink):
+```typescript
+eyes: {
+  shape: { left: 'HALF', right: 'CLOSED' },  // Viewer's left=half, right=closed
+}
+```
+
+---
+
+## Initialization
+
+### initializeCharacter() (initialize.ts)
+
+Called once on mount. Sets ALL animatable properties via `gsap.set()`:
+
+```typescript
+function initializeCharacter(elements, { isOff }) {
+  // Character
+  gsap.set(character, { x: 0, y: 0, scale: 1, rotation: 0, opacity: 1 });
+
+  // Eyes - IDLE shape
+  gsap.set([eyeLeftPath, eyeRightPath], { attr: { d: EYE_SHAPES.IDLE } });
+  gsap.set([eyeLeft, eyeRight], { width: 20, height: 45, x: 0, y: 0 });
+
+  // Shadow, glows...
+}
+```
+
+**Why this matters:** GSAP can only animate properties it "owns". If CSS or inline styles set a property, GSAP may fight with them. By setting everything via `gsap.set()` at init, GSAP owns all animatable properties.
+
+---
+
+## Debugging
+
+### Enable Logging
+
+In `feature-flags.ts`:
+```typescript
+export const ENABLE_ANIMATION_DEBUG_LOGS = true;
+```
+
+### Console Dev Tools
+
+In browser console:
+```javascript
+antyAnimations.getSystemInfo()    // Check what's active
+antyAnimations.testEmotion('happy')  // Test specific emotion
+antyAnimations.showMappings()     // See emotion mappings
+```
+
+### Debug Overlay
+
+The `<AnimationDebugOverlay>` component shows:
+- Current animation sequence
+- Character position over time
+- Snapshot cards for each animation
+
+---
+
+## Known Issues & Bugs
+
+### High Priority
+- [ ] Some eye shapes may be positioned incorrectly after morph
+- [ ] Wink eye may be reversed (left vs right)
+- [ ] Sad/angry eye rotations need tuning
+
+### Medium Priority
+- [ ] Glow following may lag incorrectly on some emotions
+- [ ] Body bracket animations (shocked) may be off
+
+### Low Priority
+- [ ] Animation timing could be more polished
+- [ ] Some emotions feel "robotic" vs organic
+
+---
+
+## Migration History
+
+This system was migrated from an original GSAP demo in stages:
+
+1. **Original**: Inline GSAP code scattered throughout component
+2. **First refactor**: Created AnimationController + StateMachine + ElementRegistry
+3. **Overengineered**: StateMachine grew to 254 lines, ElementRegistry to 217 lines
+4. **Current refactor**:
+   - Deleted StateMachine, ElementRegistry (were mostly bypassed with `force=true`)
+   - Created declarative `EMOTION_CONFIGS` system
+   - Single `interpretEmotionConfig()` replaces 1,000-line switch/case
+   - Removed duplicate gesture definitions
+
+---
+
+## Adding a New Emotion
+
+1. Add to `EmotionType` union in `types.ts`:
+   ```typescript
+   export type EmotionType = 'happy' | 'sad' | ... | 'my-new-emotion';
+   ```
+
+2. Add config to `definitions/emotions.ts`:
+   ```typescript
+   'my-new-emotion': {
+     id: 'my-new-emotion',
+     eyes: { shape: 'HAPPY', duration: 0.2 },
+     character: [
+       { props: { y: -20 }, duration: 0.3, ease: 'power2.out' },
+       { props: { y: 0 }, duration: 0.3, ease: 'power2.in' },
+     ],
+     totalDuration: 0.6,
+   },
+   ```
+
+3. Test it:
+   ```javascript
+   antyAnimations.testEmotion('my-new-emotion')
+   ```
+
+---
+
+## Files NOT to Touch (They Work)
+
+- `morph.ts` - Search bar transformation (complex, tested)
+- `transitions.ts` - Wake-up/power-off (working)
+- `flappy-anty.tsx` - Flappy game (separate system)
