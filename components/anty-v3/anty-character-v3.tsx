@@ -668,8 +668,9 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
         <div ref={leftBodyRef} className="absolute inset-[0_13.15%_13.15%_0]">
           <img alt="" className="block max-w-none size-full" src={img1} />
         </div>
-        {/* Left eye - Always SVG, morphed by animation controller */}
-        <div className="absolute flex inset-[33.44%_31.21%_38.44%_56.29%] items-center justify-center">
+        {/* Left eye (VIEWER's left) - Always SVG, morphed by animation controller */}
+        {/* inset-[top_right_bottom_left]: left=30.57% = positioned on viewer's LEFT */}
+        <div className="absolute flex inset-[33.44%_56.93%_38.44%_30.57%] items-center justify-center">
           <div
             ref={leftEyeRef}
             className="flex-none flex items-center justify-center relative"
@@ -697,8 +698,9 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
           </div>
         </div>
 
-        {/* Right eye - Always SVG, morphed by animation controller */}
-        <div className="absolute flex inset-[33.44%_56.93%_38.44%_30.57%] items-center justify-center">
+        {/* Right eye (VIEWER's right) - Always SVG, morphed by animation controller */}
+        {/* inset-[top_right_bottom_left]: left=56.29% = positioned on viewer's RIGHT */}
+        <div className="absolute flex inset-[33.44%_31.21%_38.44%_56.29%] items-center justify-center">
           <div
             ref={rightEyeRef}
             className="flex-none flex items-center justify-center relative"

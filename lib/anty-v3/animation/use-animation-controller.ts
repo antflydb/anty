@@ -17,9 +17,12 @@ import {
   isEmotionType,
 } from './types';
 import { idleAnimationConfig } from '../gsap-configs';
-import { createEmotionAnimation } from './definitions/emotions';
 import { createIdleAnimation } from './definitions/idle';
 import { createEyeAnimation } from './definitions/eye-animations';
+import { interpretEmotionConfig } from './definitions/emotion-interpreter';
+import { EMOTION_CONFIGS } from './definitions/emotion-configs';
+import { createEmotionAnimation } from './definitions/emotions';
+import { initializeCharacter } from './initialize';
 
 /**
  * Elements required by the animation controller
@@ -166,8 +169,8 @@ export function useAnimationController(
   const previousIsOffRef = useRef(isOff);
   const previousSearchModeRef = useRef(searchMode);
 
-  // Idle timeline reference
-  const idleTimelineRef = useRef<gsap.core.Timeline | null>(null);
+  // NOTE: idleTimelineRef REMOVED - controller is single owner of idle
+  // The controller manages idle internally, hook just calls controller methods
 
   /**
    * Initialize controller
@@ -230,10 +233,7 @@ export function useAnimationController(
       if (enableLogging) {
         console.log('[useAnimationController] Cleaning up controller');
       }
-      if (idleTimelineRef.current) {
-        idleTimelineRef.current.kill();
-        idleTimelineRef.current = null;
-      }
+      // Controller.destroy() kills all timelines including idle
       controllerRef.current?.destroy();
       controllerRef.current = null;
       isInitialized.current = false;
@@ -242,7 +242,7 @@ export function useAnimationController(
   }, []); // Empty deps - only initialize once
 
   /**
-   * Check if elements are available
+   * Check if elements are available and initialize character
    */
   useEffect(() => {
     const hasRequiredElements =
@@ -257,7 +257,37 @@ export function useAnimationController(
     if (enableLogging && wasReady !== isReady.current) {
       console.log('[useAnimationController] Ready state changed:', isReady.current);
     }
-  }, [elements, enableLogging]);
+
+    // Initialize character when elements become ready
+    if (hasRequiredElements && !wasReady && elements.character) {
+      if (enableLogging) {
+        console.log('[useAnimationController] Calling initializeCharacter()');
+      }
+
+      // Get glow elements for initialization
+      const innerGlow = document.querySelector('.inner-glow') as HTMLElement;
+      const glowElements = document.querySelectorAll('[class*="glow"]');
+      const outerGlow = Array.from(glowElements).find(el => !el.classList.contains('inner-glow')) as HTMLElement;
+
+      initializeCharacter(
+        {
+          character: elements.character,
+          shadow: elements.shadow || null,
+          eyeLeft: elements.eyeLeft,
+          eyeRight: elements.eyeRight,
+          eyeLeftPath: elements.eyeLeftPath,
+          eyeRightPath: elements.eyeRightPath,
+          eyeLeftSvg: elements.eyeLeftSvg,
+          eyeRightSvg: elements.eyeRightSvg,
+          innerGlow: innerGlow,
+          outerGlow: outerGlow,
+          leftBody: elements.leftBody,
+          rightBody: elements.rightBody,
+        },
+        { isOff }
+      );
+    }
+  }, [elements, enableLogging, isOff]);
 
   /**
    * Handle OFF state changes (wake-up and power-off sequences)
@@ -278,11 +308,7 @@ export function useAnimationController(
       // Notify debug overlay
       onAnimationSequenceChange?.('CONTROLLER: Wake-up (OFF → ON)');
 
-      // Kill any existing animations
-      if (idleTimelineRef.current) {
-        idleTimelineRef.current.kill();
-        idleTimelineRef.current = null;
-      }
+      // Kill all animations via controller (single source of truth)
       controllerRef.current.killAll();
 
       // CRITICAL FIX: Actually call the wake-up animation!
@@ -311,20 +337,18 @@ export function useAnimationController(
           eyeRightSvg: elements.eyeRightSvg || undefined,
         });
 
-        // Start idle when wake-up completes
+        // Start idle when wake-up completes - use controller's startIdle
         wakeUpTl.eventCallback('onComplete', () => {
           if (enableLogging) {
-            console.log('[useAnimationController] Wake-up complete, manually starting idle');
+            console.log('[useAnimationController] Wake-up complete, starting idle via controller');
           }
 
-          // Create idle timeline using createIdleAnimation with eye elements
-          // No delay - start immediately after wake-up completes
-          if (autoStartIdle && elements.character && shadow) {
+          // Create idle timeline and register with controller
+          if (autoStartIdle && elements.character && shadow && controllerRef.current) {
             const idleTl = createIdleAnimation(
               {
                 character: elements.character,
                 shadow: shadow,
-                // Pass eye elements
                 eyeLeft: elements.eyeLeft || undefined,
                 eyeRight: elements.eyeRight || undefined,
                 eyeLeftPath: elements.eyeLeftPath || undefined,
@@ -332,14 +356,12 @@ export function useAnimationController(
                 eyeLeftSvg: elements.eyeLeftSvg || undefined,
                 eyeRightSvg: elements.eyeRightSvg || undefined,
               },
-              { delay: 0 } // No delay - start immediately
+              { delay: 0 }
             );
 
-            idleTimelineRef.current = idleTl;
-
-            if (enableLogging) {
-              console.log('[useAnimationController] Idle animation started immediately');
-            }
+            // Register with controller - controller is single owner of idle
+            const idleElements = [elements.character, shadow].filter(Boolean) as Element[];
+            controllerRef.current.startIdle(idleTl, idleElements);
 
             // Notify debug overlay
             onAnimationSequenceChange?.('CONTROLLER: Idle animation');
@@ -364,11 +386,7 @@ export function useAnimationController(
       // Notify debug overlay
       onAnimationSequenceChange?.('CONTROLLER: Power-off (ON → OFF)');
 
-      // Kill all animations
-      if (idleTimelineRef.current) {
-        idleTimelineRef.current.kill();
-        idleTimelineRef.current = null;
-      }
+      // Kill all animations via controller (single source of truth)
       controllerRef.current.killAll();
 
       // CRITICAL FIX: Actually call the power-off animation!
@@ -471,7 +489,8 @@ export function useAnimationController(
   useEffect(() => {
     if (!autoStartIdle || !isReady.current || !controllerRef.current) return;
     if (isOff || searchMode) return;
-    if (idleTimelineRef.current) return; // Already started
+    // Check controller's idle state, not a local ref
+    if (controllerRef.current.isIdle()) return; // Already running
 
     if (enableLogging) {
       console.log('[useAnimationController] Auto-starting idle animation');
@@ -493,14 +512,13 @@ export function useAnimationController(
       { delay: 0 }
     );
 
-    // Register idle with controller (deduplicate to avoid double acquisition)
+    // Register idle with controller - controller is single owner of idle
     const idleElements = Array.from(new Set([
       elements.character,
       elements.shadow,
     ].filter(Boolean))) as Element[];
 
     controllerRef.current.startIdle(tl, idleElements);
-    idleTimelineRef.current = tl;
   }, [autoStartIdle, isOff, searchMode, elements, enableLogging]);
 
   /**
@@ -537,25 +555,52 @@ export function useAnimationController(
       const glowElements = document.querySelectorAll('[class*="glow"]');
       const outerGlow = Array.from(glowElements).find(el => !el.classList.contains('inner-glow')) as HTMLElement;
 
-      // Create timeline for emotion with animations, passing eye elements
-      const tl = createEmotionAnimation(
-        emotion,
-        {
+      // Try new declarative emotion system first
+      const emotionConfig = EMOTION_CONFIGS[emotion];
+      let tl: gsap.core.Timeline;
+
+      if (emotionConfig) {
+        // Use new declarative emotion interpreter
+        if (enableLogging) {
+          console.log(`[useAnimationController] Using new emotion system for: ${emotion}`);
+        }
+        tl = interpretEmotionConfig(emotionConfig, {
           character: elements.character!,
-          leftBody: elements.leftBody || undefined,
-          rightBody: elements.rightBody || undefined,
-          innerGlow: innerGlow || undefined,
-          outerGlow: outerGlow || undefined,
-          // Pass eye elements
-          eyeLeft: elements.eyeLeft || undefined,
-          eyeRight: elements.eyeRight || undefined,
-          eyeLeftPath: elements.eyeLeftPath || undefined,
-          eyeRightPath: elements.eyeRightPath || undefined,
-          eyeLeftSvg: elements.eyeLeftSvg || undefined,
-          eyeRightSvg: elements.eyeRightSvg || undefined,
-        },
-        {} // EmotionAnimationOptions - currently no options needed
-      );
+          eyeLeft: elements.eyeLeft,
+          eyeRight: elements.eyeRight,
+          eyeLeftPath: elements.eyeLeftPath,
+          eyeRightPath: elements.eyeRightPath,
+          eyeLeftSvg: elements.eyeLeftSvg,
+          eyeRightSvg: elements.eyeRightSvg,
+          innerGlow: innerGlow,
+          outerGlow: outerGlow,
+          leftBody: elements.leftBody,
+          rightBody: elements.rightBody,
+        });
+      } else {
+        // Fallback to old emotion system for emotions not yet ported
+        if (enableLogging) {
+          console.log(`[useAnimationController] Falling back to old emotion system for: ${emotion}`);
+        }
+        tl = createEmotionAnimation(
+          emotion,
+          {
+            character: elements.character!,
+            leftBody: elements.leftBody || undefined,
+            rightBody: elements.rightBody || undefined,
+            innerGlow: innerGlow || undefined,
+            outerGlow: outerGlow || undefined,
+            // Pass eye elements
+            eyeLeft: elements.eyeLeft || undefined,
+            eyeRight: elements.eyeRight || undefined,
+            eyeLeftPath: elements.eyeLeftPath || undefined,
+            eyeRightPath: elements.eyeRightPath || undefined,
+            eyeLeftSvg: elements.eyeLeftSvg || undefined,
+            eyeRightSvg: elements.eyeRightSvg || undefined,
+          },
+          {} // EmotionAnimationOptions - currently no options needed
+        );
+      }
 
       // Collect elements for this emotion (deduplicate to avoid double acquisition)
       const emotionElements = Array.from(new Set([
@@ -628,12 +673,7 @@ export function useAnimationController(
       console.log('[useAnimationController] Starting idle animation');
     }
 
-    // Kill existing idle
-    if (idleTimelineRef.current) {
-      idleTimelineRef.current.kill();
-      idleTimelineRef.current = null;
-    }
-
+    // Controller's startIdle already kills existing idle first
     // Create new idle timeline using createIdleAnimation with eye elements
     const tl = createIdleAnimation(
       {
@@ -650,14 +690,13 @@ export function useAnimationController(
       { delay: 0 }
     );
 
-    // Register with controller
+    // Register with controller - controller is single owner of idle
     const idleElements = [
       elements.character,
       elements.shadow,
     ].filter(Boolean) as Element[];
 
     controllerRef.current.startIdle(tl, idleElements);
-    idleTimelineRef.current = tl;
   }, [elements, enableLogging]);
 
   /**
@@ -696,11 +735,7 @@ export function useAnimationController(
       console.log('[useAnimationController] Killing all animations');
     }
 
-    if (idleTimelineRef.current) {
-      idleTimelineRef.current.kill();
-      idleTimelineRef.current = null;
-    }
-
+    // Controller.killAll() handles killing idle (single source of truth)
     controllerRef.current.killAll();
   }, [enableLogging]);
 
