@@ -436,6 +436,15 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
           'angry': 'angry',
           'shocked': 'shocked',
           'spin': 'spin',
+          'wink': 'wink',
+          'jump': 'jump',
+          'idea': 'jump', // Legacy alias
+          'lookaround': 'lookaround',
+          'nod': 'nod',
+          'headshake': 'headshake',
+          'look-left': 'look-left',
+          'look-right': 'look-right',
+          'super': 'super',
         };
 
         const emotionType = validEmotions[emotion];
