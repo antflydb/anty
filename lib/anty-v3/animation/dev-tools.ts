@@ -137,7 +137,7 @@ function createDevTools(): AntyAnimationDevTools {
         console.error('❌ No animation systems registered');
         return;
       }
-      await runAllTests(null, controllerInstance);
+      await runAllTests(controllerInstance);
     },
 
     testEmotion: (emotion: string): void => {

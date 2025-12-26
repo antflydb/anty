@@ -167,7 +167,7 @@ export function createWakeUpAnimation(
   }
 
   // Shadow grows back to full size and fades in (no Y movement - stays on ground)
-  // Single smooth animation from 0 to 1.0 scale, matching legacy system
+  // Single smooth animation from 0 to 1.0 scale
   timeline.to(
     shadow,
     {
@@ -190,7 +190,7 @@ export function createWakeUpAnimation(
 /**
  * Creates power-off animation (ON → OFF transition)
  *
- * Dramatic three-phase choreography matching legacy system:
+ * Dramatic three-phase choreography:
  * 1. Climb up (0.5s) - controlled rise to y: -60
  * 2. SNAP down HARD (0.1s) - explosive drop to y: 50, scale: 0.65 with expo.in easing
  * 3. Fade out (0.05-0.06s) - character to 0.45 opacity, glows/shadow to 0

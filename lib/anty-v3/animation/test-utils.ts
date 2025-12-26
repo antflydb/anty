@@ -156,26 +156,8 @@ export async function testStateTransitions(
 }
 
 // ===========================
-// Legacy System Testing
+// State Validation
 // ===========================
-
-/**
- * @deprecated Legacy system removed
- */
-export async function testLegacyBlinks(): Promise<void> {
-  console.warn('testLegacyBlinks is deprecated - legacy system removed');
-}
-
-// ===========================
-// Comparison Testing
-// ===========================
-
-/**
- * @deprecated Legacy comparison removed
- */
-export async function comparePerformance(): Promise<void> {
-  console.warn('comparePerformance is deprecated - legacy system removed');
-}
 
 /**
  * Validate state consistency between systems
@@ -228,7 +210,6 @@ export function validateStateConsistency(
  * Run all tests
  */
 export async function runAllTests(
-  _legacy: null,
   newSystem: UseAnimationControllerReturn | null
 ): Promise<void> {
   console.log('🚀 Running Full Test Suite\n');

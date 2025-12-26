@@ -114,7 +114,6 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
 
   const superGlowRef = useRef<HTMLDivElement>(null);
   const superGlowTimelineRef = useRef<gsap.core.Timeline | null>(null); // Memory leak fix
-  // Legacy refs removed - no longer needed with AnimationController
 
   // Force re-render when refs are populated (fixes initialization timing bug)
   const [refsReady, setRefsReady] = useState(false);
@@ -203,11 +202,6 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [expression, isOff, searchMode]);
-  // ============================================================================
-  // END NEW ANIMATION CONTROLLER
-  // ============================================================================
-
-  // Legacy performWink removed - wink is now handled by AnimationController
 
   // Expose particle spawning methods and refs to parent
   useImperativeHandle(ref, () => ({
@@ -545,8 +539,6 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
       }
     };
   }, [isSuperMode]);
-
-  // Legacy idle animation removed - now handled by AnimationController
 
   // Track current expression in a ref to avoid recreating the scheduler
   const currentExpressionRef = useRef(expression);
