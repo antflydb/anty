@@ -20,7 +20,7 @@ import { idleAnimationConfig } from '../gsap-configs';
 import { createIdleAnimation } from './definitions/idle';
 import { createEyeAnimation } from './definitions/eye-animations';
 import { interpretEmotionConfig } from './definitions/emotion-interpreter';
-import { EMOTION_CONFIGS } from './definitions/emotion-configs';
+import { EMOTION_CONFIGS } from './definitions/emotions';
 import { initializeCharacter } from './initialize';
 
 /**

@@ -12,7 +12,7 @@
  * 4. Easy to add new emotions
  */
 
-import type { EmotionConfig } from './emotion-config';
+import type { EmotionConfig } from '../types';
 import type { EmotionType } from '../types';
 
 /**

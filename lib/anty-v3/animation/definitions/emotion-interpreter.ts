@@ -8,10 +8,10 @@
  */
 
 import gsap from 'gsap';
-import type { EmotionConfig, EyeConfig, CharacterPhase, GlowConfig, BodyConfig } from './emotion-config';
+import type { EmotionConfig, EyeConfig, CharacterPhase, GlowConfig, BodyConfig } from '../types';
 import { createEyeAnimation } from './eye-animations';
 import { EYE_SHAPES, EYE_DIMENSIONS } from './eye-shapes';
-import { GLOW_CONSTANTS } from './emotion-configs';
+import { GLOW_CONSTANTS } from './emotions';
 
 /**
  * Elements required for emotion animations

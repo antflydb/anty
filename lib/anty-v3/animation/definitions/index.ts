@@ -11,7 +11,7 @@ export {
 } from './idle';
 
 // Declarative emotion system
-export { EMOTION_CONFIGS } from './emotion-configs';
+export { EMOTION_CONFIGS } from './emotions';
 export { interpretEmotionConfig } from './emotion-interpreter';
 export type {
   EmotionConfig,
@@ -19,7 +19,7 @@ export type {
   CharacterPhase,
   GlowConfig,
   BodyConfig,
-} from './emotion-config';
+} from '../types';
 
 // Transition animations
 export {
