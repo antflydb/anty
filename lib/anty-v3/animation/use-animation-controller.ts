@@ -21,7 +21,6 @@ import { createIdleAnimation } from './definitions/idle';
 import { createEyeAnimation } from './definitions/eye-animations';
 import { interpretEmotionConfig } from './definitions/emotion-interpreter';
 import { EMOTION_CONFIGS } from './definitions/emotion-configs';
-import { createEmotionAnimation } from './definitions/emotions';
 import { initializeCharacter } from './initialize';
 
 /**
@@ -555,52 +554,30 @@ export function useAnimationController(
       const glowElements = document.querySelectorAll('[class*="glow"]');
       const outerGlow = Array.from(glowElements).find(el => !el.classList.contains('inner-glow')) as HTMLElement;
 
-      // Try new declarative emotion system first
+      // Get emotion config from declarative system
       const emotionConfig = EMOTION_CONFIGS[emotion];
-      let tl: gsap.core.Timeline;
-
-      if (emotionConfig) {
-        // Use new declarative emotion interpreter
-        if (enableLogging) {
-          console.log(`[useAnimationController] Using new emotion system for: ${emotion}`);
-        }
-        tl = interpretEmotionConfig(emotionConfig, {
-          character: elements.character!,
-          eyeLeft: elements.eyeLeft,
-          eyeRight: elements.eyeRight,
-          eyeLeftPath: elements.eyeLeftPath,
-          eyeRightPath: elements.eyeRightPath,
-          eyeLeftSvg: elements.eyeLeftSvg,
-          eyeRightSvg: elements.eyeRightSvg,
-          innerGlow: innerGlow,
-          outerGlow: outerGlow,
-          leftBody: elements.leftBody,
-          rightBody: elements.rightBody,
-        });
-      } else {
-        // Fallback to old emotion system for emotions not yet ported
-        if (enableLogging) {
-          console.log(`[useAnimationController] Falling back to old emotion system for: ${emotion}`);
-        }
-        tl = createEmotionAnimation(
-          emotion,
-          {
-            character: elements.character!,
-            leftBody: elements.leftBody || undefined,
-            rightBody: elements.rightBody || undefined,
-            innerGlow: innerGlow || undefined,
-            outerGlow: outerGlow || undefined,
-            // Pass eye elements
-            eyeLeft: elements.eyeLeft || undefined,
-            eyeRight: elements.eyeRight || undefined,
-            eyeLeftPath: elements.eyeLeftPath || undefined,
-            eyeRightPath: elements.eyeRightPath || undefined,
-            eyeLeftSvg: elements.eyeLeftSvg || undefined,
-            eyeRightSvg: elements.eyeRightSvg || undefined,
-          },
-          {} // EmotionAnimationOptions - currently no options needed
-        );
+      if (!emotionConfig) {
+        console.error(`[useAnimationController] Unknown emotion: ${emotion}`);
+        return false;
       }
+
+      if (enableLogging) {
+        console.log(`[useAnimationController] Playing emotion: ${emotion}`);
+      }
+
+      const tl = interpretEmotionConfig(emotionConfig, {
+        character: elements.character!,
+        eyeLeft: elements.eyeLeft,
+        eyeRight: elements.eyeRight,
+        eyeLeftPath: elements.eyeLeftPath,
+        eyeRightPath: elements.eyeRightPath,
+        eyeLeftSvg: elements.eyeLeftSvg,
+        eyeRightSvg: elements.eyeRightSvg,
+        innerGlow: innerGlow,
+        outerGlow: outerGlow,
+        leftBody: elements.leftBody,
+        rightBody: elements.rightBody,
+      });
 
       // Collect elements for this emotion (deduplicate to avoid double acquisition)
       const emotionElements = Array.from(new Set([

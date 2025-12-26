@@ -10,19 +10,16 @@ export {
   type IdleAnimationOptions,
 } from './idle';
 
-// Emotion animations
-export {
-  createEmotionAnimation,
-  type EmotionAnimationElements,
-  type EmotionAnimationOptions,
-} from './emotions';
-
-// Gesture animations
-export {
-  createGestureAnimation,
-  type GestureAnimationElements,
-  type GestureType,
-} from './gestures';
+// Declarative emotion system
+export { EMOTION_CONFIGS } from './emotion-configs';
+export { interpretEmotionConfig } from './emotion-interpreter';
+export type {
+  EmotionConfig,
+  EyeConfig,
+  CharacterPhase,
+  GlowConfig,
+  BodyConfig,
+} from './emotion-config';
 
 // Transition animations
 export {
