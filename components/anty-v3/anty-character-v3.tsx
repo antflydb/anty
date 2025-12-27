@@ -225,12 +225,12 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
               `;
               document.body.appendChild(lightbulb);
               const bulbTl = gsap.timeline({ onComplete: () => lightbulb.remove() });
-              // Gentle upward drift (less distance)
-              bulbTl.to(lightbulb, { y: -20, duration: 0.6, ease: 'power2.out' }, 0);
+              // Gentle upward drift (slower, longer visible)
+              bulbTl.to(lightbulb, { y: -25, duration: 0.9, ease: 'power2.out' }, 0);
               // Fade in quickly
               bulbTl.to(lightbulb, { opacity: 1, duration: 0.12, ease: 'power2.out' }, 0);
               // Fade out as he descends
-              bulbTl.to(lightbulb, { opacity: 0, duration: 0.25, ease: 'power2.in' }, 0.4);
+              bulbTl.to(lightbulb, { opacity: 0, duration: 0.3, ease: 'power2.in' }, 0.65);
             }, 180); // Appear near apex
           }
         },

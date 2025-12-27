@@ -175,6 +175,12 @@ export const EMOTION_CONFIGS: Partial<Record<EmotionType, EmotionConfig>> = {
   // ===========================
   spin: {
     id: 'spin',
+    eyes: {
+      shape: 'HALF',
+      duration: 0.2,
+      yOffset: -10,
+      delay: 0.25, // Start during jump
+    },
     character: [
       // Jump up
       { props: { y: -70 }, duration: 0.3, ease: 'power2.out' },
@@ -220,13 +226,13 @@ export const EMOTION_CONFIGS: Partial<Record<EmotionType, EmotionConfig>> = {
     character: [
       // Leap up higher
       { props: { y: -45 }, duration: 0.25, ease: 'power2.out' },
-      // Hold in air a bit longer while bulb rises
-      { props: { y: -45 }, duration: 0.75, ease: 'none' },
+      // Hold in air longer while bulb rises
+      { props: { y: -45 }, duration: 1.0, ease: 'none' },
       // Come back down smoothly (no bounce)
       { props: { y: 0 }, duration: 0.25, ease: 'power2.in' },
     ],
     glow: { follow: true },
-    totalDuration: 1.25,
+    totalDuration: 1.5,
     showLightbulb: true,
     eyeResetDuration: 0.2,
   },
@@ -278,25 +284,35 @@ export const EMOTION_CONFIGS: Partial<Record<EmotionType, EmotionConfig>> = {
   nod: {
     id: 'nod',
     character: [
-      { props: { y: 8 }, duration: 0.2, ease: 'power2.out' },
-      { props: { y: -4 }, duration: 0.2, ease: 'power2.inOut' },
-      { props: { y: 0 }, duration: 0.2, ease: 'power2.in' },
+      // First nod - tilt forward + dip down
+      { props: { rotationX: -35, y: 8, transformPerspective: 600 }, duration: 0.15, ease: 'power2.out' },
+      { props: { rotationX: 0, y: 0, transformPerspective: 600 }, duration: 0.15, ease: 'power2.inOut' },
+      // Second nod
+      { props: { rotationX: -35, y: 8, transformPerspective: 600 }, duration: 0.15, ease: 'power2.out' },
+      { props: { rotationX: 0, y: 0, transformPerspective: 600 }, duration: 0.15, ease: 'power2.inOut' },
+      // Third nod
+      { props: { rotationX: -35, y: 8, transformPerspective: 600 }, duration: 0.15, ease: 'power2.out' },
+      { props: { rotationX: 0, y: 0, transformPerspective: 600 }, duration: 0.15, ease: 'power2.in' },
     ],
-    totalDuration: 0.6,
+    totalDuration: 0.9,
   },
 
   // ===========================
-  // HEADSHAKE - Horizontal shake (no)
+  // HEADSHAKE - Y-axis rotation shake (no)
   // ===========================
   headshake: {
     id: 'headshake',
     character: [
-      { props: { x: -6 }, duration: 0.2, ease: 'power2.inOut' },
-      { props: { x: 6 }, duration: 0.2, ease: 'power2.inOut' },
-      { props: { x: -6 }, duration: 0.2, ease: 'power2.inOut' },
-      { props: { x: 0 }, duration: 0.2, ease: 'power2.out' },
+      // Ramping amplitude: starts smaller, builds up
+      { props: { rotationY: -35, transformPerspective: 600 }, duration: 0.15, ease: 'power4.out' },
+      { props: { rotationY: 40, transformPerspective: 600 }, duration: 0.18, ease: 'power4.inOut' },
+      { props: { rotationY: -45, transformPerspective: 600 }, duration: 0.18, ease: 'power4.inOut' },
+      { props: { rotationY: 50, transformPerspective: 600 }, duration: 0.18, ease: 'power4.inOut' },
+      { props: { rotationY: -50, transformPerspective: 600 }, duration: 0.18, ease: 'power4.inOut' },
+      { props: { rotationY: 0, transformPerspective: 600 }, duration: 0.2, ease: 'power2.inOut' },
     ],
-    totalDuration: 0.8,
+    totalDuration: 1.07,
+    resetRotationY: true,
   },
 
   // ===========================
