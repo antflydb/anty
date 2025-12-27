@@ -10,8 +10,8 @@
 import gsap from 'gsap';
 import type { EmotionConfig, EyeConfig, CharacterPhase, GlowConfig, BodyConfig } from '../types';
 import { createEyeAnimation } from './eye-animations';
-import { EYE_SHAPES, EYE_DIMENSIONS } from './eye-shapes';
 import { GLOW_CONSTANTS } from './emotions';
+import { resetEyesToIdle } from '../initialize';
 
 /**
  * Elements required for emotion animations
@@ -129,6 +129,8 @@ function addEyeAnimation(
   }
 
   // Eye rotations (for sad/angry)
+  // Note: Right eye shape is already mirrored at the path level,
+  // so rotation values are simply applied directly (no scaleX flip needed)
   if (eyeConfig.leftRotation !== undefined) {
     timeline.to(eyeLeft, {
       rotation: eyeConfig.leftRotation,
@@ -140,7 +142,6 @@ function addEyeAnimation(
   if (eyeConfig.rightRotation !== undefined) {
     timeline.to(eyeRight, {
       rotation: eyeConfig.rightRotation,
-      scaleX: eyeConfig.flipRightX ? -1 : 1,
       duration: 0.15,
       ease: 'power2.out',
     }, eyeConfig.duration);
@@ -215,34 +216,4 @@ function addCharacterPhases(
       }, typeof position === 'number' ? position + lag : `-=${phase.duration - lag}`);
     }
   }
-}
-
-/**
- * Reset eyes to IDLE state after emotion completes
- */
-function resetEyesToIdle(elements: EmotionElements): void {
-  const { eyeLeft, eyeRight, eyeLeftPath, eyeRightPath, eyeLeftSvg, eyeRightSvg } = elements;
-
-  if (!eyeLeft || !eyeRight || !eyeLeftPath || !eyeRightPath || !eyeLeftSvg || !eyeRightSvg) {
-    return;
-  }
-
-  // Reset path to IDLE shape
-  gsap.set([eyeLeftPath, eyeRightPath], {
-    attr: { d: EYE_SHAPES.IDLE },
-  });
-
-  // Reset viewBox
-  gsap.set([eyeLeftSvg, eyeRightSvg], {
-    attr: { viewBox: EYE_DIMENSIONS.IDLE.viewBox },
-  });
-
-  // Reset transforms
-  gsap.set([eyeLeft, eyeRight], {
-    scaleX: 1,
-    scaleY: 1,
-    rotation: 0,
-    x: 0,
-    y: 0,
-  });
 }

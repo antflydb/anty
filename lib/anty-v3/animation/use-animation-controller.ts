@@ -16,12 +16,12 @@ import {
   type AnimationOptions,
   isEmotionType,
 } from './types';
-import { idleAnimationConfig } from '../gsap-configs';
 import { createIdleAnimation } from './definitions/idle';
 import { createEyeAnimation } from './definitions/eye-animations';
 import { interpretEmotionConfig } from './definitions/emotion-interpreter';
 import { EMOTION_CONFIGS } from './definitions/emotions';
 import { initializeCharacter } from './initialize';
+import { createWakeUpAnimation, createPowerOffAnimation } from './definitions/transitions';
 
 /**
  * Elements required by the animation controller
@@ -238,6 +238,7 @@ export function useAnimationController(
       isInitialized.current = false;
       isReady.current = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Empty deps - only initialize once
 
   /**
@@ -318,9 +319,6 @@ export function useAnimationController(
         const glowElements = document.querySelectorAll('[class*="glow"]');
         const outerGlow = Array.from(glowElements).find(el => !el.classList.contains('inner-glow')) as HTMLElement;
 
-        // Import the wake-up animation function
-        const { createWakeUpAnimation } = require('@/lib/anty-v3/animation/definitions/transitions');
-
         // Create and play wake-up timeline with CORRECT signature (expects object)
         const wakeUpTl = createWakeUpAnimation({
           character: elements.character,
@@ -396,9 +394,6 @@ export function useAnimationController(
         const glowElements = document.querySelectorAll('[class*="glow"]');
         const outerGlow = Array.from(glowElements).find(el => !el.classList.contains('inner-glow')) as HTMLElement;
 
-        // Import the power-off animation function
-        const { createPowerOffAnimation } = require('@/lib/anty-v3/animation/definitions/transitions');
-
         // Create and play power-off timeline
         const powerOffTl = createPowerOffAnimation({
           character: elements.character,
@@ -426,6 +421,8 @@ export function useAnimationController(
         });
       }
     }
+    // Only re-run when isOff changes - other deps are stable or captured in refs
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOff, enableLogging]);
 
   /**
@@ -480,6 +477,8 @@ export function useAnimationController(
         controllerRef.current.resumeIdle();
       }
     }
+    // Only re-run when searchMode changes - eye elements are stable refs
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchMode, enableLogging]);
 
   /**

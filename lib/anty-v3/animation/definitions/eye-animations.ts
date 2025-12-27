@@ -12,7 +12,7 @@
  */
 
 import gsap from 'gsap';
-import { EYE_SHAPES, EYE_DIMENSIONS, type EyeShapeName } from './eye-shapes';
+import { getEyeShape, getEyeDimensions, type EyeShapeName } from './eye-shapes';
 
 // ===========================
 // Types & Interfaces
@@ -165,11 +165,11 @@ export function createEyeAnimation(
     ? { left: shapeSpec, right: shapeSpec }
     : { left: shapeSpec.left, right: shapeSpec.right ?? shapeSpec.left };
 
-  // Animate left eye
+  // Animate left eye (uses base path - point 0 on left edge)
   if (elements.leftEyePath && elements.leftEyeSvg) {
-    const leftShape = shapes.left;
-    const leftPath = EYE_SHAPES[leftShape];
-    const leftDimensions = EYE_DIMENSIONS[leftShape];
+    const leftShapeName = shapes.left;
+    const leftPath = getEyeShape(leftShapeName, 'left');
+    const leftDimensions = getEyeDimensions(leftShapeName);
 
     // Morph SVG path
     timeline.to(
@@ -182,8 +182,7 @@ export function createEyeAnimation(
       0
     );
 
-    // Morph ONLY viewBox, NOT width/height
-    // Container stays fixed at 18.63×44.52px, preserveAspectRatio="none" handles scaling
+    // Morph viewBox to match new shape
     timeline.to(
       elements.leftEyeSvg,
       {
@@ -196,16 +195,28 @@ export function createEyeAnimation(
       0
     );
 
-    // REMOVED: container dimension morphing - containers stay fixed at CSS defaults
+    // Animate container dimensions to match shape's actual size
+    if (elements.leftEye) {
+      timeline.to(
+        elements.leftEye,
+        {
+          width: leftDimensions.width,
+          height: leftDimensions.height,
+          duration,
+          ease,
+        },
+        0
+      );
+    }
   }
 
-  // Animate right eye
+  // Animate right eye (uses mirrored path - point 0 on right edge)
   if (elements.rightEyePath && elements.rightEyeSvg) {
-    const rightShape = shapes.right ?? shapes.left;
-    const rightPath = EYE_SHAPES[rightShape];
-    const rightDimensions = EYE_DIMENSIONS[rightShape];
+    const rightShapeName = shapes.right ?? shapes.left;
+    const rightPath = getEyeShape(rightShapeName, 'right');
+    const rightDimensions = getEyeDimensions(rightShapeName);
 
-    // Morph SVG path
+    // Morph SVG path (mirrored version for smooth animation)
     timeline.to(
       elements.rightEyePath,
       {
@@ -216,8 +227,7 @@ export function createEyeAnimation(
       0
     );
 
-    // Morph ONLY viewBox, NOT width/height
-    // Container stays fixed at 18.63×44.52px, preserveAspectRatio="none" handles scaling
+    // Morph viewBox to match new shape
     timeline.to(
       elements.rightEyeSvg,
       {
@@ -230,7 +240,19 @@ export function createEyeAnimation(
       0
     );
 
-    // REMOVED: container dimension morphing - containers stay fixed at CSS defaults
+    // Animate container dimensions to match shape's actual size
+    if (elements.rightEye) {
+      timeline.to(
+        elements.rightEye,
+        {
+          width: rightDimensions.width,
+          height: rightDimensions.height,
+          duration,
+          ease,
+        },
+        0
+      );
+    }
   }
 
   return timeline;

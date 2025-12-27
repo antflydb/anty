@@ -8,7 +8,7 @@
  */
 
 import gsap from 'gsap';
-import { EYE_SHAPES, EYE_DIMENSIONS } from './definitions/eye-shapes';
+import { getEyeShape, getEyeDimensions } from './definitions/eye-shapes';
 
 /**
  * Elements that can be animated on the character
@@ -98,11 +98,16 @@ export function initializeCharacter(
   }
 
   // ===========================
-  // Eye SVG paths - IDLE shape
+  // Eye SVG paths - IDLE shape (mirrored for right eye)
   // ===========================
-  if (eyeLeftPath && eyeRightPath) {
-    gsap.set([eyeLeftPath, eyeRightPath], {
-      attr: { d: EYE_SHAPES.IDLE },
+  if (eyeLeftPath) {
+    gsap.set(eyeLeftPath, {
+      attr: { d: getEyeShape('IDLE', 'left') },
+    });
+  }
+  if (eyeRightPath) {
+    gsap.set(eyeRightPath, {
+      attr: { d: getEyeShape('IDLE', 'right') },
     });
   }
 
@@ -110,8 +115,9 @@ export function initializeCharacter(
   // Eye SVG viewBox - IDLE dimensions
   // ===========================
   if (eyeLeftSvg && eyeRightSvg) {
+    const idleDimensions = getEyeDimensions('IDLE');
     gsap.set([eyeLeftSvg, eyeRightSvg], {
-      attr: { viewBox: EYE_DIMENSIONS.IDLE.viewBox },
+      attr: { viewBox: idleDimensions.viewBox },
     });
   }
 
@@ -170,13 +176,23 @@ export function resetEyesToIdle(
     return;
   }
 
+  const idleDimensions = getEyeDimensions('IDLE');
+
   if (duration === 0) {
-    // Instant reset
-    gsap.set([eyeLeftPath, eyeRightPath], {
-      attr: { d: EYE_SHAPES.IDLE },
+    // Instant reset - use mirrored path for right eye
+    gsap.set(eyeLeftPath, {
+      attr: { d: getEyeShape('IDLE', 'left') },
+    });
+    gsap.set(eyeRightPath, {
+      attr: { d: getEyeShape('IDLE', 'right') },
     });
     gsap.set([eyeLeftSvg, eyeRightSvg], {
-      attr: { viewBox: EYE_DIMENSIONS.IDLE.viewBox },
+      attr: { viewBox: idleDimensions.viewBox },
+    });
+    // Reset container dimensions to IDLE size
+    gsap.set([eyeLeft, eyeRight], {
+      width: idleDimensions.width,
+      height: idleDimensions.height,
     });
     gsap.set([eyeLeft, eyeRight], {
       scaleX: 1,
@@ -188,22 +204,30 @@ export function resetEyesToIdle(
     return;
   }
 
-  // Animated reset
+  // Animated reset - use mirrored path for right eye
   const timeline = gsap.timeline();
 
-  timeline.to([eyeLeftPath, eyeRightPath], {
-    attr: { d: EYE_SHAPES.IDLE },
+  timeline.to(eyeLeftPath, {
+    attr: { d: getEyeShape('IDLE', 'left') },
+    duration,
+    ease: 'power2.inOut',
+  }, 0);
+
+  timeline.to(eyeRightPath, {
+    attr: { d: getEyeShape('IDLE', 'right') },
     duration,
     ease: 'power2.inOut',
   }, 0);
 
   timeline.to([eyeLeftSvg, eyeRightSvg], {
-    attr: { viewBox: EYE_DIMENSIONS.IDLE.viewBox },
+    attr: { viewBox: idleDimensions.viewBox },
     duration,
     ease: 'power2.inOut',
   }, 0);
 
   timeline.to([eyeLeft, eyeRight], {
+    width: idleDimensions.width,
+    height: idleDimensions.height,
     scaleX: 1,
     scaleY: 1,
     rotation: 0,

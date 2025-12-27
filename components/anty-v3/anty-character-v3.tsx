@@ -3,21 +3,18 @@
 import { useRef, useState, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
-import {
-  type ButtonName,
-  type ExpressionName,
-  type Particle,
-  DEFAULT_IDLE_CONFIG,
-} from '@/lib/anty-v3/animation-state';
+import { type ButtonName } from '@/lib/anty-v3/ui-types';
+import { type Particle } from '@/lib/anty-v3/particles';
 import { type AntyStats } from '@/lib/anty-v3/stat-system';
 import { AntyExpressionLayer } from './anty-expression-layer';
 import { AntyParticleCanvas, type ParticleCanvasHandle } from './anty-particle-canvas';
 import { useAnimationController } from '@/lib/anty-v3/animation/use-animation-controller';
-import { type EmotionType } from '@/lib/anty-v3/animation/types';
+import { type EmotionType, type ExpressionName } from '@/lib/anty-v3/animation/types';
 import {
   ENABLE_ANIMATION_DEBUG_LOGS,
   logAnimationEvent,
 } from '@/lib/anty-v3/animation/feature-flags';
+import { getEyeShape } from '@/lib/anty-v3/animation/definitions/eye-shapes';
 
 // Register GSAP plugin
 gsap.registerPlugin(useGSAP);
@@ -691,7 +688,7 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
             >
               <path
                 ref={leftEyePathRef}
-                d="M1.00146e-10 35.5C-2.44505e-05 40.7467 4.47719 45 10.0001 45C15.5229 44.9999 20 40.7467 20 35.5V9.4999C20 4.25325 15.5229 0 10.0001 0C4.47727 0 0.000145614 4.25325 0.000121164 9.49992L1.00146e-10 35.5Z"
+                d={getEyeShape('IDLE', 'left')}
                 fill="#052333"
               />
             </svg>
@@ -721,7 +718,7 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
             >
               <path
                 ref={rightEyePathRef}
-                d="M1.00146e-10 35.5C-2.44505e-05 40.7467 4.47719 45 10.0001 45C15.5229 44.9999 20 40.7467 20 35.5V9.4999C20 4.25325 15.5229 0 10.0001 0C4.47727 0 0.000145614 4.25325 0.000121164 9.49992L1.00146e-10 35.5Z"
+                d={getEyeShape('IDLE', 'right')}
                 fill="#052333"
               />
             </svg>

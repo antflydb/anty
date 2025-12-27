@@ -88,8 +88,7 @@ export const EMOTION_CONFIGS: Partial<Record<EmotionType, EmotionConfig>> = {
       shape: 'SAD',
       duration: 0.2,
       leftRotation: -15,
-      rightRotation: -15,
-      flipRightX: true,
+      rightRotation: 15, // Mirrored: opposite of left for proper reflection
     },
     character: [
       // Droop down (no scale change to avoid shrinking)
@@ -112,8 +111,7 @@ export const EMOTION_CONFIGS: Partial<Record<EmotionType, EmotionConfig>> = {
       shape: 'ANGRY',
       duration: 0.2,
       leftRotation: 20,
-      rightRotation: 20,
-      flipRightX: true,
+      rightRotation: -20, // Mirrored: opposite of left for proper reflection
     },
     character: [
       // Drop down
@@ -237,7 +235,7 @@ export const EMOTION_CONFIGS: Partial<Record<EmotionType, EmotionConfig>> = {
   wink: {
     id: 'wink',
     eyes: {
-      shape: { left: 'HALF', right: 'CLOSED' },
+      shape: { left: 'CLOSED', right: 'HALF' },
       duration: 0.25,
     },
     character: [

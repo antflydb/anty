@@ -2,7 +2,7 @@
 
 import { useRef, useEffect, forwardRef, useImperativeHandle, useState } from 'react';
 import gsap from 'gsap';
-import { type Particle, type ParticleType, PARTICLE_CONFIGS } from '@/lib/anty-v3/animation-state';
+import { type Particle, type ParticleType, PARTICLE_CONFIGS } from '@/lib/anty-v3/particles';
 
 interface AntyParticleCanvasProps {
   particles: Particle[];

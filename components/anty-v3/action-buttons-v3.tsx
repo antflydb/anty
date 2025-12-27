@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { type ButtonName } from '@/lib/anty-v3/animation-state';
+import { type ButtonName } from '@/lib/anty-v3/ui-types';
 
 interface ActionButtonsV3Props {
   moodsButtonRef?: React.RefObject<HTMLButtonElement | null>;

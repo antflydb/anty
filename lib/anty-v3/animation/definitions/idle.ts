@@ -6,8 +6,9 @@
  */
 
 import gsap from 'gsap';
-import { idleAnimationConfig } from '../../gsap-configs';
-import { createEyeAnimation, createBlinkAnimation, createDoubleBlinkAnimation, type EyeAnimationElements } from './eye-animations';
+import { IDLE_FLOAT, IDLE_ROTATION, IDLE_BREATHE, SHADOW } from '../constants';
+import { createBlinkAnimation, createDoubleBlinkAnimation, type EyeAnimationElements } from './eye-animations';
+import { getEyeShape, getEyeDimensions } from './eye-shapes';
 
 export interface IdleAnimationElements {
   character: HTMLElement;
@@ -48,8 +49,6 @@ export function createIdleAnimation(
   const { character, shadow, eyeLeft, eyeRight, eyeLeftPath, eyeRightPath, eyeLeftSvg, eyeRightSvg } = elements;
   const { delay = 0.2 } = options;
 
-  const { float, rotation, breathe } = idleAnimationConfig;
-
   // Create coordinated timeline with infinite repeat
   const timeline = gsap.timeline({
     repeat: -1,
@@ -66,17 +65,18 @@ export function createIdleAnimation(
 
   // Set eyes to IDLE shape immediately (not animated, to avoid yoyo oscillation)
   if (eyeLeft && eyeRight && eyeLeftPath && eyeRightPath && eyeLeftSvg && eyeRightSvg) {
-    const idleShape = 'IDLE';
-    const idlePath = require('./eye-shapes').EYE_SHAPES[idleShape];
-    const idleDimensions = require('./eye-shapes').EYE_DIMENSIONS[idleShape];
+    const idleDimensions = getEyeDimensions('IDLE');
 
     // Use gsap.set() to immediately set eyes to IDLE without animation
-    gsap.set([eyeLeftPath, eyeRightPath], {
-      attr: { d: idlePath },
+    // Left eye uses base path, right eye uses mirrored path
+    gsap.set(eyeLeftPath, {
+      attr: { d: getEyeShape('IDLE', 'left') },
+    });
+    gsap.set(eyeRightPath, {
+      attr: { d: getEyeShape('IDLE', 'right') },
     });
 
-    // Set ONLY viewBox - no width/height properties
-    // Container stays fixed at 18.63×44.52px via CSS
+    // Set viewBox for both eyes
     gsap.set([eyeLeftSvg, eyeRightSvg], {
       attr: { viewBox: idleDimensions.viewBox },
     });
@@ -97,11 +97,11 @@ export function createIdleAnimation(
   timeline.to(
     character,
     {
-      y: -float.amplitude, // Float up by amplitude (12px)
-      rotation: rotation.degrees, // Gentle rotation (2°)
-      scale: breathe.scaleMax, // Subtle breathing (1.02)
-      duration: float.duration, // Smooth timing (2.5s)
-      ease: float.ease, // Sine easing for smoothness
+      y: -IDLE_FLOAT.amplitude, // Float up by amplitude (12px)
+      rotation: IDLE_ROTATION.degrees, // Gentle rotation (2.5°)
+      scale: IDLE_BREATHE.scaleMax, // Subtle breathing (1.0)
+      duration: IDLE_FLOAT.duration, // Smooth timing (3.7s)
+      ease: IDLE_FLOAT.ease, // Sine easing for smoothness
     },
     0 // Start at timeline beginning
   );
@@ -113,12 +113,12 @@ export function createIdleAnimation(
   timeline.to(
     shadow,
     {
-      xPercent: -50, // Keep centered (static positioning)
-      scaleX: 0.7, // Shrink horizontally when character is up
-      scaleY: 0.55, // Shrink vertically when character is up
-      opacity: 0.2, // Fade when character is far
-      duration: float.duration,
-      ease: float.ease,
+      xPercent: SHADOW.xPercent, // Keep centered (static positioning)
+      scaleX: SHADOW.scaleXWhenUp, // Shrink horizontally when character is up
+      scaleY: SHADOW.scaleYWhenUp, // Shrink vertically when character is up
+      opacity: SHADOW.opacityWhenUp, // Fade when character is far
+      duration: IDLE_FLOAT.duration,
+      ease: IDLE_FLOAT.ease,
     },
     0 // Synchronized with character movement
   );
@@ -177,12 +177,12 @@ export function createIdleAnimation(
 
     // Also cleanup on kill (for manual timeline.kill())
     const originalKill = timeline.kill.bind(timeline);
-    timeline.kill = function() {
+    timeline.kill = function(this: gsap.core.Timeline) {
       blinkSchedulerActive = false;
       blinkDelayedCalls.forEach(call => call.kill());
       blinkDelayedCalls.length = 0;
       return originalKill();
-    } as any;
+    } as typeof timeline.kill;
   }
 
   return timeline;

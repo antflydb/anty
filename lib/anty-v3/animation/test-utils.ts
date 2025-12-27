@@ -43,24 +43,23 @@ export const MAPPED_EXPRESSIONS: Array<EmotionType | 'idle'> = [
 
 /**
  * All emotions (from actual EmotionType definition)
+ * Each emotion here MUST have a config in EMOTION_CONFIGS
  */
 export const TEST_EMOTIONS: EmotionType[] = [
   'happy',
   'sad',
   'angry',
-  'surprised',
   'shocked',
-  'confused',
-  'thinking',
   'excited',
-  'tired',
-  'searching',
-  'found',
-  'error',
-  'success',
-  'loading',
-  'celebrate',
   'spin',
+  'jump',
+  'lookaround',
+  'wink',
+  'nod',
+  'headshake',
+  'look-left',
+  'look-right',
+  'super',
 ];
 
 // ===========================

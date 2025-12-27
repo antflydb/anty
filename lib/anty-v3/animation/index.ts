@@ -24,6 +24,5 @@ export * from './feature-flags';
 export { exposeDevTools, registerAnimationController, useDevTools } from './dev-tools';
 export type { AntyAnimationDevTools } from './dev-tools';
 
-// New simplified state machine and initialization
-export { SimpleStateMachine, type AnimationStateType } from './state';
+// Initialization
 export { initializeCharacter, resetEyesToIdle, type CharacterElements, type InitializeOptions } from './initialize';

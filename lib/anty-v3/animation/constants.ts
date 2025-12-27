@@ -17,14 +17,14 @@
 /**
  * Idle floating animation - character gently bobs up and down
  *
- * CRITICAL: This duration (3.7s) is synchronized with rotation animation.
+ * CRITICAL: This duration is synchronized with rotation animation.
  * DO NOT change without updating rotation.duration to match.
  */
 export const IDLE_FLOAT = {
   /** Vertical floating distance in pixels */
   amplitude: 12,
   /** Animation duration in seconds - MUST match rotation duration */
-  duration: 3.7,
+  duration: 2.5,
   /** GSAP easing function for smooth sine wave motion */
   ease: 'sine.inOut',
 } as const;
@@ -33,13 +33,13 @@ export const IDLE_FLOAT = {
  * Idle rotation animation - character gently tilts side to side
  *
  * CRITICAL: This is SYNCHRONIZED with floating animation.
- * Both animations share the same 3.7s duration and ease for visual harmony.
+ * Both animations share the same duration and ease for visual harmony.
  */
 export const IDLE_ROTATION = {
-  /** Maximum rotation angle in degrees (±2.5°) */
-  degrees: 2.5,
+  /** Maximum rotation angle in degrees (0° to 2°) */
+  degrees: 2.0,
   /** Animation duration in seconds - MUST match float duration */
-  duration: 3.7,
+  duration: 2.5,
   /** GSAP easing function - MUST match float ease */
   ease: 'sine.inOut',
   /** Whether rotation is synchronized with floating */
@@ -49,16 +49,16 @@ export const IDLE_ROTATION = {
 /**
  * Idle breathing scale animation - character subtly expands/contracts
  *
- * This runs independently from float/rotation and is slightly slower (4s vs 3.7s)
+ * This runs independently from float/rotation and is slightly slower
  * to create organic, non-mechanical movement.
  */
 export const IDLE_BREATHE = {
   /** Minimum scale during breathing cycle */
-  scaleMin: 0.98,
+  scaleMin: 1.0,
   /** Maximum scale during breathing cycle */
-  scaleMax: 1.0,
+  scaleMax: 1.02,
   /** Animation duration in seconds */
-  duration: 4,
+  duration: 3,
   /** GSAP easing function */
   ease: 'sine.inOut',
 } as const;
@@ -102,7 +102,7 @@ export const SHADOW = {
   opacityWhenDown: 0.7,
   /** Shadow horizontal position (xPercent) - NEVER changes */
   xPercent: -50,
-  /** Animation duration matches idle float (seconds) */
+  /** Animation duration matches idle float (seconds) - MUST match IDLE_FLOAT.duration */
   duration: 2.5,
   /** GSAP easing function matches idle float */
   ease: 'sine.inOut',
@@ -978,6 +978,18 @@ export const EXPRESSION_TRANSITION = {
   /** Slow transition - 500ms (dramatic shifts like happy → angry) */
   slow: 0.5,
 } as const;
+
+/**
+ * Expression transition configs with easing
+ *
+ * Used for crossfade animations between expressions.
+ */
+export const EXPRESSION_TRANSITIONS: Record<string, { duration: number; ease: string }> = {
+  instant: { duration: 0, ease: 'none' },
+  fast: { duration: 0.15, ease: 'power2.inOut' },
+  normal: { duration: 0.3, ease: 'power2.inOut' },
+  slow: { duration: 0.5, ease: 'power2.inOut' },
+};
 
 // ============================================================================
 // SUPER MODE

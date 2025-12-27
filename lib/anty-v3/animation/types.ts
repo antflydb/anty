@@ -27,23 +27,14 @@ export enum AnimationState {
 
 /**
  * Available emotion types as string literals for type safety
+ * Each emotion MUST have a corresponding config in EMOTION_CONFIGS
  */
 export type EmotionType =
   | 'happy'
   | 'sad'
   | 'angry'
-  | 'surprised'
   | 'shocked'
-  | 'confused'
-  | 'thinking'
   | 'excited'
-  | 'tired'
-  | 'searching'
-  | 'found'
-  | 'error'
-  | 'success'
-  | 'loading'
-  | 'celebrate'
   | 'spin'
   | 'jump'
   | 'lookaround'
@@ -53,6 +44,12 @@ export type EmotionType =
   | 'look-left'
   | 'look-right'
   | 'super';
+
+/**
+ * Expression name includes EmotionType plus special states
+ * Used for component props that can also accept 'idle' or 'off'
+ */
+export type ExpressionName = EmotionType | 'idle' | 'off';
 
 /**
  * Search mode types for search-specific animations
@@ -95,32 +92,6 @@ export type EasingFunction =
   | 'elastic.in'
   | 'elastic.out'
   | 'elastic.inOut';
-
-/**
- * References to all animated DOM elements
- */
-export interface AnimationElements {
-  /** Main container element */
-  container: HTMLDivElement | null;
-  /** SVG element containing the Anty character */
-  svg: SVGSVGElement | null;
-  /** Main body/shadow element */
-  body: SVGElement | null;
-  /** Left eye element */
-  eyeLeft: SVGElement | null;
-  /** Right eye element */
-  eyeRight: SVGElement | null;
-  /** Left antenna element */
-  antennaLeft: SVGElement | null;
-  /** Right antenna element */
-  antennaRight: SVGElement | null;
-  /** Glow/aura effect element */
-  glow: SVGElement | null;
-  /** Optional search bar element */
-  searchBar?: HTMLElement | null;
-  /** Optional search input element */
-  searchInput?: HTMLInputElement | null;
-}
 
 /**
  * Options for playing emotion animations
@@ -555,18 +526,8 @@ export function isEmotionType(value: string): value is EmotionType {
     'happy',
     'sad',
     'angry',
-    'surprised',
     'shocked',
-    'confused',
-    'thinking',
     'excited',
-    'tired',
-    'searching',
-    'found',
-    'error',
-    'success',
-    'loading',
-    'celebrate',
     'spin',
     'jump',
     'lookaround',
@@ -624,10 +585,8 @@ export interface EyeConfig {
   scale?: number;
   /** Rotation for left eye */
   leftRotation?: number;
-  /** Rotation for right eye */
+  /** Rotation for right eye (use opposite sign of leftRotation for mirror effect) */
   rightRotation?: number;
-  /** Whether to flip right eye horizontally */
-  flipRightX?: boolean;
 }
 
 /**

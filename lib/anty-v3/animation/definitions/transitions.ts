@@ -4,7 +4,7 @@
  */
 
 import gsap from 'gsap';
-import { createEyeAnimation, type EyeAnimationElements } from './eye-animations';
+import { createEyeAnimation } from './eye-animations';
 
 export interface TransitionAnimationElements {
   character: HTMLElement;

@@ -7,4 +7,4 @@ export { ExpressionMenu } from './expression-menu';
 export { PowerButton } from './power-button';
 export { FlappyGame } from './flappy-game';
 export { FPSMeter } from './fps-meter';
-export type { ButtonName } from '@/lib/anty-v3/animation-state';
+export type { ButtonName } from '@/lib/anty-v3/ui-types';

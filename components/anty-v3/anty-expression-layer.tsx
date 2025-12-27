@@ -3,7 +3,7 @@
 import { useRef, useState } from 'react';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
-import { EXPRESSION_TRANSITIONS } from '@/lib/anty-v3/animation-state';
+import { EXPRESSION_TRANSITIONS } from '@/lib/anty-v3/animation/constants';
 import type { EmotionType } from '@/lib/anty-v3/animation/types';
 
 // Register GSAP plugin

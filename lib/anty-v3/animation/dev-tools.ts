@@ -33,6 +33,7 @@
  */
 
 import type { UseAnimationControllerReturn } from './use-animation-controller';
+import type { EmotionType } from './types';
 import {
   ENABLE_ANIMATION_DEBUG_LOGS,
   logAnimationSystemInfo,
@@ -42,12 +43,21 @@ import {
   testAllEmotions,
   testMappingRoundTrip,
   showAllMappings,
-  printDebugInfo,
   monitorStateChanges,
   validateStateConsistency,
   TEST_EXPRESSIONS,
   TEST_EMOTIONS,
 } from './test-utils';
+
+// ===========================
+// Global Window Extension
+// ===========================
+
+declare global {
+  interface Window {
+    antyAnimations?: AntyAnimationDevTools;
+  }
+}
 
 // ===========================
 // Global Interface
@@ -152,7 +162,7 @@ function createDevTools(): AntyAnimationDevTools {
       }
 
       const success = controllerInstance.playEmotion(
-        emotion as any,
+        emotion as EmotionType,
         { priority: 5 }
       );
 
@@ -251,7 +261,7 @@ export function exposeDevTools(): void {
   }
 
   // Extend window interface
-  (window as any).antyAnimations = createDevTools();
+  window.antyAnimations = createDevTools();
 
   // Log helpful message
   console.log(`

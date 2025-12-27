@@ -65,7 +65,6 @@ export function createSearchMorphAnimation(
   callbacks: MorphAnimationCallbacks = {}
 ): gsap.core.Timeline {
   const {
-    character,
     leftBody,
     rightBody,
     leftEye,

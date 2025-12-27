@@ -81,7 +81,8 @@ export class AnimationController {
   /**
    * Start idle animation
    */
-  startIdle(timeline: gsap.core.Timeline, elements: (Element | string)[]): void {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  startIdle(timeline: gsap.core.Timeline, _elements: (Element | string)[]): void {
     if (this.config.enableLogging) {
       console.log('[AnimationController] Starting idle animation');
     }

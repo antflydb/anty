@@ -1,7 +1,7 @@
 # Anty Animation System
 
-> **STATUS: Work in Progress**
-> Migrated from original GSAP demo. Core architecture is solid, but many emotion animations still have bugs (timing, eye positioning, etc.).
+> **STATUS: Refactored & Consolidated**
+> Clean architecture with single sources of truth. Some emotion animations may still need tuning (timing, eye positioning).
 
 ## Quick Reference for Debugging
 
@@ -77,26 +77,51 @@ Edit `definitions/emotions.ts` → find the emotion → change the config. That'
 ## File Structure
 
 ```
-animation/
-├── README.md                 # This file
-├── types.ts                  # All TypeScript types
-├── controller.ts             # AnimationController class
-├── use-animation-controller.ts  # React hook
-├── initialize.ts             # initializeCharacter() - sets initial GSAP state
-├── state.ts                  # SimpleStateMachine (minimal)
-├── constants.ts              # Timing constants, configs
-├── feature-flags.ts          # Debug flags
-├── dev-tools.ts              # Console debugging tools
+lib/anty-v3/
+├── ui-types.ts               # ButtonName type (shared with components)
+├── particle-physics.ts       # Particle simulation logic
 │
-└── definitions/
-    ├── emotions.ts           # All 14 emotions as declarative config
-    ├── emotion-interpreter.ts # Builds GSAP timelines from configs
-    ├── eye-shapes.ts         # SVG path data for eye morphs
-    ├── eye-animations.ts     # Eye morph utilities
-    ├── idle.ts               # Idle float/breathe/blink
-    ├── transitions.ts        # Wake-up, power-off
-    └── morph.ts              # Search bar transformation
+├── particles/                # Particle system
+│   ├── types.ts              # Particle, ParticleType, ParticleConfig
+│   ├── configs.ts            # PARTICLE_CONFIGS (single source of truth)
+│   └── index.ts              # Re-exports
+│
+└── animation/
+    ├── README.md             # This file
+    ├── types.ts              # EmotionType, ExpressionName, all animation types
+    ├── controller.ts         # AnimationController class
+    ├── use-animation-controller.ts  # React hook + AnimationElements interface
+    ├── initialize.ts         # initializeCharacter() + resetEyesToIdle()
+    ├── state-machine.ts      # StateMachine (used by controller)
+    ├── constants.ts          # IDLE_*, SHADOW, EXPRESSION_TRANSITIONS
+    ├── feature-flags.ts      # Debug flags
+    ├── dev-tools.ts          # Console debugging tools
+    ├── test-utils.ts         # Testing utilities for dev-tools
+    │
+    └── definitions/
+        ├── emotions.ts       # All 14 emotions as declarative config
+        ├── emotion-interpreter.ts # Builds GSAP timelines from configs
+        ├── eye-shapes.ts     # SVG paths for eye morphs (L/R mirroring)
+        ├── eye-animations.ts # Eye morph utilities
+        ├── idle.ts           # Idle float/breathe/blink
+        ├── transitions.ts    # Wake-up, power-off
+        └── morph.ts          # Search bar transformation
 ```
+
+---
+
+## Single Sources of Truth
+
+| Config | Location | Usage |
+|--------|----------|-------|
+| Idle animation timing | `animation/constants.ts` (`IDLE_FLOAT`, `IDLE_ROTATION`, etc.) | idle.ts imports these |
+| Particle configs | `particles/configs.ts` (`PARTICLE_CONFIGS`) | particle-physics.ts imports |
+| Expression transitions | `animation/constants.ts` (`EXPRESSION_TRANSITIONS`) | expression-layer imports |
+| Eye shapes | `definitions/eye-shapes.ts` (`EYE_SHAPES`, `EYE_DIMENSIONS`) | All eye rendering |
+| Emotion configs | `definitions/emotions.ts` (`EMOTION_CONFIGS`) | emotion-interpreter.ts |
+| UI button names | `ui-types.ts` (`ButtonName`) | Components import this |
+
+**CRITICAL**: Never duplicate configs. Always import from the canonical source.
 
 ---
 
@@ -207,6 +232,35 @@ eyes: {
 
 ---
 
+## Particle System
+
+Particles are managed in `lib/anty-v3/particles/`:
+
+```typescript
+// particles/configs.ts
+export const PARTICLE_CONFIGS: Record<ParticleType, ParticleConfig> = {
+  heart: {
+    gravity: 80,       // pixels/second²
+    drag: 0.98,        // velocity retention
+    lifetime: 2.0,     // seconds
+    fadeStart: 0.7,    // 70% through lifetime
+    initialVelocity: { minX: -100, maxX: 100, minY: -250, maxY: -150 },
+    rotationSpeed: { min: -180, max: 180 },
+    // ...
+  },
+  sparkle: { /* ... */ },
+  confetti: { /* ... */ },
+};
+```
+
+**Key points:**
+- All timing values are in **seconds** (not milliseconds)
+- Physics runs at 60fps via `requestAnimationFrame`
+- `anty-particle-canvas.tsx` renders the particles
+- `particle-physics.ts` handles the simulation
+
+---
+
 ## Initialization
 
 ### initializeCharacter() (initialize.ts)
@@ -281,11 +335,23 @@ This system was migrated from an original GSAP demo in stages:
 1. **Original**: Inline GSAP code scattered throughout component
 2. **First refactor**: Created AnimationController + StateMachine + ElementRegistry
 3. **Overengineered**: StateMachine grew to 254 lines, ElementRegistry to 217 lines
-4. **Current refactor**:
+4. **Declarative refactor**:
    - Deleted StateMachine, ElementRegistry (were mostly bypassed with `force=true`)
    - Created declarative `EMOTION_CONFIGS` system
    - Single `interpretEmotionConfig()` replaces 1,000-line switch/case
    - Removed duplicate gesture definitions
+5. **Architecture cleanup**:
+   - Deleted `animation-state.ts` and `gsap-configs.ts` (~380 lines of duplicate code)
+   - Created `particles/` directory with single source of truth for particle configs
+   - Consolidated `resetEyesToIdle()` into `initialize.ts` (was duplicated)
+   - Moved `ButtonName` to `ui-types.ts`
+   - Added `EXPRESSION_TRANSITIONS` to `constants.ts`
+   - Removed 10 unimplemented emotions from types (prevented runtime crashes)
+6. **Dead code removal** (current):
+   - Deleted `expression-engine.ts` (64 lines, never used)
+   - Deleted `state.ts` / `SimpleStateMachine` (79 lines, never imported)
+   - Removed duplicate `AnimationElements` interface from `types.ts` (canonical version in `use-animation-controller.ts`)
+   - Fixed all lint errors in animation system (0 errors, 0 warnings)
 
 ---
 
@@ -318,6 +384,15 @@ This system was migrated from an original GSAP demo in stages:
 
 ## Files NOT to Touch (They Work)
 
-- `morph.ts` - Search bar transformation (complex, tested)
-- `transitions.ts` - Wake-up/power-off (working)
-- `flappy-anty.tsx` - Flappy game (separate system)
+- `state-machine.ts` - FSM for animation states (used by controller)
+- `definitions/morph.ts` - Search bar transformation (complex, tested)
+- `definitions/transitions.ts` - Wake-up/power-off (working)
+- `definitions/eye-shapes.ts` - SVG paths for eyes (L/R mirroring works)
+- `particles/configs.ts` - Particle physics configs (unless adding new types)
+- `constants.ts` - Critical timing values (marked with CRITICAL comments)
+- `components/anty-v3/flappy-game.tsx` - Flappy game (separate system)
+
+## Files You CAN Edit
+
+- `definitions/emotions.ts` - Add/modify emotion animations
+- `feature-flags.ts` - Toggle debug logging

@@ -5,21 +5,11 @@
  * for the canvas-based particle system.
  */
 
-import type { Particle } from './animation-state';
-import { particleConfigs } from './gsap-configs';
-
-/**
- * Gravity constant applied to all particles.
- * Positive values pull particles down, negative values push them up.
- */
-export const GRAVITY = 0.5;
+import type { Particle } from './particles';
+import { PARTICLE_CONFIGS } from './particles';
 
 /**
  * Generates a random value within a range.
- *
- * @param min - Minimum value
- * @param max - Maximum value
- * @returns Random number between min and max
  */
 export function randomInRange(min: number, max: number): number {
   return Math.random() * (max - min) + min;
@@ -27,18 +17,15 @@ export function randomInRange(min: number, max: number): number {
 
 /**
  * Gets velocity range for a specific particle type.
- *
- * @param type - Particle type
- * @returns Velocity range {x: [min, max], y: [min, max]}
  */
 export function getVelocityRange(type: Particle['type']): {
-  x: [number, number];
-  y: [number, number];
+  x: { min: number; max: number };
+  y: { min: number; max: number };
 } {
-  const config = particleConfigs[type];
+  const config = PARTICLE_CONFIGS[type];
   return {
-    x: config.velocity.x as [number, number],
-    y: config.velocity.y as [number, number],
+    x: config.initialVelocity.x,
+    y: config.initialVelocity.y,
   };
 }
 
@@ -50,18 +37,18 @@ export function getVelocityRange(type: Particle['type']): {
  * @returns Updated particle object
  */
 export function updateParticle(particle: Particle, deltaTime: number): Particle {
-  const config = particleConfigs[particle.type];
+  const config = PARTICLE_CONFIGS[particle.type];
 
-  // Apply gravity to velocity
-  const gravityEffect = config.gravity * deltaTime * 100; // Scale for visibility
+  // Apply gravity to velocity (gravity is in pixels/s²)
+  const gravityEffect = config.gravity * deltaTime;
   const newVy = particle.vy + gravityEffect;
 
   // Update position based on velocity
   const newX = particle.x + particle.vx * deltaTime;
   const newY = particle.y + particle.vy * deltaTime;
 
-  // Decrease lifetime
-  const newLife = particle.life - deltaTime / (config.lifetime / 1000);
+  // Decrease lifetime (lifetime is in seconds)
+  const newLife = particle.life - deltaTime / config.lifetime;
 
   // Calculate opacity based on remaining lifetime and fadeStart threshold
   let newOpacity = particle.opacity;
@@ -71,9 +58,8 @@ export function updateParticle(particle: Particle, deltaTime: number): Particle 
     newOpacity = newLife / config.fadeStart;
   }
 
-  // Update rotation (for visual variety)
-  const rotationSpeed = 45; // degrees per second
-  const newRotation = particle.rotation + rotationSpeed * deltaTime;
+  // Update rotation using particle's rotation speed
+  const newRotation = particle.rotation + particle.rotationSpeed * deltaTime;
 
   return {
     ...particle,
@@ -89,9 +75,6 @@ export function updateParticle(particle: Particle, deltaTime: number): Particle 
 
 /**
  * Checks if a particle has expired and should be removed.
- *
- * @param particle - The particle to check
- * @returns True if the particle is expired
  */
 export function isParticleExpired(particle: Particle): boolean {
   return particle.life <= 0 || particle.opacity <= 0;
@@ -99,28 +82,24 @@ export function isParticleExpired(particle: Particle): boolean {
 
 /**
  * Creates a new particle with randomized properties.
- *
- * @param type - Type of particle to create
- * @param position - Starting position {x, y}
- * @returns New particle object
  */
 export function createParticle(
   type: Particle['type'],
   position: { x: number; y: number }
 ): Particle {
-  const config = particleConfigs[type];
-  const velocityRange = getVelocityRange(type);
+  const config = PARTICLE_CONFIGS[type];
+  const velocity = config.initialVelocity;
 
   return {
     id: `${type}-${Date.now()}-${Math.random()}`,
     type,
     x: position.x,
     y: position.y,
-    vx: randomInRange(velocityRange.x[0], velocityRange.x[1]),
-    vy: randomInRange(velocityRange.y[0], velocityRange.y[1]),
+    vx: randomInRange(velocity.x.min, velocity.x.max),
+    vy: randomInRange(velocity.y.min, velocity.y.max),
     life: 1.0,
     opacity: 1.0,
-    scale: randomInRange(0.6, 1.0),
+    scale: randomInRange(config.initialScale.min, config.initialScale.max),
     rotation: randomInRange(0, 360),
     rotationSpeed: randomInRange(config.rotationSpeed.min, config.rotationSpeed.max),
   };
@@ -154,8 +133,8 @@ class ParticlePool {
 
     if (particle) {
       // Reuse existing particle, reset properties
-      const config = particleConfigs[type];
-      const velocityRange = getVelocityRange(type);
+      const config = PARTICLE_CONFIGS[type];
+      const velocity = config.initialVelocity;
 
       return {
         ...particle,
@@ -164,10 +143,11 @@ class ParticlePool {
         y: position.y,
         life: 1.0,
         opacity: 1.0,
-        scale: randomInRange(0.6, 1.0),
+        scale: randomInRange(config.initialScale.min, config.initialScale.max),
         rotation: randomInRange(0, 360),
-        vx: randomInRange(velocityRange.x[0], velocityRange.x[1]),
-        vy: randomInRange(velocityRange.y[0], velocityRange.y[1]),
+        rotationSpeed: randomInRange(config.rotationSpeed.min, config.rotationSpeed.max),
+        vx: randomInRange(velocity.x.min, velocity.x.max),
+        vy: randomInRange(velocity.y.min, velocity.y.max),
       };
     }
 
