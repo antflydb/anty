@@ -195,21 +195,18 @@ export const EMOTION_CONFIGS: Partial<Record<EmotionType, EmotionConfig>> = {
   },
 
   // ===========================
-  // JUMP - Simple bounce (space key, etc)
+  // JUMP - Classic Mario-style jump (space key)
   // ===========================
   jump: {
     id: 'jump',
     character: [
-      // Quick bounce up
-      { props: { y: -25 }, duration: 0.2, ease: 'power2.out' },
-      // Come back down
-      { props: { y: 0 }, duration: 0.25, ease: 'power2.in' },
-      // Small settle bounce
-      { props: { y: -8 }, duration: 0.1, ease: 'power2.out' },
-      { props: { y: 0 }, duration: 0.1, ease: 'power2.in' },
+      // Rise up (fast launch, slow at apex)
+      { props: { y: -55 }, duration: 0.3, ease: 'power2.out' },
+      // Fall down (slow at apex, fast landing)
+      { props: { y: 0 }, duration: 0.3, ease: 'power2.in' },
     ],
     glow: { follow: true },
-    totalDuration: 0.65,
+    totalDuration: 0.6,
   },
 
   // ===========================
@@ -264,7 +261,7 @@ export const EMOTION_CONFIGS: Partial<Record<EmotionType, EmotionConfig>> = {
     id: 'wink',
     eyes: {
       shape: { left: 'CLOSED', right: 'HALF' },
-      duration: 0.19,
+      duration: 0.08, // Snap to wink quickly
       yOffset: { left: 0, right: -10 }, // Only right eye rises up
     },
     character: [
