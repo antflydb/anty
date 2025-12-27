@@ -211,6 +211,12 @@ export const EMOTION_CONFIGS: Partial<Record<EmotionType, EmotionConfig>> = {
   // ===========================
   idea: {
     id: 'idea',
+    eyes: {
+      shape: 'IDLE',
+      duration: 0.2,
+      scale: 1.15,
+      yOffset: -10, // Eyes lift up with jump
+    },
     character: [
       // Leap up higher
       { props: { y: -45 }, duration: 0.25, ease: 'power2.out' },
@@ -222,6 +228,7 @@ export const EMOTION_CONFIGS: Partial<Record<EmotionType, EmotionConfig>> = {
     glow: { follow: true },
     totalDuration: 1.25,
     showLightbulb: true,
+    eyeResetDuration: 0.2,
   },
 
   // ===========================

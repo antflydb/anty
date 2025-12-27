@@ -678,4 +678,6 @@ export interface EmotionConfig {
   resetRotationY?: boolean;
   /** Whether to show lightbulb emoji above character (idea animation) */
   showLightbulb?: boolean;
+  /** Duration for eye reset transition at end (0 = instant, default) */
+  eyeResetDuration?: number;
 }

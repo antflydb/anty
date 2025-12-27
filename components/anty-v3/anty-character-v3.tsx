@@ -218,7 +218,7 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
                 position: fixed;
                 left: ${rect.left + rect.width / 2 - 22}px;
                 top: ${rect.top - 80}px;
-                font-size: 44px;
+                font-size: 48px;
                 z-index: 1000;
                 pointer-events: none;
                 opacity: 0;

@@ -53,8 +53,8 @@ export function interpretEmotionConfig(
       gsap.set(character, { rotationY: 0 });
     }
 
-    // Reset eyes to IDLE
-    resetEyesToIdle(elements);
+    // Reset eyes to IDLE (duration configurable per emotion)
+    resetEyesToIdle(elements, config.eyeResetDuration ?? 0);
 
     // Reset body brackets if they were animated
     if (config.body && leftBody && rightBody) {
