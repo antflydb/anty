@@ -91,20 +91,19 @@ export const EMOTION_CONFIGS: Partial<Record<EmotionType, EmotionConfig>> = {
       rightRotation: 15, // Mirrored: opposite of left for proper reflection
     },
     character: [
-      // Drop down gently
-      { props: { y: 18 }, duration: 0.7, ease: 'power2.out' },
-      // Subtle slow sway starts parallel to drop (position: 0)
-      { props: { x: -5 }, duration: 0.8, ease: 'sine.inOut', position: 0 },
-      { props: { x: 5 }, duration: 0.8, ease: 'sine.inOut' },
-      { props: { x: -5 }, duration: 0.8, ease: 'sine.inOut' },
-      { props: { x: 5 }, duration: 0.8, ease: 'sine.inOut' },
+      // Drop down gently (faster)
+      { props: { y: 18 }, duration: 0.5, ease: 'power2.out' },
+      // Subtle slow sway starts parallel to drop (3 cycles instead of 4)
+      { props: { x: -5 }, duration: 0.7, ease: 'sine.inOut', position: 0 },
+      { props: { x: 5 }, duration: 0.7, ease: 'sine.inOut' },
+      { props: { x: -5 }, duration: 0.7, ease: 'sine.inOut' },
       // Return to center
-      { props: { x: 0 }, duration: 0.5, ease: 'sine.inOut' },
+      { props: { x: 0 }, duration: 0.4, ease: 'sine.inOut' },
       // Rise back up gently
-      { props: { y: 0 }, duration: 0.5, ease: 'power2.in' },
+      { props: { y: 0 }, duration: 0.4, ease: 'power2.in' },
     ],
     glow: { follow: true },
-    totalDuration: 4.4,
+    totalDuration: 3.4,
   },
 
   // ===========================
@@ -235,10 +234,10 @@ export const EMOTION_CONFIGS: Partial<Record<EmotionType, EmotionConfig>> = {
   },
 
   // ===========================
-  // LOOKAROUND - Look left then right
+  // BACK-FORTH - Look left then right
   // ===========================
-  lookaround: {
-    id: 'lookaround',
+  'back-forth': {
+    id: 'back-forth',
     character: [
       // Look left
       { props: { rotation: -8, x: -10 }, duration: 0.3, ease: 'power2.out' },
@@ -273,6 +272,7 @@ export const EMOTION_CONFIGS: Partial<Record<EmotionType, EmotionConfig>> = {
       { props: { rotation: 0, y: 0 }, duration: 0.25, ease: 'power1.inOut' },
     ],
     totalDuration: 0.84,
+    resetIdle: false, // Subtle emotion - don't disrupt breathing
   },
 
   // ===========================

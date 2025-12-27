@@ -522,6 +522,8 @@ export default function AntyV3() {
       // Use AnimationController for super mode transformation
       if (antyRef.current?.playEmotion) {
         antyRef.current.playEmotion('super');
+        // Track super mode scale in controller (preserves scale during other emotions)
+        antyRef.current.setSuperMode?.(1.45);
       }
 
       // Spawn celebration sparkles during transformation
@@ -539,7 +541,20 @@ export default function AntyV3() {
 
       // Stay SUPER for 15 seconds
       superModeTimerRef.current = setTimeout(() => {
-        // Return to idle (AnimationController will handle scale reset via idle animation)
+        // Clear super mode scale first
+        antyRef.current?.setSuperMode?.(null);
+
+        // Smoothly animate scale back to normal
+        const characterElement = document.querySelector('[class*="character"]') as HTMLElement;
+        if (characterElement) {
+          gsap.to(characterElement, {
+            scale: 1,
+            duration: 0.3,
+            ease: 'power2.out',
+          });
+        }
+
+        // Return to idle
         setExpression('idle');
         setIsSuperMode(false);
         superModeTimerRef.current = null;
@@ -1420,16 +1435,15 @@ export default function AntyV3() {
         // Spawn food particles immediately - will arrive during hover!
         antyRef.current?.spawnFeedingParticles();
 
-        // Custom feed animation: anticipatory hover and wiggle
+        // Custom feed animation: high leap that hangs at apex while food arrives
         if (characterElement) {
           const feedTl = gsap.timeline();
-          // Small excited hop while waiting for food
-          feedTl.to(characterElement, { y: -15, duration: 0.2, ease: 'power2.out' });
-          feedTl.to(characterElement, { y: 0, duration: 0.15, ease: 'power2.in' });
-          // Tiny wiggle of anticipation
-          feedTl.to(characterElement, { rotation: 5, duration: 0.1, ease: 'power1.inOut' });
-          feedTl.to(characterElement, { rotation: -5, duration: 0.1, ease: 'power1.inOut' });
-          feedTl.to(characterElement, { rotation: 0, duration: 0.1, ease: 'power1.inOut' });
+          // High leap - dramatic jump up (easeout = slowing at top)
+          feedTl.to(characterElement, { y: -55, duration: 0.4, ease: 'power2.out' });
+          // Continue drifting up slightly while food arrives (feels like hanging)
+          feedTl.to(characterElement, { y: -63, duration: 1.6, ease: 'power3.out' });
+          // Come down as happy eyes start (~2.3s total)
+          feedTl.to(characterElement, { y: 0, duration: 0.3, ease: 'power2.in' });
         }
 
         // Update stats
@@ -1476,7 +1490,38 @@ export default function AntyV3() {
         if (searchActive) {
           morphToCharacter();
         } else {
-          morphToSearchBar();
+          // If in super mode, cleanly exit first before morphing to search
+          if (isSuperMode) {
+            // Cancel super mode timer
+            if (superModeTimerRef.current) {
+              clearTimeout(superModeTimerRef.current);
+              superModeTimerRef.current = null;
+            }
+            // Clear super mode state
+            antyRef.current?.setSuperMode?.(null);
+            setIsSuperMode(false);
+            setEarnedHearts([]);
+            heartTimersRef.current.forEach((timer) => clearTimeout(timer));
+            heartTimersRef.current.clear();
+
+            // Reset to idle baseline before search morph
+            const characterElement = characterRef.current;
+            if (characterElement) {
+              gsap.to(characterElement, {
+                scale: 1,
+                rotation: 0,
+                x: 0,
+                y: 0,
+                duration: 0.3,
+                ease: 'power2.out',
+                onComplete: () => morphToSearchBar(),
+              });
+            } else {
+              morphToSearchBar();
+            }
+          } else {
+            morphToSearchBar();
+          }
         }
         break;
     }

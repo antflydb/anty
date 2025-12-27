@@ -66,6 +66,7 @@ export interface AntyCharacterHandle {
   killAll?: () => void;
   startLook?: (direction: 'left' | 'right') => void;
   endLook?: () => void;
+  setSuperMode?: (scale: number | null) => void;
   leftBodyRef?: React.RefObject<HTMLDivElement | null>;
   rightBodyRef?: React.RefObject<HTMLDivElement | null>;
   leftEyeRef?: React.RefObject<HTMLDivElement | null>;
@@ -214,11 +215,14 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
               if (!rect) return;
               const lightbulb = document.createElement('div');
               lightbulb.textContent = '💡';
+              // Scale up lightbulb during super mode (48 * 1.45 ≈ 70)
+              const bulbSize = isSuperMode ? 70 : 48;
+              const bulbOffset = isSuperMode ? 32 : 22; // Adjust centering for larger size
               lightbulb.style.cssText = `
                 position: fixed;
-                left: ${rect.left + rect.width / 2 - 22}px;
+                left: ${rect.left + rect.width / 2 - bulbOffset}px;
                 top: ${rect.top - 80}px;
-                font-size: 48px;
+                font-size: ${bulbSize}px;
                 z-index: 1000;
                 pointer-events: none;
                 opacity: 0;
@@ -511,7 +515,7 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
         'wink': 'wink',
         'jump': 'jump',
         'idea': 'idea',
-        'lookaround': 'lookaround',
+        'back-forth': 'back-forth',
         'nod': 'nod',
         'headshake': 'headshake',
         'look-left': 'look-left',
@@ -574,6 +578,9 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
     killAll: () => {
       animationController.killAll();
     },
+    setSuperMode: (scale: number | null) => {
+      animationController.setSuperMode(scale);
+    },
     leftEyeRef,
     rightEyeRef,
     leftEyePathRef,
@@ -603,7 +610,7 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
       'wink': 'wink',
       'jump': 'jump',
       'idea': 'idea',
-      'lookaround': 'lookaround',
+      'back-forth': 'back-forth',
       'nod': 'nod',
       'headshake': 'headshake',
       'look-left': 'look-left',

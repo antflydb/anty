@@ -38,7 +38,7 @@ export type EmotionType =
   | 'spin'
   | 'jump'
   | 'idea'
-  | 'lookaround'
+  | 'back-forth'
   | 'wink'
   | 'nod'
   | 'headshake'
@@ -514,6 +514,8 @@ export interface AnimationOptions {
   easing?: EasingFunction;
   /** Delay before start */
   delay?: number;
+  /** Whether to restart idle from origin after emotion completes (default: true) */
+  resetIdle?: boolean;
 }
 
 /**
@@ -531,7 +533,7 @@ export function isEmotionType(value: string): value is EmotionType {
     'excited',
     'spin',
     'jump',
-    'lookaround',
+    'back-forth',
     'wink',
     'nod',
     'headshake',
@@ -609,6 +611,8 @@ export interface CharacterPhase {
     scale?: number;
     rotation?: number;
     rotationY?: number;
+    rotationX?: number;
+    transformPerspective?: number;
   };
   /** Duration in seconds */
   duration: number;
@@ -680,4 +684,7 @@ export interface EmotionConfig {
   showLightbulb?: boolean;
   /** Duration for eye reset transition at end (0 = instant, default) */
   eyeResetDuration?: number;
+  /** Whether to restart idle from origin after emotion completes (default: true)
+   *  Set to false for subtle emotions like wink that shouldn't disrupt breathing */
+  resetIdle?: boolean;
 }

@@ -25,7 +25,7 @@ export function mapEmotionToExpression(emotion: string | undefined): EmotionType
     'look-left': 'look-left',
     'look-right': 'look-right',
     'spin': 'spin',
-    'lookaround': 'lookaround',
+    'back-forth': 'back-forth',
 
     // Aliases and synonyms
     'joy': 'happy',
@@ -64,7 +64,7 @@ export function mapEmotionToExpression(emotion: string | undefined): EmotionType
 
 /**
  * Extracts emotion tag from text
- * Format: [EMOTION:happy] or [EMOTION:lookaround]
+ * Format: [EMOTION:happy] or [EMOTION:back-forth]
  */
 export function extractEmotion(text: string): string | null {
   const match = text.match(/\[EMOTION:(\w+(?:-\w+)?)\]/i);

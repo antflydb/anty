@@ -24,7 +24,7 @@ export const TEST_EXPRESSIONS: Array<EmotionType | 'idle' | 'off'> = [
   'angry',
   'sad',
   'jump',
-  'lookaround',
+  'back-forth',
 ];
 
 /**
@@ -53,7 +53,7 @@ export const TEST_EMOTIONS: EmotionType[] = [
   'excited',
   'spin',
   'jump',
-  'lookaround',
+  'back-forth',
   'wink',
   'nod',
   'headshake',

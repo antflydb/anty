@@ -101,6 +101,8 @@ export interface UseAnimationControllerReturn {
   isIdle: () => boolean;
   /** Get debug information */
   getDebugInfo: () => ReturnType<AnimationController['getDebugInfo']>;
+  /** Set super mode scale (null to exit super mode) */
+  setSuperMode: (scale: number | null) => void;
   /** Check if controller is ready */
   isReady: boolean;
 }
@@ -357,6 +359,7 @@ export function useAnimationController(
 
           // Create idle timeline and register with controller
           if (autoStartIdle && elements.character && shadow && controllerRef.current) {
+            const baseScale = controllerRef.current.getSuperModeScale() ?? 1;
             const idleResult = createIdleAnimation(
               {
                 character: elements.character,
@@ -368,7 +371,7 @@ export function useAnimationController(
                 eyeLeftSvg: elements.eyeLeftSvg || undefined,
                 eyeRightSvg: elements.eyeRightSvg || undefined,
               },
-              { delay: 0 }
+              { delay: 0, baseScale }
             );
 
             // Register with controller - controller owns idle and blink scheduler
@@ -514,6 +517,7 @@ export function useAnimationController(
     }
 
     // Create idle timeline using createIdleAnimation with eye elements
+    const baseScale = controllerRef.current.getSuperModeScale() ?? 1;
     const idleResult = createIdleAnimation(
       {
         character: elements.character!,
@@ -526,7 +530,7 @@ export function useAnimationController(
         eyeLeftSvg: elements.eyeLeftSvg || undefined,
         eyeRightSvg: elements.eyeRightSvg || undefined,
       },
-      { delay: 0 }
+      { delay: 0, baseScale }
     );
 
     // Register idle with controller - controller owns idle and blink scheduler
@@ -587,6 +591,32 @@ export function useAnimationController(
         console.log(`[useAnimationController] Playing emotion: ${emotion}`);
       }
 
+      // CLEANUP: Kill any existing eye tweens for clean handoff on interruption
+      const eyeElements = [
+        elements.eyeLeft,
+        elements.eyeRight,
+        elements.eyeLeftPath,
+        elements.eyeRightPath,
+        elements.eyeLeftSvg,
+        elements.eyeRightSvg,
+      ].filter(Boolean);
+      if (eyeElements.length > 0) {
+        gsap.killTweensOf(eyeElements);
+      }
+
+      // CLEANUP: Reset character transforms to baseline on interruption
+      // Preserves super mode scale if active
+      const superModeScale = controllerRef.current.getSuperModeScale();
+      gsap.set(elements.character!, {
+        rotation: 0,
+        rotationY: 0,
+        rotationX: 0,
+        transformPerspective: 0,
+        x: 0,
+        y: 0,
+        scale: superModeScale ?? 1,
+      });
+
       const tl = interpretEmotionConfig(emotionConfig, {
         character: elements.character!,
         eyeLeft: elements.eyeLeft,
@@ -608,7 +638,13 @@ export function useAnimationController(
         elements.eyeRight,
       ].filter(Boolean))) as Element[];
 
-      return controllerRef.current.playEmotion(emotion, tl, emotionElements, animationOptions);
+      // Pass resetIdle flag from emotion config (default: true for clean idle restart)
+      const optionsWithResetIdle = {
+        ...animationOptions,
+        resetIdle: emotionConfig.resetIdle,
+      };
+
+      return controllerRef.current.playEmotion(emotion, tl, emotionElements, optionsWithResetIdle);
     },
     [elements, enableLogging]
   );
@@ -674,6 +710,7 @@ export function useAnimationController(
 
     // Controller's startIdle already kills existing idle first
     // Create new idle timeline using createIdleAnimation with eye elements
+    const baseScale = controllerRef.current.getSuperModeScale() ?? 1;
     const idleResult = createIdleAnimation(
       {
         character: elements.character!,
@@ -686,7 +723,7 @@ export function useAnimationController(
         eyeLeftSvg: elements.eyeLeftSvg || undefined,
         eyeRightSvg: elements.eyeRightSvg || undefined,
       },
-      { delay: 0 }
+      { delay: 0, baseScale }
     );
 
     // Register with controller - controller owns idle and blink scheduler
@@ -782,6 +819,20 @@ export function useAnimationController(
     return controllerRef.current.getDebugInfo();
   }, []);
 
+  /**
+   * Set super mode scale (preserves scale during emotions)
+   * @param scale - Scale value (e.g., 1.45) or null to disable
+   */
+  const setSuperMode = useCallback((scale: number | null) => {
+    if (!controllerRef.current) return;
+
+    if (enableLogging) {
+      console.log(`[useAnimationController] Setting super mode scale: ${scale}`);
+    }
+
+    controllerRef.current.setSuperMode(scale);
+  }, [enableLogging]);
+
   // CRITICAL: Memoize return object to prevent useEffect re-firing in consumers
   return useMemo(() => ({
     playEmotion,
@@ -794,6 +845,7 @@ export function useAnimationController(
     getEmotion,
     isIdle: isIdleActive,
     getDebugInfo,
+    setSuperMode,
     isReady: isReady.current,
-  }), [playEmotion, transitionTo, startIdle, pause, resume, killAll, getState, getEmotion, isIdleActive, getDebugInfo]);
+  }), [playEmotion, transitionTo, startIdle, pause, resume, killAll, getState, getEmotion, isIdleActive, getDebugInfo, setSuperMode]);
 }

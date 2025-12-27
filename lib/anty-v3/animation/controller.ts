@@ -48,6 +48,9 @@ export class AnimationController {
   private currentEmotion: EmotionType | null = null;
   private isIdleActive = false;
 
+  // Super mode scale (when set, preserves scale during emotions)
+  private superModeScale: number | null = null;
+
   constructor(
     callbacks: AnimationCallbacks = {},
     config: ControllerConfig = {}
@@ -165,6 +168,42 @@ export class AnimationController {
     if (this.config.enableLogging) {
       console.log('[AnimationController] Resumed idle animation and blink scheduler');
     }
+  }
+
+  /**
+   * Restart idle animation from origin (seek to 0)
+   * Use this for a clean handoff after emotions that significantly move the character
+   */
+  restartIdle(): void {
+    if (this.idleTimeline) {
+      this.idleTimeline.seek(0);
+      this.idleTimeline.play();
+    }
+    // Fresh blink timer
+    if (this.blinkControls) {
+      this.blinkControls.resumeBlinks();
+    }
+    if (this.config.enableLogging) {
+      console.log('[AnimationController] Restarted idle animation from origin');
+    }
+  }
+
+  /**
+   * Set super mode scale (preserves scale during emotions)
+   * @param scale - Scale value (e.g., 1.45) or null to disable
+   */
+  setSuperMode(scale: number | null): void {
+    this.superModeScale = scale;
+    if (this.config.enableLogging) {
+      console.log(`[AnimationController] Super mode scale: ${scale}`);
+    }
+  }
+
+  /**
+   * Get current super mode scale
+   */
+  getSuperModeScale(): number | null {
+    return this.superModeScale;
   }
 
   /**
@@ -298,7 +337,14 @@ export class AnimationController {
 
       // Return to idle (force transition to bypass priority check)
       this.stateMachine.transition(AnimationState.IDLE, true);
-      this.resumeIdle();
+
+      // Restart or resume idle based on resetIdle flag (default: restart for clean handoff)
+      const shouldResetIdle = options.resetIdle !== false;
+      if (shouldResetIdle) {
+        this.restartIdle();
+      } else {
+        this.resumeIdle();
+      }
 
       // Process queue
       this.processQueue();

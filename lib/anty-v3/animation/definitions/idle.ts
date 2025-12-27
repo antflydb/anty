@@ -31,6 +31,8 @@ export interface IdleAnimationElements {
 export interface IdleAnimationOptions {
   /** Delay before starting animation (seconds) */
   delay?: number;
+  /** Base scale for character (default: 1, use 1.45 for super mode) */
+  baseScale?: number;
 }
 
 /**
@@ -68,7 +70,7 @@ export function createIdleAnimation(
   options: IdleAnimationOptions = {}
 ): IdleAnimationResult {
   const { character, shadow, eyeLeft, eyeRight, eyeLeftPath, eyeRightPath, eyeLeftSvg, eyeRightSvg } = elements;
-  const { delay = 0.2 } = options;
+  const { delay = 0.2, baseScale = 1 } = options;
 
   // Create coordinated timeline with infinite repeat
   const timeline = gsap.timeline({
@@ -77,9 +79,10 @@ export function createIdleAnimation(
     delay,
   });
 
-  // Reset character to base state immediately (important when coming from super mode)
+  // Reset character to base state immediately
+  // Use baseScale to preserve super mode scale (1.45) when applicable
   gsap.set(character, {
-    scale: 1,
+    scale: baseScale,
     rotation: 0,
     y: 0,
   });
@@ -115,12 +118,13 @@ export function createIdleAnimation(
   }
 
   // Character floats up with rotation and breathing
+  // Breathing scale is relative to baseScale (e.g., 1.45 * 1.02 for super mode)
   timeline.to(
     character,
     {
       y: -IDLE_FLOAT.amplitude, // Float up by amplitude (12px)
       rotation: IDLE_ROTATION.degrees, // Gentle rotation (2.5°)
-      scale: IDLE_BREATHE.scaleMax, // Subtle breathing (1.0)
+      scale: baseScale * IDLE_BREATHE.scaleMax, // Subtle breathing relative to baseScale
       duration: IDLE_FLOAT.duration, // Smooth timing (3.7s)
       ease: IDLE_FLOAT.ease, // Sine easing for smoothness
     },

@@ -184,7 +184,7 @@ function interpretEmotionConfig(config: EmotionConfig, elements): gsap.core.Time
 | shocked | Jump + bracket separation | - |
 | spin | Y-axis 720° spin | - |
 | jump | Jump up and down | Was "idea", renamed |
-| lookaround | Look left then right | - |
+| back-forth | Look left then right | - |
 | wink | Asymmetric eye close + tilt | Eye may be backwards |
 | nod | Vertical head bob | - |
 | headshake | Horizontal head shake | - |

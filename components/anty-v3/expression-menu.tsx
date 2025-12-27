@@ -20,7 +20,7 @@ const EXPRESSIONS: { name: EmotionType; emoji: string; label: string; hotkey: st
   { name: 'angry', emoji: '😠', label: 'Angry', hotkey: '6' },
   { name: 'sad', emoji: '😢', label: 'Sad', hotkey: '7' },
   { name: 'idea', emoji: '💡', label: 'Idea', hotkey: '8' },
-  { name: 'lookaround', emoji: '👀', label: 'Look Around', hotkey: '9' },
+  { name: 'back-forth', emoji: '👀', label: 'Back-Forth', hotkey: '9' },
   { name: 'nod', emoji: '👍', label: 'Nod', hotkey: '0' },
   { name: 'headshake', emoji: '👎', label: 'Headshake', hotkey: '-' },
   // look-left and look-right removed - handled by hold-style keyboard handler in page.tsx
