@@ -7,7 +7,13 @@
 
 import gsap from 'gsap';
 import { IDLE_FLOAT, IDLE_ROTATION, IDLE_BREATHE, SHADOW } from '../constants';
-import { createBlinkAnimation, createDoubleBlinkAnimation, type EyeAnimationElements } from './eye-animations';
+import {
+  createBlinkAnimation,
+  createDoubleBlinkAnimation,
+  createLookAnimation,
+  createReturnFromLookAnimation,
+  type EyeAnimationElements,
+} from './eye-animations';
 import { getEyeShape, getEyeDimensions } from './eye-shapes';
 
 export interface IdleAnimationElements {
@@ -28,24 +34,39 @@ export interface IdleAnimationOptions {
 }
 
 /**
+ * Return type for createIdleAnimation
+ * Includes timeline and blink scheduler controls
+ */
+export interface IdleAnimationResult {
+  /** The GSAP timeline for idle float/breathe animation */
+  timeline: gsap.core.Timeline;
+  /** Pause the blink scheduler (call when emotion starts) */
+  pauseBlinks: () => void;
+  /** Resume the blink scheduler (call when emotion ends) */
+  resumeBlinks: () => void;
+  /** Kill the blink scheduler entirely (call on cleanup) */
+  killBlinks: () => void;
+}
+
+/**
  * Creates the idle breathing animation timeline
  *
  * Coordinates three synchronized animations:
  * 1. Vertical floating (up/down motion)
  * 2. Gentle rotation (synchronized with float)
  * 3. Breathing scale (subtle size changes)
- * 4. **NEW:** Periodic blinking (5-12 second intervals, 20% chance of double blink)
+ * 4. Periodic blinking (5-12 second intervals, 20% chance of double blink)
  *
  * Shadow inversely follows character movement (shrinks when character floats up)
  *
  * @param elements - Character and shadow DOM elements (plus optional eye elements for blinking)
  * @param options - Optional delay configuration
- * @returns GSAP timeline with infinite repeat + blink scheduler cleanup function
+ * @returns Object with timeline and blink scheduler controls
  */
 export function createIdleAnimation(
   elements: IdleAnimationElements,
   options: IdleAnimationOptions = {}
-): gsap.core.Timeline {
+): IdleAnimationResult {
   const { character, shadow, eyeLeft, eyeRight, eyeLeftPath, eyeRightPath, eyeLeftSvg, eyeRightSvg } = elements;
   const { delay = 0.2 } = options;
 
@@ -124,66 +145,116 @@ export function createIdleAnimation(
   );
 
   // ===========================
-  // Built-in Blink Scheduler
+  // Spontaneous Action Scheduler
   // ===========================
-  // Add periodic blinking to idle animation for natural secondary motion
-  // Only runs if eye elements are provided
-  if (eyeLeft && eyeRight && eyeLeftPath && eyeRightPath && eyeLeftSvg && eyeRightSvg) {
-    let blinkSchedulerActive = true;
-    const blinkDelayedCalls: gsap.core.Tween[] = [];
+  // Handles random eye-only actions: blinks and looks
+  // Separate from idle timeline so it can be paused/resumed independently
+  let schedulerActive = false;
+  let schedulerPaused = false;
+  let currentDelayedCall: gsap.core.Tween | null = null;
 
-    const scheduleNextBlink = () => {
-      if (!blinkSchedulerActive) return;
+  const hasEyeElements = eyeLeft && eyeRight && eyeLeftPath && eyeRightPath && eyeLeftSvg && eyeRightSvg;
 
-      const delay = gsap.utils.random(5, 12); // 5-12 seconds between blinks
+  const scheduleNextAction = () => {
+    if (!schedulerActive || schedulerPaused || !hasEyeElements) return;
 
-      const delayedCall = gsap.delayedCall(delay, () => {
-        if (!blinkSchedulerActive) return;
+    const actionDelay = gsap.utils.random(8, 15); // 8-15 seconds between actions (less frequent)
 
-        // 20% chance of double blink, 80% single blink
-        const isDoubleBlink = Math.random() < 0.2;
+    currentDelayedCall = gsap.delayedCall(actionDelay, () => {
+      if (!schedulerActive || schedulerPaused) return;
 
-        const eyeElements: EyeAnimationElements = {
-          leftEye: eyeLeft,
-          rightEye: eyeRight,
-          leftEyePath: eyeLeftPath,
-          rightEyePath: eyeRightPath,
-          leftEyeSvg: eyeLeftSvg,
-          rightEyeSvg: eyeRightSvg,
-        };
+      const eyeElements: EyeAnimationElements = {
+        leftEye: eyeLeft!,
+        rightEye: eyeRight!,
+        leftEyePath: eyeLeftPath!,
+        rightEyePath: eyeRightPath!,
+        leftEyeSvg: eyeLeftSvg!,
+        rightEyeSvg: eyeRightSvg!,
+      };
 
-        const blinkTl = isDoubleBlink
-          ? createDoubleBlinkAnimation(eyeElements)
-          : createBlinkAnimation(eyeElements);
+      // Pick a random spontaneous action:
+      // 72% single blink, 18% double blink, 5% look-left, 5% look-right
+      const roll = Math.random();
 
-        blinkTl.play();
+      if (roll < 0.05) {
+        // Look left (eye-only)
+        console.log('[Spontaneous] Look left');
+        const lookTl = createLookAnimation(eyeElements, { direction: 'left' });
+        lookTl.eventCallback('onComplete', () => {
+          // Hold for a moment, then return to idle
+          gsap.delayedCall(0.4, () => {
+            createReturnFromLookAnimation(eyeElements).play();
+          });
+        });
+        lookTl.play();
+      } else if (roll < 0.10) {
+        // Look right (eye-only)
+        console.log('[Spontaneous] Look right');
+        const lookTl = createLookAnimation(eyeElements, { direction: 'right' });
+        lookTl.eventCallback('onComplete', () => {
+          // Hold for a moment, then return to idle
+          gsap.delayedCall(0.4, () => {
+            createReturnFromLookAnimation(eyeElements).play();
+          });
+        });
+        lookTl.play();
+      } else if (roll < 0.28) {
+        // Double blink (20% of remaining 90%)
+        console.log('[Spontaneous] Double blink');
+        createDoubleBlinkAnimation(eyeElements).play();
+      } else {
+        // Single blink
+        console.log('[Spontaneous] Single blink');
+        createBlinkAnimation(eyeElements).play();
+      }
 
-        // Schedule next blink
-        scheduleNextBlink();
-      });
-
-      blinkDelayedCalls.push(delayedCall);
-    };
-
-    // Start the blink scheduler
-    scheduleNextBlink();
-
-    // Cleanup: Kill blink scheduler when idle timeline is killed
-    timeline.eventCallback('onComplete', () => {
-      blinkSchedulerActive = false;
-      blinkDelayedCalls.forEach(call => call.kill());
-      blinkDelayedCalls.length = 0;
+      // Schedule next action
+      scheduleNextAction();
     });
+  };
 
-    // Also cleanup on kill (for manual timeline.kill())
-    const originalKill = timeline.kill.bind(timeline);
-    timeline.kill = function(this: gsap.core.Timeline) {
-      blinkSchedulerActive = false;
-      blinkDelayedCalls.forEach(call => call.kill());
-      blinkDelayedCalls.length = 0;
-      return originalKill();
-    } as typeof timeline.kill;
+  const pauseBlinks = () => {
+    schedulerPaused = true;
+    // Kill any pending delayed call
+    if (currentDelayedCall) {
+      currentDelayedCall.kill();
+      currentDelayedCall = null;
+    }
+  };
+
+  const resumeBlinks = () => {
+    if (!schedulerActive) return;
+    schedulerPaused = false;
+    // Schedule a new action (fresh random delay)
+    scheduleNextAction();
+  };
+
+  const killBlinks = () => {
+    schedulerActive = false;
+    schedulerPaused = false;
+    if (currentDelayedCall) {
+      currentDelayedCall.kill();
+      currentDelayedCall = null;
+    }
+  };
+
+  // Start the spontaneous action scheduler if we have eye elements
+  if (hasEyeElements) {
+    schedulerActive = true;
+    scheduleNextAction();
   }
 
-  return timeline;
+  // Also cleanup on timeline kill
+  const originalKill = timeline.kill.bind(timeline);
+  timeline.kill = function(this: gsap.core.Timeline) {
+    killBlinks();
+    return originalKill();
+  } as typeof timeline.kill;
+
+  return {
+    timeline,
+    pauseBlinks,
+    resumeBlinks,
+    killBlinks,
+  };
 }

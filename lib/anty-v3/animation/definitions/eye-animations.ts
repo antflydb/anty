@@ -113,7 +113,7 @@ const DEFAULTS = {
   DOUBLE_BLINK_PAUSE: 0.1,
 
   /** Look animation duration */
-  LOOK_DURATION: 0.25,
+  LOOK_DURATION: 0.15,
   /** Look animation X offset */
   LOOK_X_OFFSET: 12,
   /** Look animation bunch (eyes move closer) */

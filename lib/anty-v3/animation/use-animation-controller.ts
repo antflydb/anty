@@ -342,7 +342,7 @@ export function useAnimationController(
 
           // Create idle timeline and register with controller
           if (autoStartIdle && elements.character && shadow && controllerRef.current) {
-            const idleTl = createIdleAnimation(
+            const idleResult = createIdleAnimation(
               {
                 character: elements.character,
                 shadow: shadow,
@@ -356,9 +356,13 @@ export function useAnimationController(
               { delay: 0 }
             );
 
-            // Register with controller - controller is single owner of idle
+            // Register with controller - controller owns idle and blink scheduler
             const idleElements = [elements.character, shadow].filter(Boolean) as Element[];
-            controllerRef.current.startIdle(idleTl, idleElements);
+            controllerRef.current.startIdle(idleResult.timeline, idleElements, {
+              pauseBlinks: idleResult.pauseBlinks,
+              resumeBlinks: idleResult.resumeBlinks,
+              killBlinks: idleResult.killBlinks,
+            });
 
             // Notify debug overlay
             onAnimationSequenceChange?.('CONTROLLER: Idle animation');
@@ -495,7 +499,7 @@ export function useAnimationController(
     }
 
     // Create idle timeline using createIdleAnimation with eye elements
-    const tl = createIdleAnimation(
+    const idleResult = createIdleAnimation(
       {
         character: elements.character!,
         shadow: elements.shadow!,
@@ -510,13 +514,17 @@ export function useAnimationController(
       { delay: 0 }
     );
 
-    // Register idle with controller - controller is single owner of idle
+    // Register idle with controller - controller owns idle and blink scheduler
     const idleElements = Array.from(new Set([
       elements.character,
       elements.shadow,
     ].filter(Boolean))) as Element[];
 
-    controllerRef.current.startIdle(tl, idleElements);
+    controllerRef.current.startIdle(idleResult.timeline, idleElements, {
+      pauseBlinks: idleResult.pauseBlinks,
+      resumeBlinks: idleResult.resumeBlinks,
+      killBlinks: idleResult.killBlinks,
+    });
   }, [autoStartIdle, isOff, searchMode, elements, enableLogging]);
 
   /**
@@ -651,7 +659,7 @@ export function useAnimationController(
 
     // Controller's startIdle already kills existing idle first
     // Create new idle timeline using createIdleAnimation with eye elements
-    const tl = createIdleAnimation(
+    const idleResult = createIdleAnimation(
       {
         character: elements.character!,
         shadow: elements.shadow!,
@@ -666,13 +674,17 @@ export function useAnimationController(
       { delay: 0 }
     );
 
-    // Register with controller - controller is single owner of idle
+    // Register with controller - controller owns idle and blink scheduler
     const idleElements = [
       elements.character,
       elements.shadow,
     ].filter(Boolean) as Element[];
 
-    controllerRef.current.startIdle(tl, idleElements);
+    controllerRef.current.startIdle(idleResult.timeline, idleElements, {
+      pauseBlinks: idleResult.pauseBlinks,
+      resumeBlinks: idleResult.resumeBlinks,
+      killBlinks: idleResult.killBlinks,
+    });
   }, [elements, enableLogging]);
 
   /**

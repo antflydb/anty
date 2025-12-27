@@ -277,41 +277,37 @@ export const EMOTION_CONFIGS: Partial<Record<EmotionType, EmotionConfig>> = {
   },
 
   // ===========================
-  // LOOK-LEFT - Look in direction
+  // LOOK-LEFT - Eye-only look (no body movement)
+  // Secondary action - doesn't interrupt main animation flow
   // ===========================
   'look-left': {
     id: 'look-left',
     eyes: {
       shape: 'LOOK',
-      duration: 0.2,
-      xOffset: -3,
+      duration: 0.15,
+      xOffset: -12,
+      bunch: 4,
     },
-    character: [
-      { props: { rotation: -2 }, duration: 0.25, ease: 'power2.out' },
-      // Hold
-      { props: { rotation: -2 }, duration: 0.3, ease: 'none' },
-      { props: { rotation: 0 }, duration: 0.25, ease: 'power2.in' },
-    ],
-    totalDuration: 0.8,
+    character: [], // Eye-only, no body movement
+    totalDuration: 0.7,
+    holdDuration: 0.4, // Hold before returning to idle (doubled)
   },
 
   // ===========================
-  // LOOK-RIGHT - Look in direction
+  // LOOK-RIGHT - Eye-only look (no body movement)
+  // Secondary action - doesn't interrupt main animation flow
   // ===========================
   'look-right': {
     id: 'look-right',
     eyes: {
       shape: 'LOOK',
-      duration: 0.2,
-      xOffset: 3,
+      duration: 0.15,
+      xOffset: 12,
+      bunch: 4,
     },
-    character: [
-      { props: { rotation: 2 }, duration: 0.25, ease: 'power2.out' },
-      // Hold
-      { props: { rotation: 2 }, duration: 0.3, ease: 'none' },
-      { props: { rotation: 0 }, duration: 0.25, ease: 'power2.in' },
-    ],
-    totalDuration: 0.8,
+    character: [], // Eye-only, no body movement
+    totalDuration: 0.7,
+    holdDuration: 0.4, // Hold before returning to idle (doubled)
   },
 
   // ===========================

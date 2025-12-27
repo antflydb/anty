@@ -15,6 +15,7 @@ import {
   logAnimationEvent,
 } from '@/lib/anty-v3/animation/feature-flags';
 import { getEyeShape } from '@/lib/anty-v3/animation/definitions/eye-shapes';
+import { createLookAnimation, createReturnFromLookAnimation } from '@/lib/anty-v3/animation/definitions/eye-animations';
 
 // Register GSAP plugin
 gsap.registerPlugin(useGSAP);
@@ -63,6 +64,8 @@ export interface AntyCharacterHandle {
   hideSearchGlow?: () => void;
   playEmotion?: (emotion: ExpressionName, options?: { isChatOpen?: boolean; showLightbulb?: boolean; quickDescent?: boolean }) => boolean;
   killAll?: () => void;
+  startLook?: (direction: 'left' | 'right') => void;
+  endLook?: () => void;
   leftBodyRef?: React.RefObject<HTMLDivElement | null>;
   rightBodyRef?: React.RefObject<HTMLDivElement | null>;
   leftEyeRef?: React.RefObject<HTMLDivElement | null>;
@@ -452,6 +455,48 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
         console.log('[AnimationController] Emotion not supported:', emotion);
       }
       return false;
+    },
+    // Hold-style look for keyboard (start on keydown, end on keyup)
+    // Completely bypasses the emotion system - direct eye control
+    startLook: (direction: 'left' | 'right') => {
+      if (!leftEyeRef.current || !rightEyeRef.current || !leftEyePathRef.current || !rightEyePathRef.current || !leftEyeSvgRef.current || !rightEyeSvgRef.current) {
+        return;
+      }
+
+      // Pause idle animation and blink scheduler to prevent interference
+      animationController.pause();
+
+      const lookTl = createLookAnimation(
+        {
+          leftEye: leftEyeRef.current,
+          rightEye: rightEyeRef.current,
+          leftEyePath: leftEyePathRef.current,
+          rightEyePath: rightEyePathRef.current,
+          leftEyeSvg: leftEyeSvgRef.current,
+          rightEyeSvg: rightEyeSvgRef.current,
+        },
+        { direction }
+      );
+      lookTl.play();
+    },
+    endLook: () => {
+      if (!leftEyeRef.current || !rightEyeRef.current || !leftEyePathRef.current || !rightEyePathRef.current || !leftEyeSvgRef.current || !rightEyeSvgRef.current) {
+        return;
+      }
+
+      const returnTl = createReturnFromLookAnimation({
+        leftEye: leftEyeRef.current,
+        rightEye: rightEyeRef.current,
+        leftEyePath: leftEyePathRef.current,
+        rightEyePath: rightEyePathRef.current,
+        leftEyeSvg: leftEyeSvgRef.current,
+        rightEyeSvg: rightEyeSvgRef.current,
+      });
+      returnTl.eventCallback('onComplete', () => {
+        // Resume idle animation and blink scheduler after returning to idle
+        animationController.resume();
+      });
+      returnTl.play();
     },
     killAll: () => {
       animationController.killAll();

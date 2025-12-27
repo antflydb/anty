@@ -583,6 +583,8 @@ export interface EyeConfig {
   xOffset?: number;
   /** Scale multiplier for eyes */
   scale?: number;
+  /** Bunching effect - eyes move closer together (for look animations) */
+  bunch?: number;
   /** Rotation for left eye */
   leftRotation?: number;
   /** Rotation for right eye (use opposite sign of leftRotation for mirror effect) */
@@ -655,6 +657,8 @@ export interface EmotionConfig {
   body?: BodyConfig;
   /** Total animation duration in seconds */
   totalDuration: number;
+  /** Hold duration before returning to idle (for look animations) */
+  holdDuration?: number;
   /** Whether rotation should be reset at end */
   resetRotation?: boolean;
   /** Whether rotationY should be reset at end */

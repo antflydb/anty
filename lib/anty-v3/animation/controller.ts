@@ -21,6 +21,15 @@ import {
 } from './types';
 import { StateMachine } from './state-machine';
 
+/**
+ * Blink scheduler controls returned from createIdleAnimation
+ */
+interface BlinkControls {
+  pauseBlinks: () => void;
+  resumeBlinks: () => void;
+  killBlinks: () => void;
+}
+
 export class AnimationController {
   private stateMachine: StateMachine;
   private callbacks: AnimationCallbacks;
@@ -29,6 +38,7 @@ export class AnimationController {
   // Timeline tracking
   private activeTimelines = new Map<string, TimelineRef>();
   private idleTimeline: gsap.core.Timeline | null = null;
+  private blinkControls: BlinkControls | null = null;
 
   // Animation queue
   private queue: QueuedAnimation[] = [];
@@ -81,8 +91,11 @@ export class AnimationController {
   /**
    * Start idle animation
    */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  startIdle(timeline: gsap.core.Timeline, _elements: (Element | string)[]): void {
+  startIdle(
+    timeline: gsap.core.Timeline,
+    _elements: (Element | string)[],
+    blinkControls?: BlinkControls
+  ): void {
     if (this.config.enableLogging) {
       console.log('[AnimationController] Starting idle animation');
     }
@@ -95,13 +108,17 @@ export class AnimationController {
       return;
     }
 
-    // Kill existing idle timeline
+    // Kill existing idle timeline and blink scheduler
     if (this.idleTimeline) {
       this.idleTimeline.kill();
     }
+    if (this.blinkControls) {
+      this.blinkControls.killBlinks();
+    }
 
-    // Store timeline
+    // Store timeline and blink controls
     this.idleTimeline = timeline;
+    this.blinkControls = blinkControls || null;
     this.isIdleActive = true;
     this.currentEmotion = null;
 
@@ -119,40 +136,52 @@ export class AnimationController {
   }
 
   /**
-   * Pause idle animation
+   * Pause idle animation (and blink scheduler)
    */
   pauseIdle(): void {
     if (this.idleTimeline && this.idleTimeline.isActive()) {
       this.idleTimeline.pause();
-      if (this.config.enableLogging) {
-        console.log('[AnimationController] Paused idle animation');
-      }
+    }
+    // Pause blinks - this kills the pending timer entirely
+    if (this.blinkControls) {
+      this.blinkControls.pauseBlinks();
+    }
+    if (this.config.enableLogging) {
+      console.log('[AnimationController] Paused idle animation and blink scheduler');
     }
   }
 
   /**
-   * Resume idle animation
+   * Resume idle animation (and blink scheduler)
    */
   resumeIdle(): void {
     if (this.idleTimeline && !this.idleTimeline.isActive()) {
       this.idleTimeline.resume();
-      if (this.config.enableLogging) {
-        console.log('[AnimationController] Resumed idle animation');
-      }
+    }
+    // Resume blinks - schedules a fresh random delay
+    if (this.blinkControls) {
+      this.blinkControls.resumeBlinks();
+    }
+    if (this.config.enableLogging) {
+      console.log('[AnimationController] Resumed idle animation and blink scheduler');
     }
   }
 
   /**
-   * Kill idle animation
+   * Kill idle animation (and blink scheduler)
    */
   killIdle(): void {
     if (this.idleTimeline) {
       this.idleTimeline.kill();
       this.idleTimeline = null;
-      this.isIdleActive = false;
-      if (this.config.enableLogging) {
-        console.log('[AnimationController] Killed idle animation');
-      }
+    }
+    if (this.blinkControls) {
+      this.blinkControls.killBlinks();
+      this.blinkControls = null;
+    }
+    this.isIdleActive = false;
+    if (this.config.enableLogging) {
+      console.log('[AnimationController] Killed idle animation and blink scheduler');
     }
   }
 

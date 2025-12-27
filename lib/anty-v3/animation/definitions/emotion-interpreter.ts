@@ -44,22 +44,31 @@ export function interpretEmotionConfig(
   const { character, eyeLeft, eyeRight, eyeLeftPath, eyeRightPath, eyeLeftSvg, eyeRightSvg, innerGlow, outerGlow, leftBody, rightBody } = elements;
   const glowElements = [innerGlow, outerGlow].filter(Boolean) as HTMLElement[];
 
+  const doReset = () => {
+    // Reset rotation if configured
+    if (config.resetRotation) {
+      gsap.set(character, { rotation: 0 });
+    }
+    if (config.resetRotationY) {
+      gsap.set(character, { rotationY: 0 });
+    }
+
+    // Reset eyes to IDLE
+    resetEyesToIdle(elements);
+
+    // Reset body brackets if they were animated
+    if (config.body && leftBody && rightBody) {
+      gsap.set([leftBody, rightBody], { x: 0, y: 0 });
+    }
+  };
+
   const timeline = gsap.timeline({
     onComplete: () => {
-      // Reset rotation if configured
-      if (config.resetRotation) {
-        gsap.set(character, { rotation: 0 });
-      }
-      if (config.resetRotationY) {
-        gsap.set(character, { rotationY: 0 });
-      }
-
-      // Reset eyes to IDLE
-      resetEyesToIdle(elements);
-
-      // Reset body brackets if they were animated
-      if (config.body && leftBody && rightBody) {
-        gsap.set([leftBody, rightBody], { x: 0, y: 0 });
+      // If holdDuration is set, wait before resetting (for look animations)
+      if (config.holdDuration) {
+        gsap.delayedCall(config.holdDuration, doReset);
+      } else {
+        doReset();
       }
     },
   });
@@ -117,10 +126,24 @@ function addEyeAnimation(
   timeline.add(eyeTl, 0);
 
   // Eye position/transform animations
-  if (eyeConfig.yOffset !== undefined || eyeConfig.xOffset !== undefined || eyeConfig.scale !== undefined) {
-    timeline.to([eyeLeft, eyeRight], {
+  if (eyeConfig.yOffset !== undefined || eyeConfig.xOffset !== undefined || eyeConfig.scale !== undefined || eyeConfig.bunch !== undefined) {
+    const xOffset = eyeConfig.xOffset ?? 0;
+    const bunch = eyeConfig.bunch ?? 0;
+
+    // Left eye: moves in direction + bunches towards center
+    timeline.to(eyeLeft, {
       y: eyeConfig.yOffset ?? 0,
-      x: eyeConfig.xOffset ?? 0,
+      x: xOffset + bunch,
+      scaleX: eyeConfig.scale ?? 1,
+      scaleY: eyeConfig.scale ?? 1,
+      duration: eyeConfig.duration,
+      ease: 'power2.out',
+    }, 0);
+
+    // Right eye: moves in direction - bunches towards center
+    timeline.to(eyeRight, {
+      y: eyeConfig.yOffset ?? 0,
+      x: xOffset - bunch,
       scaleX: eyeConfig.scale ?? 1,
       scaleY: eyeConfig.scale ?? 1,
       duration: eyeConfig.duration,

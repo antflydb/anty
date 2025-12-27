@@ -188,9 +188,47 @@ function interpretEmotionConfig(config: EmotionConfig, elements): gsap.core.Time
 | wink | Asymmetric eye close + tilt | Eye may be backwards |
 | nod | Vertical head bob | - |
 | headshake | Horizontal head shake | - |
-| look-left | Eyes look left | - |
-| look-right | Eyes look right | - |
+| look-left | Eyes look left (eye-only) | - |
+| look-right | Eyes look right (eye-only) | - |
 | super | Glow + float up | - |
+
+---
+
+## Spontaneous Actions
+
+The idle animation includes a spontaneous action scheduler that triggers random eye-only animations during idle state. The scheduler is **paused during emotion animations** and **resumed when returning to idle**.
+
+### How it works:
+
+1. `createIdleAnimation` returns an `IdleAnimationResult` object:
+   ```typescript
+   interface IdleAnimationResult {
+     timeline: gsap.core.Timeline;
+     pauseBlinks: () => void;   // Kills pending timer
+     resumeBlinks: () => void;  // Schedules fresh 5-12s delay
+     killBlinks: () => void;    // Stops scheduler permanently
+   }
+   ```
+2. Controller stores the controls alongside the idle timeline
+3. `pauseIdle()` calls `pauseBlinks()` - kills any pending timer
+4. `resumeIdle()` calls `resumeBlinks()` - schedules a fresh random delay
+5. `killIdle()` calls `killBlinks()` - stops the scheduler entirely
+
+### Current spontaneous actions (eye-only):
+- **Single blink** (72%): Quick eye close and open
+- **Double blink** (18%): Two quick blinks in succession
+- **Look left** (5%): Eyes shift left with bunching, hold, return
+- **Look right** (5%): Eyes shift right with bunching, hold, return
+
+### Single source of truth:
+- Spontaneous looks use `createLookAnimation()` from `eye-animations.ts`
+- Manual look-left/look-right emotions use the same eye config (shape, xOffset, bunch)
+- Both are eye-only (no body movement)
+
+### Timing:
+- Random delay between actions: 5-12 seconds
+- When paused, no timers fire (clean, no wasted callbacks)
+- When resumed, a fresh random delay is scheduled
 
 ---
 

@@ -23,8 +23,8 @@ const EXPRESSIONS: { name: EmotionType; emoji: string; label: string; hotkey: st
   { name: 'lookaround', emoji: '👀', label: 'Look Around', hotkey: '9' },
   { name: 'nod', emoji: '👍', label: 'Nod', hotkey: '0' },
   { name: 'headshake', emoji: '👎', label: 'Headshake', hotkey: '-' },
-  { name: 'look-left', emoji: '👈', label: 'Look Left', hotkey: '←' },
-  { name: 'look-right', emoji: '👉', label: 'Look Right', hotkey: '→' },
+  // look-left and look-right removed - handled by hold-style keyboard handler in page.tsx
+  // Press and hold [ or ] for direct eye control
 ];
 
 interface ExpressionMenuInternalProps extends ExpressionMenuProps {
@@ -68,11 +68,7 @@ export function ExpressionMenu({ onExpressionSelect, currentExpression, isExpand
         return;
       }
 
-      const expression = EXPRESSIONS.find((expr) => {
-        if (expr.hotkey === '←') return e.key === 'ArrowLeft';
-        if (expr.hotkey === '→') return e.key === 'ArrowRight';
-        return e.key === expr.hotkey;
-      });
+      const expression = EXPRESSIONS.find((expr) => e.key === expr.hotkey);
 
       if (expression) {
         e.preventDefault();

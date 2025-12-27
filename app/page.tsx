@@ -87,6 +87,9 @@ export default function AntyV3() {
 
   // Search mode state
   const [searchActive, setSearchActive] = useState(false);
+
+  // Hold-style look state
+  const lookHeldRef = useRef<'left' | 'right' | null>(null);
   const [searchValue, setSearchValue] = useState('');
   const searchBarRef = useRef<HTMLDivElement>(null);
   const searchBorderRef = useRef<HTMLDivElement>(null);
@@ -276,18 +279,12 @@ export default function AntyV3() {
         return;
       }
 
-      // Prevent default behavior for arrow keys and space
-      if (['ArrowLeft', 'ArrowRight', 'Space', ' '].includes(e.key)) {
+      // Prevent default behavior for space
+      if (['Space', ' '].includes(e.key)) {
         e.preventDefault();
       }
 
-      if (e.key === 'ArrowLeft') {
-        setExpression('look-left');
-        scheduleExpressionReset(800);
-      } else if (e.key === 'ArrowRight') {
-        setExpression('look-right');
-        scheduleExpressionReset(800);
-      } else if (e.key === ' ' || e.key === 'Space') {
+      if (e.key === ' ' || e.key === 'Space') {
         // Trigger jump animation - use 'jump' emotion WITHOUT lightbulb, WITH quick descent
         if (expression !== 'off' && antyRef.current?.playEmotion) {
           antyRef.current.playEmotion('jump', {
@@ -296,10 +293,43 @@ export default function AntyV3() {
           });
         }
       }
+
+      // Hold-style look: [ for left, ] for right
+      // Only trigger on initial keydown (not on repeat)
+      if (e.key === '[' && !e.repeat && expression !== 'off') {
+        if (lookHeldRef.current !== 'left') {
+          lookHeldRef.current = 'left';
+          antyRef.current?.startLook?.('left');
+        }
+      }
+      if (e.key === ']' && !e.repeat && expression !== 'off') {
+        if (lookHeldRef.current !== 'right') {
+          lookHeldRef.current = 'right';
+          antyRef.current?.startLook?.('right');
+        }
+      }
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      // Disable keyboard shortcuts when chat or search is open
+      if (isChatOpen || searchActive) {
+        return;
+      }
+
+      // Release look when [ or ] is released
+      if ((e.key === '[' && lookHeldRef.current === 'left') ||
+          (e.key === ']' && lookHeldRef.current === 'right')) {
+        lookHeldRef.current = null;
+        antyRef.current?.endLook?.();
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
   }, [expression, isChatOpen, searchActive]);
 
   // Click outside handler for search mode
