@@ -165,11 +165,14 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
       onAnimationSequenceChange: onAnimationSequenceChange, // Pass through to controller
       callbacks: {
         onEmotionMotionComplete: (emotion, timelineId, duration) => {
-          if (ENABLE_ANIMATION_DEBUG_LOGS) {
+          // Eye-only actions (look-left, look-right) are secondary animations like blinks
+          // They shouldn't generate verbose logging
+          const isEyeOnlyAction = emotion === 'look-left' || emotion === 'look-right';
+
+          if (ENABLE_ANIMATION_DEBUG_LOGS && !isEyeOnlyAction) {
             logAnimationEvent('Emotion Motion Complete', { emotion, timelineId, duration });
           }
           // Notify parent that emotion animation has completed
-          console.log(`[AntyCharacterV3] Emotion ${emotion} motion complete, calling onEmotionComplete:`, !!onEmotionComplete);
           if (onEmotionComplete) {
             onEmotionComplete(emotion);
           }

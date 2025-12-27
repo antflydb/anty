@@ -189,27 +189,42 @@ export function useAnimationController(
         onStateChange?.(from, to);
       },
       onEmotionMotionStart: (emotion, timelineId) => {
-        if (enableLogging) {
+        // Eye-only actions (look-left, look-right) are secondary animations like blinks
+        // They shouldn't trigger position tracking or verbose logging
+        const isEyeOnlyAction = emotion === 'look-left' || emotion === 'look-right';
+
+        if (enableLogging && !isEyeOnlyAction) {
           console.log(`[useAnimationController] Emotion motion START: ${emotion}`);
         }
-        // Notify position tracker via special sequence message
-        onAnimationSequenceChange?.(`MOTION_START:${emotion.toUpperCase()}`);
+        // Only notify position tracker for body-moving animations
+        if (!isEyeOnlyAction) {
+          onAnimationSequenceChange?.(`MOTION_START:${emotion.toUpperCase()}`);
+        }
         callbacks.onEmotionMotionStart?.(emotion, timelineId);
       },
       onEmotionMotionComplete: (emotion, timelineId, duration) => {
-        if (enableLogging) {
+        // Eye-only actions (look-left, look-right) are secondary animations like blinks
+        // They shouldn't trigger position tracking or verbose logging
+        const isEyeOnlyAction = emotion === 'look-left' || emotion === 'look-right';
+
+        if (enableLogging && !isEyeOnlyAction) {
           console.log(`[useAnimationController] Emotion motion COMPLETE: ${emotion} (${duration}ms)`);
         }
-        // Notify position tracker that motion actually completed
-        onAnimationSequenceChange?.(`MOTION_COMPLETE:${emotion.toUpperCase()}:${duration}`);
+        // Only notify position tracker for body-moving animations
+        if (!isEyeOnlyAction) {
+          onAnimationSequenceChange?.(`MOTION_COMPLETE:${emotion.toUpperCase()}:${duration}`);
+        }
 
         // Call BOTH the callback from options AND any parent callback
         callbacks.onEmotionMotionComplete?.(emotion, timelineId, duration);
 
         // Reset to IDLE after a brief delay (allows position tracker to capture MOTION_COMPLETE)
-        setTimeout(() => {
-          onAnimationSequenceChange?.('CONTROLLER: Idle animation');
-        }, 100);
+        // Skip delay for eye-only actions since there's no position tracking
+        if (!isEyeOnlyAction) {
+          setTimeout(() => {
+            onAnimationSequenceChange?.('CONTROLLER: Idle animation');
+          }, 100);
+        }
       },
     };
 
