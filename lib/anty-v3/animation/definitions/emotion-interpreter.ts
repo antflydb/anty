@@ -129,13 +129,18 @@ function addEyeAnimation(
 
   // Eye position/transform animations
   if (eyeConfig.yOffset !== undefined || eyeConfig.xOffset !== undefined || eyeConfig.scale !== undefined || eyeConfig.bunch !== undefined) {
-    const xOffset = eyeConfig.xOffset ?? 0;
     const bunch = eyeConfig.bunch ?? 0;
+
+    // Handle per-eye or shared offsets
+    const leftYOffset = typeof eyeConfig.yOffset === 'object' ? eyeConfig.yOffset.left : (eyeConfig.yOffset ?? 0);
+    const rightYOffset = typeof eyeConfig.yOffset === 'object' ? eyeConfig.yOffset.right : (eyeConfig.yOffset ?? 0);
+    const leftXOffset = typeof eyeConfig.xOffset === 'object' ? eyeConfig.xOffset.left : (eyeConfig.xOffset ?? 0);
+    const rightXOffset = typeof eyeConfig.xOffset === 'object' ? eyeConfig.xOffset.right : (eyeConfig.xOffset ?? 0);
 
     // Left eye: moves in direction + bunches towards center
     timeline.to(eyeLeft, {
-      y: eyeConfig.yOffset ?? 0,
-      x: xOffset + bunch,
+      y: leftYOffset,
+      x: leftXOffset + bunch,
       scaleX: eyeConfig.scale ?? 1,
       scaleY: eyeConfig.scale ?? 1,
       duration: eyeConfig.duration,
@@ -144,8 +149,8 @@ function addEyeAnimation(
 
     // Right eye: moves in direction - bunches towards center
     timeline.to(eyeRight, {
-      y: eyeConfig.yOffset ?? 0,
-      x: xOffset - bunch,
+      y: rightYOffset,
+      x: rightXOffset - bunch,
       scaleX: eyeConfig.scale ?? 1,
       scaleY: eyeConfig.scale ?? 1,
       duration: eyeConfig.duration,
@@ -171,6 +176,19 @@ function addEyeAnimation(
       ease: 'power2.out',
     }, eyePosition);
   }
+
+  // Eye return animation (for shocked - scale back down)
+  if (eyeConfig.returnPosition !== undefined) {
+    const returnDuration = eyeConfig.returnDuration ?? 0.25;
+    timeline.to([eyeLeft, eyeRight], {
+      scaleX: 1,
+      scaleY: 1,
+      y: 0,
+      x: 0,
+      duration: returnDuration,
+      ease: 'power2.out',
+    }, eyeConfig.returnPosition);
+  }
 }
 
 /**
@@ -184,6 +202,9 @@ function addBodyAnimation(
 ): void {
   const duration = bodyConfig.duration ?? 0.2;
   const ease = bodyConfig.ease ?? 'back.out(2)';
+  const returnPosition = bodyConfig.returnPosition ?? '+=1.15';
+  const returnDuration = bodyConfig.returnDuration ?? 0.25;
+  const returnEase = bodyConfig.returnEase ?? 'elastic.out(1, 0.5)';
 
   // Separate brackets
   timeline.to(leftBody, {
@@ -200,13 +221,13 @@ function addBodyAnimation(
     ease,
   }, 0);
 
-  // Return brackets (after a delay based on config)
+  // Return brackets
   timeline.to([leftBody, rightBody], {
     x: 0,
     y: 0,
-    duration: 0.25,
-    ease: 'elastic.out(1, 0.5)',
-  }, '+=1.15');
+    duration: returnDuration,
+    ease: returnEase,
+  }, returnPosition);
 }
 
 /**

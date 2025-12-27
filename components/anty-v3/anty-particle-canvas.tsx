@@ -34,6 +34,7 @@ export const AntyParticleCanvas = forwardRef<ParticleCanvasHandle, AntyParticleC
     // Expose spawn method to parent
     useImperativeHandle(ref, () => ({
       spawnParticle: (type: ParticleType, x: number, y: number, color?: string) => {
+        console.log('[PARTICLE SPAWN]', type, 'at', { x, y, color });
         const config = PARTICLE_CONFIGS[type];
         const timestamp = Date.now();
         const random = Math.random();

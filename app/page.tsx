@@ -263,6 +263,26 @@ export default function AntyV3() {
         if (ENABLE_ANIMATION_DEBUG_LOGS) {
           console.log('[ANIMATION] Controller handled emotion successfully');
         }
+
+        // Spawn yellow sparkle burst from right eye during wink
+        if (expr === 'wink') {
+          console.log('[WINK] Spawning sparkles');
+          const canvasOffset = (160 * 5) / 2;
+          // Right eye position (slightly right of center, at eye level)
+          const rightEyeX = canvasOffset + 35;
+          const rightEyeY = canvasOffset - 10;
+          console.log('[WINK] Canvas offset:', canvasOffset, 'Right eye pos:', rightEyeX, rightEyeY);
+          for (let i = 0; i < 6; i++) {
+            setTimeout(() => {
+              console.log('[WINK] Spawning sparkle', i, 'at', rightEyeX, rightEyeY);
+              antyRef.current?.spawnSparkle?.(
+                rightEyeX + gsap.utils.random(-15, 15),
+                rightEyeY + gsap.utils.random(-15, 15),
+                '#FFD700' // Gold/yellow
+              );
+            }, 50 + i * 40);
+          }
+        }
       } else {
         console.warn('[ANIMATION] Controller declined emotion:', expr);
       }
@@ -279,18 +299,11 @@ export default function AntyV3() {
         return;
       }
 
-      // Prevent default behavior for space
-      if (['Space', ' '].includes(e.key)) {
+      // Space key for simple jump
+      if ((e.key === ' ' || e.key === 'Space') && !e.repeat) {
         e.preventDefault();
-      }
-
-      if (e.key === ' ' || e.key === 'Space') {
-        // Trigger jump animation - use 'jump' emotion WITHOUT lightbulb, WITH quick descent
         if (expression !== 'off' && antyRef.current?.playEmotion) {
-          antyRef.current.playEmotion('jump', {
-            showLightbulb: false,
-            quickDescent: true
-          });
+          antyRef.current.playEmotion('jump');
         }
       }
 
@@ -1403,13 +1416,20 @@ export default function AntyV3() {
         break;
 
       case 'feed':
-        // Feeding animation - use 'jump' emotion WITHOUT lightbulb
+        // Feeding animation - custom inline animation (not using jump emotion)
         // Spawn food particles immediately - will arrive during hover!
         antyRef.current?.spawnFeedingParticles();
 
-        // Use jump emotion (no lightbulb emoji)
-        if (antyRef.current?.playEmotion) {
-          antyRef.current.playEmotion('jump', { showLightbulb: false });
+        // Custom feed animation: anticipatory hover and wiggle
+        if (characterElement) {
+          const feedTl = gsap.timeline();
+          // Small excited hop while waiting for food
+          feedTl.to(characterElement, { y: -15, duration: 0.2, ease: 'power2.out' });
+          feedTl.to(characterElement, { y: 0, duration: 0.15, ease: 'power2.in' });
+          // Tiny wiggle of anticipation
+          feedTl.to(characterElement, { rotation: 5, duration: 0.1, ease: 'power1.inOut' });
+          feedTl.to(characterElement, { rotation: -5, duration: 0.1, ease: 'power1.inOut' });
+          feedTl.to(characterElement, { rotation: 0, duration: 0.1, ease: 'power1.inOut' });
         }
 
         // Update stats

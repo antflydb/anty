@@ -180,6 +180,59 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
               }
             }, 550); // Near apex (0.18s squat + 0.4s rise)
           }
+
+          // Spawn yellow sparkles from right eye during wink
+          console.log('[WINK SPARKLE] onEmotionMotionStart called with emotion:', emotion);
+          if (emotion === 'wink' && canvasRef.current?.spawnParticle) {
+            console.log('[WINK SPARKLE] Spawning sparkles, canvasRef:', !!canvasRef.current);
+            const canvasCenterX = (size * 5) / 2;
+            const canvasCenterY = (size * 5) / 2;
+            // Right eye position (slightly right of center, at eye level)
+            const rightEyeX = canvasCenterX + 25;
+            const rightEyeY = canvasCenterY - 15;
+
+            for (let i = 0; i < 6; i++) {
+              setTimeout(() => {
+                const spawnX = rightEyeX + (Math.random() - 0.5) * 30;
+                const spawnY = rightEyeY + (Math.random() - 0.5) * 30;
+                console.log('[WINK SPARKLE] Spawning particle', i, 'at:', { spawnX, spawnY });
+                canvasRef.current?.spawnParticle?.(
+                  'sparkle',
+                  spawnX,
+                  spawnY,
+                  '#FFD700' // Gold/yellow
+                );
+              }, 50 + i * 40);
+            }
+          }
+
+          // Spawn lightbulb emoji for idea animation
+          // Timing: leap up 0.25s, hold 0.5s, descend 0.25s (total 1.0s)
+          if (emotion === 'idea' && containerRef.current) {
+            setTimeout(() => {
+              const rect = containerRef.current?.getBoundingClientRect();
+              if (!rect) return;
+              const lightbulb = document.createElement('div');
+              lightbulb.textContent = '💡';
+              lightbulb.style.cssText = `
+                position: fixed;
+                left: ${rect.left + rect.width / 2 - 22}px;
+                top: ${rect.top - 80}px;
+                font-size: 44px;
+                z-index: 1000;
+                pointer-events: none;
+                opacity: 0;
+              `;
+              document.body.appendChild(lightbulb);
+              const bulbTl = gsap.timeline({ onComplete: () => lightbulb.remove() });
+              // Gentle upward drift (less distance)
+              bulbTl.to(lightbulb, { y: -20, duration: 0.6, ease: 'power2.out' }, 0);
+              // Fade in quickly
+              bulbTl.to(lightbulb, { opacity: 1, duration: 0.12, ease: 'power2.out' }, 0);
+              // Fade out as he descends
+              bulbTl.to(lightbulb, { opacity: 0, duration: 0.25, ease: 'power2.in' }, 0.4);
+            }, 180); // Appear near apex
+          }
         },
         onEmotionMotionComplete: (emotion, timelineId, duration) => {
           // Eye-only actions (look-left, look-right) are secondary animations like blinks
@@ -457,7 +510,7 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
         'spin': 'spin',
         'wink': 'wink',
         'jump': 'jump',
-        'idea': 'jump', // Legacy alias
+        'idea': 'idea',
         'lookaround': 'lookaround',
         'nod': 'nod',
         'headshake': 'headshake',
@@ -549,7 +602,7 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
       'spin': 'spin',
       'wink': 'wink',
       'jump': 'jump',
-      'idea': 'jump', // Legacy alias
+      'idea': 'idea',
       'lookaround': 'lookaround',
       'nod': 'nod',
       'headshake': 'headshake',

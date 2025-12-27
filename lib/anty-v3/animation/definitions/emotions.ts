@@ -59,11 +59,11 @@ export const EMOTION_CONFIGS: Partial<Record<EmotionType, EmotionConfig>> = {
       shape: 'HAPPY',
       duration: 0.2,
       yOffset: -10,
-      delay: 0.5, // Start during leap
+      delay: 0.35, // Start during leap
     },
     character: [
       // Squat down (anticipation)
-      { props: { y: 25 }, duration: 0.35, ease: 'power2.in' },
+      { props: { y: 12 }, duration: 0.2, ease: 'power2.in' },
       // Spin up from crouch to apex
       { props: { y: -70, rotation: 360 }, duration: 0.4, ease: 'power2.out' },
       // Hang in air
@@ -85,20 +85,26 @@ export const EMOTION_CONFIGS: Partial<Record<EmotionType, EmotionConfig>> = {
     id: 'sad',
     eyes: {
       shape: 'SAD',
-      duration: 0.2,
+      duration: 0.25,
+      yOffset: 10, // Lower eyes
       leftRotation: -15,
       rightRotation: 15, // Mirrored: opposite of left for proper reflection
     },
     character: [
-      // Droop down (no scale change to avoid shrinking)
-      { props: { y: 10, rotation: 0 }, duration: 0.6, ease: 'power2.out' },
-      // Hold
-      { props: { y: 10 }, duration: 0.9, ease: 'none' },
-      // Return to normal
-      { props: { y: 0, scale: 1 }, duration: 0.4, ease: 'power2.in' },
+      // Drop down gently
+      { props: { y: 18 }, duration: 0.7, ease: 'power2.out' },
+      // Subtle slow sway starts parallel to drop (position: 0)
+      { props: { x: -5 }, duration: 0.8, ease: 'sine.inOut', position: 0 },
+      { props: { x: 5 }, duration: 0.8, ease: 'sine.inOut' },
+      { props: { x: -5 }, duration: 0.8, ease: 'sine.inOut' },
+      { props: { x: 5 }, duration: 0.8, ease: 'sine.inOut' },
+      // Return to center
+      { props: { x: 0 }, duration: 0.5, ease: 'sine.inOut' },
+      // Rise back up gently
+      { props: { y: 0 }, duration: 0.5, ease: 'power2.in' },
     ],
     glow: { follow: true },
-    totalDuration: 1.9,
+    totalDuration: 4.4,
   },
 
   // ===========================
@@ -114,21 +120,21 @@ export const EMOTION_CONFIGS: Partial<Record<EmotionType, EmotionConfig>> = {
     },
     character: [
       // Drop down
-      { props: { y: 15 }, duration: 0.6, ease: 'power2.out' },
+      { props: { y: 15 }, duration: 0.4, ease: 'power2.out' },
       // Shake 3 times
-      { props: { x: -8 }, duration: 0.8, ease: 'sine.inOut' },
-      { props: { x: 8 }, duration: 0.8, ease: 'sine.inOut' },
-      { props: { x: -8 }, duration: 0.8, ease: 'sine.inOut' },
-      { props: { x: 8 }, duration: 0.8, ease: 'sine.inOut' },
-      { props: { x: -8 }, duration: 0.8, ease: 'sine.inOut' },
-      { props: { x: 8 }, duration: 0.8, ease: 'sine.inOut' },
-      // Return to center
-      { props: { x: 0 }, duration: 0.4, ease: 'sine.inOut' },
+      { props: { x: -8 }, duration: 0.15, ease: 'sine.inOut' },
+      { props: { x: 8 }, duration: 0.15, ease: 'sine.inOut' },
+      { props: { x: -8 }, duration: 0.15, ease: 'sine.inOut' },
+      { props: { x: 8 }, duration: 0.15, ease: 'sine.inOut' },
+      { props: { x: -8 }, duration: 0.15, ease: 'sine.inOut' },
+      { props: { x: 8 }, duration: 0.15, ease: 'sine.inOut' },
+      // Hold down
+      { props: { x: 0 }, duration: 0.5, ease: 'sine.inOut' },
       // Return up
-      { props: { y: 0 }, duration: 0.5, ease: 'power2.in' },
+      { props: { y: 0 }, duration: 0.4, ease: 'power2.in' },
     ],
     glow: { follow: true },
-    totalDuration: 6.3,
+    totalDuration: 2.2,
   },
 
   // ===========================
@@ -140,19 +146,14 @@ export const EMOTION_CONFIGS: Partial<Record<EmotionType, EmotionConfig>> = {
       shape: 'IDLE', // Keep idle shape but scale up
       duration: 0.2,
       scale: 1.4,
+      returnPosition: 1.3, // Scale down when brackets close
+      returnDuration: 0.3,
     },
     character: [
       // Jump up
       { props: { y: -30 }, duration: 0.2, ease: 'power2.out' },
-      // Hold with slight shake
-      { props: { y: -30, rotation: 2 }, duration: 0.08, ease: 'power1.inOut' },
-      { props: { y: -30, rotation: -2 }, duration: 0.08, ease: 'power1.inOut' },
-      { props: { y: -30, rotation: 2 }, duration: 0.08, ease: 'power1.inOut' },
-      { props: { y: -30, rotation: -2 }, duration: 0.08, ease: 'power1.inOut' },
-      // Wait
-      { props: { y: -30 }, duration: 1.15, ease: 'none' },
-      // Return
-      { props: { y: 0, rotation: 0 }, duration: 0.5, ease: 'power1.inOut' },
+      // Descend at 1.3s (parallel with bracket close)
+      { props: { y: 0 }, duration: 0.3, ease: 'power2.in', position: 1.3 },
     ],
     body: {
       leftX: -15,
@@ -161,9 +162,12 @@ export const EMOTION_CONFIGS: Partial<Record<EmotionType, EmotionConfig>> = {
       rightY: 15,
       duration: 0.2,
       ease: 'back.out(2)',
+      returnPosition: 1.3, // Close brackets parallel with descent
+      returnDuration: 0.3,
+      returnEase: 'power2.inOut',
     },
     glow: { follow: true },
-    totalDuration: 2.17,
+    totalDuration: 1.6,
   },
 
   // ===========================
@@ -185,26 +189,39 @@ export const EMOTION_CONFIGS: Partial<Record<EmotionType, EmotionConfig>> = {
   },
 
   // ===========================
-  // JUMP - Jump with optional hold
+  // JUMP - Simple bounce (space key, etc)
   // ===========================
   jump: {
     id: 'jump',
-    eyes: {
-      shape: 'IDLE',
-      duration: 0.4,
-      scale: 1.15,
-      yOffset: -5,
-    },
     character: [
-      // Jump up
-      { props: { y: -35, scale: 1.05, rotation: 0 }, duration: 0.4, ease: 'back.out(2)' },
-      // Hold at peak
-      { props: { y: -35, scale: 1.05 }, duration: 1.2, ease: 'none' },
-      // Descend
-      { props: { y: 0, scale: 1 }, duration: 0.5, ease: 'elastic.out(1, 0.5)' },
+      // Quick bounce up
+      { props: { y: -25 }, duration: 0.2, ease: 'power2.out' },
+      // Come back down
+      { props: { y: 0 }, duration: 0.25, ease: 'power2.in' },
+      // Small settle bounce
+      { props: { y: -8 }, duration: 0.1, ease: 'power2.out' },
+      { props: { y: 0 }, duration: 0.1, ease: 'power2.in' },
     ],
     glow: { follow: true },
-    totalDuration: 2.1,
+    totalDuration: 0.65,
+  },
+
+  // ===========================
+  // IDEA - Aha moment with lightbulb
+  // ===========================
+  idea: {
+    id: 'idea',
+    character: [
+      // Leap up higher
+      { props: { y: -45 }, duration: 0.25, ease: 'power2.out' },
+      // Hold in air a bit longer while bulb rises
+      { props: { y: -45 }, duration: 0.75, ease: 'none' },
+      // Come back down smoothly (no bounce)
+      { props: { y: 0 }, duration: 0.25, ease: 'power2.in' },
+    ],
+    glow: { follow: true },
+    totalDuration: 1.25,
+    showLightbulb: true,
   },
 
   // ===========================
@@ -234,17 +251,18 @@ export const EMOTION_CONFIGS: Partial<Record<EmotionType, EmotionConfig>> = {
     id: 'wink',
     eyes: {
       shape: { left: 'CLOSED', right: 'HALF' },
-      duration: 0.25,
+      duration: 0.19,
+      yOffset: { left: 0, right: -10 }, // Only right eye rises up
     },
     character: [
-      // Tilt up
-      { props: { rotation: -3, y: -5 }, duration: 0.25, ease: 'power1.inOut' },
+      // Tilt up (25% faster)
+      { props: { rotation: -3, y: -5 }, duration: 0.19, ease: 'power1.inOut' },
       // Hold
       { props: { rotation: -3, y: -5 }, duration: 0.4, ease: 'none' },
       // Return
       { props: { rotation: 0, y: 0 }, duration: 0.25, ease: 'power1.inOut' },
     ],
-    totalDuration: 0.9,
+    totalDuration: 0.84,
   },
 
   // ===========================
@@ -287,8 +305,8 @@ export const EMOTION_CONFIGS: Partial<Record<EmotionType, EmotionConfig>> = {
       bunch: 4,
     },
     character: [], // Eye-only, no body movement
-    totalDuration: 0.7,
-    holdDuration: 0.4, // Hold before returning to idle (doubled)
+    totalDuration: 0.9,
+    holdDuration: 0.6, // Hold before returning to idle
   },
 
   // ===========================
@@ -304,8 +322,8 @@ export const EMOTION_CONFIGS: Partial<Record<EmotionType, EmotionConfig>> = {
       bunch: 4,
     },
     character: [], // Eye-only, no body movement
-    totalDuration: 0.7,
-    holdDuration: 0.4, // Hold before returning to idle (doubled)
+    totalDuration: 0.9,
+    holdDuration: 0.6, // Hold before returning to idle
   },
 
   // ===========================

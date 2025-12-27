@@ -37,6 +37,7 @@ export type EmotionType =
   | 'excited'
   | 'spin'
   | 'jump'
+  | 'idea'
   | 'lookaround'
   | 'wink'
   | 'nod'
@@ -579,10 +580,10 @@ export interface EyeConfig {
   duration: number;
   /** Delay before eye animation starts (seconds) */
   delay?: number;
-  /** Y offset for eyes (negative = up) */
-  yOffset?: number;
-  /** X offset for eyes (negative = left) */
-  xOffset?: number;
+  /** Y offset for eyes (negative = up). Can be number for both or {left, right} for asymmetric */
+  yOffset?: number | { left: number; right: number };
+  /** X offset for eyes (negative = left). Can be number for both or {left, right} for asymmetric */
+  xOffset?: number | { left: number; right: number };
   /** Scale multiplier for eyes */
   scale?: number;
   /** Bunching effect - eyes move closer together (for look animations) */
@@ -591,6 +592,10 @@ export interface EyeConfig {
   leftRotation?: number;
   /** Rotation for right eye (use opposite sign of leftRotation for mirror effect) */
   rightRotation?: number;
+  /** When eyes return to normal (timeline position) - resets scale/offset */
+  returnPosition?: number | string;
+  /** Duration of return animation */
+  returnDuration?: number;
 }
 
 /**
@@ -641,6 +646,12 @@ export interface BodyConfig {
   duration?: number;
   /** Easing for movement */
   ease?: string;
+  /** When brackets return (timeline position, e.g. 0.8 or '+=1') */
+  returnPosition?: number | string;
+  /** Duration of return animation */
+  returnDuration?: number;
+  /** Easing for return */
+  returnEase?: string;
 }
 
 /**
@@ -665,4 +676,6 @@ export interface EmotionConfig {
   resetRotation?: boolean;
   /** Whether rotationY should be reset at end */
   resetRotationY?: boolean;
+  /** Whether to show lightbulb emoji above character (idea animation) */
+  showLightbulb?: boolean;
 }

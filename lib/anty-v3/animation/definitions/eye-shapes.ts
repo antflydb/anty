@@ -144,21 +144,21 @@ export const EYE_SHAPES = {
   // Will be positioned left or right in container
   LOOK: "M1.15167e-10 17.36C-2.81181e-05 23.2363 5.14877 28.0001 11.5001 28C17.8513 27.9999 23 23.2363 23 17.36V10.6399C23 4.76364 17.8513 0 11.5001 0C5.14886 0 0.000167456 4.76364 0.000139339 10.6399L1.15167e-10 17.36Z",
 
-  // HALF - Half-height eye with flat bottom (20×24)
+  // HALF - Half-height eye with flat bottom (22×28)
   // Used for wink (one eye open, one half)
-  HALF: "M0 24C0 24 4.4771 24 10 24C15.5228 24 20 24 20 24V9.30604C20 4.16645 15.5229 0 10.0001 0C4.47727 0 0.000145614 4.16646 0.000121164 9.30605L0 24Z",
+  HALF: "M0 28C0 28 4.925 28 11 28C17.075 28 22 28 22 28V10.857C22 4.861 17.075 0 11 0C4.925 0 0.00016 4.861 0.00013 10.857L0 28Z",
 
-  // CLOSED - Thin horizontal line for closed eyes (23×6)
+  // CLOSED - Thin horizontal line for closed eyes (23×8)
   // Used for blink and wink
-  CLOSED: "M1.15167e-10 3.36953C-2.81181e-05 5.24589 5.14877 5.00963 11.5001 5.00957C17.8513 5.00952 23 5.24585 23 3.36958V1.64947C23 -0.226791 17.8513 0.00957287 11.5001 0.00957287C5.14886 0.00957287 0.000167456 -0.226782 0.000139339 1.64949L1.15167e-10 3.36953Z",
+  CLOSED: "M1.15e-10 4.493C-2.81e-05 6.995 5.14877 6.679 11.5001 6.679C17.8513 6.679 23 6.995 23 4.493V2.199C23 -0.302 17.8513 0.0128 11.5001 0.0128C5.14886 0.0128 0.000167 -0.302 0.000139 2.199L1.15e-10 4.493Z",
 
-  // ANGRY - Flat top, curved bottom for angry brows (29×14)
+  // ANGRY - Flat top, curved bottom for angry brows (36×18)
   // Rotated 20deg in animation for left eye, flipped+rotated for right
-  ANGRY: "M1.45211e-10 1.66985C-3.54533e-05 7.37468 6.49193 13.9994 14.5001 13.9993C22.5082 13.9993 29 7.37464 29 1.6699V0C29 0 22.5082 2.99931 14.5001 2.99931C6.49205 2.99931 0.000175688 1.94426e-05 0.000175688 1.94426e-05L1.45211e-10 1.66985Z",
+  ANGRY: "M1.8e-10 2.147C-4.4e-05 9.482 8.058 18 18 18C27.95 18 36 9.482 36 2.147V0C36 0 27.95 3.857 18 3.857C8.058 3.857 0.000225 2.5e-05 0.000225 2.5e-05L1.8e-10 2.147Z",
 
-  // SAD - Flat top, curved droopy bottom (20×10)
+  // SAD - Flat top, curved droopy bottom (27×14)
   // Rotated -15deg in animation for left eye, flipped+rotated for right
-  SAD: "M1.00146e-10 1.15162C-2.44505e-05 5.08599 4.47719 9.65473 10.0001 9.6547C15.5229 9.65466 20 5.08596 20 1.15166V0C20 0 15.5229 2.06849 10.0001 2.06849C4.47728 2.06849 0.000121164 1.34087e-05 0.000121164 1.34087e-05L1.00146e-10 1.15162Z",
+  SAD: "M1e-10 1.613C-2.9e-05 7.122 6.045 14 13.5 14C20.96 14 27 7.122 27 1.613V0C27 0 20.96 2.897 13.5 2.897C6.045 2.897 0.00014 1.9e-05 0.00014 1.9e-05L1e-10 1.613Z",
 
   // OFF/LOGO shapes - Triangular shapes for OFF state (these don't need to morph smoothly)
   // Note: LEFT points left (<), RIGHT points right (>)
@@ -183,24 +183,24 @@ export const EYE_DIMENSIONS = {
     viewBox: "0 0 23 28",
   },
   HALF: {
-    width: 20,
-    height: 24,
-    viewBox: "0 0 20 24",
+    width: 22,
+    height: 28,
+    viewBox: "0 0 22 28",
   },
   CLOSED: {
     width: 23,
-    height: 6,
-    viewBox: "0 0 23 6",
+    height: 8,
+    viewBox: "0 0 23 8",
   },
   ANGRY: {
-    width: 29,
-    height: 14,
-    viewBox: "0 0 29 14",
+    width: 36,
+    height: 18,
+    viewBox: "0 0 36 18",
   },
   SAD: {
-    width: 20,
-    height: 10,
-    viewBox: "0 0 20 10",
+    width: 27,
+    height: 14,
+    viewBox: "0 0 27 14",
   },
   OFF_LEFT: {
     width: 26.82,
