@@ -577,6 +577,8 @@ export interface EyeConfig {
   shape: EyeShapeName | { left: EyeShapeName; right: EyeShapeName };
   /** Duration of eye morph animation */
   duration: number;
+  /** Delay before eye animation starts (seconds) */
+  delay?: number;
   /** Y offset for eyes (negative = up) */
   yOffset?: number;
   /** X offset for eyes (negative = left) */

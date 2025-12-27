@@ -1466,20 +1466,6 @@ export default function AntyV3() {
     <div className="bg-white min-h-screen flex flex-col relative">
       <FPSMeter />
 
-      {/* Animation System Indicator - Development Only */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="fixed bottom-4 left-4 z-50 space-y-1">
-          {/* Main system indicator */}
-          <div className="px-3 py-1.5 rounded-md text-xs font-medium opacity-90 bg-green-100 text-green-700 border border-green-300">
-            ANIMATION SYSTEM
-          </div>
-
-          {/* Eye rendering mode indicator */}
-          <div className="px-3 py-1.5 rounded-md text-xs font-medium opacity-90 bg-green-100 text-green-700 border border-green-300">
-            👁️ SVG Morphing
-          </div>
-        </div>
-      )}
 
       {gameMode === 'idle' ? (
         <>

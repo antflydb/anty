@@ -63,6 +63,7 @@ export function interpretEmotionConfig(
   };
 
   const timeline = gsap.timeline({
+    paused: true, // Don't auto-play - controller will play when ready
     onComplete: () => {
       // If holdDuration is set, wait before resetting (for look animations)
       if (config.holdDuration) {
@@ -123,7 +124,8 @@ function addEyeAnimation(
     { duration: eyeConfig.duration }
   );
 
-  timeline.add(eyeTl, 0);
+  const eyePosition = eyeConfig.delay ?? 0;
+  timeline.add(eyeTl, eyePosition);
 
   // Eye position/transform animations
   if (eyeConfig.yOffset !== undefined || eyeConfig.xOffset !== undefined || eyeConfig.scale !== undefined || eyeConfig.bunch !== undefined) {
@@ -138,7 +140,7 @@ function addEyeAnimation(
       scaleY: eyeConfig.scale ?? 1,
       duration: eyeConfig.duration,
       ease: 'power2.out',
-    }, 0);
+    }, eyePosition);
 
     // Right eye: moves in direction - bunches towards center
     timeline.to(eyeRight, {
@@ -148,26 +150,26 @@ function addEyeAnimation(
       scaleY: eyeConfig.scale ?? 1,
       duration: eyeConfig.duration,
       ease: 'power2.out',
-    }, 0);
+    }, eyePosition);
   }
 
-  // Eye rotations (for sad/angry)
+  // Eye rotations (for sad/angry) - happen during the morph, not after
   // Note: Right eye shape is already mirrored at the path level,
   // so rotation values are simply applied directly (no scaleX flip needed)
   if (eyeConfig.leftRotation !== undefined) {
     timeline.to(eyeLeft, {
       rotation: eyeConfig.leftRotation,
-      duration: 0.15,
+      duration: eyeConfig.duration,
       ease: 'power2.out',
-    }, eyeConfig.duration);
+    }, eyePosition);
   }
 
   if (eyeConfig.rightRotation !== undefined) {
     timeline.to(eyeRight, {
       rotation: eyeConfig.rightRotation,
-      duration: 0.15,
+      duration: eyeConfig.duration,
       ease: 'power2.out',
-    }, eyeConfig.duration);
+    }, eyePosition);
   }
 }
 
@@ -220,8 +222,11 @@ function addCharacterPhases(
   const distanceRatio = glowConfig?.distanceRatio ?? GLOW_CONSTANTS.DISTANCE_RATIO;
   const lag = glowConfig?.lag ?? GLOW_CONSTANTS.LAG_SECONDS;
 
+  let isFirstPhase = true;
   for (const phase of phases) {
-    const position = phase.position ?? undefined;
+    // First phase starts at 0, others sequence naturally or use explicit position
+    const position = phase.position ?? (isFirstPhase ? 0 : undefined);
+    isFirstPhase = false;
 
     // Animate character
     timeline.to(character, {

@@ -164,6 +164,23 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
       },
       onAnimationSequenceChange: onAnimationSequenceChange, // Pass through to controller
       callbacks: {
+        onEmotionMotionStart: (emotion) => {
+          // Spawn confetti for excited animation
+          if (emotion === 'excited' && canvasRef.current?.spawnParticle) {
+            // Spawn confetti burst near apex (0.35s rise + brief hang)
+            setTimeout(() => {
+              const count = 40;
+              const canvasCenterX = (size * 5) / 2;
+              const canvasCenterY = (size * 5) / 2;
+
+              for (let i = 0; i < count; i++) {
+                setTimeout(() => {
+                  canvasRef.current?.spawnParticle?.('confetti', canvasCenterX, canvasCenterY - 50);
+                }, i * 10);
+              }
+            }, 550); // Near apex (0.18s squat + 0.4s rise)
+          }
+        },
         onEmotionMotionComplete: (emotion, timelineId, duration) => {
           // Eye-only actions (look-left, look-right) are secondary animations like blinks
           // They shouldn't generate verbose logging

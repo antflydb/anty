@@ -59,23 +59,22 @@ export const EMOTION_CONFIGS: Partial<Record<EmotionType, EmotionConfig>> = {
       shape: 'HAPPY',
       duration: 0.2,
       yOffset: -10,
+      delay: 0.5, // Start during leap
     },
     character: [
-      // Jump up with 360 spin
-      { props: { y: -70, rotation: 360 }, duration: 0.5, ease: 'power2.out' },
-      // Hold at apex
-      { props: { y: -70, rotation: 360 }, duration: 0.3, ease: 'none' },
-      // Drop down
-      { props: { y: 0 }, duration: 0.45, ease: 'power1.inOut' },
-      // First bounce
-      { props: { y: -25 }, duration: 0.18, ease: 'power2.out' },
-      { props: { y: 0 }, duration: 0.18, ease: 'power2.in' },
-      // Second bounce
-      { props: { y: -18 }, duration: 0.15, ease: 'power2.out' },
-      { props: { y: 0 }, duration: 0.15, ease: 'power2.in' },
+      // Squat down (anticipation)
+      { props: { y: 25 }, duration: 0.35, ease: 'power2.in' },
+      // Spin up from crouch to apex
+      { props: { y: -70, rotation: 360 }, duration: 0.4, ease: 'power2.out' },
+      // Hang in air
+      { props: { y: -70, rotation: 360 }, duration: 0.4, ease: 'none' },
+      // Normal comedown with small bounce
+      { props: { y: 0 }, duration: 0.3, ease: 'power2.in' },
+      { props: { y: -12 }, duration: 0.12, ease: 'power2.out' },
+      { props: { y: 0 }, duration: 0.1, ease: 'power2.in' },
     ],
     glow: { follow: true },
-    totalDuration: 1.91,
+    totalDuration: 1.5,
     resetRotation: true,
   },
 
@@ -175,14 +174,13 @@ export const EMOTION_CONFIGS: Partial<Record<EmotionType, EmotionConfig>> = {
     character: [
       // Jump up
       { props: { y: -70 }, duration: 0.3, ease: 'power2.out' },
-      // Spin on Y-axis (overlaps with jump)
-      { props: { rotationY: 360 }, duration: 1.1, ease: 'back.out(1.2)', position: '-=0.3' },
-      // Wait then descend
-      { props: { y: -70 }, duration: 0.8, ease: 'none' },
-      { props: { y: 0 }, duration: 0.35, ease: 'power2.in' },
+      // Double spin on Y-axis (overlaps with jump)
+      { props: { rotationY: 720 }, duration: 1.1, ease: 'back.out(1.2)', position: '-=0.3' },
+      // Descend (overlaps with end of spin)
+      { props: { y: 0 }, duration: 0.35, ease: 'power2.in', position: '-=0.4' },
     ],
     glow: { follow: true },
-    totalDuration: 2.55,
+    totalDuration: 1.35,
     resetRotationY: true,
   },
 
