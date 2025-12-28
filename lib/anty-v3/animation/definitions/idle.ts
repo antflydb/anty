@@ -10,8 +10,6 @@ import { IDLE_FLOAT, IDLE_ROTATION, IDLE_BREATHE } from '../constants';
 import {
   createBlinkAnimation,
   createDoubleBlinkAnimation,
-  createLookAnimation,
-  createReturnFromLookAnimation,
   type EyeAnimationElements,
 } from './eye-animations';
 import { getEyeShape, getEyeDimensions } from './eye-shapes';
@@ -168,33 +166,11 @@ export function createIdleAnimation(
       };
 
       // Pick a random spontaneous action:
-      // 72% single blink, 18% double blink, 5% look-left, 5% look-right
+      // 80% single blink, 20% double blink
       const roll = Math.random();
 
-      if (roll < 0.05) {
-        // Look left (eye-only)
-        console.log('[Spontaneous] Look left');
-        const lookTl = createLookAnimation(eyeElements, { direction: 'left' });
-        lookTl.eventCallback('onComplete', () => {
-          // Hold for a moment, then return to idle
-          gsap.delayedCall(0.4, () => {
-            createReturnFromLookAnimation(eyeElements).play();
-          });
-        });
-        lookTl.play();
-      } else if (roll < 0.10) {
-        // Look right (eye-only)
-        console.log('[Spontaneous] Look right');
-        const lookTl = createLookAnimation(eyeElements, { direction: 'right' });
-        lookTl.eventCallback('onComplete', () => {
-          // Hold for a moment, then return to idle
-          gsap.delayedCall(0.4, () => {
-            createReturnFromLookAnimation(eyeElements).play();
-          });
-        });
-        lookTl.play();
-      } else if (roll < 0.28) {
-        // Double blink (20% of remaining 90%)
+      if (roll < 0.20) {
+        // Double blink
         console.log('[Spontaneous] Double blink');
         createDoubleBlinkAnimation(eyeElements).play();
       } else {
