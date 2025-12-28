@@ -7,9 +7,13 @@ import { AntySearchBar } from '@/components/anty-v3/anty-search-bar';
 import { AnimationDebugOverlay } from '@/components/anty-v3/animation-debug-overlay';
 import { EyeDebugBoxes } from '@/components/anty-v3/eye-debug-boxes';
 import { ChatPanel } from '@/components/anty-chat';
-import type { EmotionType } from '@/lib/anty-v3/animation/types';
+import type { EmotionType, SearchBarConfig } from '@/lib/anty-v3/animation/types';
+import { DEFAULT_SEARCH_BAR_CONFIG } from '@/lib/anty-v3/animation/types';
 import type { AntyStats } from '@/lib/anty-v3/stat-system';
 import { ENABLE_ANIMATION_DEBUG_LOGS } from '@/lib/anty-v3/animation/feature-flags';
+
+// Search bar configuration - can be changed for different sizes
+const searchBarConfig: SearchBarConfig = DEFAULT_SEARCH_BAR_CONFIG;
 
 export default function AntyV3() {
   // Add CSS animation for super mode hue shift
@@ -996,7 +1000,7 @@ export default function AntyV3() {
 
     // STEP 1: Body halves separate, scale down, move to corners
     // DYNAMIC CALCULATION: Position brackets to align outer edges with search bar corners
-    const BRACKET_SCALE = 0.14;
+    const { bracketScale } = searchBarConfig;
 
     // CRITICAL: Set search bar to final scale (1.0) BEFORE reading position
     // Otherwise we'll read the position at scale 0.95 and calculations will be wrong
@@ -1012,8 +1016,8 @@ export default function AntyV3() {
     const leftBracketSize = leftBracketRect.width;
     const rightBracketSize = rightBracketRect.width;
 
-    const scaledLeftBracketSize = leftBracketSize * BRACKET_SCALE;
-    const scaledRightBracketSize = rightBracketSize * BRACKET_SCALE;
+    const scaledLeftBracketSize = leftBracketSize * bracketScale;
+    const scaledRightBracketSize = rightBracketSize * bracketScale;
 
     // Get CURRENT center positions of brackets (including their inset positioning)
     // These are viewport-relative positions
@@ -1094,9 +1098,9 @@ export default function AntyV3() {
     tl.to(leftBody, {
       x: leftTransformX,
       y: leftTransformY,
-      scale: BRACKET_SCALE,
-      scaleX: BRACKET_SCALE,
-      scaleY: BRACKET_SCALE,
+      scale: bracketScale,
+      scaleX: bracketScale,
+      scaleY: bracketScale,
       rotation: 0,
       duration: 0.35,
       ease: 'power2.inOut',
@@ -1106,9 +1110,9 @@ export default function AntyV3() {
     tl.to(rightBody, {
       x: rightTransformX,
       y: rightTransformY,
-      scale: BRACKET_SCALE,
-      scaleX: BRACKET_SCALE,
-      scaleY: BRACKET_SCALE,
+      scale: bracketScale,
+      scaleX: bracketScale,
+      scaleY: bracketScale,
       rotation: 0,
       duration: 0.35,
       ease: 'power2.inOut',
@@ -1716,6 +1720,7 @@ export default function AntyV3() {
                   placeholderRef={searchPlaceholderRef}
                   kbdRef={searchKbdRef}
                   glowRef={searchGlowRef}
+                  config={searchBarConfig}
                 />
               </div>
 

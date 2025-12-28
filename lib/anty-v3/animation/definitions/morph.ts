@@ -4,6 +4,7 @@
  */
 
 import gsap from 'gsap';
+import { type SearchBarConfig, DEFAULT_SEARCH_BAR_CONFIG } from '../types';
 
 export interface MorphAnimationElements {
   character: HTMLElement;
@@ -29,10 +30,12 @@ export interface MorphAnimationCallbacks {
   onComplete?: () => void;
 }
 
-/**
- * Bracket scale for search bar corners
- */
-const BRACKET_SCALE = 0.14;
+export interface MorphAnimationOptions {
+  /** Search bar configuration for dimensions and bracket scale */
+  config?: SearchBarConfig;
+  /** Animation callbacks */
+  callbacks?: MorphAnimationCallbacks;
+}
 
 /**
  * Creates search morph animation timeline
@@ -56,13 +59,13 @@ const BRACKET_SCALE = 0.14;
  *
  * @param direction - 'in' for character→search, 'out' for search→character
  * @param elements - All DOM elements involved in morph
- * @param callbacks - Optional callback functions
+ * @param options - Optional config and callback functions
  * @returns GSAP timeline for morph animation
  */
 export function createSearchMorphAnimation(
   direction: MorphDirection,
   elements: MorphAnimationElements,
-  callbacks: MorphAnimationCallbacks = {}
+  options: MorphAnimationOptions = {}
 ): gsap.core.Timeline {
   const {
     leftBody,
@@ -79,7 +82,9 @@ export function createSearchMorphAnimation(
     searchGlow,
   } = elements;
 
+  const { config = DEFAULT_SEARCH_BAR_CONFIG, callbacks = {} } = options;
   const { onShowSearchGlow, onHideSearchGlow, onComplete } = callbacks;
+  const { bracketScale } = config;
 
   const timeline = gsap.timeline({
     onComplete,
@@ -135,8 +140,8 @@ export function createSearchMorphAnimation(
 
     const leftBracketSize = leftBracketRect.width;
     const rightBracketSize = rightBracketRect.width;
-    const scaledLeftBracketSize = leftBracketSize * BRACKET_SCALE;
-    const scaledRightBracketSize = rightBracketSize * BRACKET_SCALE;
+    const scaledLeftBracketSize = leftBracketSize * bracketScale;
+    const scaledRightBracketSize = rightBracketSize * bracketScale;
 
     // Current bracket centers (viewport-relative)
     const leftCurrentCenterX = leftBracketRect.left + leftBracketRect.width / 2;
@@ -203,9 +208,9 @@ export function createSearchMorphAnimation(
       {
         x: leftTransformX,
         y: leftTransformY,
-        scale: BRACKET_SCALE,
-        scaleX: BRACKET_SCALE,
-        scaleY: BRACKET_SCALE,
+        scale: bracketScale,
+        scaleX: bracketScale,
+        scaleY: bracketScale,
         rotation: 0,
         duration: 0.35,
         ease: 'power2.inOut',
@@ -219,9 +224,9 @@ export function createSearchMorphAnimation(
       {
         x: rightTransformX,
         y: rightTransformY,
-        scale: BRACKET_SCALE,
-        scaleX: BRACKET_SCALE,
-        scaleY: BRACKET_SCALE,
+        scale: bracketScale,
+        scaleX: bracketScale,
+        scaleY: bracketScale,
         rotation: 0,
         duration: 0.35,
         ease: 'power2.inOut',

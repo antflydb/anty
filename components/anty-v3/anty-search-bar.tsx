@@ -2,6 +2,7 @@
 
 import { type RefObject } from 'react';
 import { Kbd } from '@/components/ui/kbd';
+import { type SearchBarConfig, DEFAULT_SEARCH_BAR_CONFIG } from '@/lib/anty-v3/animation/types';
 
 interface AntySearchBarProps {
   active: boolean;
@@ -14,19 +15,36 @@ interface AntySearchBarProps {
   placeholderRef: RefObject<HTMLDivElement | null>;
   kbdRef: RefObject<HTMLDivElement | null>;
   glowRef: RefObject<HTMLDivElement | null>;
+  /** Search bar configuration - controls dimensions and corner radius */
+  config?: SearchBarConfig;
 }
 
-export function AntySearchBar({ active, value, onChange, inputRef, barRef, borderRef, borderGradientRef, placeholderRef, kbdRef, glowRef }: AntySearchBarProps) {
+export function AntySearchBar({
+  active,
+  value,
+  onChange,
+  inputRef,
+  barRef,
+  borderRef,
+  borderGradientRef,
+  placeholderRef,
+  kbdRef,
+  glowRef,
+  config = DEFAULT_SEARCH_BAR_CONFIG,
+}: AntySearchBarProps) {
   // Only hide placeholder when there's actual text typed
   const showPlaceholder = !value;
+
+  // Extract config values
+  const { width, height, borderRadius, innerRadius, borderWidth } = config;
 
   return (
     <div
       ref={barRef}
       className="absolute"
       style={{
-        width: '642px',
-        height: '69px',
+        width: `${width}px`,
+        height: `${height}px`,
         left: '50%',
         top: '50%',
         transform: 'translate(-50%, -50%)',
@@ -54,18 +72,20 @@ export function AntySearchBar({ active, value, onChange, inputRef, barRef, borde
       {/* Animated gradient border wrapper */}
       <div
         ref={borderGradientRef}
-        className="relative w-full h-full rounded-[10px] p-[2.75px]"
+        className="relative w-full h-full"
         style={{
+          borderRadius: `${borderRadius}px`,
+          padding: `${borderWidth}px`,
           background: 'linear-gradient(white, white) padding-box, conic-gradient(from 0deg, #E5EDFF 0%, #C7D2FE 25%, #D8B4FE 50%, #C7D2FE 75%, #E5EDFF 100%) border-box',
-          border: '2.75px solid transparent',
+          border: `${borderWidth}px solid transparent`,
           opacity: 0, // GSAP controls opacity
         }}
       >
         <div
           ref={borderRef}
-          className="relative w-full h-full bg-white rounded-[8px]"
+          className="relative w-full h-full bg-white"
           style={{
-            // Border color animated by GSAP for fade-in
+            borderRadius: `${innerRadius}px`,
           }}
         >
         {/* Fake animated placeholder */}

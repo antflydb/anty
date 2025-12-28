@@ -692,3 +692,39 @@ export interface EmotionConfig {
    *  Set to false for subtle emotions like wink that shouldn't disrupt breathing */
   resetIdle?: boolean;
 }
+
+// ============================================================================
+// Search Bar Configuration (for API-driven morphing)
+// ============================================================================
+
+/**
+ * Configuration for the search bar appearance and morph animation
+ * All dimensions in pixels unless otherwise specified
+ */
+export interface SearchBarConfig {
+  /** Width of the search bar */
+  width: number;
+  /** Height of the search bar */
+  height: number;
+  /** Outer corner radius (border wrapper) */
+  borderRadius: number;
+  /** Inner corner radius (input container) */
+  innerRadius: number;
+  /** Scale factor for brackets when morphed to corners (0-1) */
+  bracketScale: number;
+  /** Border width for gradient border */
+  borderWidth: number;
+}
+
+/**
+ * Default search bar configuration
+ * These values produce the current polished look
+ */
+export const DEFAULT_SEARCH_BAR_CONFIG: SearchBarConfig = {
+  width: 642,
+  height: 69,
+  borderRadius: 10,
+  innerRadius: 8,
+  bracketScale: 0.14,
+  borderWidth: 2.75,
+};
