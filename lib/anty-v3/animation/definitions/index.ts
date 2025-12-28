@@ -28,14 +28,6 @@ export {
   type TransitionAnimationElements,
 } from './transitions';
 
-// Search morph animations
-export {
-  createSearchMorphAnimation,
-  type MorphAnimationElements,
-  type MorphDirection,
-  type MorphAnimationCallbacks,
-} from './morph';
-
 // Eye animations
 export {
   createEyeAnimation,

@@ -101,7 +101,7 @@ export const AntyParticleCanvas = forwardRef<ParticleCanvasHandle, AntyParticleC
         if (searchGlowActive) {
           const centerX = width / 2;
           const centerY = height / 2;
-          // Create large elliptical glow to cover search bar (642×69px)
+          // Create large elliptical glow to cover search bar (642×70px)
           const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, 500);
           gradient.addColorStop(0, 'rgba(229, 237, 255, 0.5)');
           gradient.addColorStop(0.4, 'rgba(229, 237, 255, 0.3)');

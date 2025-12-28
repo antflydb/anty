@@ -722,7 +722,7 @@ export interface SearchBarConfig {
  */
 export const DEFAULT_SEARCH_BAR_CONFIG: SearchBarConfig = {
   width: 642,
-  height: 69,
+  height: 70,
   borderRadius: 10,
   innerRadius: 8,
   bracketScale: 0.14,

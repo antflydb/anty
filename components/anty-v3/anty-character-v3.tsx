@@ -432,10 +432,10 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
         particles.push(particle);
       }
 
-      // Get Anty's position on screen (offset up 15px for better visual convergence)
+      // Get Anty's position on screen (offset for better visual convergence)
       const containerRect = container.getBoundingClientRect();
-      const antyX = containerRect.left + containerRect.width / 2;
-      const antyY = containerRect.top + containerRect.height / 2 - 15;
+      const antyX = containerRect.left + containerRect.width / 2 - 12; // Offset left
+      const antyY = containerRect.top + containerRect.height / 2 - 30; // Offset up more
 
       // Animate with GSAP - converging INTO Anty!
       particles.forEach((particle, i) => {

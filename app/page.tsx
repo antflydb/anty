@@ -6,14 +6,12 @@ import { AntyCharacterV3, ActionButtonsV3, HeartMeter, ExpressionMenu, PowerButt
 import { AntySearchBar } from '@/components/anty-v3/anty-search-bar';
 import { AnimationDebugOverlay } from '@/components/anty-v3/animation-debug-overlay';
 import { EyeDebugBoxes } from '@/components/anty-v3/eye-debug-boxes';
+import { SearchBarDemoMenu, getStoredSearchBarConfig } from '@/components/anty-v3/search-bar-demo-menu';
 import { ChatPanel } from '@/components/anty-chat';
-import type { EmotionType, SearchBarConfig } from '@/lib/anty-v3/animation/types';
+import type { EmotionType } from '@/lib/anty-v3/animation/types';
 import { DEFAULT_SEARCH_BAR_CONFIG } from '@/lib/anty-v3/animation/types';
 import type { AntyStats } from '@/lib/anty-v3/stat-system';
 import { ENABLE_ANIMATION_DEBUG_LOGS } from '@/lib/anty-v3/animation/feature-flags';
-
-// Search bar configuration - can be changed for different sizes
-const searchBarConfig: SearchBarConfig = DEFAULT_SEARCH_BAR_CONFIG;
 
 export default function AntyV3() {
   // Add CSS animation for super mode hue shift
@@ -93,6 +91,16 @@ export default function AntyV3() {
 
   // Search mode state
   const [searchActive, setSearchActive] = useState(false);
+
+  // Search bar config (loaded from sessionStorage for demo purposes)
+  // Initialize with defaults to avoid hydration mismatch - sessionStorage read in useEffect
+  const [searchBarConfig, setSearchBarConfig] = useState(DEFAULT_SEARCH_BAR_CONFIG);
+
+  // Load custom config from sessionStorage after hydration
+  useEffect(() => {
+    const stored = getStoredSearchBarConfig();
+    setSearchBarConfig(stored);
+  }, []);
 
   // Hold-style look state
   const lookHeldRef = useRef<'left' | 'right' | null>(null);
@@ -357,10 +365,13 @@ export default function AntyV3() {
 
     const handleClickOutside = (event: MouseEvent) => {
       const searchBarEl = searchBarRef.current;
-      const target = event.target as Node;
+      const target = event.target as HTMLElement;
 
-      // Ignore if clicking on search bar or Anty brackets
+      // Ignore if clicking on search bar
       if (searchBarEl?.contains(target)) return;
+
+      // Ignore if clicking on demo menu
+      if (target.closest('[data-search-demo-menu]')) return;
 
       morphToCharacter();
     };
@@ -1580,7 +1591,7 @@ export default function AntyV3() {
   return (
     <div className="bg-white min-h-screen flex flex-col relative">
       <FPSMeter />
-
+      <SearchBarDemoMenu visible={searchActive} />
 
       {gameMode === 'idle' ? (
         <>

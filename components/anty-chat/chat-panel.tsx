@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Send, Loader2, Key, ChevronDown, ChevronUp, MoreVertical } from 'lucide-react';
+import gsap from 'gsap';
 import { AntyChat, type ChatMessage } from '@/lib/chat/openai-client';
 import { mapEmotionToExpression, stripEmotionTags } from '@/lib/chat/emotion-mapper';
 import type { EmotionType } from '@/lib/anty-v3/animation/types';
@@ -35,6 +36,8 @@ export function ChatPanel({ isOpen, onClose, onEmotion }: ChatPanelProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const inputBorderRef = useRef<HTMLDivElement>(null);
+  const borderTweenRef = useRef<gsap.core.Tween | null>(null);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -95,6 +98,35 @@ export function ChatPanel({ isOpen, onClose, onEmotion }: ChatPanelProps) {
       setShowApiKeyInput(false);
     }
   }, []);
+
+  // Rotating gradient border animation
+  useEffect(() => {
+    if (!isOpen || showApiKeyInput) return;
+
+    // Small delay to ensure ref is attached after render
+    const timer = setTimeout(() => {
+      if (!inputBorderRef.current) return;
+
+      const rotationAnim = { deg: 0 };
+      borderTweenRef.current = gsap.to(rotationAnim, {
+        deg: 360,
+        duration: 4,
+        ease: 'none',
+        repeat: -1,
+        onUpdate: () => {
+          if (inputBorderRef.current) {
+            inputBorderRef.current.style.background = `linear-gradient(white, white) padding-box, conic-gradient(from ${rotationAnim.deg}deg, #E5EDFF 0%, #C7D2FE 25%, #D8B4FE 50%, #C7D2FE 75%, #E5EDFF 100%) border-box`;
+          }
+        },
+      });
+    }, 50);
+
+    return () => {
+      clearTimeout(timer);
+      borderTweenRef.current?.kill();
+      borderTweenRef.current = null;
+    };
+  }, [isOpen, showApiKeyInput]);
 
   // ESC key to close chat
   useEffect(() => {
@@ -412,7 +444,15 @@ export function ChatPanel({ isOpen, onClose, onEmotion }: ChatPanelProps) {
 
                 {/* Input */}
                 <div className="p-4">
-                  <div className="relative">
+                  <div
+                    ref={inputBorderRef}
+                    className="relative rounded-full"
+                    style={{
+                      padding: '2px',
+                      background: 'linear-gradient(white, white) padding-box, conic-gradient(from 0deg, #E5EDFF 0%, #C7D2FE 25%, #D8B4FE 50%, #C7D2FE 75%, #E5EDFF 100%) border-box',
+                      border: '2px solid transparent',
+                    }}
+                  >
                     <input
                       ref={inputRef}
                       type="text"
@@ -421,12 +461,12 @@ export function ChatPanel({ isOpen, onClose, onEmotion }: ChatPanelProps) {
                       onKeyPress={handleKeyPress}
                       placeholder="Type a message..."
                       disabled={isLoading}
-                      className="w-full pl-4 pr-12 py-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[#8B5CF6] focus:border-transparent disabled:opacity-50 placeholder:text-[#D4D3D3]"
+                      className="w-full pl-4 pr-12 py-3 bg-white rounded-full focus:outline-none disabled:opacity-50 placeholder:text-[#D4D3D3]"
                     />
                     <button
                       onClick={handleSend}
                       disabled={!input.trim() || isLoading}
-                      className={`absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full disabled:cursor-not-allowed transition-colors ${
+                      className={`absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full disabled:cursor-not-allowed transition-colors ${
                         !input.trim() || isLoading
                           ? 'bg-gray-200 text-gray-600 opacity-30'
                           : 'bg-[#8B5CF6] text-white hover:bg-[#7C3AED]'

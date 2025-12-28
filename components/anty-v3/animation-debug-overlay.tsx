@@ -1107,7 +1107,7 @@ export function AnimationDebugOverlay({
 
         <div className="mt-3 pt-2 border-t border-green-400/30">
           <div className="text-gray-400 text-[10px] mb-1">Current Sequence:</div>
-          <div className="text-green-400 font-bold text-sm break-words max-w-full overflow-wrap-anywhere">
+          <div className="text-green-400 font-bold text-sm break-words max-w-full overflow-wrap-anywhere" style={{ minHeight: '2.5em' }}>
             {debugData.currentSequence}
             {randomAction && (
               <span className="text-cyan-400"> + {randomAction}</span>

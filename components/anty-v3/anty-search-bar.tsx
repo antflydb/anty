@@ -38,6 +38,9 @@ export function AntySearchBar({
   // Extract config values
   const { width, height, borderRadius, innerRadius, borderWidth } = config;
 
+  // Default height for calculating top offset (keeps same visual position)
+  const defaultHeight = DEFAULT_SEARCH_BAR_CONFIG.height;
+
   return (
     <div
       ref={barRef}
@@ -46,20 +49,22 @@ export function AntySearchBar({
         width: `${width}px`,
         height: `${height}px`,
         left: '50%',
-        top: '50%',
-        transform: 'translate(-50%, -50%)',
+        // Top-aligned: at default height (70px), matches centered position
+        // Larger heights expand downward
+        top: `calc(50% - ${defaultHeight / 2}px)`,
+        transform: 'translateX(-50%)',
         opacity: 0, // GSAP controls opacity
         pointerEvents: active ? 'auto' : 'none',
         zIndex: 2,
       }}
     >
-      {/* AI Gradient Glow - positioned behind search bar */}
+      {/* AI Gradient Glow - positioned behind search bar, scales with box */}
       <div
         ref={glowRef}
         className="absolute pointer-events-none"
         style={{
-          width: '750px',
-          height: '100px',
+          width: `${width}px`,
+          height: `${height}px`,
           left: '50%',
           top: '50%',
           transform: 'translate(-50%, -50%)',
@@ -88,51 +93,59 @@ export function AntySearchBar({
             borderRadius: `${innerRadius}px`,
           }}
         >
-        {/* Fake animated placeholder */}
-        <div
-          ref={placeholderRef}
-          className="absolute left-6 pointer-events-none select-none flex items-center"
-          style={{
-            opacity: showPlaceholder ? 1 : 0,
-            top: 0,
-            height: '100%',
-            fontFamily: 'Inter, sans-serif',
-            fontWeight: 500,
-            fontSize: '17.85px',
-            color: '#D4D3D3',
-            transition: showPlaceholder ? 'none' : 'opacity 0.15s ease-out',
-          }}
-        >
-          Ask about SearchAF
-        </div>
+          {/* Content container - fixed to default height, content centered within */}
+          <div
+            className="absolute top-0 left-0 right-0"
+            style={{
+              height: `${defaultHeight - borderWidth * 2}px`,
+            }}
+          >
+            {/* Fake animated placeholder */}
+            <div
+              ref={placeholderRef}
+              className="absolute left-6 pointer-events-none select-none flex items-center"
+              style={{
+                opacity: showPlaceholder ? 1 : 0,
+                top: 0,
+                height: '100%',
+                fontFamily: 'Inter, sans-serif',
+                fontWeight: 500,
+                fontSize: '17.85px',
+                color: '#D4D3D3',
+                transition: showPlaceholder ? 'none' : 'opacity 0.15s ease-out',
+              }}
+            >
+              Ask about SearchAF
+            </div>
 
-        {/* Animated CMD+K indicator */}
-        <div
-          ref={kbdRef}
-          className="absolute right-6 pointer-events-none select-none flex items-center"
-          style={{
-            opacity: showPlaceholder ? 1 : 0,
-            top: 0,
-            height: '100%',
-            transition: showPlaceholder ? 'none' : 'opacity 0.15s ease-out',
-          }}
-        >
-          <Kbd className="text-xs text-gray-400">⌘K</Kbd>
-        </div>
+            {/* Animated CMD+K indicator */}
+            <div
+              ref={kbdRef}
+              className="absolute right-6 pointer-events-none select-none flex items-center"
+              style={{
+                opacity: showPlaceholder ? 1 : 0,
+                top: 0,
+                height: '100%',
+                transition: showPlaceholder ? 'none' : 'opacity 0.15s ease-out',
+              }}
+            >
+              <Kbd className="text-xs text-gray-400">⌘K</Kbd>
+            </div>
 
-        <input
-          ref={inputRef}
-          type="text"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder="" // Empty placeholder since we use fake one
-          className="w-full h-full px-6 bg-transparent outline-none text-[#052333]"
-          style={{
-            fontFamily: 'Inter, sans-serif',
-            fontWeight: 500,
-            fontSize: '17.85px',
-          }}
-        />
+            <input
+              ref={inputRef}
+              type="text"
+              value={value}
+              onChange={(e) => onChange(e.target.value)}
+              placeholder="" // Empty placeholder since we use fake one
+              className="w-full h-full px-6 bg-transparent outline-none text-[#052333]"
+              style={{
+                fontFamily: 'Inter, sans-serif',
+                fontWeight: 500,
+                fontSize: '17.85px',
+              }}
+            />
+          </div>
         </div>
       </div>
     </div>
