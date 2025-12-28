@@ -272,6 +272,39 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
               dropTl.to(teardrop, { opacity: 0, duration: 0.4, ease: 'power2.in' }, 0.85);
             }, 250); // Appear shortly after Anty starts drooping
           }
+
+          // Spawn exclamation emoji for shocked animation
+          // Appears in upper-right quadrant (like teardrop), drifts upward (like lightbulb)
+          if (emotion === 'shocked' && containerRef.current) {
+            setTimeout(() => {
+              const rect = containerRef.current?.getBoundingClientRect();
+              if (!rect) return;
+              const exclamation = document.createElement('div');
+              exclamation.textContent = '❗';
+              // Same size as lightbulb, scale up during super mode
+              const emojiSize = isSuperMode ? 70 : 48;
+              const emojiOffset = isSuperMode ? 32 : 22;
+              // Position: upper-right quadrant (like teardrop), but higher
+              const xOffset = rect.width * 0.35;
+              exclamation.style.cssText = `
+                position: fixed;
+                left: ${rect.left + rect.width / 2 + xOffset - emojiOffset}px;
+                top: ${rect.top - 50}px;
+                font-size: ${emojiSize}px;
+                z-index: 1000;
+                pointer-events: none;
+                opacity: 0;
+              `;
+              document.body.appendChild(exclamation);
+              const exclamationTl = gsap.timeline({ onComplete: () => exclamation.remove() });
+              // Gentle upward drift (like lightbulb, opposite of teardrop)
+              exclamationTl.to(exclamation, { y: -25, duration: 0.9, ease: 'power2.out' }, 0);
+              // Fade in quickly
+              exclamationTl.to(exclamation, { opacity: 1, duration: 0.12, ease: 'power2.out' }, 0);
+              // Fade out
+              exclamationTl.to(exclamation, { opacity: 0, duration: 0.3, ease: 'power2.in' }, 0.65);
+            }, 180); // Appear near the start of shock reaction
+          }
         },
         onEmotionMotionComplete: (emotion, timelineId, duration) => {
           // Eye-only actions (look-left, look-right) are secondary animations like blinks
