@@ -126,7 +126,7 @@ export function AnimationDebugOverlay({
   const [idleValidationState, setIdleValidationState] = useState<'tracking' | 'valid' | 'invalid' | 'none'>('none');
   const [idleValidationTimer, setIdleValidationTimer] = useState<NodeJS.Timeout | null>(null);
 
-  // Expected IDLE ranges from ANIMATION_VALIDATION.md
+  // Expected IDLE ranges (validated visually)
   const EXPECTED_IDLE = {
     rotationMin: 0.0,
     rotationMax: 2.0,
@@ -136,7 +136,7 @@ export function AnimationDebugOverlay({
     widthMax: 168.8,
     heightMin: 160.0,
     heightMax: 168.8,
-    shadowMin: 112.0,
+    shadowMin: 143.3,
     shadowMax: 160.0,
   };
 
