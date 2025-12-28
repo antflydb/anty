@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import gsap from 'gsap';
 import { AntyCharacterV3, ActionButtonsV3, HeartMeter, ExpressionMenu, PowerButton, FlappyGame, FPSMeter, type ButtonName, type AntyCharacterHandle, type EarnedHeart } from '@/components/anty-v3';
 import { AntySearchBar } from '@/components/anty-v3/anty-search-bar';
@@ -67,6 +67,8 @@ export default function AntyV3() {
     indexHealth: 100,
   });
   const [earnedHearts, setEarnedHearts] = useState<EarnedHeart[]>([]);
+  const [showHearts, setShowHearts] = useState(false); // Hidden until first eat
+  const heartsHideTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const characterRef = useRef<HTMLDivElement>(null);
   const glowRef = useRef<HTMLDivElement>(null);
@@ -475,6 +477,23 @@ export default function AntyV3() {
     };
   }, [gameMode, searchActive]);
 
+  // Show hearts and start 3-minute hide timer
+  const showHeartsWithTimer = useCallback(() => {
+    // Show hearts
+    setShowHearts(true);
+
+    // Clear existing hide timer
+    if (heartsHideTimerRef.current) {
+      clearTimeout(heartsHideTimerRef.current);
+    }
+
+    // Start 3-minute timer to hide hearts
+    heartsHideTimerRef.current = setTimeout(() => {
+      setShowHearts(false);
+      heartsHideTimerRef.current = null;
+    }, 3 * 60 * 1000); // 3 minutes
+  }, []);
+
   // Cleanup heart timers on unmount
   useEffect(() => {
     return () => {
@@ -488,6 +507,9 @@ export default function AntyV3() {
       }
       if (spinDescentTimerRef.current) {
         clearTimeout(spinDescentTimerRef.current);
+      }
+      if (heartsHideTimerRef.current) {
+        clearTimeout(heartsHideTimerRef.current);
       }
     };
   }, []);
@@ -544,18 +566,24 @@ export default function AntyV3() {
         // Clear super mode scale first
         antyRef.current?.setSuperMode?.(null);
 
-        // Smoothly animate scale back to normal
+        // Animate scale back to normal, THEN restart idle
         const characterElement = document.querySelector('[class*="character"]') as HTMLElement;
         if (characterElement) {
           gsap.to(characterElement, {
             scale: 1,
             duration: 0.3,
             ease: 'power2.out',
+            onComplete: () => {
+              // Return to idle AFTER scale animation completes
+              // This ensures idle captures scale: 1, not 1.45
+              setExpression('idle');
+            }
           });
+        } else {
+          // Fallback if no character element
+          setExpression('idle');
         }
 
-        // Return to idle
-        setExpression('idle');
         setIsSuperMode(false);
         superModeTimerRef.current = null;
 
@@ -564,6 +592,13 @@ export default function AntyV3() {
         // Clear all heart timers
         heartTimersRef.current.forEach((timer) => clearTimeout(timer));
         heartTimersRef.current.clear();
+
+        // Hide hearts when super mode ends (until next eat)
+        setShowHearts(false);
+        if (heartsHideTimerRef.current) {
+          clearTimeout(heartsHideTimerRef.current);
+          heartsHideTimerRef.current = null;
+        }
       }, 15000);
     }
 
@@ -1402,9 +1437,9 @@ export default function AntyV3() {
         }
         // Toggle chat panel
         setIsChatOpen(prev => {
-          // Only trigger happy animation when opening chat
+          // Only trigger chant (happy eyes, no wiggle) when opening chat
           if (!prev) {
-            setExpression('happy');
+            setExpression('chant');
             scheduleExpressionReset(2000);
           }
           return !prev;
@@ -1431,17 +1466,28 @@ export default function AntyV3() {
         break;
 
       case 'feed':
+        // Show hearts on first eat (and reset 3-minute hide timer)
+        showHeartsWithTimer();
+
         // Feeding animation - custom inline animation (not using jump emotion)
+        // Pause idle/blinks during feed animation
+        antyRef.current?.pauseIdle?.();
+
         // Spawn food particles immediately - will arrive during hover!
         antyRef.current?.spawnFeedingParticles();
 
-        // Custom feed animation: high leap that hangs at apex while food arrives
+        // Custom feed animation: moderate leap that hangs at apex while food arrives
         if (characterElement) {
-          const feedTl = gsap.timeline();
-          // High leap - dramatic jump up (easeout = slowing at top)
-          feedTl.to(characterElement, { y: -55, duration: 0.4, ease: 'power2.out' });
+          const feedTl = gsap.timeline({
+            onComplete: () => {
+              // Resume idle when animation finishes
+              antyRef.current?.resumeIdle?.();
+            }
+          });
+          // Moderate leap - jump up (easeout = slowing at top)
+          feedTl.to(characterElement, { y: -35, duration: 0.4, ease: 'power2.out' });
           // Continue drifting up slightly while food arrives (feels like hanging)
-          feedTl.to(characterElement, { y: -63, duration: 1.6, ease: 'power3.out' });
+          feedTl.to(characterElement, { y: -42, duration: 1.6, ease: 'power3.out' });
           // Come down as happy eyes start (~2.3s total)
           feedTl.to(characterElement, { y: 0, duration: 0.3, ease: 'power2.in' });
         }
@@ -1465,7 +1511,7 @@ export default function AntyV3() {
 
         // Earn a heart and trigger pulse at happy eyes moment
         animationTimerRef.current = setTimeout(() => {
-          setExpression('happy');
+          setExpression('chant');
           // Find first grey (not earned) heart and earn it
           const firstGreyHeart = [0, 1, 2].find(
             (index) => !earnedHearts.find((h) => h.index === index)
@@ -1534,7 +1580,7 @@ export default function AntyV3() {
 
       {gameMode === 'idle' ? (
         <>
-          <HeartMeter hearts={hearts} earnedHearts={earnedHearts} isOff={expression === 'off'} />
+          {showHearts && <HeartMeter hearts={hearts} earnedHearts={earnedHearts} isOff={expression === 'off'} />}
 
           <div className="flex-1 flex items-center justify-center pb-12 relative" style={{ paddingTop: '50px' }}>
             <div

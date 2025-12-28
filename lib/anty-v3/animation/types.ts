@@ -44,7 +44,8 @@ export type EmotionType =
   | 'headshake'
   | 'look-left'
   | 'look-right'
-  | 'super';
+  | 'super'
+  | 'chant';
 
 /**
  * Expression name includes EmotionType plus special states
@@ -540,6 +541,7 @@ export function isEmotionType(value: string): value is EmotionType {
     'look-left',
     'look-right',
     'super',
+    'chant',
   ];
   return emotions.includes(value as EmotionType);
 }
@@ -682,6 +684,8 @@ export interface EmotionConfig {
   resetRotationY?: boolean;
   /** Whether to show lightbulb emoji above character (idea animation) */
   showLightbulb?: boolean;
+  /** Whether to show teardrop emoji beside character (sad animation) */
+  showTeardrop?: boolean;
   /** Duration for eye reset transition at end (0 = instant, default) */
   eyeResetDuration?: number;
   /** Whether to restart idle from origin after emotion completes (default: true)

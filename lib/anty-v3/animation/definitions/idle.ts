@@ -6,7 +6,7 @@
  */
 
 import gsap from 'gsap';
-import { IDLE_FLOAT, IDLE_ROTATION, IDLE_BREATHE, SHADOW } from '../constants';
+import { IDLE_FLOAT, IDLE_ROTATION, IDLE_BREATHE } from '../constants';
 import {
   createBlinkAnimation,
   createDoubleBlinkAnimation,
@@ -69,7 +69,9 @@ export function createIdleAnimation(
   elements: IdleAnimationElements,
   options: IdleAnimationOptions = {}
 ): IdleAnimationResult {
-  const { character, shadow, eyeLeft, eyeRight, eyeLeftPath, eyeRightPath, eyeLeftSvg, eyeRightSvg } = elements;
+  const { character, shadow: _shadow, eyeLeft, eyeRight, eyeLeftPath, eyeRightPath, eyeLeftSvg, eyeRightSvg } = elements;
+  // Note: shadow is handled by ShadowTracker, not the idle timeline
+  void _shadow; // Mark as intentionally unused
   const { delay = 0.2, baseScale = 1 } = options;
 
   // Create coordinated timeline with infinite repeat
@@ -118,35 +120,24 @@ export function createIdleAnimation(
   }
 
   // Character floats up with rotation and breathing
-  // Breathing scale is relative to baseScale (e.g., 1.45 * 1.02 for super mode)
+  // CRITICAL: Use relative scale (*=) so super mode scale persists across idle restarts
+  // The timeline captures values at creation time, so absolute scale (baseScale * 1.02)
+  // would target the wrong value if super mode was set after idle was created.
   timeline.to(
     character,
     {
       y: -IDLE_FLOAT.amplitude, // Float up by amplitude (12px)
       rotation: IDLE_ROTATION.degrees, // Gentle rotation (2.5°)
-      scale: baseScale * IDLE_BREATHE.scaleMax, // Subtle breathing relative to baseScale
-      duration: IDLE_FLOAT.duration, // Smooth timing (3.7s)
+      scale: `*=${IDLE_BREATHE.scaleMax}`, // Relative breathing (multiply by 1.02)
+      duration: IDLE_FLOAT.duration, // Smooth timing (2.5s)
       ease: IDLE_FLOAT.ease, // Sine easing for smoothness
     },
     0 // Start at timeline beginning
   );
 
-  // Shadow inversely follows character
-  // - Stays fixed on ground (no Y movement)
-  // - Only opacity and scale change
-  // - Shrinks and fades when character floats up
-  timeline.to(
-    shadow,
-    {
-      xPercent: SHADOW.xPercent, // Keep centered (static positioning)
-      scaleX: SHADOW.scaleXWhenUp, // Shrink horizontally when character is up
-      scaleY: SHADOW.scaleYWhenUp, // Shrink vertically when character is up
-      opacity: SHADOW.opacityWhenUp, // Fade when character is far
-      duration: IDLE_FLOAT.duration,
-      ease: IDLE_FLOAT.ease,
-    },
-    0 // Synchronized with character movement
-  );
+  // NOTE: Shadow is now handled by the ShadowTracker (shadow.ts)
+  // which dynamically responds to character Y position for ALL animations,
+  // not just idle. This eliminates disjointed shadow behavior.
 
   // ===========================
   // Spontaneous Action Scheduler

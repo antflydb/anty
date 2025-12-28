@@ -44,6 +44,9 @@ export function interpretEmotionConfig(
   const { character, eyeLeft, eyeRight, eyeLeftPath, eyeRightPath, eyeLeftSvg, eyeRightSvg, innerGlow, outerGlow, leftBody, rightBody } = elements;
   const glowElements = [innerGlow, outerGlow].filter(Boolean) as HTMLElement[];
 
+  // Track pending delayed reset so we can kill it on interrupt
+  let pendingResetCall: gsap.core.Tween | null = null;
+
   const doReset = () => {
     // Reset rotation if configured
     if (config.resetRotation) {
@@ -67,10 +70,19 @@ export function interpretEmotionConfig(
     onComplete: () => {
       // If holdDuration is set, wait before resetting (for look animations)
       if (config.holdDuration) {
-        gsap.delayedCall(config.holdDuration, doReset);
+        pendingResetCall = gsap.delayedCall(config.holdDuration, doReset);
       } else {
         doReset();
       }
+    },
+    onInterrupt: () => {
+      // Kill any pending delayed reset when interrupted
+      if (pendingResetCall) {
+        pendingResetCall.kill();
+        pendingResetCall = null;
+      }
+      // Do immediate reset on interrupt (no delay)
+      doReset();
     },
   });
 

@@ -22,6 +22,7 @@ import { interpretEmotionConfig } from './definitions/emotion-interpreter';
 import { EMOTION_CONFIGS } from './definitions/emotions';
 import { initializeCharacter } from './initialize';
 import { createWakeUpAnimation, createPowerOffAnimation } from './definitions/transitions';
+import { createShadowTracker, type ShadowTrackerControls } from './shadow';
 
 /**
  * Elements required by the animation controller
@@ -97,8 +98,10 @@ export interface UseAnimationControllerReturn {
   getState: () => AnimationState;
   /** Get current emotion */
   getEmotion: () => EmotionType | null;
-  /** Check if idle is active */
+  /** Check if idle is active (started but may be paused) */
   isIdle: () => boolean;
+  /** Check if idle is actively playing (not paused) */
+  isIdlePlaying: () => boolean;
   /** Get debug information */
   getDebugInfo: () => ReturnType<AnimationController['getDebugInfo']>;
   /** Set super mode scale (null to exit super mode) */
@@ -169,6 +172,9 @@ export function useAnimationController(
   // Track previous states for change detection
   const previousIsOffRef = useRef(isOff);
   const previousSearchModeRef = useRef(searchMode);
+
+  // Shadow tracker - dynamically updates shadow based on character Y position
+  const shadowTrackerRef = useRef<ShadowTrackerControls | null>(null);
 
   // NOTE: idleTimelineRef REMOVED - controller is single owner of idle
   // The controller manages idle internally, hook just calls controller methods
@@ -249,6 +255,9 @@ export function useAnimationController(
       if (enableLogging) {
         console.log('[useAnimationController] Cleaning up controller');
       }
+      // Stop shadow tracker
+      shadowTrackerRef.current?.stop();
+      shadowTrackerRef.current = null;
       // Controller.destroy() kills all timelines including idle
       controllerRef.current?.destroy();
       controllerRef.current = null;
@@ -303,6 +312,23 @@ export function useAnimationController(
         },
         { isOff }
       );
+
+      // Create shadow tracker - dynamically updates shadow based on character Y position
+      // This replaces all the disjointed shadow animations in idle, emotions, etc.
+      if (elements.shadow && !shadowTrackerRef.current) {
+        shadowTrackerRef.current = createShadowTracker(
+          elements.character,
+          elements.shadow
+        );
+        // Start immediately (will track character Y at 60fps)
+        // Don't start if in OFF mode - wake-up transition handles shadow
+        if (!isOff) {
+          shadowTrackerRef.current.start();
+        }
+        if (enableLogging) {
+          console.log('[useAnimationController] Shadow tracker created and started');
+        }
+      }
     }
   }, [elements, enableLogging, isOff]);
 
@@ -385,6 +411,14 @@ export function useAnimationController(
             // Notify debug overlay
             onAnimationSequenceChange?.('CONTROLLER: Idle animation');
           }
+
+          // Start shadow tracker after wake-up (shadow fade-in is handled by wake-up animation)
+          if (shadowTrackerRef.current) {
+            shadowTrackerRef.current.start();
+            if (enableLogging) {
+              console.log('[useAnimationController] Shadow tracker started after wake-up');
+            }
+          }
         });
 
         wakeUpTl.play();
@@ -400,6 +434,14 @@ export function useAnimationController(
     if (!wasOff && isNowOff) {
       if (enableLogging) {
         console.log('[useAnimationController] Power-off sequence: ON → OFF - CALLING POWER-OFF ANIMATION');
+      }
+
+      // Stop shadow tracker - power-off animation handles its own shadow fade
+      if (shadowTrackerRef.current) {
+        shadowTrackerRef.current.stop();
+        if (enableLogging) {
+          console.log('[useAnimationController] Shadow tracker stopped for power-off');
+        }
       }
 
       // Notify debug overlay
@@ -465,6 +507,11 @@ export function useAnimationController(
 
       // Pause idle animation
       controllerRef.current.pauseIdle();
+
+      // Pause shadow tracker - shadow is hidden during search
+      if (shadowTrackerRef.current) {
+        shadowTrackerRef.current.pause();
+      }
     }
 
     // Exiting search mode
@@ -491,12 +538,20 @@ export function useAnimationController(
 
         restoreTl.eventCallback('onComplete', () => {
           controllerRef.current?.resumeIdle();
+          // Resume shadow tracker after exiting search
+          if (shadowTrackerRef.current) {
+            shadowTrackerRef.current.resume();
+          }
         });
 
         restoreTl.play();
       } else {
         // Fallback if eye elements are not available
         controllerRef.current.resumeIdle();
+        // Resume shadow tracker
+        if (shadowTrackerRef.current) {
+          shadowTrackerRef.current.resume();
+        }
       }
     }
     // Only re-run when searchMode changes - eye elements are stable refs
@@ -800,13 +855,23 @@ export function useAnimationController(
   }, []);
 
   /**
-   * Check if idle is active
+   * Check if idle is active (started but may be paused)
    */
   const isIdleActive = useCallback((): boolean => {
     if (!controllerRef.current) {
       return false;
     }
     return controllerRef.current.isIdle();
+  }, []);
+
+  /**
+   * Check if idle is actively playing (not paused)
+   */
+  const isIdlePlaying = useCallback((): boolean => {
+    if (!controllerRef.current) {
+      return false;
+    }
+    return controllerRef.current.isIdlePlaying();
   }, []);
 
   /**
@@ -844,8 +909,9 @@ export function useAnimationController(
     getState,
     getEmotion,
     isIdle: isIdleActive,
+    isIdlePlaying,
     getDebugInfo,
     setSuperMode,
     isReady: isReady.current,
-  }), [playEmotion, transitionTo, startIdle, pause, resume, killAll, getState, getEmotion, isIdleActive, getDebugInfo, setSuperMode]);
+  }), [playEmotion, transitionTo, startIdle, pause, resume, killAll, getState, getEmotion, isIdleActive, isIdlePlaying, getDebugInfo, setSuperMode]);
 }

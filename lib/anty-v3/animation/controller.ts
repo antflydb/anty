@@ -85,10 +85,17 @@ export class AnimationController {
   }
 
   /**
-   * Check if idle is currently active
+   * Check if idle is currently active (started but may be paused)
    */
   isIdle(): boolean {
     return this.isIdleActive;
+  }
+
+  /**
+   * Check if idle is actively playing (not paused)
+   */
+  isIdlePlaying(): boolean {
+    return this.isIdleActive && this.idleTimeline !== null && this.idleTimeline.isActive();
   }
 
   /**
@@ -171,13 +178,19 @@ export class AnimationController {
   }
 
   /**
-   * Restart idle animation from origin (seek to 0)
+   * Restart idle animation from origin
    * Use this for a clean handoff after emotions that significantly move the character
+   *
+   * Uses invalidate() to force GSAP to recapture starting values.
+   * This is critical for super mode: the idle timeline uses relative scale (*=1.02),
+   * so we need it to recapture the current scale (1.45 in super mode) as the base.
    */
   restartIdle(): void {
     if (this.idleTimeline) {
-      this.idleTimeline.seek(0);
-      this.idleTimeline.play();
+      // invalidate() clears cached starting values, forcing recapture on next render
+      // This ensures relative scale (*=1.02) works from current scale, not creation-time scale
+      this.idleTimeline.invalidate();
+      this.idleTimeline.restart();
     }
     // Fresh blink timer
     if (this.blinkControls) {
@@ -293,7 +306,7 @@ export class AnimationController {
     timeline.pause();
 
     // CRITICAL: Capture original callbacks from emotion timeline BEFORE clearing them
-    // This preserves eye reset and rotation cleanup logic from emotions.ts
+    // This preserves eye reset and rotation cleanup logic from emotion-interpreter.ts
     const originalOnStart = timeline.eventCallback('onStart');
     const originalOnComplete = timeline.eventCallback('onComplete');
     const originalOnInterrupt = timeline.eventCallback('onInterrupt');
@@ -302,6 +315,9 @@ export class AnimationController {
     timeline.eventCallback('onStart', null);
     timeline.eventCallback('onComplete', null);
     timeline.eventCallback('onInterrupt', null);
+
+    // Track if onInterrupt was already called to prevent double-reset
+    let interruptHandled = false;
 
     // Setup callbacks BEFORE playing timeline
     const animationStartTime = Date.now();
@@ -356,19 +372,18 @@ export class AnimationController {
     });
 
     timeline.eventCallback('onInterrupt', () => {
+      // Prevent double-handling
+      if (interruptHandled) return;
+      interruptHandled = true;
+
       if (this.config.enableLogging) {
         console.log(`[AnimationController] Emotion ${emotion} interrupted`);
       }
 
-      // Call original onInterrupt callback if exists
+      // Call original onInterrupt callback - this does immediate eye reset
+      // (emotion-interpreter.ts sets up onInterrupt to kill pending delays and reset immediately)
       if (originalOnInterrupt) {
         originalOnInterrupt.call(timeline);
-      }
-
-      // CRITICAL: Also call onComplete to reset eyes when interrupted
-      // When timeline.kill() is called, onComplete doesn't fire, but we still need eye reset
-      if (originalOnComplete) {
-        originalOnComplete.call(timeline);
       }
 
       // Cleanup

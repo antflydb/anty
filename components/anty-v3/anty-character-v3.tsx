@@ -64,6 +64,8 @@ export interface AntyCharacterHandle {
   hideSearchGlow?: () => void;
   playEmotion?: (emotion: ExpressionName, options?: { isChatOpen?: boolean; showLightbulb?: boolean; quickDescent?: boolean }) => boolean;
   killAll?: () => void;
+  pauseIdle?: () => void;
+  resumeIdle?: () => void;
   startLook?: (direction: 'left' | 'right') => void;
   endLook?: () => void;
   setSuperMode?: (scale: number | null) => void;
@@ -237,6 +239,39 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
               bulbTl.to(lightbulb, { opacity: 0, duration: 0.3, ease: 'power2.in' }, 0.65);
             }, 180); // Appear near apex
           }
+
+          // Spawn teardrop emoji for sad animation
+          // Appears in upper-right quadrant, drifts downward (opposite of lightbulb)
+          if (emotion === 'sad' && containerRef.current) {
+            setTimeout(() => {
+              const rect = containerRef.current?.getBoundingClientRect();
+              if (!rect) return;
+              const teardrop = document.createElement('div');
+              teardrop.textContent = '💧';
+              // Smaller than lightbulb, scale up during super mode
+              const dropSize = isSuperMode ? 52 : 36;
+              const dropOffset = isSuperMode ? 24 : 16;
+              // Position: upper-right quadrant, horizontal center at inner edge of right side (~65% from center)
+              const xOffset = rect.width * 0.35;
+              teardrop.style.cssText = `
+                position: fixed;
+                left: ${rect.left + rect.width / 2 + xOffset - dropOffset}px;
+                top: ${rect.top - 20}px;
+                font-size: ${dropSize}px;
+                z-index: 1000;
+                pointer-events: none;
+                opacity: 0;
+              `;
+              document.body.appendChild(teardrop);
+              const dropTl = gsap.timeline({ onComplete: () => teardrop.remove() });
+              // Gentle downward drift (opposite of lightbulb)
+              dropTl.to(teardrop, { y: 35, duration: 1.2, ease: 'power2.in' }, 0);
+              // Fade in quickly
+              dropTl.to(teardrop, { opacity: 1, duration: 0.15, ease: 'power2.out' }, 0);
+              // Fade out as it falls
+              dropTl.to(teardrop, { opacity: 0, duration: 0.4, ease: 'power2.in' }, 0.85);
+            }, 250); // Appear shortly after Anty starts drooping
+          }
         },
         onEmotionMotionComplete: (emotion, timelineId, duration) => {
           // Eye-only actions (look-left, look-right) are secondary animations like blinks
@@ -397,10 +432,10 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
         particles.push(particle);
       }
 
-      // Get Anty's position on screen
+      // Get Anty's position on screen (offset up 15px for better visual convergence)
       const containerRect = container.getBoundingClientRect();
       const antyX = containerRect.left + containerRect.width / 2;
-      const antyY = containerRect.top + containerRect.height / 2;
+      const antyY = containerRect.top + containerRect.height / 2 - 15;
 
       // Animate with GSAP - converging INTO Anty!
       particles.forEach((particle, i) => {
@@ -521,6 +556,7 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
         'look-left': 'look-left',
         'look-right': 'look-right',
         'super': 'super',
+        'chant': 'chant',
       };
 
       const emotionType = validEmotions[emotion];
@@ -578,6 +614,12 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
     killAll: () => {
       animationController.killAll();
     },
+    pauseIdle: () => {
+      animationController.pause();
+    },
+    resumeIdle: () => {
+      animationController.resume();
+    },
     setSuperMode: (scale: number | null) => {
       animationController.setSuperMode(scale);
     },
@@ -615,6 +657,8 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
       'headshake': 'headshake',
       'look-left': 'look-left',
       'look-right': 'look-right',
+      'super': 'super',
+      'chant': 'chant',
     };
 
     const emotionType = validEmotions[expression];
@@ -686,44 +730,51 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
     onSpontaneousExpressionRef.current = onSpontaneousExpression;
   }, [onSpontaneousExpression]);
 
-  // Setup spontaneous look behaviors (random looking left/right)
+  // Track when idle started (reset when expression changes away from idle)
+  const idleStartTimeRef = useRef<number>(Date.now());
+  useEffect(() => {
+    if (expression === 'idle') {
+      // Reset idle start time when returning to idle
+      idleStartTimeRef.current = Date.now();
+    }
+  }, [expression]);
+
+  // Setup spontaneous "bored" behaviors (triggered after extended idle)
+  // DISABLED FOR NOW - will be used for future bored emotions
   // IMPORTANT: Empty dependencies to ensure only ONE scheduler is ever created
   useGSAP(
     () => {
       let isActive = true;
+      const MIN_IDLE_TIME_MS = 120000; // 2 minutes of continuous idle required
 
       const scheduleRandomBehavior = () => {
         if (!isActive) return;
 
-        const delay = gsap.utils.random(15, 30); // Random delay between 15-30 seconds (rare behaviors)
+        const delay = gsap.utils.random(60, 120); // Check every 60-120 seconds
 
         gsap.delayedCall(delay, () => {
           if (!isActive) return;
 
-          // Only trigger behaviors when in idle state AND not in search mode
-          if (currentExpressionRef.current !== 'idle' || searchModeRef.current) {
-            // If not idle or in search mode, wait another full delay period before checking again
+          // Only trigger behaviors when:
+          // 1. Expression is idle
+          // 2. Not in search mode
+          // 3. Idle animation is actually playing (not paused for eat/other custom animations)
+          // 4. Been idle for at least 2 minutes continuously
+          const isIdlePlaying = animationController.isIdlePlaying();
+          const idleDuration = Date.now() - idleStartTimeRef.current;
+          const hasBeenIdleLongEnough = idleDuration >= MIN_IDLE_TIME_MS;
+
+          if (currentExpressionRef.current !== 'idle' || searchModeRef.current || !isIdlePlaying || !hasBeenIdleLongEnough) {
+            // If conditions not met, wait another full delay period before checking again
             scheduleRandomBehavior();
             return;
           }
 
-          const random = Math.random();
+          // TODO: Add "bored" emotions here in the future
+          // For now, just log that we would trigger something
+          // onRandomAction?.('BORED - would trigger emotion');
 
-          if (random < 0.5) {
-            // 50% chance of look left
-            if (onSpontaneousExpressionRef.current) {
-              onSpontaneousExpressionRef.current('look-left');
-            }
-            onRandomAction?.('LOOK LEFT');
-          } else {
-            // 50% chance of look right
-            if (onSpontaneousExpressionRef.current) {
-              onSpontaneousExpressionRef.current('look-right');
-            }
-            onRandomAction?.('LOOK RIGHT');
-          }
-
-          // Schedule next behavior (minimum 15 seconds from now)
+          // Schedule next behavior
           scheduleRandomBehavior();
         });
       };

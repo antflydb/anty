@@ -104,6 +104,7 @@ export const EMOTION_CONFIGS: Partial<Record<EmotionType, EmotionConfig>> = {
     ],
     glow: { follow: true },
     totalDuration: 3.4,
+    showTeardrop: true,
   },
 
   // ===========================
@@ -365,6 +366,23 @@ export const EMOTION_CONFIGS: Partial<Record<EmotionType, EmotionConfig>> = {
     ],
     glow: { follow: true },
     totalDuration: 0.55,
+  },
+
+  // ===========================
+  // CHANT - Eye-only happy eyes (triggered by chant output)
+  // No body movement, no UI button - just happy eyes for ~1.5s
+  // ===========================
+  chant: {
+    id: 'chant',
+    eyes: {
+      shape: 'HAPPY',
+      duration: 0.2,
+      yOffset: -8, // Slight lift like happy
+    },
+    character: [], // Eye-only, no body movement
+    totalDuration: 1.5,
+    holdDuration: 1.2, // Hold happy eyes before returning to idle
+    resetIdle: false, // Don't disrupt breathing
   },
 };
 

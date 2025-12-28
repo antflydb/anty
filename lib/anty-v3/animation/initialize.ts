@@ -122,7 +122,10 @@ export function initializeCharacter(
   }
 
   // ===========================
-  // Shadow - ground-fixed, only scale/opacity animate
+  // Shadow - initial state before ShadowTracker takes over
+  // When ON: grounded state (full size, visible)
+  // When OFF: shrunk state (wake-up will fade it in)
+  // After init, ShadowTracker dynamically updates based on character Y
   // ===========================
   if (shadow) {
     gsap.set(shadow, {
