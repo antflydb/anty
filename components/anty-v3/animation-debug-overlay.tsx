@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef, useCallback } from 'react';
+import gsap from 'gsap';
 
 interface AnimationDebugData {
   rotation: number;
@@ -26,6 +27,8 @@ interface DebugAlert {
 interface AnimationDebugOverlayProps {
   characterRef: React.RefObject<HTMLDivElement | null>;
   shadowRef: React.RefObject<HTMLDivElement | null>;
+  innerGlowRef?: React.RefObject<HTMLDivElement | null>;
+  outerGlowRef?: React.RefObject<HTMLDivElement | null>;
   currentSequence?: string;
   randomAction?: string;
 }
@@ -33,6 +36,8 @@ interface AnimationDebugOverlayProps {
 export function AnimationDebugOverlay({
   characterRef,
   shadowRef,
+  innerGlowRef,
+  outerGlowRef,
   currentSequence = 'IDLE',
   randomAction = '',
 }: AnimationDebugOverlayProps) {
@@ -57,11 +62,11 @@ export function AnimationDebugOverlay({
 
   // Position tracker experimental feature - MUST BE DECLARED BEFORE USE IN useEffect
   const [showPositionTracker, setShowPositionTracker] = useState(true); // Default to enabled
-  const [positionHistory, setPositionHistory] = useState<Array<{ x: number; y: number; shadow: number }>>([]);
+  const [positionHistory, setPositionHistory] = useState<Array<{ x: number; y: number; shadow: number; innerGlowX: number; innerGlowY: number; outerGlowX: number; outerGlowY: number }>>([]);
   const [snapshotCards, setSnapshotCards] = useState<Array<{
     id: string;
     sequence: string;
-    data: Array<{ x: number; y: number; shadow: number }>;
+    data: Array<{ x: number; y: number; shadow: number; innerGlowX: number; innerGlowY: number; outerGlowX: number; outerGlowY: number }>;
   }>>([]);
   const cardIdCounter = useRef(0);
   const [isHoveringSnapshots, setIsHoveringSnapshots] = useState(false);
@@ -95,7 +100,7 @@ export function AnimationDebugOverlay({
   const lastProcessedMotionRef = useRef<string>(''); // Prevent duplicate processing
 
   // Pre-motion buffer for capturing lead-in frames
-  const PRE_MOTION_BUFFER = useRef<Array<{ x: number; y: number; shadow: number }>>([]);
+  const PRE_MOTION_BUFFER = useRef<Array<{ x: number; y: number; shadow: number; innerGlowX: number; innerGlowY: number; outerGlowX: number; outerGlowY: number }>>([]);
   const MAX_BUFFER_SIZE = 60; // ~1s at 60fps
 
   // Update max tracker height based on main debug panel height
@@ -779,11 +784,32 @@ export function AnimationDebugOverlay({
           setBaselinePosition({ x: centerX, y: centerY });
         }
 
+        // Get glow positions using GSAP's getProperty (reads the actual GSAP-tracked x/y values)
+        // This is more accurate than parsing CSS transform matrix which includes Tailwind centering
+        let innerGlowX = 0, innerGlowY = 0, outerGlowX = 0, outerGlowY = 0;
+        if (innerGlowRef?.current) {
+          // Use gsap.getProperty to read the x/y values that GlowSystem is setting
+          innerGlowX = (gsap.getProperty(innerGlowRef.current, 'x') as number) || 0;
+          innerGlowY = (gsap.getProperty(innerGlowRef.current, 'y') as number) || 0;
+        }
+        if (outerGlowRef?.current) {
+          outerGlowX = (gsap.getProperty(outerGlowRef.current, 'x') as number) || 0;
+          outerGlowY = (gsap.getProperty(outerGlowRef.current, 'y') as number) || 0;
+        }
+
         // Calculate deviation from baseline (0,0,0 system)
         // Y is inverted: negative deviation = moving down (higher Y), positive = moving up (lower Y)
         const deviation = baselinePosition
-          ? { x: centerX - baselinePosition.x, y: baselinePosition.y - centerY, shadow: shadowRect.width }
-          : { x: 0, y: 0, shadow: shadowRect.width };
+          ? {
+              x: centerX - baselinePosition.x,
+              y: baselinePosition.y - centerY,
+              shadow: shadowRect.width,
+              innerGlowX,
+              innerGlowY: -innerGlowY, // Invert Y for consistency
+              outerGlowX,
+              outerGlowY: -outerGlowY, // Invert Y for consistency
+            }
+          : { x: 0, y: 0, shadow: shadowRect.width, innerGlowX: 0, innerGlowY: 0, outerGlowX: 0, outerGlowY: 0 };
 
         // Always accumulate data to position history
         setPositionHistory(prev => [...prev, deviation]);
@@ -830,7 +856,7 @@ export function AnimationDebugOverlay({
         cancelAnimationFrame(animationFrameId);
       }
     };
-  }, [characterRef, shadowRef, currentSequence, lastY, showPositionTracker]);
+  }, [characterRef, shadowRef, innerGlowRef, outerGlowRef, currentSequence, lastY, showPositionTracker]);
 
   // Alert styling by type
   const getAlertStyle = (type: DebugAlert['type']) => {
@@ -847,7 +873,7 @@ export function AnimationDebugOverlay({
   };
 
   // Render position plot with chronological stacking (left = oldest, right = newest)
-  const renderPositionPlot = (data: Array<{ x: number; y: number; shadow: number }>, width = 280, height = 80, isLive = false) => {
+  const renderPositionPlot = (data: Array<{ x: number; y: number; shadow: number; innerGlowX: number; innerGlowY: number; outerGlowX: number; outerGlowY: number }>, width = 280, height = 80, isLive = false) => {
     if (data.length < 2) {
       return (
         <div className="flex items-center justify-center h-full text-gray-500 text-[10px]">
@@ -909,6 +935,69 @@ export function AnimationDebugOverlay({
         {positionPoints.length > 0 && (
           <circle cx={positionPoints[positionPoints.length - 1].x} cy={positionPoints[positionPoints.length - 1].y}
             r="3" fill="lime" />
+        )}
+      </svg>
+    );
+  };
+
+  // Render glow plot showing inner and outer glow deviations
+  const renderGlowPlot = (data: Array<{ innerGlowX: number; innerGlowY: number; outerGlowX: number; outerGlowY: number }>, width = 280, height = 50) => {
+    if (data.length < 2) {
+      return (
+        <div className="flex items-center justify-center h-full text-gray-500 text-[10px]">
+          Collecting glow data...
+        </div>
+      );
+    }
+
+    // Calculate bounds for glow Y positions (both inner and outer)
+    const allGlowY = [...data.map(d => d.innerGlowY), ...data.map(d => d.outerGlowY)];
+    const glowYMin = Math.min(...allGlowY);
+    const glowYMax = Math.max(...allGlowY);
+    const glowYRange = glowYMax - glowYMin || 1;
+
+    // Map data to SVG coordinates
+    const padding = 5;
+    const plotWidth = width - padding * 2;
+    const plotHeight = height - padding * 2;
+
+    // Inner glow points (cyan)
+    const innerGlowPoints = data.map((d, i) => {
+      const x = ((i / (data.length - 1)) * plotWidth) + padding;
+      const y = ((1 - (d.innerGlowY - glowYMin) / glowYRange) * plotHeight) + padding;
+      return { x, y };
+    });
+
+    // Outer glow points (magenta)
+    const outerGlowPoints = data.map((d, i) => {
+      const x = ((i / (data.length - 1)) * plotWidth) + padding;
+      const y = ((1 - (d.outerGlowY - glowYMin) / glowYRange) * plotHeight) + padding;
+      return { x, y };
+    });
+
+    const innerGlowPathD = innerGlowPoints.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+    const outerGlowPathD = outerGlowPoints.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+
+    return (
+      <svg width={width} height={height} className="bg-black/30">
+        {/* Grid lines */}
+        <line x1={padding} y1={height / 2} x2={width - padding} y2={height / 2}
+          stroke="#333" strokeWidth="1" strokeDasharray="2,2" />
+
+        {/* Outer glow plot line - magenta */}
+        <path d={outerGlowPathD} fill="none" stroke="#ff00ff" strokeWidth="1.5" opacity="0.7" />
+
+        {/* Inner glow plot line - cyan */}
+        <path d={innerGlowPathD} fill="none" stroke="#00ffff" strokeWidth="1.5" opacity="0.7" />
+
+        {/* Current points */}
+        {innerGlowPoints.length > 0 && (
+          <>
+            <circle cx={outerGlowPoints[outerGlowPoints.length - 1].x} cy={outerGlowPoints[outerGlowPoints.length - 1].y}
+              r="2" fill="#ff00ff" />
+            <circle cx={innerGlowPoints[innerGlowPoints.length - 1].x} cy={innerGlowPoints[innerGlowPoints.length - 1].y}
+              r="2" fill="#00ffff" />
+          </>
         )}
       </svg>
     );
@@ -1251,8 +1340,25 @@ export function AnimationDebugOverlay({
                     <span className="text-cyan-300 text-[9px] font-bold">{card.sequence}</span>
                     <span className="text-gray-500 text-[8px] font-mono">{card.id}</span>
                   </div>
-                  <div className="w-full">
+                  {/* Position plot (Anty + shadow) */}
+                  <div className="w-full mb-1">
+                    <div className="text-[8px] text-gray-500 mb-0.5 flex items-center gap-1">
+                      <span className="w-2 h-0.5 bg-[lime] inline-block"></span>
+                      <span>Position</span>
+                      <span className="w-2 h-0.5 bg-red-500 inline-block ml-1"></span>
+                      <span>Shadow</span>
+                    </div>
                     {renderPositionPlot(card.data, 256, 60, false)}
+                  </div>
+                  {/* Glow plot (inner + outer glow deviation) */}
+                  <div className="w-full">
+                    <div className="text-[8px] text-gray-500 mb-0.5 flex items-center gap-1">
+                      <span className="w-2 h-0.5 bg-[cyan] inline-block"></span>
+                      <span>Inner</span>
+                      <span className="w-2 h-0.5 bg-[magenta] inline-block ml-1"></span>
+                      <span>Outer</span>
+                    </div>
+                    {renderGlowPlot(card.data, 256, 45)}
                   </div>
                 </div>
               );
@@ -1270,8 +1376,25 @@ export function AnimationDebugOverlay({
                   <span className="inline-block w-[60px]">Δy: <span className="inline-block w-[35px] text-right">{(Math.abs(positionHistory[positionHistory.length - 1].y) < 0.05 ? 0 : positionHistory[positionHistory.length - 1].y).toFixed(1)}px</span></span>
                 </div>
               )}
-              <div className="w-full">
+              {/* Position plot (Anty + shadow) */}
+              <div className="w-full mb-1">
+                <div className="text-[8px] text-gray-500 mb-0.5 flex items-center gap-1">
+                  <span className="w-2 h-0.5 bg-[lime] inline-block"></span>
+                  <span>Position</span>
+                  <span className="w-2 h-0.5 bg-red-500 inline-block ml-1"></span>
+                  <span>Shadow</span>
+                </div>
                 {renderPositionPlot(positionHistory, 256, 60, true)}
+              </div>
+              {/* Glow plot (inner + outer glow deviation) */}
+              <div className="w-full">
+                <div className="text-[8px] text-gray-500 mb-0.5 flex items-center gap-1">
+                  <span className="w-2 h-0.5 bg-[cyan] inline-block"></span>
+                  <span>Inner</span>
+                  <span className="w-2 h-0.5 bg-[magenta] inline-block ml-1"></span>
+                  <span>Outer</span>
+                </div>
+                {renderGlowPlot(positionHistory, 256, 45)}
               </div>
             </div>
           </div>

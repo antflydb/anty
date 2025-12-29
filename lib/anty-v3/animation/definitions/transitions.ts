@@ -31,8 +31,10 @@ const GLOW_LAG_SECONDS = 0.05;
 /**
  * Creates wake-up animation (OFF → ON transition)
  *
- * TEMPORARILY INSTANT: Just snaps to idle state immediately.
- * The full animation will be rebuilt later.
+ * "Blink Awake" animation (~0.5s):
+ * 1. Body smoothly rises (scale 0.65→1, y 50→0, opacity 0.45→1)
+ * 2. Eyes snap from OFF arrows to CLOSED partway through
+ * 3. Eyes morph from CLOSED → IDLE (opening like waking up)
  *
  * @param elements - Character, shadow, and optional glow elements
  * @returns GSAP timeline for wake-up animation
@@ -55,59 +57,119 @@ export function createWakeUpAnimation(
     gsap.killTweensOf([eyeLeftPath, eyeRightPath]);
   }
 
-  // INSTANT RESET: Snap to idle state immediately
-  gsap.set(character, {
-    opacity: 1,
-    scale: 1,
-    y: 0,
-    x: 0,
-    rotation: 0,
-    rotationX: 0,
-    rotationY: 0,
-    clearProps: 'willChange',
-  });
+  // ============================================
+  // WAKE-UP: Mirror of power-off sequence
+  // ============================================
+  // OFF does: climb to -60 (0.5s) → snap to 50 (0.1s) → fade
+  // ON does:  snap to -60 (0.12s) → hang → settle to 0 (0.5s)
+  // ============================================
 
-  gsap.set(shadow, {
-    xPercent: -50,
-    scaleX: 1,
-    scaleY: 1,
-    opacity: 0.7,
-  });
+  // Phase 1: POP UP - quick but readable rise to apex
+  // Opacity and scale come in with the rise
+  timeline.fromTo(
+    character,
+    {
+      opacity: 0.45,
+      scale: 0.65,
+      y: 50,
+      x: 0,
+      rotation: 0,
+    },
+    {
+      opacity: 1,
+      scale: 1,
+      y: -40,
+      duration: 0.25,
+      ease: 'power3.out', // Quick but visible rise
+    }
+  );
 
-  // NOTE: Glow initial state removed - GlowSystem handles via snapToCharacter() and fadeIn()
+  // Phase 2: HANG at apex - brief pause to let it read
+  // (timeline just continues, this is the gap before settle)
 
-  // Set eyes to IDLE instantly (no animation) with proper dimensions
+  // Phase 3: SETTLE DOWN - smooth descent to idle (mirror of the climb)
+  timeline.to(
+    character,
+    {
+      y: 0,
+      duration: 0.35,
+      ease: 'power2.inOut',
+      clearProps: 'willChange',
+    },
+    0.75 // Start after 0.5s hangtime at apex (0.25 rise + 0.5 hang)
+  );
+
+  // Shadow: starts small/faint, shrinks during rise
+  timeline.fromTo(
+    shadow,
+    {
+      xPercent: -50,
+      scaleX: 0.65,
+      scaleY: 0.65,
+      opacity: 0,
+    },
+    {
+      scaleX: 0.5,
+      scaleY: 0.35,
+      opacity: 0.3,
+      duration: 0.25,
+      ease: 'power3.out',
+    },
+    0
+  );
+
+  // Shadow: grows as character settles
+  timeline.to(
+    shadow,
+    {
+      scaleX: 1,
+      scaleY: 1,
+      opacity: 0.7,
+      duration: 0.35,
+      ease: 'power2.inOut',
+    },
+    0.75
+  );
+
+  // ============================================
+  // EYES: Snap to IDLE, then blink-awake before settle
+  // ============================================
   if (eyeLeftPath && eyeRightPath && eyeLeftSvg && eyeRightSvg && eyeLeft && eyeRight) {
     const idleDimensions = getEyeDimensions('IDLE');
 
     // Kill any existing eye tweens
     gsap.killTweensOf([eyeLeftPath, eyeRightPath, eyeLeftSvg, eyeRightSvg, eyeLeft, eyeRight]);
 
-    // Snap paths to IDLE shape
-    gsap.set(eyeLeftPath, { attr: { d: getEyeShape('IDLE', 'left') } });
-    gsap.set(eyeRightPath, { attr: { d: getEyeShape('IDLE', 'right') } });
+    // Start with HALF eyes (half-open) positioned higher
+    const halfDimensions = getEyeDimensions('HALF');
 
-    // Update viewBox to IDLE dimensions
-    gsap.set([eyeLeftSvg, eyeRightSvg], { attr: { viewBox: idleDimensions.viewBox } });
-
-    // Update container dimensions and reset transforms
-    gsap.set([eyeLeft, eyeRight], {
-      width: idleDimensions.width,
-      height: idleDimensions.height,
+    timeline.set(eyeLeftPath, { attr: { d: getEyeShape('HALF', 'left') } }, 0);
+    timeline.set(eyeRightPath, { attr: { d: getEyeShape('HALF', 'right') } }, 0);
+    timeline.set([eyeLeftSvg, eyeRightSvg], { attr: { viewBox: halfDimensions.viewBox } }, 0);
+    timeline.set([eyeLeft, eyeRight], {
+      width: halfDimensions.width,
+      height: halfDimensions.height,
       x: 0,
-      y: 0,
+      y: -10, // Higher up
       rotation: 0,
       scaleX: 1,
       scaleY: 1,
-    });
-  } else if (eyeLeftPath && eyeRightPath) {
-    // Fallback if SVG containers not available
-    gsap.set(eyeLeftPath, { attr: { d: getEyeShape('IDLE', 'left') } });
-    gsap.set(eyeRightPath, { attr: { d: getEyeShape('IDLE', 'right') } });
-  }
+    }, 0);
 
-  // Tiny delay so timeline has something to complete
-  timeline.to({}, { duration: 0.01 });
+    const eyeContainers = [eyeLeft, eyeRight];
+
+    // Morph to IDLE eyes and settle down during descent
+    timeline.to(eyeLeftPath, { attr: { d: getEyeShape('IDLE', 'left') }, duration: 0.25, ease: 'power2.inOut' }, 0.75);
+    timeline.to(eyeRightPath, { attr: { d: getEyeShape('IDLE', 'right') }, duration: 0.25, ease: 'power2.inOut' }, 0.75);
+    timeline.to([eyeLeftSvg, eyeRightSvg], { attr: { viewBox: idleDimensions.viewBox }, duration: 0.25, ease: 'power2.inOut' }, 0.75);
+    timeline.to([eyeLeft, eyeRight], {
+      width: idleDimensions.width,
+      height: idleDimensions.height,
+      y: 0,
+      duration: 0.35,
+      ease: 'power2.inOut',
+    }, 0.75);
+  }
 
   return timeline;
 }

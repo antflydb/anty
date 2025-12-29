@@ -977,6 +977,15 @@ export default function AntyV3() {
       transformOrigin: '50% 50%' // Ensure scaling happens from center
     });
 
+    // Shadow fades out immediately
+    if (shadow) {
+      tl.to(shadow, {
+        opacity: 0,
+        duration: 0.1,
+        ease: 'power2.in'
+      }, 0);
+    }
+
     // Anticipation: slight squash down (80ms)
     tl.to([leftBody, rightBody], {
       y: 5,
@@ -1225,14 +1234,14 @@ export default function AntyV3() {
       }, 0);
     }
 
-    // STEP 3: Search glow crossfades with orb glows
+    // STEP 3: Search glow crossfades with orb glows (faster fade)
     if (searchGlow) {
       tl.to(searchGlow, {
         opacity: 0,
         scale: 0.85,
-        duration: 0.35,
+        duration: 0.15,
         ease: 'power1.out'
-      }, 0.05);
+      }, 0);
     }
 
     // STEP 4: Search bar container fades out - 200ms
@@ -1749,6 +1758,8 @@ export default function AntyV3() {
         <AnimationDebugOverlay
           characterRef={characterRef}
           shadowRef={shadowRef}
+          innerGlowRef={innerGlowRef}
+          outerGlowRef={glowRef}
           currentSequence={currentAnimationSequence}
           randomAction={lastRandomAction}
         />

@@ -182,6 +182,9 @@ export function useAnimationController(
   const previousIsOffRef = useRef(isOff);
   const previousSearchModeRef = useRef(searchMode);
 
+  // Track if we're in a wake-up transition (prevents auto-start idle race)
+  const isWakingUpRef = useRef(false);
+
   // Shadow tracker - dynamically updates shadow based on character Y position
   const shadowTrackerRef = useRef<ShadowTrackerControls | null>(null);
 
@@ -379,6 +382,9 @@ export function useAnimationController(
         console.log('[useAnimationController] Wake-up sequence: OFF → ON - CALLING WAKE-UP ANIMATION');
       }
 
+      // Set flag to prevent auto-start idle race condition
+      isWakingUpRef.current = true;
+
       // Notify debug overlay
       onAnimationSequenceChange?.('CONTROLLER: Wake-up (OFF → ON)');
 
@@ -402,8 +408,21 @@ export function useAnimationController(
           eyeRightSvg: elements.eyeRightSvg || undefined,
         });
 
+        // Start glow immediately WITH the pop (not after)
+        if (glowSystemRef.current) {
+          glowSystemRef.current.snapToCharacter(); // Reset spring positions
+          glowSystemRef.current.start();
+          glowSystemRef.current.fadeIn(0.3); // Fade in with the pop
+          if (enableLogging) {
+            console.log('[useAnimationController] Glow system started with wake-up');
+          }
+        }
+
         // Start idle when wake-up completes - use controller's startIdle
         wakeUpTl.eventCallback('onComplete', () => {
+          // Clear wake-up flag
+          isWakingUpRef.current = false;
+
           if (enableLogging) {
             console.log('[useAnimationController] Wake-up complete, starting idle via controller');
           }
@@ -444,20 +463,12 @@ export function useAnimationController(
               console.log('[useAnimationController] Shadow tracker started after wake-up');
             }
           }
-
-          // Start glow system and fade in after wake-up
-          if (glowSystemRef.current) {
-            glowSystemRef.current.snapToCharacter(); // Reset spring positions
-            glowSystemRef.current.start();
-            glowSystemRef.current.fadeIn(0.6); // Match wake-up timing
-            if (enableLogging) {
-              console.log('[useAnimationController] Glow system started after wake-up');
-            }
-          }
         });
 
         wakeUpTl.play();
       } else {
+        // Clear flag on failure so idle can still start
+        isWakingUpRef.current = false;
         console.error('[useAnimationController] Wake-up failed - missing elements', {
           hasCharacter: !!elements.character,
           hasShadow: !!elements.shadow
@@ -614,6 +625,8 @@ export function useAnimationController(
   useEffect(() => {
     if (!autoStartIdle || !isReady.current || !controllerRef.current) return;
     if (isOff || searchMode) return;
+    // Skip if we're in a wake-up transition (wake-up handles its own idle start)
+    if (isWakingUpRef.current) return;
     // Check controller's idle state, not a local ref
     if (controllerRef.current.isIdle()) return; // Already running
 
