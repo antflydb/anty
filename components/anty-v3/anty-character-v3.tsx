@@ -14,7 +14,7 @@ import {
   ENABLE_ANIMATION_DEBUG_LOGS,
   logAnimationEvent,
 } from '@/lib/anty-v3/animation/feature-flags';
-import { getEyeShape } from '@/lib/anty-v3/animation/definitions/eye-shapes';
+import { getEyeShape, getEyeDimensions } from '@/lib/anty-v3/animation/definitions/eye-shapes';
 import { createLookAnimation, createReturnFromLookAnimation } from '@/lib/anty-v3/animation/definitions/eye-animations';
 
 // Register GSAP plugin
@@ -53,6 +53,12 @@ interface AntyCharacterV3Props {
   debugMode?: boolean;
   onAnimationSequenceChange?: (sequence: string) => void;
   onRandomAction?: (action: string) => void;
+  /** Ref for inner glow element (for portable animations) */
+  innerGlowRef?: React.RefObject<HTMLDivElement | null>;
+  /** Ref for outer glow element (for portable animations) */
+  outerGlowRef?: React.RefObject<HTMLDivElement | null>;
+  /** Ref for shadow element (for portable animations) */
+  shadowRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 export interface AntyCharacterHandle {
@@ -96,6 +102,9 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
   debugMode = false,
   onAnimationSequenceChange,
   onRandomAction,
+  innerGlowRef,
+  outerGlowRef,
+  shadowRef,
 }, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const characterRef = useRef<HTMLDivElement>(null);
@@ -116,6 +125,10 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
   // Performance fix: Compute expression states instead of storing in state
   const isOff = expression === 'off';
 
+  // Always use IDLE dimensions for initial render - GSAP handles all shape changes
+  // (initialization sets correct shape on mount, animations handle transitions)
+  const initialEyeDimensions = getEyeDimensions('IDLE');
+
   const superGlowRef = useRef<HTMLDivElement>(null);
   const superGlowTimelineRef = useRef<gsap.core.Timeline | null>(null); // Memory leak fix
 
@@ -130,15 +143,11 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
   // ============================================================================
   // NEW ANIMATION CONTROLLER
   // ============================================================================
-  // Note: Shadow element is in parent (page.tsx) with id="anty-shadow"
-  // We'll get it via DOM query since it's outside this component
-  const shadowElement = typeof document !== 'undefined' ? document.getElementById('anty-shadow') : null;
-
   const animationController = useAnimationController(
     {
       container: containerRef.current,
       character: characterRef.current,
-      shadow: shadowElement,
+      shadow: shadowRef?.current,
       eyeLeft: leftEyeRef.current,
       eyeRight: rightEyeRef.current,
       eyeLeftPath: leftEyePathRef.current,
@@ -147,6 +156,8 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
       eyeRightSvg: rightEyeSvgRef.current,
       leftBody: leftBodyRef.current,
       rightBody: rightBodyRef.current,
+      innerGlow: innerGlowRef?.current,
+      outerGlow: outerGlowRef?.current,
     },
     {
       enableLogging: ENABLE_ANIMATION_DEBUG_LOGS,
@@ -856,15 +867,11 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
       {/* Character body with animations */}
       <div
         ref={characterRef}
-        className="relative w-full h-full"
+        className={`relative w-full h-full ${isSuperMode ? 'super-mode' : ''}`}
         style={{
           willChange: 'transform',
           overflow: 'visible',
           // opacity controlled by animation, not React state (prevents double-gray flicker)
-          filter: isSuperMode
-            ? 'drop-shadow(0 0 20px rgba(255, 215, 0, 0.9)) drop-shadow(0 0 40px rgba(255, 165, 0, 0.6)) brightness(1.15) saturate(1.3)'
-            : 'none',
-          animation: isSuperMode ? 'superModeHue 3s linear infinite' : 'none',
         }}
       >
         {/* Anty body layers from Figma */}
@@ -881,8 +888,8 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
             ref={leftEyeRef}
             className="flex-none flex items-center justify-center relative"
             style={{
-              height: '45px',
-              width: '20px',
+              height: `${initialEyeDimensions.height}px`,
+              width: `${initialEyeDimensions.width}px`,
               transformOrigin: 'center center',
             }}
           >
@@ -890,7 +897,7 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
               ref={leftEyeSvgRef}
               width="100%"
               height="100%"
-              viewBox="0 0 20 45"
+              viewBox={initialEyeDimensions.viewBox}
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
               style={{ display: 'block' }}
@@ -911,8 +918,8 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
             ref={rightEyeRef}
             className="flex-none flex items-center justify-center relative"
             style={{
-              height: '45px',
-              width: '20px',
+              height: `${initialEyeDimensions.height}px`,
+              width: `${initialEyeDimensions.width}px`,
               transformOrigin: 'center center',
             }}
           >
@@ -920,7 +927,7 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
               ref={rightEyeSvgRef}
               width="100%"
               height="100%"
-              viewBox="0 0 20 45"
+              viewBox={initialEyeDimensions.viewBox}
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
               style={{ display: 'block' }}

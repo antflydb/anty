@@ -5,7 +5,7 @@
 
 import gsap from 'gsap';
 import { createEyeAnimation } from './eye-animations';
-import { getEyeShape } from './eye-shapes';
+import { getEyeShape, getEyeDimensions } from './eye-shapes';
 
 export interface TransitionAnimationElements {
   character: HTMLElement;
@@ -84,13 +84,34 @@ export function createWakeUpAnimation(
     });
   }
 
-  // Set eyes to IDLE instantly (no animation)
-  if (eyeLeftPath && eyeRightPath) {
+  // Set eyes to IDLE instantly (no animation) with proper dimensions
+  if (eyeLeftPath && eyeRightPath && eyeLeftSvg && eyeRightSvg && eyeLeft && eyeRight) {
+    const idleDimensions = getEyeDimensions('IDLE');
+
+    // Kill any existing eye tweens
+    gsap.killTweensOf([eyeLeftPath, eyeRightPath, eyeLeftSvg, eyeRightSvg, eyeLeft, eyeRight]);
+
+    // Snap paths to IDLE shape
     gsap.set(eyeLeftPath, { attr: { d: getEyeShape('IDLE', 'left') } });
     gsap.set(eyeRightPath, { attr: { d: getEyeShape('IDLE', 'right') } });
-  }
-  if (eyeLeft && eyeRight) {
-    gsap.set([eyeLeft, eyeRight], { x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1 });
+
+    // Update viewBox to IDLE dimensions
+    gsap.set([eyeLeftSvg, eyeRightSvg], { attr: { viewBox: idleDimensions.viewBox } });
+
+    // Update container dimensions and reset transforms
+    gsap.set([eyeLeft, eyeRight], {
+      width: idleDimensions.width,
+      height: idleDimensions.height,
+      x: 0,
+      y: 0,
+      rotation: 0,
+      scaleX: 1,
+      scaleY: 1,
+    });
+  } else if (eyeLeftPath && eyeRightPath) {
+    // Fallback if SVG containers not available
+    gsap.set(eyeLeftPath, { attr: { d: getEyeShape('IDLE', 'left') } });
+    gsap.set(eyeRightPath, { attr: { d: getEyeShape('IDLE', 'right') } });
   }
 
   // Tiny delay so timeline has something to complete
@@ -204,6 +225,47 @@ export function createPowerOffAnimation(
 
   // CRITICAL: Freeze rotation at 0° for logo state
   timeline.set(character, { rotation: 0 }, '>');
+
+  // INSTANT SNAP: Set eyes to OFF/logo shape at the end
+  // Using gsap.set (instant, no morphing) to avoid glitchy point flipping
+  if (eyeLeftPath && eyeRightPath && eyeLeftSvg && eyeRightSvg && eyeLeft && eyeRight) {
+    const offDimensions = getEyeDimensions('OFF_LEFT'); // Same for both sides
+
+    // Kill any existing eye tweens to prevent conflicts
+    gsap.killTweensOf([eyeLeftPath, eyeRightPath, eyeLeftSvg, eyeRightSvg, eyeLeft, eyeRight]);
+
+    // Snap to OFF shapes instantly (no animation = no morphing glitches)
+    timeline.set(eyeLeftPath, { attr: { d: getEyeShape('OFF_LEFT', 'left') } }, '>');
+    timeline.set(eyeRightPath, { attr: { d: getEyeShape('OFF_RIGHT', 'right') } }, '<');
+
+    // Update viewBox to match OFF dimensions
+    timeline.set([eyeLeftSvg, eyeRightSvg], { attr: { viewBox: offDimensions.viewBox } }, '<');
+
+    // Update container dimensions and position for logo state
+    // Eyes move closer together (toward center) and vertically centered
+    const eyeOffsetX = 3; // px toward center
+    const eyeOffsetY = 3; // px down
+
+    timeline.set(eyeLeft, {
+      width: offDimensions.width,
+      height: offDimensions.height,
+      rotation: 0,
+      scaleX: 1,
+      scaleY: 1,
+      x: eyeOffsetX,  // Move right toward center
+      y: eyeOffsetY,
+    }, '<');
+
+    timeline.set(eyeRight, {
+      width: offDimensions.width,
+      height: offDimensions.height,
+      rotation: 0,
+      scaleX: 1,
+      scaleY: 1,
+      x: -eyeOffsetX, // Move left toward center
+      y: eyeOffsetY,
+    }, '<');
+  }
 
   return timeline;
 }

@@ -13,25 +13,11 @@ import { DEFAULT_SEARCH_BAR_CONFIG } from '@/lib/anty-v3/animation/types';
 import type { AntyStats } from '@/lib/anty-v3/stat-system';
 import { ENABLE_ANIMATION_DEBUG_LOGS } from '@/lib/anty-v3/animation/feature-flags';
 
-export default function AntyV3() {
-  // Add CSS animation for super mode hue shift
-  useEffect(() => {
-    if (!document.getElementById('anty-super-mode-styles')) {
-      const style = document.createElement('style');
-      style.id = 'anty-super-mode-styles';
-      style.textContent = `
-        @keyframes superModeHue {
-          0% { filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.9)) drop-shadow(0 0 40px rgba(255, 165, 0, 0.6)) brightness(1.15) saturate(1.3) hue-rotate(0deg); }
-          25% { filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.9)) drop-shadow(0 0 40px rgba(255, 165, 0, 0.6)) brightness(1.15) saturate(1.3) hue-rotate(10deg); }
-          50% { filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.9)) drop-shadow(0 0 40px rgba(255, 165, 0, 0.6)) brightness(1.15) saturate(1.3) hue-rotate(0deg); }
-          75% { filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.9)) drop-shadow(0 0 40px rgba(255, 165, 0, 0.6)) brightness(1.15) saturate(1.3) hue-rotate(-10deg); }
-          100% { filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.9)) drop-shadow(0 0 40px rgba(255, 165, 0, 0.6)) brightness(1.15) saturate(1.3) hue-rotate(0deg); }
-        }
-      `;
-      document.head.appendChild(style);
-    }
-  }, []);
+// Chat panel layout constants
+const CHAT_PANEL_WIDTH = 384;
+const CHAT_OFFSET = CHAT_PANEL_WIDTH / 2; // Character shifts left by half panel width when chat opens
 
+export default function AntyV3() {
   // Game mode state
   const [gameMode, setGameMode] = useState<'idle' | 'game'>('idle');
   const [gameHighScore, setGameHighScore] = useState(0);
@@ -74,6 +60,8 @@ export default function AntyV3() {
 
   const characterRef = useRef<HTMLDivElement>(null);
   const glowRef = useRef<HTMLDivElement>(null);
+  const innerGlowRef = useRef<HTMLDivElement>(null);
+  const shadowRef = useRef<HTMLDivElement>(null);
   const antyRef = useRef<AntyCharacterHandle>(null);
   const moodsButtonRef = useRef<HTMLButtonElement>(null);
   const heartTimersRef = useRef<Map<number, NodeJS.Timeout>>(new Map());
@@ -145,8 +133,8 @@ export default function AntyV3() {
     let animationFrameId: number;
 
     const updateDebugBoxes = () => {
-      const shadow = document.getElementById('anty-shadow');
-      const innerGlow = document.querySelector('.inner-glow') as HTMLElement;
+      const shadow = shadowRef.current;
+      const innerGlow = innerGlowRef.current;
       const outerGlow = glowRef.current;
 
       const shadowDebug = document.getElementById('debug-shadow');
@@ -803,9 +791,9 @@ export default function AntyV3() {
     const characterElement = characterRef.current;
     if (!characterElement) return;
 
-    const innerGlow = document.querySelector('.inner-glow') as HTMLElement;
+    const innerGlow = innerGlowRef.current;
     const outerGlow = glowRef.current;
-    const shadow = document.getElementById('anty-shadow');
+    const shadow = shadowRef.current;
 
     // Kill any existing animations and timers
     gsap.killTweensOf([characterElement, innerGlow, outerGlow, shadow]);
@@ -949,8 +937,8 @@ export default function AntyV3() {
     const leftEye = antyRef.current?.leftEyeRef?.current;
     const rightEye = antyRef.current?.rightEyeRef?.current;
     const searchBar = searchBarRef.current;
-    const shadow = document.getElementById('anty-shadow');
-    const innerGlow = document.querySelector('.inner-glow') as HTMLElement;
+    const shadow = shadowRef.current;
+    const innerGlow = innerGlowRef.current;
     const outerGlow = glowRef.current;
 
     if (ENABLE_ANIMATION_DEBUG_LOGS) {
@@ -1264,8 +1252,8 @@ export default function AntyV3() {
     const rightEye = antyRef.current?.rightEyeRef?.current;
     const searchBar = searchBarRef.current;
     const searchBorder = searchBorderRef.current;
-    const shadow = document.getElementById('anty-shadow');
-    const innerGlow = document.querySelector('.inner-glow') as HTMLElement;
+    const shadow = shadowRef.current;
+    const innerGlow = innerGlowRef.current;
     const outerGlow = glowRef.current;
 
     if (!leftBody || !rightBody || !searchBar) return;
@@ -1604,12 +1592,13 @@ export default function AntyV3() {
                 width: '160px',
                 height: '240px',
                 transition: 'transform 0.3s ease-out',
-                transform: isChatOpen ? 'translateX(-192px)' : 'translateX(0)', // Move left by half of chat panel width (384px/2)
+                transform: isChatOpen ? `translateX(-${CHAT_OFFSET}px)` : 'translateX(0)',
               }}
             >
               {/* Floating glow behind Anty - Layer 1 (inner, more saturated) */}
               <div
-                className="inner-glow absolute left-1/2 -translate-x-1/2 -translate-y-1/2"
+                ref={innerGlowRef}
+                className="inner-glow anty-z-glow absolute left-1/2 -translate-x-1/2 -translate-y-1/2"
                 style={{
                   top: '80px',
                   width: '120px',
@@ -1620,7 +1609,6 @@ export default function AntyV3() {
                   filter: 'blur(25px)',
                   transformOrigin: 'center center',
                   pointerEvents: 'none',
-                  zIndex: 0,
                 }}
               />
 
@@ -1628,7 +1616,7 @@ export default function AntyV3() {
               {debugMode && (
                 <div
                   id="debug-inner-glow"
-                  className="absolute left-1/2 pointer-events-none"
+                  className="anty-z-debug absolute left-1/2 pointer-events-none"
                   style={{
                     top: '80px',
                     width: '120px',
@@ -1636,7 +1624,6 @@ export default function AntyV3() {
                     borderRadius: '50%',
                     border: '3px solid cyan',
                     transform: 'translate(-50%, -50%)',
-                    zIndex: 9999,
                   }}
                 />
               )}
@@ -1644,7 +1631,7 @@ export default function AntyV3() {
               {/* Floating glow behind Anty - Layer 2 (outer, softer) */}
               <div
                 ref={glowRef}
-                className="outer-glow absolute left-1/2 -translate-x-1/2 -translate-y-1/2"
+                className="outer-glow anty-z-glow absolute left-1/2 -translate-x-1/2 -translate-y-1/2"
                 style={{
                   top: '80px',
                   width: '170px',
@@ -1655,7 +1642,6 @@ export default function AntyV3() {
                   filter: 'blur(45px)',
                   transformOrigin: 'center center',
                   pointerEvents: 'none',
-                  zIndex: 0,
                 }}
               />
 
@@ -1663,7 +1649,7 @@ export default function AntyV3() {
               {debugMode && (
                 <div
                   id="debug-outer-glow"
-                  className="absolute left-1/2 pointer-events-none"
+                  className="anty-z-debug absolute left-1/2 pointer-events-none"
                   style={{
                     top: '80px',
                     width: '170px',
@@ -1671,7 +1657,6 @@ export default function AntyV3() {
                     borderRadius: '50%',
                     border: '3px solid magenta',
                     transform: 'translate(-50%, -50%)',
-                    zIndex: 9999,
                   }}
                 />
               )}
@@ -1679,11 +1664,11 @@ export default function AntyV3() {
               {/* Anty character in idle mode */}
               <div
                 ref={characterRef}
+                className="anty-z-character"
                 style={{
                   position: 'absolute',
                   top: 0,
                   left: 0,
-                  zIndex: 1,
                   transformOrigin: 'center center',
                 }}
               >
@@ -1694,6 +1679,9 @@ export default function AntyV3() {
                   isSuperMode={isSuperMode}
                   searchMode={searchActive}
                   debugMode={debugMode}
+                  innerGlowRef={innerGlowRef}
+                  outerGlowRef={glowRef}
+                  shadowRef={shadowRef}
                   onAnimationSequenceChange={(sequence) => {
                     setCurrentAnimationSequence(sequence);
                   }}
@@ -1737,6 +1725,8 @@ export default function AntyV3() {
 
               {/* Fixed shadow - doesn't move with character */}
               <div
+                ref={shadowRef}
+                id="anty-shadow"
                 className="absolute left-1/2 -translate-x-1/2"
                 style={{
                   bottom: '0px',
@@ -1750,14 +1740,13 @@ export default function AntyV3() {
                   transformOrigin: 'center center',
                   pointerEvents: 'none',
                 }}
-                id="anty-shadow"
               />
 
               {/* Debug overlay for shadow */}
               {debugMode && (
                 <div
                   id="debug-shadow"
-                  className="absolute pointer-events-none"
+                  className="anty-z-debug absolute pointer-events-none"
                   style={{
                     left: '50%',
                     bottom: '0px',
@@ -1765,7 +1754,6 @@ export default function AntyV3() {
                     height: '40px',
                     border: '3px solid red',
                     borderRadius: '50%',
-                    zIndex: 9999,
                   }}
                 />
               )}
@@ -1776,7 +1764,7 @@ export default function AntyV3() {
             className="action-buttons"
             style={{
               transition: 'transform 0.3s ease-out',
-              transform: isChatOpen ? 'translateX(-192px)' : 'translateX(0)',
+              transform: isChatOpen ? `translateX(-${CHAT_OFFSET}px)` : 'translateX(0)',
             }}
           >
             <ActionButtonsV3 onButtonClick={handleButtonClick} isOff={expression === 'off'} moodsButtonRef={moodsButtonRef} />
@@ -1850,7 +1838,7 @@ export default function AntyV3() {
       {debugMode && characterRef.current && (
         <AnimationDebugOverlay
           characterRef={characterRef}
-          shadowRef={{ current: document.getElementById('anty-shadow') as HTMLDivElement }}
+          shadowRef={shadowRef}
           currentSequence={currentAnimationSequence}
           randomAction={lastRandomAction}
         />
@@ -1867,11 +1855,11 @@ export default function AntyV3() {
       {/* White fade overlay for classy transition - always rendered */}
       <div
         ref={whiteFadeRef}
+        className="anty-z-overlay"
         style={{
           position: 'fixed',
           inset: 0,
           backgroundColor: 'white',
-          zIndex: 9999,
           pointerEvents: 'none',
           opacity: 0,
           display: showWhiteFade ? 'block' : 'none',

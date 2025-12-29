@@ -160,10 +160,12 @@ export const EYE_SHAPES = {
   // Rotated -15deg in animation for left eye, flipped+rotated for right
   SAD: "M1e-10 1.613C-2.9e-05 7.122 6.045 14 13.5 14C20.96 14 27 7.122 27 1.613V0C27 0 20.96 2.897 13.5 2.897C6.045 2.897 0.00014 1.9e-05 0.00014 1.9e-05L1e-10 1.613Z",
 
-  // OFF/LOGO shapes - Triangular shapes for OFF state (these don't need to morph smoothly)
-  // Note: LEFT points left (<), RIGHT points right (>)
-  OFF_LEFT: "M0.149646 4.06437C0.161122 0.445336 4.53711 -1.35915 7.09619 1.19988L30.6157 24.719C32.2048 26.3081 32.2048 28.8846 30.6157 30.4738L6.94659 54.1429C4.37872 56.7108 -0.0114921 54.8841 2.26039e-05 51.2526L0.149646 4.06437Z",
-  OFF_RIGHT: "M32.2198 52.406C32.2083 56.025 27.8323 57.8295 25.2733 55.2705L1.19187 31.1895C-0.39728 29.6003 -0.397291 27.0238 1.19184 25.4347L25.4264 1.2001C27.9943 -1.36776 32.3845 0.458888 32.373 4.09038L32.2198 52.406Z",
+  // OFF/LOGO shapes - Triangular arrow shapes for OFF state (26x45 viewBox)
+  // LEFT eye points RIGHT (>) toward center
+  // RIGHT eye points LEFT (<) toward center
+  // These are stored pre-computed to ensure instant snapping without morphing
+  OFF_LEFT: "M0.119717 3.2515C0.128897 0.356275 3.62969 -1.08732 5.67695 0.959904L24.4925 19.7752C25.7639 21.0465 25.7639 23.1077 24.4926 24.379L5.55727 43.3143C3.50298 45.3686 -0.00919365 43.9073 1.80842e-05 41.0021L0.119717 3.2515Z",
+  OFF_RIGHT: "M25.8803 3.2515C25.8711 0.356275 22.3703 -1.08732 20.323 0.959904L1.5075 19.7752C0.2361 21.0465 0.2361 23.1077 1.5074 24.379L20.4427 43.3143C22.497 45.3686 26.0092 43.9073 26 41.0021L25.8803 3.2515Z",
 } as const;
 
 export const EYE_DIMENSIONS = {
@@ -203,14 +205,14 @@ export const EYE_DIMENSIONS = {
     viewBox: "0 0 27 14",
   },
   OFF_LEFT: {
-    width: 26.82,
-    height: 53.47,
-    viewBox: "0 0 31.8076 55.343",
+    width: 26,
+    height: 45,
+    viewBox: "0 0 26 45",
   },
   OFF_RIGHT: {
-    width: 26.82,
-    height: 53.47,
-    viewBox: "0 0 32.373 56.4703",
+    width: 26,
+    height: 45,
+    viewBox: "0 0 26 45",
   },
 } as const;
 

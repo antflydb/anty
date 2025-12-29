@@ -8,7 +8,7 @@
  */
 
 import gsap from 'gsap';
-import { getEyeShape, getEyeDimensions } from './definitions/eye-shapes';
+import { getEyeShape, getEyeDimensions, type EyeShapeName } from './definitions/eye-shapes';
 
 /**
  * Elements that can be animated on the character
@@ -82,14 +82,26 @@ export function initializeCharacter(
   });
 
   // ===========================
-  // Eye containers - IDLE shape
+  // Eye containers - position and transforms
   // ===========================
-  // Note: Container dimensions stay fixed at 20x45 via CSS
-  // GSAP only animates transforms and SVG attributes
-  if (eyeLeft && eyeRight) {
-    gsap.set([eyeLeft, eyeRight], {
-      x: 0,
-      y: 0,
+  // OFF state: eyes move closer together (logo position)
+  const eyeOffsetX = isOff ? 3 : 0; // px toward center
+  const eyeOffsetY = isOff ? 3 : 0; // px down
+
+  if (eyeLeft) {
+    gsap.set(eyeLeft, {
+      x: eyeOffsetX,  // Move right toward center when OFF
+      y: eyeOffsetY,
+      scaleX: 1,
+      scaleY: 1,
+      rotation: 0,
+      transformOrigin: 'center center',
+    });
+  }
+  if (eyeRight) {
+    gsap.set(eyeRight, {
+      x: -eyeOffsetX, // Move left toward center when OFF
+      y: eyeOffsetY,
       scaleX: 1,
       scaleY: 1,
       rotation: 0,
@@ -98,26 +110,39 @@ export function initializeCharacter(
   }
 
   // ===========================
-  // Eye SVG paths - IDLE shape (mirrored for right eye)
+  // Eye SVG paths - IDLE or OFF shape based on state
   // ===========================
   if (eyeLeftPath) {
+    const leftShape: EyeShapeName = isOff ? 'OFF_LEFT' : 'IDLE';
     gsap.set(eyeLeftPath, {
-      attr: { d: getEyeShape('IDLE', 'left') },
+      attr: { d: getEyeShape(leftShape, 'left') },
     });
   }
   if (eyeRightPath) {
+    const rightShape: EyeShapeName = isOff ? 'OFF_RIGHT' : 'IDLE';
     gsap.set(eyeRightPath, {
-      attr: { d: getEyeShape('IDLE', 'right') },
+      attr: { d: getEyeShape(rightShape, 'right') },
     });
   }
 
   // ===========================
-  // Eye SVG viewBox - IDLE dimensions
+  // Eye SVG viewBox - IDLE or OFF dimensions
   // ===========================
   if (eyeLeftSvg && eyeRightSvg) {
-    const idleDimensions = getEyeDimensions('IDLE');
+    const dimensions = isOff ? getEyeDimensions('OFF_LEFT') : getEyeDimensions('IDLE');
     gsap.set([eyeLeftSvg, eyeRightSvg], {
-      attr: { viewBox: idleDimensions.viewBox },
+      attr: { viewBox: dimensions.viewBox },
+    });
+  }
+
+  // ===========================
+  // Eye container dimensions - match the shape
+  // ===========================
+  if (eyeLeft && eyeRight) {
+    const dimensions = isOff ? getEyeDimensions('OFF_LEFT') : getEyeDimensions('IDLE');
+    gsap.set([eyeLeft, eyeRight], {
+      width: dimensions.width,
+      height: dimensions.height,
     });
   }
 

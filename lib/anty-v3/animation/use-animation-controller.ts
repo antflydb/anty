@@ -50,10 +50,14 @@ export interface AnimationElements {
   antennaLeft?: HTMLElement | null;
   /** Right antenna */
   antennaRight?: HTMLElement | null;
-  /** Glow effect */
+  /** Glow effect (deprecated - use outerGlow) */
   glow?: HTMLElement | null;
   /** Search bar */
   searchBar?: HTMLElement | null;
+  /** Inner glow element */
+  innerGlow?: HTMLElement | null;
+  /** Outer glow element */
+  outerGlow?: HTMLElement | null;
   /** Left body */
   leftBody?: HTMLElement | null;
   /** Right body */
@@ -290,10 +294,6 @@ export function useAnimationController(
         console.log('[useAnimationController] Calling initializeCharacter()');
       }
 
-      // Get glow elements for initialization
-      const innerGlow = document.querySelector('.inner-glow') as HTMLElement;
-      const outerGlow = document.querySelector('.outer-glow') as HTMLElement;
-
       initializeCharacter(
         {
           character: elements.character,
@@ -304,8 +304,8 @@ export function useAnimationController(
           eyeRightPath: elements.eyeRightPath,
           eyeLeftSvg: elements.eyeLeftSvg,
           eyeRightSvg: elements.eyeRightSvg,
-          innerGlow: innerGlow,
-          outerGlow: outerGlow,
+          innerGlow: elements.innerGlow || null,
+          outerGlow: elements.outerGlow || null,
           leftBody: elements.leftBody,
           rightBody: elements.rightBody,
         },
@@ -354,19 +354,13 @@ export function useAnimationController(
       controllerRef.current.killAll();
 
       // CRITICAL FIX: Actually call the wake-up animation!
-      const shadow = document.getElementById('anty-shadow');
-      if (elements.character && shadow) {
-        // Get glow elements
-        const innerGlow = document.querySelector('.inner-glow') as HTMLElement;
-        const glowElements = document.querySelectorAll('[class*="glow"]');
-        const outerGlow = Array.from(glowElements).find(el => !el.classList.contains('inner-glow')) as HTMLElement;
-
+      if (elements.character && elements.shadow) {
         // Create and play wake-up timeline with CORRECT signature (expects object)
         const wakeUpTl = createWakeUpAnimation({
           character: elements.character,
-          shadow: shadow,
-          innerGlow: innerGlow,
-          outerGlow: outerGlow,
+          shadow: elements.shadow,
+          innerGlow: elements.innerGlow || undefined,
+          outerGlow: elements.outerGlow || undefined,
           // Pass eye elements
           eyeLeft: elements.eyeLeft || undefined,
           eyeRight: elements.eyeRight || undefined,
@@ -383,12 +377,12 @@ export function useAnimationController(
           }
 
           // Create idle timeline and register with controller
-          if (autoStartIdle && elements.character && shadow && controllerRef.current) {
+          if (autoStartIdle && elements.character && elements.shadow && controllerRef.current) {
             const baseScale = controllerRef.current.getSuperModeScale() ?? 1;
             const idleResult = createIdleAnimation(
               {
                 character: elements.character,
-                shadow: shadow,
+                shadow: elements.shadow,
                 eyeLeft: elements.eyeLeft || undefined,
                 eyeRight: elements.eyeRight || undefined,
                 eyeLeftPath: elements.eyeLeftPath || undefined,
@@ -400,7 +394,7 @@ export function useAnimationController(
             );
 
             // Register with controller - controller owns idle and blink scheduler
-            const idleElements = [elements.character, shadow].filter(Boolean) as Element[];
+            const idleElements = [elements.character, elements.shadow].filter(Boolean) as Element[];
             controllerRef.current.startIdle(idleResult.timeline, idleElements, {
               pauseBlinks: idleResult.pauseBlinks,
               resumeBlinks: idleResult.resumeBlinks,
@@ -424,7 +418,7 @@ export function useAnimationController(
       } else {
         console.error('[useAnimationController] Wake-up failed - missing elements', {
           hasCharacter: !!elements.character,
-          hasShadow: !!shadow
+          hasShadow: !!elements.shadow
         });
       }
     }
@@ -450,19 +444,13 @@ export function useAnimationController(
       controllerRef.current.killAll();
 
       // CRITICAL FIX: Actually call the power-off animation!
-      const shadow = document.getElementById('anty-shadow');
-      if (elements.character && shadow) {
-        // Get glow elements
-        const innerGlow = document.querySelector('.inner-glow') as HTMLElement;
-        const glowElements = document.querySelectorAll('[class*="glow"]');
-        const outerGlow = Array.from(glowElements).find(el => !el.classList.contains('inner-glow')) as HTMLElement;
-
+      if (elements.character && elements.shadow) {
         // Create and play power-off timeline
         const powerOffTl = createPowerOffAnimation({
           character: elements.character,
-          shadow: shadow,
-          innerGlow: innerGlow,
-          outerGlow: outerGlow,
+          shadow: elements.shadow,
+          innerGlow: elements.innerGlow || undefined,
+          outerGlow: elements.outerGlow || undefined,
           // Pass eye elements
           eyeLeft: elements.eyeLeft || undefined,
           eyeRight: elements.eyeRight || undefined,
@@ -480,7 +468,7 @@ export function useAnimationController(
       } else {
         console.error('[useAnimationController] Power-off failed - missing elements', {
           hasCharacter: !!elements.character,
-          hasShadow: !!shadow
+          hasShadow: !!elements.shadow
         });
       }
     }
@@ -629,10 +617,6 @@ export function useAnimationController(
         console.log(`[useAnimationController] Playing emotion: ${emotion}`);
       }
 
-      // Get glow elements
-      const innerGlow = document.querySelector('.inner-glow') as HTMLElement;
-      const outerGlow = document.querySelector('.outer-glow') as HTMLElement;
-
       // Get emotion config from declarative system
       const emotionConfig = EMOTION_CONFIGS[emotion];
       if (!emotionConfig) {
@@ -678,8 +662,8 @@ export function useAnimationController(
         eyeRightPath: elements.eyeRightPath,
         eyeLeftSvg: elements.eyeLeftSvg,
         eyeRightSvg: elements.eyeRightSvg,
-        innerGlow: innerGlow,
-        outerGlow: outerGlow,
+        innerGlow: elements.innerGlow,
+        outerGlow: elements.outerGlow,
         leftBody: elements.leftBody,
         rightBody: elements.rightBody,
       });
