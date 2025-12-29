@@ -38,7 +38,7 @@ export function AntySearchBar({
   // Extract config values
   const { width, height, borderRadius, innerRadius, borderWidth } = config;
 
-  // Default height for calculating top offset (keeps same visual position)
+  // Default height for content area (input stays at standard size)
   const defaultHeight = DEFAULT_SEARCH_BAR_CONFIG.height;
 
   return (
@@ -49,10 +49,9 @@ export function AntySearchBar({
         width: `${width}px`,
         height: `${height}px`,
         left: '50%',
-        // Top-aligned: at default height (70px), matches centered position
-        // Larger heights expand downward
-        top: `calc(50% - ${defaultHeight / 2}px)`,
-        transform: 'translateX(-50%)',
+        // Vertically centered regardless of height
+        top: '50%',
+        transform: 'translate(-50%, -50%)',
         opacity: 0, // GSAP controls opacity
         pointerEvents: active ? 'auto' : 'none',
         zIndex: 2,
