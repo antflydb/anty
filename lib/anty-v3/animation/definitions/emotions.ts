@@ -235,10 +235,19 @@ export const EMOTION_CONFIGS: Partial<Record<EmotionType, EmotionConfig>> = {
   },
 
   // ===========================
-  // BACK-FORTH - Look left then right
+  // BACK-FORTH - Look left then right with "considering" eyes
+  // Eyes alternate: when looking one direction, opposite eye goes half-closed
   // ===========================
   'back-forth': {
     id: 'back-forth',
+    eyePhases: [
+      // Slightly before arriving left (anticipate the stop)
+      { position: 0.2, shape: { left: 'IDLE', right: 'HALF' }, duration: 0.06 },
+      // Slightly before arriving right
+      { position: 1.1, shape: { left: 'HALF', right: 'IDLE' }, duration: 0.06 },
+      // Hold second squint longer, return near end
+      { position: 1.9, shape: 'IDLE', duration: 0.06 },
+    ],
     character: [
       // Look left
       { props: { rotation: -8, x: -10 }, duration: 0.3, ease: 'power2.out' },

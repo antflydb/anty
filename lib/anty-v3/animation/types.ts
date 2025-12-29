@@ -661,13 +661,27 @@ export interface BodyConfig {
 }
 
 /**
+ * Eye phase for per-keyframe eye changes during animations
+ */
+export interface EyePhase {
+  /** Position in timeline (seconds) */
+  position: number;
+  /** Eye shape(s) to morph to */
+  shape: EyeShapeName | { left: EyeShapeName; right: EyeShapeName };
+  /** Duration of morph */
+  duration: number;
+}
+
+/**
  * Complete emotion configuration
  */
 export interface EmotionConfig {
   /** Unique emotion identifier */
   id: string;
-  /** Eye animation configuration */
+  /** Eye animation configuration (static, applied once) */
   eyes?: EyeConfig;
+  /** Per-phase eye animations (dynamic, applied at specific times) */
+  eyePhases?: EyePhase[];
   /** Character movement phases */
   character: CharacterPhase[];
   /** Glow following configuration */

@@ -8,7 +8,7 @@
  */
 
 import gsap from 'gsap';
-import type { EmotionConfig, EyeConfig, CharacterPhase, GlowConfig, BodyConfig } from '../types';
+import type { EmotionConfig, EyeConfig, EyePhase, CharacterPhase, GlowConfig, BodyConfig } from '../types';
 import { createEyeAnimation } from './eye-animations';
 import { GLOW_CONSTANTS } from './emotions';
 import { resetEyesToIdle } from '../initialize';
@@ -87,7 +87,7 @@ export function interpretEmotionConfig(
   });
 
   // ===========================
-  // Eye Animation
+  // Eye Animation (static, applied once at start)
   // ===========================
   if (config.eyes && eyeLeft && eyeRight && eyeLeftPath && eyeRightPath && eyeLeftSvg && eyeRightSvg) {
     addEyeAnimation(timeline, config.eyes, elements);
@@ -104,6 +104,14 @@ export function interpretEmotionConfig(
   // Character Movement Phases
   // ===========================
   addCharacterPhases(timeline, config.character, character, glowElements, config.glow);
+
+  // ===========================
+  // Eye Phases (dynamic, per-keyframe)
+  // Must be added AFTER character phases so timeline has correct duration
+  // ===========================
+  if (config.eyePhases && eyeLeft && eyeRight && eyeLeftPath && eyeRightPath && eyeLeftSvg && eyeRightSvg) {
+    addEyePhases(timeline, config.eyePhases, elements);
+  }
 
   return timeline;
 }
@@ -200,6 +208,38 @@ function addEyeAnimation(
       duration: returnDuration,
       ease: 'power2.out',
     }, eyeConfig.returnPosition);
+  }
+}
+
+/**
+ * Add per-phase eye animations (for dynamic eye changes during animation)
+ */
+function addEyePhases(
+  timeline: gsap.core.Timeline,
+  eyePhases: EyePhase[],
+  elements: EmotionElements
+): void {
+  const { eyeLeft, eyeRight, eyeLeftPath, eyeRightPath, eyeLeftSvg, eyeRightSvg } = elements;
+
+  if (!eyeLeft || !eyeRight || !eyeLeftPath || !eyeRightPath || !eyeLeftSvg || !eyeRightSvg) {
+    return;
+  }
+
+  for (const phase of eyePhases) {
+    const eyeTl = createEyeAnimation(
+      {
+        leftEye: eyeLeft,
+        rightEye: eyeRight,
+        leftEyePath: eyeLeftPath,
+        rightEyePath: eyeRightPath,
+        leftEyeSvg: eyeLeftSvg,
+        rightEyeSvg: eyeRightSvg,
+      },
+      phase.shape,
+      { duration: phase.duration }
+    );
+
+    timeline.add(eyeTl, phase.position);
   }
 }
 

@@ -751,6 +751,13 @@ export function AnimationDebugOverlay({
       if (Math.abs(centerY - lastY) > 0.5) {
         setLastY(centerY);
         setLastMoveTime(Date.now());
+
+        // Auto-dismiss frozen alerts after movement resumes for 2 seconds
+        if (isFrozen) {
+          setTimeout(() => {
+            setAlerts(prev => prev.filter(a => a.type !== 'frozen'));
+          }, 2000);
+        }
       }
 
       setDebugData({

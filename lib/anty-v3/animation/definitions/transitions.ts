@@ -30,15 +30,8 @@ const GLOW_LAG_SECONDS = 0.05;
 /**
  * Creates wake-up animation (OFF → ON transition)
  *
- * Three-phase choreography:
- * 1. Jump up to apex (0.2s) - controlled rise with scale from 0.65 to 1
- * 2. Tiny hang at apex (0.05s) - brief pause
- * 3. Drop down faster (0.3s) - gravity-feel descent
- *
- * Shadow grows back to full size and fades in (no Y movement - stays on ground)
- * Glows fade in and follow character at 75% distance with 0.05s lag
- *
- * Total duration: ~0.55s
+ * TEMPORARILY INSTANT: Just snaps to idle state immediately.
+ * The full animation will be rebuilt later.
  *
  * @param elements - Character, shadow, and optional glow elements
  * @returns GSAP timeline for wake-up animation
@@ -57,68 +50,34 @@ export function createWakeUpAnimation(
     gsap.killTweensOf(glowElements);
   }
 
-  // Setup - restore opacity and set will-change for GPU optimization
-  // CRITICAL: Set initial states BEFORE starting timeline
+  // INSTANT RESET: Snap to idle state immediately
   gsap.set(character, {
     opacity: 1,
-    scale: 0.65, // Start small
-    y: 0, // Start at ground
-    willChange: 'transform',
+    scale: 1,
+    y: 0,
+    x: 0,
+    rotation: 0,
+    rotationX: 0,
+    rotationY: 0,
+    clearProps: 'willChange',
   });
 
-  // CRITICAL: Shadow starts at 0.65 scale (OFF state) and grows to 1.0
   gsap.set(shadow, {
     xPercent: -50,
-    scaleX: 0.65, // Start at OFF state scale
-    scaleY: 0.65, // Start at OFF state scale
-    opacity: 0,
-  });
-
-  // Phase 1: Jump up to apex (0.2s) - controlled rise
-  timeline.to(character, {
-    y: -45,
-    scale: 1, // Grow to normal size
-    duration: 0.2,
-    ease: 'power2.out',
-    force3D: true,
-  });
-
-  // Glows jump up with character at 75% distance (0.05s lag)
-  if (glowElements.length > 0) {
-    timeline.to(
-      glowElements,
-      {
-        y: -45 * GLOW_DISTANCE_RATIO, // -34px
-        scale: 1, // Reset from 0.65 to 1
-        duration: 0.2,
-        ease: 'power2.out',
-      },
-      `-=${0.2 - GLOW_LAG_SECONDS}` // Start 0.05s after character (at 0.15)
-    );
-  }
-
-  // Phase 2: Tiny hang at apex (0.05s) - just a breath
-  timeline.to(character, {
-    y: -45,
-    scale: 1,
-    duration: 0.05,
-    ease: 'none',
+    scaleX: 1,
+    scaleY: 1,
+    opacity: 0.7,
   });
 
   if (glowElements.length > 0) {
-    timeline.to(
-      glowElements,
-      {
-        y: -45 * GLOW_DISTANCE_RATIO,
-        scale: 1,
-        duration: 0.05,
-        ease: 'none',
-      },
-      '-=0.00' // Already lagged from previous animation
-    );
+    gsap.set(glowElements, {
+      y: 0,
+      scale: 1,
+      opacity: 1,
+    });
   }
 
-  // Morph eyes from OFF to IDLE
+  // Morph eyes to IDLE instantly
   if (eyeLeft && eyeRight && eyeLeftPath && eyeRightPath && eyeLeftSvg && eyeRightSvg) {
     const eyeTl = createEyeAnimation({
       leftEye: eyeLeft,
@@ -127,62 +86,13 @@ export function createWakeUpAnimation(
       rightEyePath: eyeRightPath,
       leftEyeSvg: eyeLeftSvg,
       rightEyeSvg: eyeRightSvg,
-    }, 'IDLE', { duration: 0.3 });
+    }, 'IDLE', { duration: 0.1 });
 
-    timeline.add(eyeTl, 0.5); // Start after body wake begins
+    timeline.add(eyeTl, 0);
   }
 
-  // Phase 3: Drop down faster (0.3s)
-  timeline.to(character, {
-    y: 0,
-    scale: 1,
-    duration: 0.3,
-    ease: 'power2.in', // Faster drop with gravity feel
-    force3D: true,
-    clearProps: 'willChange', // Clean up GPU optimization
-  });
-
-  if (glowElements.length > 0) {
-    timeline.to(
-      glowElements,
-      {
-        y: 0,
-        scale: 1,
-        duration: 0.3,
-        ease: 'power2.in',
-      },
-      `-=${0.3 - GLOW_LAG_SECONDS}` // Start 0.05s after character (at 0.25)
-    );
-
-    // Fade glows opacity in (parallel with movement)
-    timeline.to(
-      glowElements,
-      {
-        opacity: 1,
-        duration: 0.6, // Slower fade-in
-        ease: 'power1.in', // Ease in for gradual start
-      },
-      '-=0.4' // Start during jump
-    );
-  }
-
-  // Shadow grows back to full size and fades in (no Y movement - stays on ground)
-  // Single smooth animation from 0 to 1.0 scale
-  timeline.to(
-    shadow,
-    {
-      xPercent: -50, // Keep centered (static, not animated)
-      scaleX: 1, // Grow from 0 to 1
-      scaleY: 1, // Grow from 0 to 1
-      opacity: 0.7, // Fade from 0 to 0.7
-      duration: 0.6, // Longer duration for smoother fade
-      ease: 'power2.out',
-    },
-    '-=0.4' // Start during landing (0.4s before end)
-  );
-
-  // CRITICAL: Ensure rotation starts at 0° after wake-up for clean idle start
-  timeline.set(character, { rotation: 0 }, '>');
+  // Tiny delay so timeline has something to complete
+  timeline.to({}, { duration: 0.05 });
 
   return timeline;
 }
