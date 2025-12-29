@@ -860,7 +860,7 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
         style={{
           willChange: 'transform',
           overflow: 'visible',
-          opacity: isOff ? 0.45 : 1,
+          // opacity controlled by animation, not React state (prevents double-gray flicker)
           filter: isSuperMode
             ? 'drop-shadow(0 0 20px rgba(255, 215, 0, 0.9)) drop-shadow(0 0 40px rgba(255, 165, 0, 0.6)) brightness(1.15) saturate(1.3)'
             : 'none',

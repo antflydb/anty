@@ -292,8 +292,7 @@ export function useAnimationController(
 
       // Get glow elements for initialization
       const innerGlow = document.querySelector('.inner-glow') as HTMLElement;
-      const glowElements = document.querySelectorAll('[class*="glow"]');
-      const outerGlow = Array.from(glowElements).find(el => !el.classList.contains('inner-glow')) as HTMLElement;
+      const outerGlow = document.querySelector('.outer-glow') as HTMLElement;
 
       initializeCharacter(
         {
@@ -632,8 +631,7 @@ export function useAnimationController(
 
       // Get glow elements
       const innerGlow = document.querySelector('.inner-glow') as HTMLElement;
-      const glowElements = document.querySelectorAll('[class*="glow"]');
-      const outerGlow = Array.from(glowElements).find(el => !el.classList.contains('inner-glow')) as HTMLElement;
+      const outerGlow = document.querySelector('.outer-glow') as HTMLElement;
 
       // Get emotion config from declarative system
       const emotionConfig = EMOTION_CONFIGS[emotion];

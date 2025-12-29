@@ -5,6 +5,7 @@
 
 import gsap from 'gsap';
 import { createEyeAnimation } from './eye-animations';
+import { getEyeShape } from './eye-shapes';
 
 export interface TransitionAnimationElements {
   character: HTMLElement;
@@ -44,10 +45,16 @@ export function createWakeUpAnimation(
 
   const timeline = gsap.timeline();
 
-  // Kill any existing animations on character and shadow
+  // Kill any existing animations on character, shadow, eyes
   gsap.killTweensOf([character, shadow]);
   if (glowElements.length > 0) {
     gsap.killTweensOf(glowElements);
+  }
+  if (eyeLeft && eyeRight) {
+    gsap.killTweensOf([eyeLeft, eyeRight]);
+  }
+  if (eyeLeftPath && eyeRightPath) {
+    gsap.killTweensOf([eyeLeftPath, eyeRightPath]);
   }
 
   // INSTANT RESET: Snap to idle state immediately
@@ -77,22 +84,17 @@ export function createWakeUpAnimation(
     });
   }
 
-  // Morph eyes to IDLE instantly
-  if (eyeLeft && eyeRight && eyeLeftPath && eyeRightPath && eyeLeftSvg && eyeRightSvg) {
-    const eyeTl = createEyeAnimation({
-      leftEye: eyeLeft,
-      rightEye: eyeRight,
-      leftEyePath: eyeLeftPath,
-      rightEyePath: eyeRightPath,
-      leftEyeSvg: eyeLeftSvg,
-      rightEyeSvg: eyeRightSvg,
-    }, 'IDLE', { duration: 0.1 });
-
-    timeline.add(eyeTl, 0);
+  // Set eyes to IDLE instantly (no animation)
+  if (eyeLeftPath && eyeRightPath) {
+    gsap.set(eyeLeftPath, { attr: { d: getEyeShape('IDLE', 'left') } });
+    gsap.set(eyeRightPath, { attr: { d: getEyeShape('IDLE', 'right') } });
+  }
+  if (eyeLeft && eyeRight) {
+    gsap.set([eyeLeft, eyeRight], { x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1 });
   }
 
   // Tiny delay so timeline has something to complete
-  timeline.to({}, { duration: 0.05 });
+  timeline.to({}, { duration: 0.01 });
 
   return timeline;
 }
@@ -127,26 +129,12 @@ export function createPowerOffAnimation(
     gsap.killTweensOf(glowElements);
   }
 
-  // Phase 1: Climb up (0.5s) - eyes stay as idle during this
+  // Phase 1: Climb up (0.5s) - eyes stay as idle
   timeline.to(character, {
     y: -60,
     duration: 0.5,
     ease: 'power2.out',
   });
-
-  // Morph eyes to OFF (triangle) shape
-  if (eyeLeft && eyeRight && eyeLeftPath && eyeRightPath && eyeLeftSvg && eyeRightSvg) {
-    const eyeTl = createEyeAnimation({
-      leftEye: eyeLeft,
-      rightEye: eyeRight,
-      leftEyePath: eyeLeftPath,
-      rightEyePath: eyeRightPath,
-      leftEyeSvg: eyeLeftSvg,
-      rightEyeSvg: eyeRightSvg,
-    }, { left: 'OFF_LEFT', right: 'OFF_RIGHT' }, { duration: 0.3 });
-
-    timeline.add(eyeTl, 0); // Start at the beginning (during climb up)
-  }
 
   // Phase 2: SNAP down HARD - super fast shrink to 65% (0.1s)
   timeline.to(character, {

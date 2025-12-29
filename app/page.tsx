@@ -1644,7 +1644,7 @@ export default function AntyV3() {
               {/* Floating glow behind Anty - Layer 2 (outer, softer) */}
               <div
                 ref={glowRef}
-                className="absolute left-1/2 -translate-x-1/2 -translate-y-1/2"
+                className="outer-glow absolute left-1/2 -translate-x-1/2 -translate-y-1/2"
                 style={{
                   top: '80px',
                   width: '170px',
@@ -1825,17 +1825,9 @@ export default function AntyV3() {
         isOff={expression === 'off'}
         onToggle={() => {
           if (expression === 'off') {
-            // Turn on - use happy as the default "on" expression
-            const onExpression: EmotionType = 'happy';
-
-            // Clear any pending expression reset
+            // Turn on - go straight to idle, let wake-up animation handle the transition
             clearExpressionReset();
-
-            // Let AnimationController handle wake-up animation via isOff state change
-            setExpression(onExpression);
-
-            // Return to idle after a brief moment
-            scheduleExpressionReset(1500);
+            setExpression('idle');
           } else {
             // Turn off - let AnimationController handle animation
             clearExpressionReset();
