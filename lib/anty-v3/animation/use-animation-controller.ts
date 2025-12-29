@@ -23,6 +23,7 @@ import { EMOTION_CONFIGS } from './definitions/emotions';
 import { initializeCharacter } from './initialize';
 import { createWakeUpAnimation, createPowerOffAnimation } from './definitions/transitions';
 import { createShadowTracker, type ShadowTrackerControls } from './shadow';
+import { createGlowSystem, type GlowSystemControls } from './glow-system';
 
 /**
  * Elements required by the animation controller
@@ -112,6 +113,10 @@ export interface UseAnimationControllerReturn {
   setSuperMode: (scale: number | null) => void;
   /** Check if controller is ready */
   isReady: boolean;
+  /** Show glows (for search exit) */
+  showGlows: (fadeIn?: boolean) => void;
+  /** Hide glows (for search enter) */
+  hideGlows: () => void;
 }
 
 /**
@@ -179,6 +184,9 @@ export function useAnimationController(
 
   // Shadow tracker - dynamically updates shadow based on character Y position
   const shadowTrackerRef = useRef<ShadowTrackerControls | null>(null);
+
+  // Glow system - physics-based glow tracking with snake-like oscillation
+  const glowSystemRef = useRef<GlowSystemControls | null>(null);
 
   // NOTE: idleTimelineRef REMOVED - controller is single owner of idle
   // The controller manages idle internally, hook just calls controller methods
@@ -262,6 +270,9 @@ export function useAnimationController(
       // Stop shadow tracker
       shadowTrackerRef.current?.stop();
       shadowTrackerRef.current = null;
+      // Stop glow system
+      glowSystemRef.current?.stop();
+      glowSystemRef.current = null;
       // Controller.destroy() kills all timelines including idle
       controllerRef.current?.destroy();
       controllerRef.current = null;
@@ -326,6 +337,27 @@ export function useAnimationController(
         }
         if (enableLogging) {
           console.log('[useAnimationController] Shadow tracker created and started');
+        }
+      }
+
+      // Create glow system - physics-based tracking with snake-like oscillation
+      // This replaces all the disjointed glow animations scattered throughout
+      if (elements.innerGlow && elements.outerGlow && !glowSystemRef.current) {
+        glowSystemRef.current = createGlowSystem(
+          elements.character,
+          elements.outerGlow,
+          elements.innerGlow
+        );
+        // Start immediately (will track character position at 60fps)
+        // Don't start if in OFF mode - wake-up transition handles glow fade-in
+        if (!isOff) {
+          glowSystemRef.current.start();
+          glowSystemRef.current.show();
+        } else {
+          glowSystemRef.current.hide();
+        }
+        if (enableLogging) {
+          console.log('[useAnimationController] Glow system created and started');
         }
       }
     }
@@ -412,6 +444,16 @@ export function useAnimationController(
               console.log('[useAnimationController] Shadow tracker started after wake-up');
             }
           }
+
+          // Start glow system and fade in after wake-up
+          if (glowSystemRef.current) {
+            glowSystemRef.current.snapToCharacter(); // Reset spring positions
+            glowSystemRef.current.start();
+            glowSystemRef.current.fadeIn(0.6); // Match wake-up timing
+            if (enableLogging) {
+              console.log('[useAnimationController] Glow system started after wake-up');
+            }
+          }
         });
 
         wakeUpTl.play();
@@ -434,6 +476,18 @@ export function useAnimationController(
         shadowTrackerRef.current.stop();
         if (enableLogging) {
           console.log('[useAnimationController] Shadow tracker stopped for power-off');
+        }
+      }
+
+      // Fade out and stop glow system for power-off (gradual like shadow)
+      if (glowSystemRef.current) {
+        glowSystemRef.current.fadeOut(0.7); // Slower fade out
+        // Stop after fade completes
+        setTimeout(() => {
+          glowSystemRef.current?.stop();
+        }, 700);
+        if (enableLogging) {
+          console.log('[useAnimationController] Glow system fading out for power-off');
         }
       }
 
@@ -499,6 +553,12 @@ export function useAnimationController(
       if (shadowTrackerRef.current) {
         shadowTrackerRef.current.pause();
       }
+
+      // Pause and hide glow system during search
+      if (glowSystemRef.current) {
+        glowSystemRef.current.pause();
+        glowSystemRef.current.hide(); // Instant hide for search mode
+      }
     }
 
     // Exiting search mode
@@ -523,6 +583,8 @@ export function useAnimationController(
           { duration: 0.3 }
         );
 
+        // NOTE: Glow show is now triggered from page.tsx via showGlows() for earlier timing
+
         restoreTl.eventCallback('onComplete', () => {
           controllerRef.current?.resumeIdle();
           // Resume shadow tracker after exiting search
@@ -539,6 +601,7 @@ export function useAnimationController(
         if (shadowTrackerRef.current) {
           shadowTrackerRef.current.resume();
         }
+        // NOTE: Glow show is now triggered from page.tsx via showGlows()
       }
     }
     // Only re-run when searchMode changes - eye elements are stable refs
@@ -880,6 +943,28 @@ export function useAnimationController(
     controllerRef.current.setSuperMode(scale);
   }, [enableLogging]);
 
+  /**
+   * Show glows (for search exit - call early in morph animation)
+   */
+  const showGlows = useCallback((fadeIn = true) => {
+    if (!glowSystemRef.current) return;
+    glowSystemRef.current.resume();
+    if (fadeIn) {
+      glowSystemRef.current.fadeIn(0.3);
+    } else {
+      glowSystemRef.current.show();
+    }
+  }, []);
+
+  /**
+   * Hide glows (for search enter)
+   */
+  const hideGlows = useCallback(() => {
+    if (!glowSystemRef.current) return;
+    glowSystemRef.current.pause();
+    glowSystemRef.current.hide();
+  }, []);
+
   // CRITICAL: Memoize return object to prevent useEffect re-firing in consumers
   return useMemo(() => ({
     playEmotion,
@@ -894,6 +979,8 @@ export function useAnimationController(
     isIdlePlaying,
     getDebugInfo,
     setSuperMode,
+    showGlows,
+    hideGlows,
     isReady: isReady.current,
-  }), [playEmotion, transitionTo, startIdle, pause, resume, killAll, getState, getEmotion, isIdleActive, isIdlePlaying, getDebugInfo, setSuperMode]);
+  }), [playEmotion, transitionTo, startIdle, pause, resume, killAll, getState, getEmotion, isIdleActive, isIdlePlaying, getDebugInfo, setSuperMode, showGlows, hideGlows]);
 }

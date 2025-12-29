@@ -40,16 +40,14 @@ const GLOW_LAG_SECONDS = 0.05;
 export function createWakeUpAnimation(
   elements: TransitionAnimationElements
 ): gsap.core.Timeline {
-  const { character, shadow, innerGlow, outerGlow, eyeLeft, eyeRight, eyeLeftPath, eyeRightPath, eyeLeftSvg, eyeRightSvg } = elements;
-  const glowElements = [innerGlow, outerGlow].filter(Boolean) as HTMLElement[];
+  const { character, shadow, eyeLeft, eyeRight, eyeLeftPath, eyeRightPath, eyeLeftSvg, eyeRightSvg } = elements;
+  // NOTE: Glow animations removed - GlowSystem handles fade in via animation controller
 
   const timeline = gsap.timeline();
 
   // Kill any existing animations on character, shadow, eyes
+  // NOTE: Don't kill glow tweens - GlowSystem manages glow animations
   gsap.killTweensOf([character, shadow]);
-  if (glowElements.length > 0) {
-    gsap.killTweensOf(glowElements);
-  }
   if (eyeLeft && eyeRight) {
     gsap.killTweensOf([eyeLeft, eyeRight]);
   }
@@ -76,13 +74,7 @@ export function createWakeUpAnimation(
     opacity: 0.7,
   });
 
-  if (glowElements.length > 0) {
-    gsap.set(glowElements, {
-      y: 0,
-      scale: 1,
-      opacity: 1,
-    });
-  }
+  // NOTE: Glow initial state removed - GlowSystem handles via snapToCharacter() and fadeIn()
 
   // Set eyes to IDLE instantly (no animation) with proper dimensions
   if (eyeLeftPath && eyeRightPath && eyeLeftSvg && eyeRightSvg && eyeLeft && eyeRight) {
@@ -139,16 +131,14 @@ export function createWakeUpAnimation(
 export function createPowerOffAnimation(
   elements: TransitionAnimationElements
 ): gsap.core.Timeline {
-  const { character, shadow, innerGlow, outerGlow, eyeLeft, eyeRight, eyeLeftPath, eyeRightPath, eyeLeftSvg, eyeRightSvg } = elements;
-  const glowElements = [innerGlow, outerGlow].filter(Boolean) as HTMLElement[];
+  const { character, shadow, eyeLeft, eyeRight, eyeLeftPath, eyeRightPath, eyeLeftSvg, eyeRightSvg } = elements;
+  // NOTE: Glow animations removed - GlowSystem handles fade out via animation controller
 
   const timeline = gsap.timeline();
 
   // Kill any existing animations
+  // NOTE: Don't kill glow tweens - GlowSystem manages glow animations
   gsap.killTweensOf([character, shadow]);
-  if (glowElements.length > 0) {
-    gsap.killTweensOf(glowElements);
-  }
 
   // Phase 1: Climb up (0.5s) - eyes stay as idle
   timeline.to(character, {
@@ -165,19 +155,7 @@ export function createPowerOffAnimation(
     ease: 'expo.in', // Exponential acceleration for dramatic snap
   });
 
-  // Phase 2b: Glows follow character down (same timing, same ease)
-  if (glowElements.length > 0) {
-    timeline.to(
-      glowElements,
-      {
-        y: 50,
-        scale: 0.65,
-        duration: 0.1,
-        ease: 'expo.in',
-      },
-      '-=0.1' // Start at the same time as the character snap
-    );
-  }
+  // NOTE: Glow following removed - GlowSystem tracks character position via physics
 
   // Phase 2c: Shadow shrinks but stays on ground (no Y movement)
   // CRITICAL: Shadow shrinks to 0.65, NOT to zero!
@@ -200,19 +178,9 @@ export function createPowerOffAnimation(
     ease: 'power2.in',
   });
 
-  // Phase 3b: Fade out background glows and shadow at the same time (0.06s)
-  if (glowElements.length > 0) {
-    timeline.to(
-      glowElements,
-      {
-        opacity: 0,
-        duration: 0.06, // Lightning fast - 60ms
-        ease: 'power2.in',
-      },
-      '-=0.05' // Start slightly before character fade finishes
-    );
-  }
+  // NOTE: Glow fade-out removed - GlowSystem handles fade out via animation controller
 
+  // Phase 3b: Fade out shadow
   timeline.to(
     shadow,
     {
@@ -220,7 +188,7 @@ export function createPowerOffAnimation(
       duration: 0.06, // Lightning fast - 60ms
       ease: 'power2.in',
     },
-    '-=0.06' // Parallel with glows
+    '-=0.05' // Start slightly before character fade finishes
   );
 
   // CRITICAL: Freeze rotation at 0° for logo state

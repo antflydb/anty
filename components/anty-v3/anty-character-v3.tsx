@@ -75,6 +75,8 @@ export interface AntyCharacterHandle {
   startLook?: (direction: 'left' | 'right') => void;
   endLook?: () => void;
   setSuperMode?: (scale: number | null) => void;
+  showGlows?: (fadeIn?: boolean) => void;
+  hideGlows?: () => void;
   leftBodyRef?: React.RefObject<HTMLDivElement | null>;
   rightBodyRef?: React.RefObject<HTMLDivElement | null>;
   leftEyeRef?: React.RefObject<HTMLDivElement | null>;
@@ -666,6 +668,12 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
     },
     setSuperMode: (scale: number | null) => {
       animationController.setSuperMode(scale);
+    },
+    showGlows: (fadeIn = true) => {
+      animationController.showGlows(fadeIn);
+    },
+    hideGlows: () => {
+      animationController.hideGlows();
     },
     leftEyeRef,
     rightEyeRef,

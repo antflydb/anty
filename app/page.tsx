@@ -429,56 +429,8 @@ export default function AntyV3() {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [searchActive, searchValue]);
 
-  // Animate the glow with ghostly, randomized movement
-  useEffect(() => {
-    // Only animate in idle mode when glow exists and not in search mode
-    if (gameMode !== 'idle' || !glowRef.current || searchActive) return;
-
-    const animateGhostly = () => {
-      // Check if we're still in idle mode and glow still exists and not searching
-      if (gameMode !== 'idle' || !glowRef.current || searchActive) return;
-
-      // Random parameters for each animation cycle
-      const randomY = gsap.utils.random(-8, -16);
-      const randomX = gsap.utils.random(-3, 3);
-      const randomScale = gsap.utils.random(0.98, 1.05);
-      const randomOpacity = gsap.utils.random(0.7, 1);
-      const randomDuration = gsap.utils.random(2.2, 3.5);
-
-      gsap.to(glowRef.current, {
-        y: randomY,
-        x: randomX,
-        scale: randomScale,
-        opacity: randomOpacity,
-        duration: randomDuration,
-        ease: 'sine.inOut',
-        onComplete: () => {
-          // Check again before return animation
-          if (gameMode !== 'idle' || !glowRef.current || searchActive) return;
-
-          // Return to base state with different random values
-          const returnDuration = gsap.utils.random(2, 3.2);
-          gsap.to(glowRef.current, {
-            y: gsap.utils.random(-2, 2),
-            x: gsap.utils.random(-2, 2),
-            scale: gsap.utils.random(0.95, 1.02),
-            opacity: gsap.utils.random(0.75, 0.95),
-            duration: returnDuration,
-            ease: 'sine.inOut',
-            onComplete: animateGhostly, // Loop with new random values
-          });
-        },
-      });
-    };
-
-    animateGhostly();
-
-    return () => {
-      if (glowRef.current) {
-        gsap.killTweensOf(glowRef.current);
-      }
-    };
-  }, [gameMode, searchActive]);
+  // NOTE: Glow animation is now handled by GlowSystem in the animation controller
+  // The physics-based tracking + oscillation replaces the old random ghostly movement
 
   // Show hearts and start 3-minute hide timer
   const showHeartsWithTimer = useCallback(() => {
@@ -791,12 +743,11 @@ export default function AntyV3() {
     const characterElement = characterRef.current;
     if (!characterElement) return;
 
-    const innerGlow = innerGlowRef.current;
-    const outerGlow = glowRef.current;
     const shadow = shadowRef.current;
 
     // Kill any existing animations and timers
-    gsap.killTweensOf([characterElement, innerGlow, outerGlow, shadow]);
+    // NOTE: Don't kill glow tweens - GlowSystem manages glow animations
+    gsap.killTweensOf([characterElement, shadow]);
     if (antyRef.current?.leftBodyRef?.current) {
       gsap.killTweensOf(antyRef.current.leftBodyRef.current);
       gsap.set(antyRef.current.leftBodyRef.current, { x: 0, y: 0 });
@@ -863,38 +814,8 @@ export default function AntyV3() {
       },
     });
 
-    // 1b. Glows jump up with Anty and scale back to normal (75% distance, 0.05s lag)
-    if (innerGlow && outerGlow) {
-      wakeUpTl.to([innerGlow, outerGlow], {
-        y: -34,  // 75% of character jump (-45 * 0.75)
-        scale: 1,  // Reset from 0.65 to 1
-        duration: 0.2,
-        ease: 'power2.out',
-      }, '-=0.15'); // Start 0.05s after character (0.2 - 0.05 = 0.15)
-
-      // 1c. Glows hang at apex
-      wakeUpTl.to([innerGlow, outerGlow], {
-        y: -34,  // 75% of character position
-        scale: 1,
-        duration: 0.05,
-        ease: 'none',
-      }, '-=0.00'); // Start 0.05s after character (already accounted for)
-
-      // 2. Glows drop with Anty (75% distance, 0.05s lag)
-      wakeUpTl.to([innerGlow, outerGlow], {
-        y: 0,  // Reset to original position
-        scale: 1,
-        duration: 0.3,
-        ease: 'power2.in',
-      }, '-=0.25'); // Start 0.05s after character (0.3 - 0.05 = 0.25)
-
-      // 3. Fade glows opacity in (parallel with movement)
-      wakeUpTl.to([innerGlow, outerGlow], {
-        opacity: 1,
-        duration: 0.6,  // Slower fade-in
-        ease: 'power1.in',  // Ease in for gradual start
-      }, '-=0.4'); // Start during jump
-    }
+    // NOTE: Glow animation is now handled by GlowSystem in the animation controller
+    // The physics-based tracking automatically follows character movement
 
     // Shadow grows back to full size and fades in (no Y movement - it stays on ground)
     if (shadow) {
@@ -983,15 +904,8 @@ export default function AntyV3() {
       gsap.set(rightEye, { opacity: 1 }); // Eyes start visible
     }
 
-    // Set glows and shadow to 0 immediately (don't animate)
-    if (innerGlow) {
-      gsap.killTweensOf(innerGlow);
-      gsap.set(innerGlow, { opacity: 0 });
-    }
-    if (outerGlow) {
-      gsap.killTweensOf(outerGlow);
-      gsap.set(outerGlow, { opacity: 0 });
-    }
+    // NOTE: Glow hiding is now handled by GlowSystem in the animation controller
+    // Set shadow to 0 immediately (don't animate)
     if (shadow) {
       gsap.killTweensOf(shadow);
       gsap.set(shadow, { xPercent: -50, opacity: 0, scaleX: 1, scaleY: 1 });
@@ -1238,6 +1152,11 @@ export default function AntyV3() {
     // DON'T set searchActive(false) yet - wait until animation completes
     // Otherwise idle animation will start during the morph and interfere
 
+    // Show glows when halves come back together (~0.5s into animation)
+    setTimeout(() => {
+      antyRef.current?.showGlows?.(true);
+    }, 500);
+
     const tl = gsap.timeline({
       onComplete: () => {
         morphingRef.current = false;
@@ -1380,23 +1299,14 @@ export default function AntyV3() {
       }, 0.67); // After settle completes (0.55 + 0.17 = 0.72, start a bit before)
     }
 
-    // Orb glows fade in as brackets close and settle
-    const orbTargets = [innerGlow, outerGlow].filter(Boolean);
-    if (orbTargets.length > 0) {
-      tl.to(orbTargets, {
-        opacity: 1,
-        duration: 0.25,
-        ease: 'power1.out'
-      }, 0.6); // Start during settle phase, ramp up as brackets come together
-    }
+    // NOTE: Orb glow fade-in is now handled by GlowSystem in the animation controller
 
     // CRITICAL: Force final states when timeline completes to ensure idle state is correct
+    // NOTE: Glow final states are now handled by GlowSystem in the animation controller
     tl.call(() => {
       if (leftEye) gsap.set(leftEye, { opacity: 1, y: 0 });
       if (rightEye) gsap.set(rightEye, { opacity: 1, y: 0 });
       if (shadow) gsap.set(shadow, { xPercent: -50, opacity: 0.7, scaleX: 1, scaleY: 1 });
-      if (innerGlow) gsap.set(innerGlow, { opacity: 1 });
-      if (outerGlow) gsap.set(outerGlow, { opacity: 1 });
       if (searchBorderGradient) gsap.set(searchBorderGradient, { opacity: 0 });
       if (searchPlaceholder) gsap.set(searchPlaceholder, { opacity: 0, filter: 'blur(0px)', y: 0 });
       if (searchKbd) gsap.set(searchKbd, { opacity: 0, filter: 'blur(0px)', y: 0 });
@@ -1639,7 +1549,7 @@ export default function AntyV3() {
                   borderRadius: '50%',
                   opacity: 1,
                   background: 'linear-gradient(90deg, #D5E2FF 0%, #EED5FF 100%)',
-                  filter: 'blur(45px)',
+                  filter: 'blur(32px)',
                   transformOrigin: 'center center',
                   pointerEvents: 'none',
                 }}

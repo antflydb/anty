@@ -10,8 +10,8 @@
 import gsap from 'gsap';
 import type { EmotionConfig, EyeConfig, EyePhase, CharacterPhase, GlowConfig, BodyConfig } from '../types';
 import { createEyeAnimation } from './eye-animations';
-import { GLOW_CONSTANTS } from './emotions';
 import { resetEyesToIdle } from '../initialize';
+// NOTE: GLOW_CONSTANTS removed - glow following now handled by GlowSystem
 
 /**
  * Elements required for emotion animations
@@ -283,18 +283,16 @@ function addBodyAnimation(
 }
 
 /**
- * Add character movement phases with glow coordination
+ * Add character movement phases
+ * NOTE: Glow following is now handled by GlowSystem via physics-based tracking
  */
 function addCharacterPhases(
   timeline: gsap.core.Timeline,
   phases: CharacterPhase[],
   character: HTMLElement,
-  glowElements: HTMLElement[],
-  glowConfig?: GlowConfig
+  _glowElements: HTMLElement[],
+  _glowConfig?: GlowConfig
 ): void {
-  const distanceRatio = glowConfig?.distanceRatio ?? GLOW_CONSTANTS.DISTANCE_RATIO;
-  const lag = glowConfig?.lag ?? GLOW_CONSTANTS.LAG_SECONDS;
-
   let isFirstPhase = true;
   for (const phase of phases) {
     // First phase starts at 0, others sequence naturally or use explicit position
@@ -308,13 +306,6 @@ function addCharacterPhases(
       ease: phase.ease,
     }, position);
 
-    // Animate glows if configured to follow
-    if (glowConfig?.follow && glowElements.length > 0 && phase.props.y !== undefined) {
-      timeline.to(glowElements, {
-        y: phase.props.y * distanceRatio,
-        duration: phase.duration,
-        ease: phase.ease,
-      }, typeof position === 'number' ? position + lag : `-=${phase.duration - lag}`);
-    }
+    // NOTE: Glow following removed - GlowSystem tracks character position via physics
   }
 }
