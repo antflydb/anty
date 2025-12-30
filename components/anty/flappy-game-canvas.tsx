@@ -15,7 +15,7 @@ interface FlappyGameCanvasProps {
 /**
  * Canvas renderer for FlappyAF game
  * Renders player (Anty), obstacles, and collectibles
- * PERFORMANCE FIX: Separated DPI setup from frame rendering
+ * PERFORMANCE: Uses RAF loop with refs to avoid React re-render overhead
  */
 export function FlappyGameCanvas({
   width,
@@ -28,6 +28,12 @@ export function FlappyGameCanvas({
   const patternCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
   const lastDimensionsRef = useRef<{ width: number; height: number; dpr: number } | null>(null);
+
+  // Store game state in refs for RAF loop access
+  const obstaclesRef = useRef(obstacles);
+  const collectiblesRef = useRef(collectibles);
+  obstaclesRef.current = obstacles;
+  collectiblesRef.current = collectibles;
 
   // Pre-render data stream pattern once
   useEffect(() => {
@@ -42,7 +48,7 @@ export function FlappyGameCanvas({
     }
   }, []);
 
-  // PERFORMANCE FIX: Only setup canvas dimensions when they change
+  // Setup canvas dimensions only when they change
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -50,7 +56,6 @@ export function FlappyGameCanvas({
     const dpr = window.devicePixelRatio || 1;
     const lastDims = lastDimensionsRef.current;
 
-    // Only reconfigure if dimensions or DPR changed
     if (!lastDims || lastDims.width !== width || lastDims.height !== height || lastDims.dpr !== dpr) {
       canvas.width = width * dpr;
       canvas.height = height * dpr;
@@ -59,7 +64,7 @@ export function FlappyGameCanvas({
 
       const ctx = canvas.getContext('2d');
       if (ctx) {
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // Use setTransform instead of scale to avoid accumulation
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         ctxRef.current = ctx;
       }
 
@@ -67,38 +72,52 @@ export function FlappyGameCanvas({
     }
   }, [width, height]);
 
-  // Render game frame - PERFORMANCE FIX: Use cached context, compute time once
+  // RAF render loop - reads from refs, decoupled from React render cycle
   useEffect(() => {
-    const ctx = ctxRef.current;
-    if (!ctx) return;
+    if (width === 0 || height === 0) return;
 
-    // Clear canvas
-    ctx.clearRect(0, 0, width, height);
+    let rafId: number;
 
-    // PERFORMANCE FIX: Compute animation time once for all collectibles
-    const animTime = performance.now() / 1000;
-
-    // Render obstacles
-    for (let i = 0; i < obstacles.length; i++) {
-      const obstacle = obstacles[i];
-      if (isOnScreen(obstacle.x, GAME_PHYSICS.OBSTACLE_WIDTH, width)) {
-        drawObstacle(ctx, obstacle, height, patternCanvasRef.current);
+    const render = () => {
+      const ctx = ctxRef.current;
+      if (!ctx) {
+        rafId = requestAnimationFrame(render);
+        return;
       }
-    }
 
-    // Render collectibles
-    for (let i = 0; i < collectibles.length; i++) {
-      const collectible = collectibles[i];
-      if (
-        !collectible.collected &&
-        isOnScreen(collectible.x, GAME_PHYSICS.COLLECTIBLE_SIZE, width)
-      ) {
-        drawCollectible(ctx, collectible, animTime);
+      // Clear canvas
+      ctx.clearRect(0, 0, width, height);
+
+      const animTime = performance.now() / 1000;
+      const currentObstacles = obstaclesRef.current;
+      const currentCollectibles = collectiblesRef.current;
+
+      // Render obstacles
+      for (let i = 0; i < currentObstacles.length; i++) {
+        const obstacle = currentObstacles[i];
+        if (isOnScreen(obstacle.x, GAME_PHYSICS.OBSTACLE_WIDTH, width)) {
+          drawObstacle(ctx, obstacle, height, patternCanvasRef.current);
+        }
       }
-    }
 
-    // Note: Player (Anty) is rendered as actual component, not on canvas
-  }, [width, height, obstacles, collectibles]);
+      // Render collectibles
+      for (let i = 0; i < currentCollectibles.length; i++) {
+        const collectible = currentCollectibles[i];
+        if (
+          !collectible.collected &&
+          isOnScreen(collectible.x, GAME_PHYSICS.COLLECTIBLE_SIZE, width)
+        ) {
+          drawCollectible(ctx, collectible, animTime);
+        }
+      }
+
+      rafId = requestAnimationFrame(render);
+    };
+
+    rafId = requestAnimationFrame(render);
+
+    return () => cancelAnimationFrame(rafId);
+  }, [width, height]); // Only restart loop on dimension change
 
   return (
     <canvas

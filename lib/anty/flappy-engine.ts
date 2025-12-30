@@ -53,13 +53,16 @@ const CELEBRATION_COLORS = [
   '#2ECC71', // Green
 ];
 
-let lastCelebrationColor = '';
+let lastCelebrationColorIndex = -1;
 
 function getRandomCelebrationColor(): string {
-  const available = CELEBRATION_COLORS.filter(c => c !== lastCelebrationColor);
-  const color = available[Math.floor(Math.random() * available.length)];
-  lastCelebrationColor = color;
-  return color;
+  // Pick random index different from last (no array allocation)
+  let index: number;
+  do {
+    index = Math.floor(Math.random() * CELEBRATION_COLORS.length);
+  } while (index === lastCelebrationColorIndex && CELEBRATION_COLORS.length > 1);
+  lastCelebrationColorIndex = index;
+  return CELEBRATION_COLORS[index];
 }
 
 // Obstacle in the pool
@@ -132,7 +135,7 @@ export function resetEngineState(state: EngineState): void {
   state.score = 0;
   state.nextObstacleId = 0;
   state.restartHoldTime = 0;
-  lastCelebrationColor = '';
+  lastCelebrationColorIndex = -1;
 
   // Deactivate all obstacles
   for (let i = 0; i < state.obstacles.length; i++) {

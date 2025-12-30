@@ -58,6 +58,7 @@ let cachedScale: { width: number; height: number; result: { scale: number; offse
 // Cache for background gradient
 let cachedGradient: { ctx: CanvasRenderingContext2D; gradient: CanvasGradient } | null = null;
 
+
 // Cache for obstacle colors (avoid parsing hex every frame)
 const colorCache = new Map<string, { highlight: string; shadow: string }>();
 
@@ -124,19 +125,9 @@ export function render(
   ctx.translate(offsetX, offsetY);
   ctx.scale(scale, scale);
 
-  // Clip to virtual resolution bounds with rounded corners
+  // Simple rectangular clip - cheap! (the curved clip path was the perf killer)
   ctx.beginPath();
-  const r = FRAME_RADIUS / scale; // Adjust radius for scale
-  ctx.moveTo(r, 0);
-  ctx.lineTo(VIRTUAL_WIDTH - r, 0);
-  ctx.quadraticCurveTo(VIRTUAL_WIDTH, 0, VIRTUAL_WIDTH, r);
-  ctx.lineTo(VIRTUAL_WIDTH, VIRTUAL_HEIGHT - r);
-  ctx.quadraticCurveTo(VIRTUAL_WIDTH, VIRTUAL_HEIGHT, VIRTUAL_WIDTH - r, VIRTUAL_HEIGHT);
-  ctx.lineTo(r, VIRTUAL_HEIGHT);
-  ctx.quadraticCurveTo(0, VIRTUAL_HEIGHT, 0, VIRTUAL_HEIGHT - r);
-  ctx.lineTo(0, r);
-  ctx.quadraticCurveTo(0, 0, r, 0);
-  ctx.closePath();
+  ctx.rect(0, 0, VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
   ctx.clip();
 
   // Render in order (back to front)
@@ -171,7 +162,7 @@ function renderBackground(ctx: CanvasRenderingContext2D, scrollX: number): void 
   ctx.fillStyle = cachedGradient.gradient;
   ctx.fillRect(0, 0, VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
 
-  // Mario-style continuous cloud line - lower and slower
+  // Mario-style continuous cloud line
   ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
   drawContinuousCloudLine(ctx, scrollX * 0.06, VIRTUAL_HEIGHT * 0.85, 2.0);
 }
@@ -192,21 +183,14 @@ function drawContinuousCloudLine(
   const startX = -(offset % patternWidth);
 
   ctx.beginPath();
-
-  // Start from bottom left
   ctx.moveTo(startX - 100, VIRTUAL_HEIGHT + 50);
 
-  // Draw scalloped top edge
   for (let x = startX - 100; x < VIRTUAL_WIDTH + patternWidth + 100; x += bumpSpacing) {
-    // Create varied bump sizes for natural cloud look
     const variation = Math.sin(x * 0.1) * 0.2 + 1;
     const r = bumpRadius * variation;
-
-    // Arc upward for cloud bump
     ctx.arc(x + bumpSpacing / 2, y, r, Math.PI, 0, false);
   }
 
-  // Draw right edge down and close
   ctx.lineTo(VIRTUAL_WIDTH + patternWidth + 100, VIRTUAL_HEIGHT + 50);
   ctx.closePath();
   ctx.fill();
@@ -232,13 +216,11 @@ function renderObstacles(ctx: CanvasRenderingContext2D, obstacles: PooledObstacl
 
     ctx.fillStyle = baseColor;
 
-    // Top obstacle
-    roundedRect(ctx, obs.x, 0, width, gapTop, 8);
-    ctx.fill();
+    // Top obstacle - simple rect, no curves!
+    ctx.fillRect(obs.x, 0, width, gapTop);
 
-    // Bottom obstacle
-    roundedRect(ctx, obs.x, gapBottom, width, VIRTUAL_HEIGHT - gapBottom, 8);
-    ctx.fill();
+    // Bottom obstacle - simple rect, no curves!
+    ctx.fillRect(obs.x, gapBottom, width, VIRTUAL_HEIGHT - gapBottom);
 
     // Highlight on left edge
     ctx.fillStyle = highlightColor;

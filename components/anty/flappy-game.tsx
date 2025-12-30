@@ -20,21 +20,24 @@ interface FlappyGameProps {
  */
 export function FlappyGame({ highScore: initialHighScore, onExit }: FlappyGameProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
   const engineStateRef = useRef<EngineState>(createEngineState());
   const gameLoopRef = useRef<GameLoop | null>(null);
   const isHoldingRef = useRef(false);
 
-  // Minimal React state - only for UI that needs re-renders
-  const [displayScore, setDisplayScore] = useState(0);
-  const [highScore, setHighScore] = useState(initialHighScore);
-  const [gamePhase, setGamePhase] = useState<'ready' | 'playing' | 'game_over'>('ready');
+  // Use refs instead of state - no React re-renders during gameplay!
+  // (All game UI is rendered to canvas, not through React)
+  const scoreRef = useRef(0);
+  const highScoreRef = useRef(initialHighScore);
 
   // Canvas dimensions
   const [size, setSize] = useState({ width: 0, height: 0 });
+  const dprRef = useRef(1);
 
   // Handle window resize
   useEffect(() => {
     const updateSize = () => {
+      dprRef.current = window.devicePixelRatio || 1;
       setSize({ width: window.innerWidth, height: window.innerHeight });
     };
     updateSize();
@@ -56,35 +59,33 @@ export function FlappyGame({ highScore: initialHighScore, onExit }: FlappyGamePr
     const ctx = canvas.getContext('2d');
     if (ctx) {
       ctx.scale(dpr, dpr);
+      ctxRef.current = ctx;
     }
   }, [size.width, size.height]);
 
-  // Render callback for game loop
+  // Render callback for game loop - uses cached context
+  const sizeRef = useRef({ width: 0, height: 0 });
+  sizeRef.current = size;
+
   const handleRender = useCallback((state: EngineState, alpha: number) => {
-    const canvas = canvasRef.current;
-    const ctx = canvas?.getContext('2d');
-    if (!ctx || !canvas) return;
+    const ctx = ctxRef.current;
+    if (!ctx) return;
 
-    // Reset transform for clean render
-    const dpr = window.devicePixelRatio || 1;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    // Reset transform for clean render (dpr cached to avoid DOM read every frame)
+    ctx.setTransform(dprRef.current, 0, 0, dprRef.current, 0, 0);
 
-    render(ctx, state, size.width, size.height, alpha);
-  }, [size.width, size.height]);
+    render(ctx, state, sizeRef.current.width, sizeRef.current.height, alpha);
+  }, []); // No dependencies - uses refs
 
-  // State change callback - updates React state sparingly
+  // State change callback - just updates refs, no React re-renders!
   const handleStateChange = useCallback((phase: EngineState['phase'], score: number) => {
-    setGamePhase(phase);
-    setDisplayScore(score);
-
-    if (phase === 'game_over') {
-      if (score > highScore) {
-        setHighScore(score);
-      }
+    scoreRef.current = score;
+    if (phase === 'game_over' && score > highScoreRef.current) {
+      highScoreRef.current = score;
     }
-  }, [highScore]);
+  }, []);
 
-  // Initialize game loop
+  // Initialize game loop - only recreate on actual size change
   useEffect(() => {
     if (size.width === 0) return;
 
@@ -106,7 +107,7 @@ export function FlappyGame({ highScore: initialHighScore, onExit }: FlappyGamePr
       loop.stop();
       gameLoopRef.current = null;
     };
-  }, [size.width, size.height, handleRender, handleStateChange]);
+  }, [size.width, size.height]); // Only size changes - callbacks use refs
 
   // Handle flap input
   const handleFlap = useCallback(() => {
@@ -122,7 +123,7 @@ export function FlappyGame({ highScore: initialHighScore, onExit }: FlappyGamePr
         handleFlap();
       } else if (e.code === 'Escape') {
         e.preventDefault();
-        onExit(displayScore, highScore);
+        onExit(scoreRef.current, highScoreRef.current);
       }
     };
 
@@ -138,7 +139,7 @@ export function FlappyGame({ highScore: initialHighScore, onExit }: FlappyGamePr
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [handleFlap, onExit, displayScore, highScore]);
+  }, [handleFlap, onExit]);
 
   // Touch controls
   useEffect(() => {
@@ -207,7 +208,7 @@ export function FlappyGame({ highScore: initialHighScore, onExit }: FlappyGamePr
 
       {/* Exit button - only UI element outside canvas */}
       <button
-        onClick={() => onExit(displayScore, highScore)}
+        onClick={() => onExit(scoreRef.current, highScoreRef.current)}
         className="fixed top-4 right-4 p-2 bg-white/80 hover:bg-white rounded-full shadow-lg transition-colors z-10"
         aria-label="Exit game"
       >
