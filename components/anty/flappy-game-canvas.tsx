@@ -1,8 +1,8 @@
 'use client';
 
 import { useRef, useEffect } from 'react';
-import type { Obstacle, Collectible, PlayerState } from '@/lib/anty-v3/game-state';
-import { GAME_PHYSICS } from '@/lib/anty-v3/game-physics';
+import type { Obstacle, Collectible, PlayerState } from '@/lib/anty/game-state';
+import { GAME_PHYSICS } from '@/lib/anty/game-physics';
 
 interface FlappyGameCanvasProps {
   width: number;

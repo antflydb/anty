@@ -1,7 +1,7 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import type { GameState } from '@/lib/anty-v3/game-state';
+import type { GameState } from '@/lib/anty/game-state';
 
 interface FlappyGameHUDProps {
   gameState: GameState;

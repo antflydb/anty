@@ -3,44 +3,23 @@
 import { useRef, useState, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
-import { type ButtonName } from '@/lib/anty-v3/ui-types';
-import { type Particle } from '@/lib/anty-v3/particles';
-import { type AntyStats } from '@/lib/anty-v3/stat-system';
+import { type ButtonName } from '@/lib/anty/ui-types';
+import { type Particle } from '@/lib/anty/particles';
+import { type AntyStats } from '@/lib/anty/stat-system';
 import { AntyExpressionLayer } from './anty-expression-layer';
 import { AntyParticleCanvas, type ParticleCanvasHandle } from './anty-particle-canvas';
-import { useAnimationController } from '@/lib/anty-v3/animation/use-animation-controller';
-import { type EmotionType, type ExpressionName } from '@/lib/anty-v3/animation/types';
+import { useAnimationController } from '@/lib/anty/animation/use-animation-controller';
+import { type EmotionType, type ExpressionName } from '@/lib/anty/animation/types';
 import {
   ENABLE_ANIMATION_DEBUG_LOGS,
   logAnimationEvent,
-} from '@/lib/anty-v3/animation/feature-flags';
-import { getEyeShape, getEyeDimensions } from '@/lib/anty-v3/animation/definitions/eye-shapes';
-import { createLookAnimation, createReturnFromLookAnimation } from '@/lib/anty-v3/animation/definitions/eye-animations';
+} from '@/lib/anty/animation/feature-flags';
+import { getEyeShape, getEyeDimensions } from '@/lib/anty/animation/definitions/eye-shapes';
+import { createLookAnimation, createReturnFromLookAnimation } from '@/lib/anty/animation/definitions/eye-animations';
 
-// Register GSAP plugin
 gsap.registerPlugin(useGSAP);
 
-// Debug logging utilities for eye animations
-const debugLog = {
-  leftEye: (action: string, details?: any) => {
-    console.log(`[LEFT EYE] ${action}`, details || '');
-  },
-  rightEye: (action: string, details?: any) => {
-    console.log(`[RIGHT EYE] ${action}`, details || '');
-  },
-  both: (action: string, details?: any) => {
-    console.log(`[BOTH EYES] ${action}`, details || '');
-  },
-  expression: (from: string, to: string) => {
-    console.log(`[EXPRESSION] ${from} → ${to} at ${Date.now()}`);
-  },
-  gsap: (target: 'left' | 'right' | 'both', action: 'to' | 'set' | 'kill', props?: any) => {
-    const targetLabel = target === 'both' ? '[BOTH EYES]' : target === 'left' ? '[LEFT EYE]' : '[RIGHT EYE]';
-    console.log(`${targetLabel} GSAP.${action}`, props || '');
-  }
-};
-
-interface AntyCharacterV3Props {
+interface AntyCharacterProps {
   stats: AntyStats;
   expression?: ExpressionName;
   onButtonClick?: (button: ButtonName) => void;
@@ -86,14 +65,14 @@ export interface AntyCharacterHandle {
 }
 
 /**
- * Main Anty Character V3 component with GSAP animations
+ * Main Anty Character component with GSAP animations
  * Features:
  * - Continuous idle animations (floating, rotation, breathing)
  * - Expression changes with crossfades
  * - Interactive button responses
  * - Canvas-based particle system
  */
-export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Props>(({
+export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>(({
   expression = 'idle',
   onSpontaneousExpression,
   onEmotionComplete,
@@ -122,19 +101,12 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
 
   const [currentExpression, setCurrentExpression] = useState<ExpressionName>(expression);
   const [particles] = useState<Particle[]>([]);
-  // isWinking state removed - morphing handles all expressions now
-
-  // Performance fix: Compute expression states instead of storing in state
   const isOff = expression === 'off';
-
-  // Always use IDLE dimensions for initial render - GSAP handles all shape changes
-  // (initialization sets correct shape on mount, animations handle transitions)
   const initialEyeDimensions = getEyeDimensions('IDLE');
 
   const superGlowRef = useRef<HTMLDivElement>(null);
-  const superGlowTimelineRef = useRef<gsap.core.Timeline | null>(null); // Memory leak fix
+  const superGlowTimelineRef = useRef<gsap.core.Timeline | null>(null);
 
-  // Force re-render when refs are populated (fixes initialization timing bug)
   const [refsReady, setRefsReady] = useState(false);
   useEffect(() => {
     if (containerRef.current && characterRef.current && !refsReady) {
@@ -142,9 +114,6 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
     }
   }, [refsReady]);
 
-  // ============================================================================
-  // NEW ANIMATION CONTROLLER
-  // ============================================================================
   const animationController = useAnimationController(
     {
       container: containerRef.current,
@@ -681,25 +650,21 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
     rightEyePathRef,
   }), [size, animationController]);
 
-  // Update expression when prop changes
-  // All animations (including wink) are now handled by AnimationController
   useEffect(() => {
     setCurrentExpression(expression);
   }, [expression]);
 
-  // Play emotion animation when expression changes (new controller only)
-  // NOTE: Re-trigger blocker REMOVED - controller handles deduplication internally
+  // Play emotion when expression changes
   useEffect(() => {
     if (!animationController.isReady) return;
     if (isOff) return; // Don't play emotions when powered off
 
-    // Map ExpressionName to EmotionType
     const validEmotions: Record<string, EmotionType> = {
       'happy': 'happy',
-      'excited': 'excited',      // Level 4 positive (jump+spin)
-      'celebrate': 'celebrate',  // Level 5 positive (confetti!)
-      'pleased': 'pleased',      // Level 2 positive
-      'smize': 'smize',          // Level 1 positive (eyes only)
+      'excited': 'excited',
+      'celebrate': 'celebrate',
+      'pleased': 'pleased',
+      'smize': 'smize',
       'sad': 'sad',
       'angry': 'angry',
       'shocked': 'shocked',
@@ -727,42 +692,21 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [expression, isOff]);
 
-  // Super mode glow animation
   useEffect(() => {
     if (!superGlowRef.current) return;
 
     if (isSuperMode) {
-      // Memory leak fix: Kill any previous timeline before creating new one
-      if (superGlowTimelineRef.current) {
-        superGlowTimelineRef.current.kill();
-      }
-
-      // Pulsing rainbow glow animation
+      superGlowTimelineRef.current?.kill();
       const glowTl = gsap.timeline({ repeat: -1, yoyo: true });
-      glowTl.to(superGlowRef.current, {
-        opacity: 0.9,
-        scale: 1.1,
-        duration: 0.8,
-        ease: 'sine.inOut',
-      });
-
-      // Store timeline reference for cleanup
+      glowTl.to(superGlowRef.current, { opacity: 0.9, scale: 1.1, duration: 0.8, ease: 'sine.inOut' });
       superGlowTimelineRef.current = glowTl;
     } else {
-      // Properly kill timeline and reset
-      if (superGlowTimelineRef.current) {
-        superGlowTimelineRef.current.kill();
-        superGlowTimelineRef.current = null;
-      }
+      superGlowTimelineRef.current?.kill();
+      superGlowTimelineRef.current = null;
       gsap.set(superGlowRef.current, { opacity: 0, scale: 1 });
     }
 
-    // Cleanup on unmount
-    return () => {
-      if (superGlowTimelineRef.current) {
-        superGlowTimelineRef.current.kill();
-      }
-    };
+    return () => { superGlowTimelineRef.current?.kill(); };
   }, [isSuperMode]);
 
   // Track current expression in a ref to avoid recreating the scheduler
@@ -777,78 +721,53 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
     searchModeRef.current = searchMode;
   }, [searchMode]);
 
-  // NOTE: Spontaneous blink scheduler removed - now built into idle animation in NEW system
-  // Spontaneous looking behaviors (look-left, look-right) handled separately
   const onSpontaneousExpressionRef = useRef(onSpontaneousExpression);
 
   useEffect(() => {
     onSpontaneousExpressionRef.current = onSpontaneousExpression;
   }, [onSpontaneousExpression]);
 
-  // Track when idle started (reset when expression changes away from idle)
+  // Track idle duration for bored behaviors
   const idleStartTimeRef = useRef<number>(Date.now());
   useEffect(() => {
     if (expression === 'idle') {
-      // Reset idle start time when returning to idle
       idleStartTimeRef.current = Date.now();
     }
   }, [expression]);
 
-  // Setup spontaneous "bored" behaviors (triggered after extended idle)
-  // DISABLED FOR NOW - will be used for future bored emotions
-  // IMPORTANT: Empty dependencies to ensure only ONE scheduler is ever created
+  // Bored behavior scheduler (triggers after extended idle)
   useGSAP(
     () => {
       let isActive = true;
-      const MIN_IDLE_TIME_MS = 120000; // 2 minutes of continuous idle required
+      const MIN_IDLE_TIME_MS = 120000; // 2 minutes
 
       const scheduleRandomBehavior = () => {
         if (!isActive) return;
 
-        const delay = gsap.utils.random(60, 120); // Check every 60-120 seconds
-
-        gsap.delayedCall(delay, () => {
+        gsap.delayedCall(gsap.utils.random(60, 120), () => {
           if (!isActive) return;
 
-          // Only trigger behaviors when:
-          // 1. Expression is idle
-          // 2. Not in search mode
-          // 3. Idle animation is actually playing (not paused for eat/other custom animations)
-          // 4. Been idle for at least 2 minutes continuously
           const isIdlePlaying = animationController.isIdlePlaying();
-          const idleDuration = Date.now() - idleStartTimeRef.current;
-          const hasBeenIdleLongEnough = idleDuration >= MIN_IDLE_TIME_MS;
+          const hasBeenIdleLongEnough = (Date.now() - idleStartTimeRef.current) >= MIN_IDLE_TIME_MS;
 
           if (currentExpressionRef.current !== 'idle' || searchModeRef.current || !isIdlePlaying || !hasBeenIdleLongEnough) {
-            // If conditions not met, wait another full delay period before checking again
             scheduleRandomBehavior();
             return;
           }
 
-          // TODO: Add "bored" emotions here in the future
-          // For now, just log that we would trigger something
-          // onRandomAction?.('BORED - would trigger emotion');
-
-          // Schedule next behavior
+          // TODO: Add bored emotions here
           scheduleRandomBehavior();
         });
       };
 
       scheduleRandomBehavior();
-
-      // Cleanup function to stop scheduling when component unmounts
-      return () => {
-        isActive = false;
-      };
+      return () => { isActive = false; };
     },
     { scope: containerRef, dependencies: [] }
   );
 
-  // Body SVG assets - bracket shapes
-  const img = "/anty-v3/body-right.svg"; // Right bracket body
-  const img1 = "/anty-v3/body-left.svg"; // Left bracket body
-
-  // Eye assets removed - now using SVG morphing via AnimationController
+  const img = "/anty/body-right.svg";
+  const img1 = "/anty/body-left.svg";
 
   return (
     <div
@@ -892,8 +811,7 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
         <div ref={leftBodyRef} className="absolute inset-[0_13.15%_13.15%_0]">
           <img alt="" className="block max-w-none size-full" src={img1} />
         </div>
-        {/* Left eye (VIEWER's left) - Always SVG, morphed by animation controller */}
-        {/* inset-[top_right_bottom_left]: left=30.57% = positioned on viewer's LEFT */}
+        {/* Left eye */}
         <div className="absolute flex inset-[33.44%_56.93%_38.44%_30.57%] items-center justify-center">
           <div
             ref={leftEyeRef}
@@ -922,8 +840,7 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
           </div>
         </div>
 
-        {/* Right eye (VIEWER's right) - Always SVG, morphed by animation controller */}
-        {/* inset-[top_right_bottom_left]: left=56.29% = positioned on viewer's RIGHT */}
+        {/* Right eye */}
         <div className="absolute flex inset-[33.44%_31.21%_38.44%_56.29%] items-center justify-center">
           <div
             ref={rightEyeRef}
@@ -952,13 +869,8 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
           </div>
         </div>
 
-        {/* Expression overlay (for future expression changes) */}
-        {/* <AntyExpressionLayer expression={currentExpression} size={size} /> */}
-
-        {/* Debug overlays for character body and eyes */}
         {debugMode && (
           <>
-            {/* Character body debug box */}
             <div
               className="absolute inset-0 pointer-events-none"
               style={{
@@ -967,10 +879,8 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
               }}
             />
 
-            {/* Left eye center tracker - Yellow plus */}
             {!isOff && (
               <>
-                {/* Horizontal line */}
                 <div
                   className="absolute pointer-events-none"
                   style={{
@@ -982,7 +892,6 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
                     zIndex: 9999,
                   }}
                 />
-                {/* Vertical line */}
                 <div
                   className="absolute pointer-events-none"
                   style={{
@@ -997,10 +906,8 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
               </>
             )}
 
-            {/* Right eye center tracker - Orange plus */}
             {!isOff && (
               <>
-                {/* Horizontal line */}
                 <div
                   className="absolute pointer-events-none"
                   style={{
@@ -1012,7 +919,6 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
                     zIndex: 9999,
                   }}
                 />
-                {/* Vertical line */}
                 <div
                   className="absolute pointer-events-none"
                   style={{
@@ -1033,7 +939,7 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
   );
 });
 
-AntyCharacterV3.displayName = 'AntyCharacterV3';
+AntyCharacter.displayName = 'AntyCharacter';
 
 // Export type for button click handler
 export type { ButtonName };

@@ -2,22 +2,22 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import gsap from 'gsap';
-import { AntyCharacterV3, ActionButtonsV3, HeartMeter, ExpressionMenu, PowerButton, FlappyGame, FPSMeter, type ButtonName, type AntyCharacterHandle, type EarnedHeart } from '@/components/anty-v3';
-import { AntySearchBar } from '@/components/anty-v3/anty-search-bar';
-import { AnimationDebugOverlay } from '@/components/anty-v3/animation-debug-overlay';
-import { EyeDebugBoxes } from '@/components/anty-v3/eye-debug-boxes';
-import { SearchBarDemoMenu, getStoredSearchBarConfig } from '@/components/anty-v3/search-bar-demo-menu';
+import { AntyCharacter, ActionButtons, HeartMeter, ExpressionMenu, PowerButton, FlappyGame, FPSMeter, type ButtonName, type AntyCharacterHandle, type EarnedHeart } from '@/components/anty';
+import { AntySearchBar } from '@/components/anty/anty-search-bar';
+import { AnimationDebugOverlay } from '@/components/anty/animation-debug-overlay';
+import { EyeDebugBoxes } from '@/components/anty/eye-debug-boxes';
+import { SearchBarDemoMenu, getStoredSearchBarConfig } from '@/components/anty/search-bar-demo-menu';
 import { ChatPanel } from '@/components/anty-chat';
-import type { EmotionType } from '@/lib/anty-v3/animation/types';
-import { DEFAULT_SEARCH_BAR_CONFIG } from '@/lib/anty-v3/animation/types';
-import type { AntyStats } from '@/lib/anty-v3/stat-system';
-import { ENABLE_ANIMATION_DEBUG_LOGS } from '@/lib/anty-v3/animation/feature-flags';
+import type { EmotionType } from '@/lib/anty/animation/types';
+import { DEFAULT_SEARCH_BAR_CONFIG } from '@/lib/anty/animation/types';
+import type { AntyStats } from '@/lib/anty/stat-system';
+import { ENABLE_ANIMATION_DEBUG_LOGS } from '@/lib/anty/animation/feature-flags';
 
 // Chat panel layout constants
 const CHAT_PANEL_WIDTH = 384;
 const CHAT_OFFSET = CHAT_PANEL_WIDTH / 2; // Character shifts left by half panel width when chat opens
 
-export default function AntyV3() {
+export default function Anty() {
   // Game mode state
   const [gameMode, setGameMode] = useState<'idle' | 'game'>('idle');
   const [gameHighScore, setGameHighScore] = useState(0);
@@ -1589,7 +1589,7 @@ export default function AntyV3() {
                   transformOrigin: 'center center',
                 }}
               >
-                <AntyCharacterV3
+                <AntyCharacter
                   ref={antyRef}
                   stats={stats}
                   expression={expression}
@@ -1684,7 +1684,7 @@ export default function AntyV3() {
               transform: isChatOpen ? `translateX(-${CHAT_OFFSET}px)` : 'translateX(0)',
             }}
           >
-            <ActionButtonsV3 onButtonClick={handleButtonClick} isOff={expression === 'off'} moodsButtonRef={moodsButtonRef} />
+            <ActionButtons onButtonClick={handleButtonClick} isOff={expression === 'off'} moodsButtonRef={moodsButtonRef} />
           </div>
 
           <ExpressionMenu

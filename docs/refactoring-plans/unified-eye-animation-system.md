@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-This plan outlines a safe, incremental approach to extract all eye animation logic from `anty-character-v3.tsx` into a dedicated custom hook `useEyeAnimations`. The refactoring will maintain 100% backward compatibility while improving maintainability and setting the foundation for future gamification features.
+This plan outlines a safe, incremental approach to extract all eye animation logic from `anty-character.tsx` into a dedicated custom hook `useEyeAnimations`. The refactoring will maintain 100% backward compatibility while improving maintainability and setting the foundation for future gamification features.
 
 ## 1. Hook Interface Design
 
@@ -45,7 +45,7 @@ The hook will manage:
 
 ### 2.1 Phase 1: Create Hook Structure (Low Risk)
 
-**Action**: Create `/Users/ellis/projects/www/lib/anty-v3/use-eye-animations.ts` with:
+**Action**: Create `/Users/ellis/projects/www/lib/anty/use-eye-animations.ts` with:
 - Basic hook structure
 - Import all necessary GSAP dependencies
 - Copy debugLog utilities from component
@@ -179,7 +179,7 @@ useEffect(() => {
 ### 3.1 Hook File Structure
 
 ```typescript
-/Users/ellis/projects/www/lib/anty-v3/use-eye-animations.ts
+/Users/ellis/projects/www/lib/anty/use-eye-animations.ts
 
 // ===========================
 // Section 1: Imports & Types
@@ -332,8 +332,8 @@ debugLog.gsap(target, action, props)  // GSAP operations
 - May need to manually merge if other changes occurred
 
 **Complete Rollback**:
-- Delete `/Users/ellis/projects/www/lib/anty-v3/use-eye-animations.ts`
-- Revert all changes to `anty-character-v3.tsx`
+- Delete `/Users/ellis/projects/www/lib/anty/use-eye-animations.ts`
+- Revert all changes to `anty-character.tsx`
 - No migration or data issues
 
 ## 5. Success Criteria
@@ -371,9 +371,9 @@ debugLog.gsap(target, action, props)  // GSAP operations
 
 ## Critical Files
 
-- `/Users/ellis/projects/www/lib/anty-v3/use-eye-animations.ts` - New hook file to create (~300 lines)
-- `/Users/ellis/projects/www/components/anty-v3/anty-character-v3.tsx` - Main component to refactor (remove ~130 lines)
-- `/Users/ellis/projects/www/lib/anty-v3/animation-state.ts` - Reference for ExpressionName type (read-only)
+- `/Users/ellis/projects/www/lib/anty/use-eye-animations.ts` - New hook file to create (~300 lines)
+- `/Users/ellis/projects/www/components/anty/anty-character.tsx` - Main component to refactor (remove ~130 lines)
+- `/Users/ellis/projects/www/lib/anty/animation-state.ts` - Reference for ExpressionName type (read-only)
 
 ## Implementation Notes
 

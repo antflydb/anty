@@ -7,7 +7,7 @@
  * Usage:
  * ```typescript
  * // In your root component or _app.tsx
- * import { exposeDevTools } from '@/lib/anty-v3/animation/dev-tools';
+ * import { exposeDevTools } from '@/lib/anty/animation/dev-tools';
  *
  * if (process.env.NODE_ENV === 'development') {
  *   exposeDevTools();

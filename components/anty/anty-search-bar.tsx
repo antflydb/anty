@@ -2,7 +2,7 @@
 
 import { type RefObject } from 'react';
 import { Kbd } from '@/components/ui/kbd';
-import { type SearchBarConfig, DEFAULT_SEARCH_BAR_CONFIG } from '@/lib/anty-v3/animation/types';
+import { type SearchBarConfig, DEFAULT_SEARCH_BAR_CONFIG } from '@/lib/anty/animation/types';
 
 interface AntySearchBarProps {
   active: boolean;

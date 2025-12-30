@@ -1,9 +1,9 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { type ButtonName } from '@/lib/anty-v3/ui-types';
+import { type ButtonName } from '@/lib/anty/ui-types';
 
-interface ActionButtonsV3Props {
+interface ActionButtonsProps {
   moodsButtonRef?: React.RefObject<HTMLButtonElement | null>;
   onButtonClick: (button: ButtonName) => void;
   isOff: boolean;
@@ -17,7 +17,7 @@ const buttons: Array<{ name: ButtonName; svg: string; alt: string }> = [
   { name: 'play', svg: '/button-play.svg', alt: 'Play' },
 ];
 
-export function ActionButtonsV3({ onButtonClick, isOff, moodsButtonRef }: ActionButtonsV3Props) {
+export function ActionButtons({ onButtonClick, isOff, moodsButtonRef }: ActionButtonsProps) {
   return (
     <div className="flex gap-5 justify-center pb-8">
       {buttons.map((button, index) => (
@@ -28,7 +28,7 @@ export function ActionButtonsV3({ onButtonClick, isOff, moodsButtonRef }: Action
           whileTap={!isOff ? { scale: 0.92 } : {}}
           transition={{ duration: 0.15 }}
           onClick={() => onButtonClick(button.name)}
-          className="p-2 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 hover:bg-gray-100 active:bg-gray-200 transition-colors duration-150"
+          className="p-1 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 hover:bg-gray-100 active:bg-gray-200 transition-colors duration-150"
           animate={
             isOff
               ? {

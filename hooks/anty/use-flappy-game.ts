@@ -11,7 +11,7 @@ import type {
   Collectible,
   PlayerState,
   GameConfig,
-} from '@/lib/anty-v3/game-state';
+} from '@/lib/anty/game-state';
 import {
   GAME_PHYSICS,
   getDifficultyConfig,
@@ -27,7 +27,7 @@ import {
   checkCollectibleCollisions,
   checkDifficultyIncrease,
   applyMagneticPull,
-} from '@/lib/anty-v3/game-physics';
+} from '@/lib/anty/game-physics';
 
 /**
  * Fun, pleasing color palette for passed obstacles

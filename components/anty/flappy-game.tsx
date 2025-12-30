@@ -2,13 +2,13 @@
 
 import { useEffect, useState, useRef } from 'react';
 import gsap from 'gsap';
-import { useFlappyGame } from '@/hooks/anty-v3/use-flappy-game';
+import { useFlappyGame } from '@/hooks/anty/use-flappy-game';
 import { FlappyGameCanvas } from './flappy-game-canvas';
 import { FlappyGameHUD } from './flappy-game-hud';
 import { FlappyGameOver } from './flappy-game-over';
 import { FlappyParallaxBackground } from './flappy-parallax-background';
 import { FlappyAnty } from './flappy-anty';
-import { GAME_PHYSICS } from '@/lib/anty-v3/game-physics';
+import { GAME_PHYSICS } from '@/lib/anty/game-physics';
 
 interface FlappyGameProps {
   /** Initial high score */

@@ -2,7 +2,7 @@
 
 /**
  * Simplified Anty component for FlappyAF game
- * Uses the actual Anty SVG assets from anty-v3
+ * Uses the actual Anty SVG assets
  */
 
 interface FlappyAntyProps {
@@ -22,19 +22,19 @@ export function FlappyAnty({ expression = 'idle', size = 80 }: FlappyAntyProps) 
     <div style={{ width: size, height: size, position: 'relative' }}>
       {/* Right body segment (bottom layer) */}
       <div style={{ position: 'absolute', inset: '13.46% 0 0 13.46%' }}>
-        <img alt="" style={{ display: 'block', maxWidth: 'none', width: '100%', height: '100%' }} src="/anty-v3/body-right.svg" />
+        <img alt="" style={{ display: 'block', maxWidth: 'none', width: '100%', height: '100%' }} src="/anty/body-right.svg" />
       </div>
 
       {/* Left body segment (top layer) */}
       <div style={{ position: 'absolute', inset: '0 13.15% 13.15% 0' }}>
-        <img alt="" style={{ display: 'block', maxWidth: 'none', width: '100%', height: '100%' }} src="/anty-v3/body-left.svg" />
+        <img alt="" style={{ display: 'block', maxWidth: 'none', width: '100%', height: '100%' }} src="/anty/body-left.svg" />
       </div>
 
       {/* Left Eye */}
       {isHappy ? (
         <div style={{ position: 'absolute', inset: '33.42% 30.45% 48.51% 55.1%' }}>
           <div style={{ position: 'absolute', inset: '0 0 0.09% 0' }}>
-            <img alt="" style={{ display: 'block', maxWidth: 'none', width: '100%', height: '100%' }} src="/anty-v3/eye-happy-left.svg" />
+            <img alt="" style={{ display: 'block', maxWidth: 'none', width: '100%', height: '100%' }} src="/anty/eye-happy-left.svg" />
           </div>
         </div>
       ) : (
@@ -73,7 +73,7 @@ export function FlappyAnty({ expression = 'idle', size = 80 }: FlappyAntyProps) 
       {isHappy ? (
         <div style={{ position: 'absolute', inset: '33.37% 56.72% 48.51% 28.78%' }}>
           <div style={{ position: 'absolute', inset: '0 0 0.09% 0' }}>
-            <img alt="" style={{ display: 'block', maxWidth: 'none', width: '100%', height: '100%' }} src="/anty-v3/eye-happy-right.svg" />
+            <img alt="" style={{ display: 'block', maxWidth: 'none', width: '100%', height: '100%' }} src="/anty/eye-happy-right.svg" />
           </div>
         </div>
       ) : (

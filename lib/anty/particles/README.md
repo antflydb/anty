@@ -13,7 +13,7 @@ Single source of truth for particle physics configuration.
 ## Usage
 
 ```typescript
-import { PARTICLE_CONFIGS, type Particle, type ParticleType } from '@/lib/anty-v3/particles';
+import { PARTICLE_CONFIGS, type Particle, type ParticleType } from '@/lib/anty/particles';
 ```
 
 ## Config Structure
@@ -39,5 +39,5 @@ export const PARTICLE_CONFIGS: Record<ParticleType, ParticleConfig> = {
 
 - All timing values are in **seconds** (not milliseconds)
 - Physics runs at 60fps via `requestAnimationFrame` in `particle-physics.ts`
-- Rendering handled by `components/anty-v3/anty-particle-canvas.tsx`
+- Rendering handled by `components/anty/anty-particle-canvas.tsx`
 - Never duplicate these configs - always import from this directory
