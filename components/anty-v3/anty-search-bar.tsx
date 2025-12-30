@@ -41,6 +41,13 @@ export function AntySearchBar({
   // Default height for content area (input stays at standard size)
   const defaultHeight = DEFAULT_SEARCH_BAR_CONFIG.height;
 
+  // Calculate if we should center content or top-align
+  // Single line height ~= font size (17.85px) + padding (~24px top/bottom) ≈ 65px
+  // If bar is tall enough for 2+ lines, top-align; otherwise center
+  const singleLineThreshold = 90; // px - anything above this is considered multi-line capable
+  const isMultiLineHeight = height > singleLineThreshold;
+  const contentTopPadding = 16; // px - top padding when top-aligned
+
   return (
     <div
       ref={barRef}
@@ -92,11 +99,16 @@ export function AntySearchBar({
             borderRadius: `${innerRadius}px`,
           }}
         >
-          {/* Content container - fixed to default height, content centered within */}
+          {/* Content container - centered for single-line, top-aligned for multi-line */}
           <div
-            className="absolute top-0 left-0 right-0"
+            className="absolute left-0 right-0"
             style={{
               height: `${defaultHeight - borderWidth * 2}px`,
+              // Center vertically for single-line, top-align with padding for multi-line
+              ...(isMultiLineHeight
+                ? { top: `${contentTopPadding}px` }
+                : { top: '50%', transform: 'translateY(-50%)' }
+              ),
             }}
           >
             {/* Fake animated placeholder */}
