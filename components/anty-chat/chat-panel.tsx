@@ -95,6 +95,7 @@ export function ChatPanel({ isOpen, onClose, onEmotion }: ChatPanelProps) {
   const inputBorderRef = useRef<HTMLDivElement>(null);
   const borderTweenRef = useRef<gsap.core.Tween | null>(null);
   const initialLoadDone = useRef(false);
+  const greetingInitiated = useRef(false);
 
   // Auto-scroll to bottom when new messages arrive or panel opens
   useEffect(() => {
@@ -204,12 +205,25 @@ export function ChatPanel({ isOpen, onClose, onEmotion }: ChatPanelProps) {
 
   // Add greeting when panel opens with no session
   useEffect(() => {
+    // Reset when session changes
+    if (!currentSessionId) {
+      greetingInitiated.current = false;
+    }
+  }, [currentSessionId]);
+
+  useEffect(() => {
     if (isOpen && !showApiKeyInput && messages.length === 0 && !currentSessionId) {
-      // Create a new session and show greeting
+      // Create a new session
       const newSession = createNewSession();
       setCurrentSessionIdState(newSession.id);
+    }
+  }, [isOpen, showApiKeyInput, currentSessionId, messages.length]);
 
+  useEffect(() => {
+    if (isOpen && !showApiKeyInput && messages.length === 0 && currentSessionId && !greetingInitiated.current) {
+      greetingInitiated.current = true;
       setIsLoading(true);
+
       const timer = setTimeout(() => {
         const randomGreeting = ANTY_GREETINGS[Math.floor(Math.random() * ANTY_GREETINGS.length)];
         const greetingMessage: Message = {
@@ -626,14 +640,14 @@ export function ChatPanel({ isOpen, onClose, onEmotion }: ChatPanelProps) {
             {/* History View */}
             {!showApiKeyInput && showHistory && (
               <div className="flex-1 overflow-y-auto">
-                {sessions.length === 0 ? (
+                {sessions.filter(s => s.messages.some(m => m.role === 'user')).length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-full text-gray-400 p-8">
                     <History className="w-12 h-12 mb-3 opacity-50" />
                     <p className="text-sm">No chat history yet</p>
                   </div>
                 ) : (
                   <div className="divide-y divide-gray-100">
-                    {sessions.map((session) => (
+                    {sessions.filter(s => s.messages.some(m => m.role === 'user')).map((session) => (
                       <div
                         key={session.id}
                         onClick={() => handleSelectSession(session.id)}
