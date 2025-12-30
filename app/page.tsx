@@ -1495,7 +1495,7 @@ export default function Anty() {
 
   return (
     <div className="bg-white min-h-screen flex flex-col relative overflow-hidden">
-      <FPSMeter />
+      {gameMode !== 'game' && <FPSMeter />}
       <SearchBarDemoMenu visible={searchActive} />
 
       {gameMode === 'idle' ? (
@@ -1725,21 +1725,23 @@ export default function Anty() {
         </>
       )}
 
-      {/* Power button - always rendered */}
-      <PowerButton
-        isOff={expression === 'off'}
-        onToggle={() => {
-          if (expression === 'off') {
-            // Turn on - go straight to idle, let wake-up animation handle the transition
-            clearExpressionReset();
-            setExpression('idle');
-          } else {
-            // Turn off - let AnimationController handle animation
-            clearExpressionReset();
-            setExpression('off'); // Controller will trigger power-off animation via isOff state
-          }
-        }}
-      />
+      {/* Power button - hidden during game mode */}
+      {gameMode !== 'game' && (
+        <PowerButton
+          isOff={expression === 'off'}
+          onToggle={() => {
+            if (expression === 'off') {
+              // Turn on - go straight to idle, let wake-up animation handle the transition
+              clearExpressionReset();
+              setExpression('idle');
+            } else {
+              // Turn off - let AnimationController handle animation
+              clearExpressionReset();
+              setExpression('off'); // Controller will trigger power-off animation via isOff state
+            }
+          }}
+        />
+      )}
 
       {/* Chat Panel */}
       <ChatPanel

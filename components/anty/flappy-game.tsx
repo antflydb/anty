@@ -1,378 +1,231 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
-import gsap from 'gsap';
-import { useFlappyGame } from '@/hooks/anty/use-flappy-game';
-import { FlappyGameCanvas } from './flappy-game-canvas';
-import { FlappyGameHUD } from './flappy-game-hud';
-import { FlappyGameOver } from './flappy-game-over';
-import { FlappyParallaxBackground } from './flappy-parallax-background';
-import { FlappyAnty } from './flappy-anty';
-import { GAME_PHYSICS } from '@/lib/anty/game-physics';
+import { useEffect, useRef, useState, useCallback } from 'react';
+import {
+  createEngineState,
+  flap,
+  GameLoop,
+  type EngineState,
+} from '@/lib/anty/flappy-engine';
+import { render, loadSprites } from '@/lib/anty/flappy-renderer';
 
 interface FlappyGameProps {
-  /** Initial high score */
   highScore: number;
-
-  /** Callback when exiting game */
   onExit: (finalScore: number, newHighScore: number) => void;
 }
 
 /**
- * FlappyAF Game Orchestrator
- * Main game component that coordinates all subsystems
+ * FlappyAF Game - Rebuilt for Performance
+ * Single canvas, single RAF loop, fixed timestep physics
  */
-export function FlappyGame({ highScore, onExit }: FlappyGameProps) {
-  const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
-  const gameContainerRef = useRef<HTMLDivElement>(null);
-  const shakeContainerRef = useRef<HTMLDivElement>(null);
-  const backgroundRef = useRef<HTMLDivElement>(null);
-  const hudRef = useRef<HTMLDivElement>(null);
-  const [antyExpression, setAntyExpression] = useState<'idle' | 'happy'>('idle');
+export function FlappyGame({ highScore: initialHighScore, onExit }: FlappyGameProps) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const engineStateRef = useRef<EngineState>(createEngineState());
+  const gameLoopRef = useRef<GameLoop | null>(null);
+  const isHoldingRef = useRef(false);
 
-  // Initialize canvas size
+  // Minimal React state - only for UI that needs re-renders
+  const [displayScore, setDisplayScore] = useState(0);
+  const [highScore, setHighScore] = useState(initialHighScore);
+  const [gamePhase, setGamePhase] = useState<'ready' | 'playing' | 'game_over'>('ready');
+
+  // Canvas dimensions
+  const [size, setSize] = useState({ width: 0, height: 0 });
+
+  // Handle window resize
   useEffect(() => {
     const updateSize = () => {
-      setCanvasSize({
-        width: window.innerWidth,
-        height: window.innerHeight,
-      });
+      setSize({ width: window.innerWidth, height: window.innerHeight });
     };
-
     updateSize();
     window.addEventListener('resize', updateSize);
     return () => window.removeEventListener('resize', updateSize);
   }, []);
 
-  // Initialize game
-  const {
-    gameState,
-    score,
-    highScore: currentHighScore,
-    player,
-    obstacles,
-    collectibles,
-    config,
-    scrollPosition, // Performance fix: now managed by RAF game loop
-    flap,
-    startGame,
-    resetToReady,
-  } = useFlappyGame({
-    canvasWidth: canvasSize.width,
-    canvasHeight: canvasSize.height,
-    initialHighScore: highScore,
-    onGameOver: (finalScore, isNewHighScore) => {
-      // Trigger death animation
-      handleDeath();
-    },
-    onDifficultyIncrease: level => {
-      // Flash border and show level popup
-      handleDifficultyIncrease(level);
-    },
-    onCollectibleCollected: (x, y, value) => {
-      // Spawn collection burst
-      spawnCollectionBurst(x, y);
-      showScorePopup(`+${value}`, x, y);
-    },
-    onCollision: (x, y) => {
-      // Trigger collision effects
-      screenShake();
-      spawnDeathBurst(x, y);
-    },
-  });
-
-  // Performance fix: Removed setInterval-based scroll update (lines 86-95)
-  // scrollPosition now updated in RAF game loop for perfect timing sync
-
-  // Initial setup
+  // Setup canvas with device pixel ratio
   useEffect(() => {
-    setAntyExpression('idle');
-  }, []);
+    const canvas = canvasRef.current;
+    if (!canvas || size.width === 0) return;
 
-  // Staggered entrance animation for classy effect
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = size.width * dpr;
+    canvas.height = size.height * dpr;
+    canvas.style.width = `${size.width}px`;
+    canvas.style.height = `${size.height}px`;
+
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.scale(dpr, dpr);
+    }
+  }, [size.width, size.height]);
+
+  // Render callback for game loop
+  const handleRender = useCallback((state: EngineState, alpha: number) => {
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext('2d');
+    if (!ctx || !canvas) return;
+
+    // Reset transform for clean render
+    const dpr = window.devicePixelRatio || 1;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    render(ctx, state, size.width, size.height, alpha);
+  }, [size.width, size.height]);
+
+  // State change callback - updates React state sparingly
+  const handleStateChange = useCallback((phase: EngineState['phase'], score: number) => {
+    setGamePhase(phase);
+    setDisplayScore(score);
+
+    if (phase === 'game_over') {
+      if (score > highScore) {
+        setHighScore(score);
+      }
+    }
+  }, [highScore]);
+
+  // Initialize game loop
   useEffect(() => {
-    if (!backgroundRef.current || !shakeContainerRef.current || !hudRef.current) return;
+    if (size.width === 0) return;
 
-    // Start everything invisible
-    gsap.set([backgroundRef.current, shakeContainerRef.current, hudRef.current], {
-      opacity: 0,
-    });
+    // Load sprites
+    loadSprites();
 
-    // Staggered fade-in
-    const tl = gsap.timeline({ delay: 0.1 });
-
-    tl.to(backgroundRef.current, {
-      opacity: 1,
-      duration: 0.4,
-      ease: 'power2.out',
-    });
-
-    tl.to(
-      shakeContainerRef.current,
-      {
-        opacity: 1,
-        duration: 0.4,
-        ease: 'power2.out',
-      },
-      '-=0.2'
+    // Create game loop with hold state getter
+    const loop = new GameLoop(
+      engineStateRef.current,
+      handleRender,
+      handleStateChange,
+      () => isHoldingRef.current
     );
 
-    tl.to(
-      hudRef.current,
-      {
-        opacity: 1,
-        duration: 0.4,
-        ease: 'power2.out',
-      },
-      '-=0.2'
-    );
+    gameLoopRef.current = loop;
+    loop.start();
+
+    return () => {
+      loop.stop();
+      gameLoopRef.current = null;
+    };
+  }, [size.width, size.height, handleRender, handleStateChange]);
+
+  // Handle flap input
+  const handleFlap = useCallback(() => {
+    flap(engineStateRef.current);
   }, []);
 
-  // Keyboard controls (only active during ready/playing, not game over)
+  // Keyboard controls
   useEffect(() => {
-    if (gameState === 'game_over') return;
-
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === ' ' || e.key === 'Space') {
+      if (e.code === 'Space' || e.key === ' ') {
         e.preventDefault();
-        flap();
+        isHoldingRef.current = true;
+        handleFlap();
+      } else if (e.code === 'Escape') {
+        e.preventDefault();
+        onExit(displayScore, highScore);
+      }
+    };
 
-        // Toggle jump expression - briefly show happy
-        setAntyExpression('happy');
-        setTimeout(() => {
-          setAntyExpression('idle');
-        }, 200);
-      } else if (e.key === 'Escape') {
-        e.preventDefault();
-        handleExit();
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.code === 'Space' || e.key === ' ') {
+        isHoldingRef.current = false;
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [flap, gameState]);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, [handleFlap, onExit, displayScore, highScore]);
 
-  /**
-   * Handle death animation
-   */
-  const handleDeath = () => {
-    // Death animation handled visually by physics
-  };
+  // Touch controls
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-  /**
-   * Handle screen shake
-   */
-  const screenShake = () => {
-    if (!shakeContainerRef.current) return;
+    const handleTouchStart = (e: TouchEvent) => {
+      e.preventDefault();
+      isHoldingRef.current = true;
+      handleFlap();
+    };
 
-    gsap.to(shakeContainerRef.current, {
-      x: `+=${gsap.utils.random(-10, 10)}`,
-      y: `+=${gsap.utils.random(-10, 10)}`,
-      duration: 0.05,
-      yoyo: true,
-      repeat: 5,
-      onComplete: () => {
-        if (shakeContainerRef.current) {
-          gsap.set(shakeContainerRef.current, { x: 0, y: 0 });
-        }
-      },
-    });
-  };
+    const handleTouchEnd = (e: TouchEvent) => {
+      e.preventDefault();
+      isHoldingRef.current = false;
+    };
 
-  /**
-   * Spawn death particle burst
-   */
-  const spawnDeathBurst = (x: number, y: number) => {
-    // Particle effects removed for simplicity
-  };
+    canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+    canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
+    canvas.addEventListener('touchcancel', handleTouchEnd, { passive: false });
+    return () => {
+      canvas.removeEventListener('touchstart', handleTouchStart);
+      canvas.removeEventListener('touchend', handleTouchEnd);
+      canvas.removeEventListener('touchcancel', handleTouchEnd);
+    };
+  }, [handleFlap]);
 
-  /**
-   * Spawn collection burst
-   */
-  const spawnCollectionBurst = (x: number, y: number) => {
-    // Particle effects removed for simplicity
-  };
+  // Mouse controls (for hold-to-restart)
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-  /**
-   * Show score popup
-   */
-  const showScorePopup = (text: string, x: number, y: number) => {
-    const popup = document.createElement('div');
-    popup.textContent = text;
-    popup.style.cssText = `
-      position: fixed;
-      left: ${x}px;
-      top: ${y}px;
-      color: #FFD700;
-      font-size: 28px;
-      font-weight: bold;
-      pointer-events: none;
-      z-index: 1000;
-      font-family: system-ui;
-      transform: translateX(-50%);
-    `;
-    document.body.appendChild(popup);
+    const handleMouseDown = () => {
+      isHoldingRef.current = true;
+      handleFlap();
+    };
 
-    gsap.fromTo(
-      popup,
-      { y: 0, opacity: 1, scale: 0.5 },
-      {
-        y: -50,
-        opacity: 0,
-        scale: 1.5,
-        duration: 0.8,
-        ease: 'power2.out',
-        onComplete: () => popup.remove(),
-      }
-    );
-  };
+    const handleMouseUp = () => {
+      isHoldingRef.current = false;
+    };
 
-  /**
-   * Show level announcement popup - BIG and OBVIOUS near bottom
-   */
-  const showLevelPopup = (level: number) => {
-    const popup = document.createElement('div');
-    popup.textContent = `LEVEL ${level}`;
-    popup.style.cssText = `
-      position: fixed;
-      left: 50%;
-      bottom: 150px;
-      transform: translateX(-50%);
-      color: #FFD700;
-      font-size: 96px;
-      font-weight: bold;
-      pointer-events: none;
-      z-index: 1000;
-      font-family: system-ui;
-      text-shadow: 0 0 30px rgba(255, 215, 0, 0.8), 0 0 60px rgba(255, 215, 0, 0.5), 0 8px 16px rgba(0,0,0,0.6);
-    `;
-    document.body.appendChild(popup);
+    canvas.addEventListener('mousedown', handleMouseDown);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      canvas.removeEventListener('mousedown', handleMouseDown);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [handleFlap]);
 
-    gsap.fromTo(
-      popup,
-      { scale: 0, opacity: 0, rotation: -15 },
-      {
-        scale: 1,
-        opacity: 1,
-        rotation: 0,
-        duration: 0.4,
-        ease: 'back.out(2)',
-      }
-    );
-
-    gsap.to(popup, {
-      opacity: 0,
-      scale: 0.8,
-      y: -30,
-      duration: 0.5,
-      delay: 1.2,
-      ease: 'power2.in',
-      onComplete: () => popup.remove(),
-    });
-  };
-
-  /**
-   * Handle difficulty increase
-   */
-  const handleDifficultyIncrease = (level: number) => {
-    if (!gameContainerRef.current) return;
-
-    // Flash border - stronger
-    gsap.fromTo(
-      gameContainerRef.current,
-      { boxShadow: '0 0 0 0 rgba(255, 215, 0, 0)' },
-      {
-        boxShadow: '0 0 80px 30px rgba(255, 215, 0, 1)',
-        duration: 0.25,
-        yoyo: true,
-        repeat: 2,
-      }
-    );
-
-    // Show BIG level popup
-    showLevelPopup(level);
-  };
-
-  /**
-   * Handle exit
-   */
-  const handleExit = () => {
-    onExit(score, currentHighScore);
-  };
-
-  /**
-   * Handle play again - jump directly back into gameplay
-   */
-  const handlePlayAgain = () => {
-    startGame();
-  };
-
-  // Don't render until canvas size is initialized
-  if (canvasSize.width === 0 || canvasSize.height === 0) {
+  // Loading state
+  if (size.width === 0) {
     return (
-      <div className="fixed inset-0 bg-white flex items-center justify-center" style={{ zIndex: 100 }}>
-        <p className="text-2xl">Loading game...</p>
+      <div className="fixed inset-0 bg-sky-100 flex items-center justify-center">
+        <p className="text-xl text-gray-600">Loading...</p>
       </div>
     );
   }
 
   return (
-    <div
-      ref={gameContainerRef}
-      className="fixed inset-0 bg-white overflow-hidden"
-      style={{ zIndex: 100 }}
-    >
-      {/* Parallax Background - Static, doesn't shake */}
-      <div ref={backgroundRef}>
-        <FlappyParallaxBackground
-          scrollPosition={scrollPosition}
-          width={canvasSize.width}
-          height={canvasSize.height}
-        />
-      </div>
+    <div className="fixed inset-0 overflow-hidden" style={{ touchAction: 'none' }}>
+      <canvas
+        ref={canvasRef}
+        className="block"
+        style={{ cursor: 'pointer' }}
+      />
 
-      {/* Shake Container - Only game elements shake */}
-      <div ref={shakeContainerRef}>
-        {/* Game Canvas */}
-        <FlappyGameCanvas
-          width={canvasSize.width}
-          height={canvasSize.height}
-          player={player}
-          obstacles={obstacles}
-          collectibles={collectibles}
-        />
-
-        {/* Anty Character */}
-        <div
-          style={{
-            position: 'fixed',
-            left: `${GAME_PHYSICS.PLAYER_X}px`,
-            top: `${player.y}px`,
-            transform: `rotate(${player.rotation}deg)`,
-            transformOrigin: 'center center',
-            zIndex: 6,
-            pointerEvents: 'none',
-          }}
+      {/* Exit button - only UI element outside canvas */}
+      <button
+        onClick={() => onExit(displayScore, highScore)}
+        className="fixed top-4 right-4 p-2 bg-white/80 hover:bg-white rounded-full shadow-lg transition-colors z-10"
+        aria-label="Exit game"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
         >
-          <FlappyAnty expression={antyExpression} size={80} />
-        </div>
-      </div>
-
-      {/* HUD */}
-      <div ref={hudRef}>
-        <FlappyGameHUD gameState={gameState} score={score} highScore={currentHighScore} />
-      </div>
-
-      {/* Game Over Modal */}
-      {gameState === 'game_over' && (
-        <FlappyGameOver
-          score={score}
-          highScore={currentHighScore}
-          isNewHighScore={score === currentHighScore && score > highScore}
-          onPlayAgain={handlePlayAgain}
-          onExit={handleExit}
-        />
-      )}
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      </button>
     </div>
   );
 }
