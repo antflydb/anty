@@ -2,16 +2,70 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Send, Loader2, Key, ChevronDown, ChevronUp, MoreVertical } from 'lucide-react';
+import { X, Send, Loader2, Key, MoreVertical, MessageSquarePlus, History, Trash2, ChevronLeft } from 'lucide-react';
+import gsap from 'gsap';
 import { AntyChat, type ChatMessage } from '@/lib/chat/openai-client';
-import { mapEmotionToExpression, stripEmotionTags } from '@/lib/chat/emotion-mapper';
-import type { ExpressionName } from '@/lib/anty-v3/animation-state';
+import { mapEmotionToExpression, stripEmotionTags, stripEmotionTagsStreaming } from '@/lib/chat/emotion-mapper';
+import type { EmotionType } from '@/lib/anty/animation/types';
+import {
+  type ChatSession,
+  type ChatMessage as StoredChatMessage,
+  getSessions,
+  getSession,
+  saveSession,
+  deleteSession,
+  createNewSession,
+  getCurrentSessionId,
+  setCurrentSessionId,
+  generateTitle,
+  formatSessionDate,
+} from '@/lib/chat/history';
 
 interface ChatPanelProps {
   isOpen: boolean;
   onClose: () => void;
-  onEmotion?: (emotion: ExpressionName) => void;
+  onEmotion?: (emotion: EmotionType) => void;
 }
+
+// Convert between UI Message and stored ChatMessage formats
+function toStoredMessage(msg: Message): StoredChatMessage {
+  return {
+    id: msg.id,
+    role: msg.role,
+    content: msg.content,
+    timestamp: msg.timestamp.toISOString(),
+    emotion: msg.emotion,
+  };
+}
+
+function fromStoredMessage(msg: StoredChatMessage): Message {
+  return {
+    id: msg.id,
+    role: msg.role,
+    content: msg.content,
+    timestamp: new Date(msg.timestamp),
+    emotion: msg.emotion,
+  };
+}
+
+// Random greeting messages for Anty
+const ANTY_GREETINGS = [
+  "Hey! What's up?",
+  "How's it going?",
+  "What can I help you with?",
+  "Heyo!",
+  "Hey!",
+  "What's going on?",
+  "What's new?",
+  "What can I do for you?",
+  "What do you want to chat about?",
+  "Hi there!",
+  "Hey, good to see you!",
+  "What's on your mind?",
+  "Ready when you are!",
+  "Let's chat!",
+  "Hey friend!",
+];
 
 interface Message {
   id: string;
@@ -31,22 +85,39 @@ export function ChatPanel({ isOpen, onClose, onEmotion }: ChatPanelProps) {
   const [showApiKeyInput, setShowApiKeyInput] = useState(true);
   const [chatClient, setChatClient] = useState<AntyChat | null>(null);
   const [showMenu, setShowMenu] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [sessions, setSessions] = useState<ChatSession[]>([]);
+  const [currentSessionId, setCurrentSessionIdState] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const inputBorderRef = useRef<HTMLDivElement>(null);
+  const borderTweenRef = useRef<gsap.core.Tween | null>(null);
+  const initialLoadDone = useRef(false);
+  const greetingInitiated = useRef(false);
 
-  // Auto-scroll to bottom when new messages arrive
+  // Auto-scroll to bottom when new messages arrive or panel opens
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-
-  // Focus input when panel opens
-  useEffect(() => {
-    if (isOpen && !showApiKeyInput) {
-      inputRef.current?.focus();
+    if (isOpen && messages.length > 0) {
+      // Small delay to ensure panel animation has started and content is rendered
+      const timer = setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+      return () => clearTimeout(timer);
     }
-  }, [isOpen, showApiKeyInput]);
+  }, [messages, isOpen]);
+
+  // Focus input when panel opens or API key input is dismissed
+  useEffect(() => {
+    if (isOpen && !showApiKeyInput && !isLoading) {
+      // Small delay to ensure input is rendered after animation starts
+      const timer = setTimeout(() => {
+        inputRef.current?.focus();
+      }, 150);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, showApiKeyInput, isLoading]);
 
   // Click outside to close menu
   useEffect(() => {
@@ -96,6 +167,108 @@ export function ChatPanel({ isOpen, onClose, onEmotion }: ChatPanelProps) {
     }
   }, []);
 
+  // Load sessions and current session on mount
+  useEffect(() => {
+    if (initialLoadDone.current) return;
+    initialLoadDone.current = true;
+
+    // Load all sessions for history view
+    setSessions(getSessions());
+
+    // Try to restore current session
+    const savedSessionId = getCurrentSessionId();
+    if (savedSessionId) {
+      const session = getSession(savedSessionId);
+      if (session && session.messages.length > 0) {
+        setCurrentSessionIdState(savedSessionId);
+        setMessages(session.messages.map(fromStoredMessage));
+      }
+    }
+  }, []);
+
+  // Save messages to current session when they change
+  useEffect(() => {
+    if (!currentSessionId || messages.length === 0) return;
+
+    const session = getSession(currentSessionId);
+    if (session) {
+      const updatedSession: ChatSession = {
+        ...session,
+        messages: messages.map(toStoredMessage),
+        title: generateTitle(messages.map(toStoredMessage)),
+        updatedAt: new Date().toISOString(),
+      };
+      saveSession(updatedSession);
+      setSessions(getSessions()); // Refresh sessions list
+    }
+  }, [messages, currentSessionId]);
+
+  // Add greeting when panel opens with no session
+  useEffect(() => {
+    // Reset when session changes
+    if (!currentSessionId) {
+      greetingInitiated.current = false;
+    }
+  }, [currentSessionId]);
+
+  useEffect(() => {
+    if (isOpen && !showApiKeyInput && messages.length === 0 && !currentSessionId) {
+      // Create a new session
+      const newSession = createNewSession();
+      setCurrentSessionIdState(newSession.id);
+    }
+  }, [isOpen, showApiKeyInput, currentSessionId, messages.length]);
+
+  useEffect(() => {
+    if (isOpen && !showApiKeyInput && messages.length === 0 && currentSessionId && !greetingInitiated.current) {
+      greetingInitiated.current = true;
+      setIsLoading(true);
+
+      const timer = setTimeout(() => {
+        const randomGreeting = ANTY_GREETINGS[Math.floor(Math.random() * ANTY_GREETINGS.length)];
+        const greetingMessage: Message = {
+          id: Date.now().toString(),
+          role: 'assistant',
+          content: randomGreeting,
+          timestamp: new Date(),
+        };
+        setMessages([greetingMessage]);
+        setIsLoading(false);
+      }, 400 + Math.random() * 300);
+
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, showApiKeyInput, currentSessionId, messages.length]);
+
+  // Rotating gradient border animation
+  useEffect(() => {
+    if (!isOpen || showApiKeyInput) return;
+
+    // Small delay to ensure ref is attached after render
+    const timer = setTimeout(() => {
+      if (!inputBorderRef.current) return;
+
+      const rotationAnim = { deg: 0 };
+      borderTweenRef.current = gsap.to(rotationAnim, {
+        deg: 360,
+        duration: 4,
+        ease: 'none',
+        repeat: -1,
+        onUpdate: () => {
+          if (inputBorderRef.current) {
+            inputBorderRef.current.style.background = `linear-gradient(white, white) padding-box, conic-gradient(from ${rotationAnim.deg}deg, #E5EDFF 0%, #C7D2FE 25%, #D8B4FE 50%, #C7D2FE 75%, #E5EDFF 100%) border-box`;
+          }
+        },
+      });
+    }, 50);
+
+    return () => {
+      clearTimeout(timer);
+      borderTweenRef.current?.kill();
+      borderTweenRef.current = null;
+    };
+  }, [isOpen, showApiKeyInput]);
+
   // ESC key to close chat
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -120,20 +293,25 @@ export function ChatPanel({ isOpen, onClose, onEmotion }: ChatPanelProps) {
     setChatClient(new AntyChat(apiKey));
     setShowApiKeyInput(false);
 
-    // Add welcome message
-    const welcomeMessage: Message = {
-      id: Date.now().toString(),
-      role: 'assistant',
-      content: "Hey there! I'm Anty, your AI companion. I'll react emotionally to our conversation. Try asking me something!",
-      timestamp: new Date(),
-    };
-    setMessages([welcomeMessage]);
+    // Show loading then add welcome message with random greeting
+    setIsLoading(true);
+    setTimeout(() => {
+      const randomGreeting = ANTY_GREETINGS[Math.floor(Math.random() * ANTY_GREETINGS.length)];
+      const welcomeMessage: Message = {
+        id: Date.now().toString(),
+        role: 'assistant',
+        content: randomGreeting,
+        timestamp: new Date(),
+      };
+      setMessages([welcomeMessage]);
+      setIsLoading(false);
 
-    // Trigger happy emotion
-    const expression = mapEmotionToExpression('happy');
-    if (expression) {
-      onEmotion?.(expression);
-    }
+      // Trigger happy emotion
+      const expression = mapEmotionToExpression('happy');
+      if (expression) {
+        onEmotion?.(expression);
+      }
+    }, 400 + Math.random() * 300);
   };
 
   const handleSend = async () => {
@@ -148,6 +326,10 @@ export function ChatPanel({ isOpen, onClose, onEmotion }: ChatPanelProps) {
 
     setMessages((prev) => [...prev, userMessage]);
     setInput('');
+    // Reset textarea height
+    if (inputRef.current) {
+      inputRef.current.style.height = '48px';
+    }
     setIsLoading(true);
 
     // Create a placeholder message for streaming
@@ -177,8 +359,8 @@ export function ChatPanel({ isOpen, onClose, onEmotion }: ChatPanelProps) {
       // Stream the response
       const response = await chatClient.sendMessage(chatHistory, (chunk) => {
         rawResponse += chunk;
-        // Strip emotion tags from the displayed content during streaming
-        const cleanChunk = stripEmotionTags(rawResponse);
+        // Strip emotion tags from the displayed content during streaming (handles partial tags)
+        const cleanChunk = stripEmotionTagsStreaming(rawResponse);
 
         setMessages((prev) =>
           prev.map((msg) =>
@@ -242,7 +424,7 @@ export function ChatPanel({ isOpen, onClose, onEmotion }: ChatPanelProps) {
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       if (showApiKeyInput) {
@@ -253,13 +435,79 @@ export function ChatPanel({ isOpen, onClose, onEmotion }: ChatPanelProps) {
     }
   };
 
+  // Auto-resize textarea up to 3 lines
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInput(e.target.value);
+
+    const textarea = e.target;
+    // Reset height to auto to get the correct scrollHeight
+    textarea.style.height = 'auto';
+
+    // Calculate line height (approximately 24px per line with padding)
+    const lineHeight = 24;
+    const maxLines = 3;
+    const maxHeight = lineHeight * maxLines;
+
+    // Set height to scrollHeight, but cap at maxHeight
+    const newHeight = Math.min(textarea.scrollHeight, maxHeight);
+    textarea.style.height = `${newHeight}px`;
+  };
+
   const handleClearApiKey = () => {
     localStorage.removeItem('anty-chat-api-key');
     setApiKey('');
     setChatClient(null);
     setShowApiKeyInput(true);
     setMessages([]);
+    setCurrentSessionIdState(null);
     setShowMenu(false);
+    setShowHistory(false);
+  };
+
+  const handleNewChat = () => {
+    // Create a new session
+    const newSession = createNewSession();
+    setCurrentSessionIdState(newSession.id);
+    setMessages([]);
+    setShowMenu(false);
+    setShowHistory(false);
+    setSessions(getSessions());
+
+    // Show new greeting after a brief delay
+    setIsLoading(true);
+    setTimeout(() => {
+      const randomGreeting = ANTY_GREETINGS[Math.floor(Math.random() * ANTY_GREETINGS.length)];
+      const greetingMessage: Message = {
+        id: Date.now().toString(),
+        role: 'assistant',
+        content: randomGreeting,
+        timestamp: new Date(),
+      };
+      setMessages([greetingMessage]);
+      setIsLoading(false);
+    }, 400 + Math.random() * 300);
+  };
+
+  const handleSelectSession = (sessionId: string) => {
+    const session = getSession(sessionId);
+    if (session) {
+      setCurrentSessionIdState(sessionId);
+      setCurrentSessionId(sessionId);
+      setMessages(session.messages.map(fromStoredMessage));
+      setShowHistory(false);
+    }
+  };
+
+  const handleDeleteSession = (sessionId: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Don't trigger select
+    deleteSession(sessionId);
+    setSessions(getSessions());
+
+    // If we deleted the current session, clear it
+    if (sessionId === currentSessionId) {
+      setCurrentSessionIdState(null);
+      setMessages([]);
+    }
   };
 
   const toggleDebugInfo = (messageId: string) => {
@@ -287,29 +535,58 @@ export function ChatPanel({ isOpen, onClose, onEmotion }: ChatPanelProps) {
           >
             {/* Header */}
             <div className="flex items-center justify-between p-4">
-              <h2 className="text-lg font-semibold text-gray-900 pl-2">Anty Chat</h2>
-              <div className="flex items-center gap-2">
-                {!showApiKeyInput && (
-                  <div className="relative" ref={menuRef}>
+              {showHistory ? (
+                <button
+                  onClick={() => setShowHistory(false)}
+                  className="flex items-center gap-1 text-gray-600 hover:text-gray-900 transition-colors pl-1"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                  <span className="text-lg font-semibold">History</span>
+                </button>
+              ) : (
+                <h2 className="text-lg font-semibold text-gray-900 pl-2">Anty Chat</h2>
+              )}
+              <div className="flex items-center gap-1">
+                {!showApiKeyInput && !showHistory && (
+                  <>
                     <button
-                      onClick={() => setShowMenu(!showMenu)}
+                      onClick={handleNewChat}
                       className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                      title="Menu"
+                      title="New Chat"
                     >
-                      <MoreVertical className="w-5 h-5 text-gray-600" />
+                      <MessageSquarePlus className="w-5 h-5 text-gray-600" />
                     </button>
-                    {showMenu && (
-                      <div className="absolute right-0 top-full mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-10">
-                        <button
-                          onClick={handleClearApiKey}
-                          className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
-                        >
-                          <Key className="w-4 h-4" />
-                          Change API Key
-                        </button>
-                      </div>
-                    )}
-                  </div>
+                    <button
+                      onClick={() => {
+                        setSessions(getSessions()); // Refresh before showing
+                        setShowHistory(true);
+                      }}
+                      className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                      title="Chat History"
+                    >
+                      <History className="w-5 h-5 text-gray-600" />
+                    </button>
+                    <div className="relative" ref={menuRef}>
+                      <button
+                        onClick={() => setShowMenu(!showMenu)}
+                        className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                        title="Menu"
+                      >
+                        <MoreVertical className="w-5 h-5 text-gray-600" />
+                      </button>
+                      {showMenu && (
+                        <div className="absolute right-0 top-full mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-10">
+                          <button
+                            onClick={handleClearApiKey}
+                            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                          >
+                            <Key className="w-4 h-4" />
+                            Change API Key
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </>
                 )}
                 <button
                   onClick={onClose}
@@ -334,7 +611,7 @@ export function ChatPanel({ isOpen, onClose, onEmotion }: ChatPanelProps) {
                     type="password"
                     value={apiKey}
                     onChange={(e) => setApiKey(e.target.value)}
-                    onKeyPress={handleKeyPress}
+                    onKeyDown={handleKeyDown}
                     placeholder="sk-..."
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8B5CF6] focus:border-transparent"
                   />
@@ -360,8 +637,48 @@ export function ChatPanel({ isOpen, onClose, onEmotion }: ChatPanelProps) {
               </div>
             )}
 
+            {/* History View */}
+            {!showApiKeyInput && showHistory && (
+              <div className="flex-1 overflow-y-auto">
+                {sessions.filter(s => s.messages.some(m => m.role === 'user')).length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-full text-gray-400 p-8">
+                    <History className="w-12 h-12 mb-3 opacity-50" />
+                    <p className="text-sm">No chat history yet</p>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-gray-100">
+                    {sessions.filter(s => s.messages.some(m => m.role === 'user')).map((session) => (
+                      <div
+                        key={session.id}
+                        onClick={() => handleSelectSession(session.id)}
+                        className={`flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors ${
+                          session.id === currentSessionId ? 'bg-purple-50' : ''
+                        }`}
+                      >
+                        <div className="flex-1 min-w-0 pr-3">
+                          <p className="text-sm font-medium text-gray-900 truncate">
+                            {session.title}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-0.5">
+                            {formatSessionDate(session.updatedAt)} · {session.messages.length} messages
+                          </p>
+                        </div>
+                        <button
+                          onClick={(e) => handleDeleteSession(session.id, e)}
+                          className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
+                          title="Delete chat"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Messages */}
-            {!showApiKeyInput && (
+            {!showApiKeyInput && !showHistory && (
               <>
                 <div className="flex-1 overflow-y-auto p-4 space-y-4">
                   {messages.map((message) => (
@@ -412,21 +729,35 @@ export function ChatPanel({ isOpen, onClose, onEmotion }: ChatPanelProps) {
 
                 {/* Input */}
                 <div className="p-4">
-                  <div className="relative">
-                    <input
+                  {!messages.some(m => m.role === 'user') && (
+                    <div className="text-xs text-gray-400 text-left mb-2 pl-1">
+                      GPT-4o-mini — API connected
+                    </div>
+                  )}
+                  <div
+                    ref={inputBorderRef}
+                    className="relative rounded-[12px]"
+                    style={{
+                      padding: '2px',
+                      background: 'linear-gradient(white, white) padding-box, conic-gradient(from 0deg, #E5EDFF 0%, #C7D2FE 25%, #D8B4FE 50%, #C7D2FE 75%, #E5EDFF 100%) border-box',
+                      border: '2px solid transparent',
+                    }}
+                  >
+                    <textarea
                       ref={inputRef}
-                      type="text"
                       value={input}
-                      onChange={(e) => setInput(e.target.value)}
-                      onKeyPress={handleKeyPress}
+                      onChange={handleInputChange}
+                      onKeyDown={handleKeyDown}
                       placeholder="Type a message..."
                       disabled={isLoading}
-                      className="w-full pl-4 pr-12 py-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[#8B5CF6] focus:border-transparent disabled:opacity-50 placeholder:text-[#D4D3D3]"
+                      rows={1}
+                      className="w-full pl-4 pr-12 py-3 bg-white rounded-[10px] focus:outline-none disabled:opacity-50 placeholder:text-[#D4D3D3] resize-none overflow-y-auto leading-6"
+                      style={{ minHeight: '48px', maxHeight: '72px' }}
                     />
                     <button
                       onClick={handleSend}
                       disabled={!input.trim() || isLoading}
-                      className={`absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full disabled:cursor-not-allowed transition-colors ${
+                      className={`absolute right-3 bottom-2 w-8 h-8 flex items-center justify-center rounded-full disabled:cursor-not-allowed transition-colors ${
                         !input.trim() || isLoading
                           ? 'bg-gray-200 text-gray-600 opacity-30'
                           : 'bg-[#8B5CF6] text-white hover:bg-[#7C3AED]'
