@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useCallback } from 'react';
 import type { Obstacle, Collectible, PlayerState } from '@/lib/anty/game-state';
 import { GAME_PHYSICS } from '@/lib/anty/game-physics';
 
@@ -15,6 +15,7 @@ interface FlappyGameCanvasProps {
 /**
  * Canvas renderer for FlappyAF game
  * Renders player (Anty), obstacles, and collectibles
+ * PERFORMANCE: Uses RAF loop with refs to avoid React re-render overhead
  */
 export function FlappyGameCanvas({
   width,
@@ -25,6 +26,14 @@ export function FlappyGameCanvas({
 }: FlappyGameCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const patternCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
+  const lastDimensionsRef = useRef<{ width: number; height: number; dpr: number } | null>(null);
+
+  // Store game state in refs for RAF loop access
+  const obstaclesRef = useRef(obstacles);
+  const collectiblesRef = useRef(collectibles);
+  obstaclesRef.current = obstacles;
+  collectiblesRef.current = collectibles;
 
   // Pre-render data stream pattern once
   useEffect(() => {
@@ -39,44 +48,76 @@ export function FlappyGameCanvas({
     }
   }, []);
 
-  // Render game frame
+  // Setup canvas dimensions only when they change
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    // High DPI setup
     const dpr = window.devicePixelRatio || 1;
-    canvas.width = width * dpr;
-    canvas.height = height * dpr;
-    canvas.style.width = `${width}px`;
-    canvas.style.height = `${height}px`;
-    ctx.scale(dpr, dpr);
+    const lastDims = lastDimensionsRef.current;
 
-    // Clear canvas
-    ctx.clearRect(0, 0, width, height);
+    if (!lastDims || lastDims.width !== width || lastDims.height !== height || lastDims.dpr !== dpr) {
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      canvas.style.width = `${width}px`;
+      canvas.style.height = `${height}px`;
 
-    // Render obstacles
-    obstacles.forEach(obstacle => {
-      if (isOnScreen(obstacle.x, GAME_PHYSICS.OBSTACLE_WIDTH, width)) {
-        drawObstacle(ctx, obstacle, height, patternCanvasRef.current);
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctxRef.current = ctx;
       }
-    });
 
-    // Render collectibles
-    collectibles.forEach(collectible => {
-      if (
-        !collectible.collected &&
-        isOnScreen(collectible.x, GAME_PHYSICS.COLLECTIBLE_SIZE, width)
-      ) {
-        drawCollectible(ctx, collectible);
+      lastDimensionsRef.current = { width, height, dpr };
+    }
+  }, [width, height]);
+
+  // RAF render loop - reads from refs, decoupled from React render cycle
+  useEffect(() => {
+    if (width === 0 || height === 0) return;
+
+    let rafId: number;
+
+    const render = () => {
+      const ctx = ctxRef.current;
+      if (!ctx) {
+        rafId = requestAnimationFrame(render);
+        return;
       }
-    });
 
-    // Note: Player (Anty) is rendered as actual component, not on canvas
-  }, [width, height, obstacles, collectibles]);
+      // Clear canvas
+      ctx.clearRect(0, 0, width, height);
+
+      const animTime = performance.now() / 1000;
+      const currentObstacles = obstaclesRef.current;
+      const currentCollectibles = collectiblesRef.current;
+
+      // Render obstacles
+      for (let i = 0; i < currentObstacles.length; i++) {
+        const obstacle = currentObstacles[i];
+        if (isOnScreen(obstacle.x, GAME_PHYSICS.OBSTACLE_WIDTH, width)) {
+          drawObstacle(ctx, obstacle, height, patternCanvasRef.current);
+        }
+      }
+
+      // Render collectibles
+      for (let i = 0; i < currentCollectibles.length; i++) {
+        const collectible = currentCollectibles[i];
+        if (
+          !collectible.collected &&
+          isOnScreen(collectible.x, GAME_PHYSICS.COLLECTIBLE_SIZE, width)
+        ) {
+          drawCollectible(ctx, collectible, animTime);
+        }
+      }
+
+      rafId = requestAnimationFrame(render);
+    };
+
+    rafId = requestAnimationFrame(render);
+
+    return () => cancelAnimationFrame(rafId);
+  }, [width, height]); // Only restart loop on dimension change
 
   return (
     <canvas
@@ -189,10 +230,9 @@ function drawDataPattern(
 
 /**
  * Draw collectible (sparkle, snack, or antfly logo)
+ * PERFORMANCE FIX: Time is now passed in to avoid Date.now() call per collectible
  */
-function drawCollectible(ctx: CanvasRenderingContext2D, collectible: Collectible) {
-  const time = Date.now() / 1000;
-
+function drawCollectible(ctx: CanvasRenderingContext2D, collectible: Collectible, time: number) {
   if (collectible.type === 'sparkle') {
     drawSparkle(ctx, collectible, time);
   } else if (collectible.type === 'snack') {

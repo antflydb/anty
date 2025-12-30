@@ -11,6 +11,7 @@ interface FlappyParallaxBackgroundProps {
 /**
  * Three-layer parallax scrolling background for FlappyAF
  * Each layer scrolls at a different speed to create depth
+ * PERFORMANCE: Canvas setup only on dimension change, RAF for scroll updates
  */
 export function FlappyParallaxBackground({
   scrollPosition,
@@ -18,36 +19,66 @@ export function FlappyParallaxBackground({
   height,
 }: FlappyParallaxBackgroundProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
+  const lastDimensionsRef = useRef<{ width: number; height: number; dpr: number } | null>(null);
+  const scrollPositionRef = useRef(scrollPosition);
 
+  // Keep scroll position ref updated
+  scrollPositionRef.current = scrollPosition;
+
+  // Setup canvas dimensions only when they change
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    // High DPI setup
     const dpr = window.devicePixelRatio || 1;
-    canvas.width = width * dpr;
-    canvas.height = height * dpr;
-    canvas.style.width = `${width}px`;
-    canvas.style.height = `${height}px`;
-    ctx.scale(dpr, dpr);
+    const lastDims = lastDimensionsRef.current;
 
-    // Clear canvas
-    ctx.clearRect(0, 0, width, height);
+    // Only reconfigure if dimensions changed
+    if (!lastDims || lastDims.width !== width || lastDims.height !== height || lastDims.dpr !== dpr) {
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      canvas.style.width = `${width}px`;
+      canvas.style.height = `${height}px`;
 
-    // Simple clean gradient - subtle and not distracting
-    const gradient = ctx.createLinearGradient(0, 0, 0, height);
-    gradient.addColorStop(0, '#E3F2FD');   // Very light blue top
-    gradient.addColorStop(1, '#F3E5F5');   // Very light purple bottom
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctxRef.current = ctx;
+      }
 
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, width, height);
+      lastDimensionsRef.current = { width, height, dpr };
+    }
+  }, [width, height]);
 
-    // Simple Mario-style clouds
-    drawSimpleClouds(ctx, scrollPosition * 0.2, width, height);
-  }, [scrollPosition, width, height]);
+  // Render loop - runs on RAF, reads scroll from ref
+  useEffect(() => {
+    const ctx = ctxRef.current;
+    if (!ctx || width === 0 || height === 0) return;
+
+    let rafId: number;
+
+    const render = () => {
+      // Clear canvas
+      ctx.clearRect(0, 0, width, height);
+
+      // Simple clean gradient
+      const gradient = ctx.createLinearGradient(0, 0, 0, height);
+      gradient.addColorStop(0, '#E3F2FD');
+      gradient.addColorStop(1, '#F3E5F5');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, width, height);
+
+      // Draw clouds using current scroll position from ref
+      drawSimpleClouds(ctx, scrollPositionRef.current * 0.2, width, height);
+
+      rafId = requestAnimationFrame(render);
+    };
+
+    rafId = requestAnimationFrame(render);
+
+    return () => cancelAnimationFrame(rafId);
+  }, [width, height]); // Only restart loop on dimension change
 
   return (
     <canvas

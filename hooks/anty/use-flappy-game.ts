@@ -112,40 +112,48 @@ export function useFlappyGame({
   const lastFrameTimeRef = useRef<number>(0);
   const lastCelebrationColorRef = useRef<string | undefined>(undefined);
 
-  // Use refs to stabilize game loop and prevent constant recreation
+  // PERFORMANCE FIX: Use refs to hold mutable game state during gameplay
+  // This avoids nested setState calls and allows single batched updates per frame
   const gameStateRef = useRef(gameState);
   const configRef = useRef(config);
+  const playerRef = useRef(player);
+  const obstaclesRef = useRef(obstacles);
+  const collectiblesRef = useRef(collectibles);
+  const scoreRef = useRef(score);
+  const scrollPositionRef = useRef(scrollPosition);
+
+  // Callback refs to avoid re-creating game loop
   const onCollisionRef = useRef(onCollision);
   const onDifficultyIncreaseRef = useRef(onDifficultyIncrease);
   const onCollectibleCollectedRef = useRef(onCollectibleCollected);
+  const handleGameOverRef = useRef<() => void>(() => {});
 
-  // Keep refs synced (callbacks will update later after they're defined)
+  // Keep refs synced with state
   useEffect(() => { gameStateRef.current = gameState; }, [gameState]);
   useEffect(() => { configRef.current = config; }, [config]);
+  useEffect(() => { playerRef.current = player; }, [player]);
+  useEffect(() => { obstaclesRef.current = obstacles; }, [obstacles]);
+  useEffect(() => { collectiblesRef.current = collectibles; }, [collectibles]);
+  useEffect(() => { scoreRef.current = score; }, [score]);
+  useEffect(() => { scrollPositionRef.current = scrollPosition; }, [scrollPosition]);
   useEffect(() => { onCollisionRef.current = onCollision; }, [onCollision]);
   useEffect(() => { onDifficultyIncreaseRef.current = onDifficultyIncrease; }, [onDifficultyIncrease]);
   useEffect(() => { onCollectibleCollectedRef.current = onCollectibleCollected; }, [onCollectibleCollected]);
 
   /**
    * Start the game
+   * PERFORMANCE FIX: Now also initializes refs for the game loop
    */
   const startGame = useCallback(() => {
     console.log('[GAME START] Canvas dimensions:', canvasWidth, 'x', canvasHeight);
     console.log('[GAME START] Player start position:', GAME_PHYSICS.PLAYER_START_Y);
 
-    // Reset state
-    setGameState('playing');
-    setScore(0);
-    setScrollPosition(0); // Performance fix: reset scroll position
-    setPlayer({
+    const initialPlayer = {
       y: GAME_PHYSICS.PLAYER_START_Y,
       velocity: 0,
       rotation: 0,
-    });
-    setObstacles([]);
-    setCollectibles([]);
-    setConfig(getDifficultyConfig(0));
-    lastCelebrationColorRef.current = undefined;
+    };
+    const initialConfig = getDifficultyConfig(0);
 
     // Spawn initial obstacles - start closer for immediate gameplay
     const initialObstacles: Obstacle[] = [];
@@ -157,7 +165,25 @@ export function useFlappyGame({
         )
       );
     }
+
+    // Reset state
+    setGameState('playing');
+    setScore(0);
+    setScrollPosition(0);
+    setPlayer(initialPlayer);
     setObstacles(initialObstacles);
+    setCollectibles([]);
+    setConfig(initialConfig);
+    lastCelebrationColorRef.current = undefined;
+
+    // PERFORMANCE FIX: Initialize refs to match initial state
+    // This ensures the game loop starts with correct values
+    playerRef.current = initialPlayer;
+    obstaclesRef.current = initialObstacles;
+    collectiblesRef.current = [];
+    scoreRef.current = 0;
+    scrollPositionRef.current = 0;
+    configRef.current = initialConfig;
 
     lastFrameTimeRef.current = performance.now();
   }, [canvasWidth, canvasHeight]);
@@ -178,19 +204,31 @@ export function useFlappyGame({
 
   /**
    * Reset to ready state
+   * PERFORMANCE FIX: Also resets refs to ensure clean state
    */
   const resetToReady = useCallback(() => {
-    setGameState('ready');
-    setScore(0);
-    setScrollPosition(0); // Performance fix: reset scroll position
-    setPlayer({
+    const initialPlayer = {
       y: GAME_PHYSICS.PLAYER_START_Y,
       velocity: 0,
       rotation: 0,
-    });
+    };
+    const initialConfig = getDifficultyConfig(0);
+
+    setGameState('ready');
+    setScore(0);
+    setScrollPosition(0);
+    setPlayer(initialPlayer);
     setObstacles([]);
     setCollectibles([]);
-    setConfig(getDifficultyConfig(0));
+    setConfig(initialConfig);
+
+    // Reset refs
+    playerRef.current = initialPlayer;
+    obstaclesRef.current = [];
+    collectiblesRef.current = [];
+    scoreRef.current = 0;
+    scrollPositionRef.current = 0;
+    configRef.current = initialConfig;
   }, []);
 
   /**
@@ -213,128 +251,137 @@ export function useFlappyGame({
     setGameState('game_over');
   }, []);
 
+  // Keep handleGameOverRef updated
+  useEffect(() => { handleGameOverRef.current = handleGameOver; }, [handleGameOver]);
+
   /**
    * Game loop - runs every frame when playing
+   * PERFORMANCE FIX: Completely restructured to avoid nested setState calls
+   * All state is read from refs, computed, then written in a single batch
    */
   const gameLoop = useCallback(
     (currentTime: number) => {
       if (gameStateRef.current !== 'playing') return;
 
-      // Calculate delta time (seconds)
+      // Calculate delta time (normalized to 60fps)
       const deltaTime = Math.min(
         (currentTime - lastFrameTimeRef.current) / 1000,
         0.1 // Cap to avoid huge jumps
       );
       lastFrameTimeRef.current = currentTime;
+      const dt = deltaTime * 60; // Normalize to 60fps frame time
 
-      // Performance fix: Update scroll position using RAF (was setInterval)
-      setScrollPosition(prev => prev + configRef.current.scrollSpeed * deltaTime * 60);
+      // ============ READ CURRENT STATE FROM REFS ============
+      const currentConfig = configRef.current;
+      const currentScore = scoreRef.current;
 
-      // Update player physics
-      setPlayer(prev => updatePlayerPhysics(prev, deltaTime * 60, canvasHeight));
+      // ============ COMPUTE NEW STATE ============
+      // 1. Update scroll position
+      const newScrollPosition = scrollPositionRef.current + currentConfig.scrollSpeed * dt;
 
-      // Update world
-      setObstacles(prev => updateObstacles(prev, configRef.current.scrollSpeed, deltaTime * 60));
-      setCollectibles(prev => updateCollectibles(prev, configRef.current.scrollSpeed, deltaTime * 60));
+      // 2. Update player physics
+      const newPlayer = updatePlayerPhysics(playerRef.current, dt, canvasHeight);
 
-      // Spawn new obstacles if needed
-      setObstacles(prev => {
-        if (shouldSpawnObstacle(prev, canvasWidth, configRef.current.obstacleSpacing)) {
-          const newObstacle = generateObstacle(canvasWidth, configRef.current.gapHeight);
+      // 3. Update obstacles and collectibles positions
+      let newObstacles = updateObstacles(obstaclesRef.current, currentConfig.scrollSpeed, dt);
+      let newCollectibles = updateCollectibles(collectiblesRef.current, currentConfig.scrollSpeed, dt);
 
-          // Maybe spawn collectible in FREE SPACE between obstacles (not in the gap)
-          const newCollectibles: Collectible[] = [];
-          if (Math.random() < GAME_PHYSICS.COLLECTIBLE_CHANCE && prev.length > 0) {
-            const lastObstacle = prev[prev.length - 1];
-            // Spawn in the middle of the free space between last obstacle and new obstacle
-            const collectibleX = lastObstacle.x + GAME_PHYSICS.OBSTACLE_WIDTH + (newObstacle.x - (lastObstacle.x + GAME_PHYSICS.OBSTACLE_WIDTH)) / 2;
-            // Random Y position in the safe flyable area
-            const collectibleY = gsap.utils.random(100, canvasHeight - 100);
-            newCollectibles.push(
-              generateCollectible(collectibleX, collectibleY)
-            );
-          }
+      // 4. Track score and config changes
+      let newScore = currentScore;
+      let newConfig = currentConfig;
 
-          if (newCollectibles.length > 0) {
-            setCollectibles(cols => [...cols, ...newCollectibles]);
-          }
+      // 5. Spawn new obstacles if needed
+      if (shouldSpawnObstacle(newObstacles, canvasWidth, currentConfig.obstacleSpacing)) {
+        const newObstacle = generateObstacle(canvasWidth, currentConfig.gapHeight);
 
-          return [...prev, newObstacle];
+        // Maybe spawn collectible in FREE SPACE between obstacles
+        if (Math.random() < GAME_PHYSICS.COLLECTIBLE_CHANCE && newObstacles.length > 0) {
+          const lastObstacle = newObstacles[newObstacles.length - 1];
+          const collectibleX = lastObstacle.x + GAME_PHYSICS.OBSTACLE_WIDTH +
+            (newObstacle.x - (lastObstacle.x + GAME_PHYSICS.OBSTACLE_WIDTH)) / 2;
+          const collectibleY = gsap.utils.random(100, canvasHeight - 100);
+          newCollectibles = [...newCollectibles, generateCollectible(collectibleX, collectibleY)];
         }
-        return prev;
-      });
 
-      // Check collisions (use refs to get latest state)
-      setPlayer(currentPlayer => {
-        setObstacles(currentObstacles => {
-          if (checkObstacleCollision(currentPlayer, currentObstacles, canvasHeight)) {
-            onCollisionRef.current?.(
-              GAME_PHYSICS.PLAYER_X + GAME_PHYSICS.PLAYER_SIZE / 2,
-              currentPlayer.y + GAME_PHYSICS.PLAYER_SIZE / 2
-            );
-            handleGameOver();
+        newObstacles = [...newObstacles, newObstacle];
+      }
+
+      // 6. Check obstacle collision (game over condition)
+      if (checkObstacleCollision(newPlayer, newObstacles, canvasHeight)) {
+        onCollisionRef.current?.(
+          GAME_PHYSICS.PLAYER_X + GAME_PHYSICS.PLAYER_SIZE / 2,
+          newPlayer.y + GAME_PHYSICS.PLAYER_SIZE / 2
+        );
+        handleGameOverRef.current();
+        return; // Exit early on collision
+      }
+
+      // 7. Check passed obstacles - PERFORMANCE FIX: Use Set for O(1) lookup
+      const passedIds = checkPassedObstacles(newPlayer, newObstacles);
+      if (passedIds.length > 0) {
+        const passedIdSet = new Set(passedIds); // O(1) lookup instead of O(n) includes()
+        newScore += passedIds.length;
+
+        // Check difficulty increase
+        if (checkDifficultyIncrease(currentScore, newScore)) {
+          const level = Math.floor(newScore / GAME_PHYSICS.DIFFICULTY_SCORE_INTERVAL);
+          newConfig = getDifficultyConfig(newScore);
+          onDifficultyIncreaseRef.current?.(level + 1);
+        }
+
+        // Mark as passed and assign celebration colors - O(1) Set lookup
+        newObstacles = newObstacles.map(obs => {
+          if (passedIdSet.has(obs.id)) {
+            const celebrationColor = getRandomCelebrationColor(lastCelebrationColorRef.current);
+            lastCelebrationColorRef.current = celebrationColor;
+            return { ...obs, passed: true, passedColor: celebrationColor };
           }
+          return obs;
+        });
+      }
 
-          // Check passed obstacles
-          const passedIds = checkPassedObstacles(currentPlayer, currentObstacles);
-          if (passedIds.length > 0) {
-            setScore(prev => {
-              const newScore = prev + passedIds.length;
+      // 8. Apply magnetic pull to collectibles
+      newCollectibles = applyMagneticPull(newPlayer, newCollectibles, dt);
 
-              // Check difficulty increase
-              if (checkDifficultyIncrease(prev, newScore)) {
-                const level = Math.floor(newScore / GAME_PHYSICS.DIFFICULTY_SCORE_INTERVAL);
-                setConfig(getDifficultyConfig(newScore));
-                // Add 1 to level for display (start game is level 1, first announcement is level 2)
-                onDifficultyIncreaseRef.current?.(level + 1);
-              }
+      // 9. Check collectible collisions - PERFORMANCE FIX: Use Set for O(1) lookup
+      const collectedIds = checkCollectibleCollisions(newPlayer, newCollectibles);
+      if (collectedIds.length > 0) {
+        const collectedIdSet = new Set(collectedIds); // O(1) lookup instead of O(n) includes()
+        const collected = newCollectibles.filter(col => collectedIdSet.has(col.id));
+        newScore += collected.reduce((sum, col) => sum + col.value, 0);
 
-              return newScore;
-            });
-
-            // Mark as passed and assign celebration colors
-            return currentObstacles.map(obs => {
-              if (passedIds.includes(obs.id)) {
-                const celebrationColor = getRandomCelebrationColor(lastCelebrationColorRef.current);
-                lastCelebrationColorRef.current = celebrationColor;
-                return { ...obs, passed: true, passedColor: celebrationColor };
-              }
-              return obs;
-            });
-          }
-
-          return currentObstacles;
+        // Trigger effects for each collected item
+        collected.forEach(col => {
+          onCollectibleCollectedRef.current?.(col.x, col.y, col.value);
         });
 
-        // Apply magnetic pull and check collectible collisions
-        setCollectibles(currentCollectibles => {
-          // First apply magnetic pull to nearby collectibles
-          let magneticCollectibles = applyMagneticPull(currentPlayer, currentCollectibles, deltaTime * 60);
+        // Mark as collected - O(1) Set lookup
+        newCollectibles = newCollectibles.map(col =>
+          collectedIdSet.has(col.id) ? { ...col, collected: true } : col
+        );
+      }
 
-          // Then check for collisions
-          const collectedIds = checkCollectibleCollisions(currentPlayer, magneticCollectibles);
-          if (collectedIds.length > 0) {
-            // Sum up the values of collected items
-            const collected = magneticCollectibles.filter(col => collectedIds.includes(col.id));
-            const totalPoints = collected.reduce((sum, col) => sum + col.value, 0);
-            setScore(prev => prev + totalPoints);
+      // ============ UPDATE REFS (for next frame computation) ============
+      scrollPositionRef.current = newScrollPosition;
+      playerRef.current = newPlayer;
+      obstaclesRef.current = newObstacles;
+      collectiblesRef.current = newCollectibles;
+      scoreRef.current = newScore;
+      configRef.current = newConfig;
 
-            // Trigger effects
-            collected.forEach(col => {
-              onCollectibleCollectedRef.current?.(col.x, col.y, col.value);
-            });
-
-            // Mark as collected
-            return magneticCollectibles.map(col =>
-              collectedIds.includes(col.id) ? { ...col, collected: true } : col
-            );
-          }
-
-          return magneticCollectibles;
-        });
-
-        return currentPlayer;
-      });
+      // ============ SINGLE BATCHED REACT STATE UPDATE ============
+      // This is the key performance fix - all state updates happen together
+      // React will batch these in the same render cycle
+      setScrollPosition(newScrollPosition);
+      setPlayer(newPlayer);
+      setObstacles(newObstacles);
+      setCollectibles(newCollectibles);
+      if (newScore !== currentScore) {
+        setScore(newScore);
+      }
+      if (newConfig !== currentConfig) {
+        setConfig(newConfig);
+      }
 
       // Continue loop
       gameLoopRef.current = requestAnimationFrame(gameLoop);
