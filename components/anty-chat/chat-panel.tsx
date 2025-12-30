@@ -86,10 +86,16 @@ export function ChatPanel({ isOpen, onClose, onEmotion }: ChatPanelProps) {
   const borderTweenRef = useRef<gsap.core.Tween | null>(null);
   const initialLoadDone = useRef(false);
 
-  // Auto-scroll to bottom when new messages arrive
+  // Auto-scroll to bottom when new messages arrive or panel opens
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    if (isOpen && messages.length > 0) {
+      // Small delay to ensure panel animation has started and content is rendered
+      const timer = setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [messages, isOpen]);
 
   // Focus input when panel opens or API key input is dismissed
   useEffect(() => {
@@ -480,35 +486,37 @@ export function ChatPanel({ isOpen, onClose, onEmotion }: ChatPanelProps) {
             {/* Header */}
             <div className="flex items-center justify-between p-4">
               <h2 className="text-lg font-semibold text-gray-900 pl-2">Anty Chat</h2>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
                 {!showApiKeyInput && (
-                  <div className="relative" ref={menuRef}>
+                  <>
                     <button
-                      onClick={() => setShowMenu(!showMenu)}
+                      onClick={handleNewChat}
                       className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                      title="Menu"
+                      title="New Chat"
                     >
-                      <MoreVertical className="w-5 h-5 text-gray-600" />
+                      <MessageSquarePlus className="w-5 h-5 text-gray-600" />
                     </button>
-                    {showMenu && (
-                      <div className="absolute right-0 top-full mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-10">
-                        <button
-                          onClick={handleNewChat}
-                          className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
-                        >
-                          <MessageSquarePlus className="w-4 h-4" />
-                          New Chat
-                        </button>
-                        <button
-                          onClick={handleClearApiKey}
-                          className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
-                        >
-                          <Key className="w-4 h-4" />
-                          Change API Key
-                        </button>
-                      </div>
-                    )}
-                  </div>
+                    <div className="relative" ref={menuRef}>
+                      <button
+                        onClick={() => setShowMenu(!showMenu)}
+                        className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                        title="Menu"
+                      >
+                        <MoreVertical className="w-5 h-5 text-gray-600" />
+                      </button>
+                      {showMenu && (
+                        <div className="absolute right-0 top-full mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-10">
+                          <button
+                            onClick={handleClearApiKey}
+                            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                          >
+                            <Key className="w-4 h-4" />
+                            Change API Key
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </>
                 )}
                 <button
                   onClick={onClose}
