@@ -181,8 +181,8 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
       onAnimationSequenceChange: onAnimationSequenceChange, // Pass through to controller
       callbacks: {
         onEmotionMotionStart: (emotion) => {
-          // Spawn confetti for excited animation
-          if (emotion === 'excited' && canvasRef.current?.spawnParticle) {
+          // Spawn confetti for celebrate animation
+          if (emotion === 'celebrate' && canvasRef.current?.spawnParticle) {
             // Spawn confetti burst near apex (0.35s rise + brief hang)
             setTimeout(() => {
               const count = 40;
@@ -198,9 +198,7 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
           }
 
           // Spawn yellow sparkles from right eye during wink
-          console.log('[WINK SPARKLE] onEmotionMotionStart called with emotion:', emotion);
           if (emotion === 'wink' && canvasRef.current?.spawnParticle) {
-            console.log('[WINK SPARKLE] Spawning sparkles, canvasRef:', !!canvasRef.current);
             const canvasCenterX = (size * 5) / 2;
             const canvasCenterY = (size * 5) / 2;
             // Right eye position (slightly right of center, at eye level)
@@ -211,7 +209,6 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
               setTimeout(() => {
                 const spawnX = rightEyeX + (Math.random() - 0.5) * 30;
                 const spawnY = rightEyeY + (Math.random() - 0.5) * 30;
-                console.log('[WINK SPARKLE] Spawning particle', i, 'at:', { spawnX, spawnY });
                 canvasRef.current?.spawnParticle?.(
                   'sparkle',
                   spawnX,
@@ -589,6 +586,9 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
       const validEmotions: Record<string, EmotionType> = {
         'happy': 'happy',
         'excited': 'excited',
+        'celebrate': 'celebrate',
+        'pleased': 'pleased',
+        'smize': 'smize',
         'sad': 'sad',
         'angry': 'angry',
         'shocked': 'shocked',
@@ -597,12 +597,12 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
         'jump': 'jump',
         'idea': 'idea',
         'back-forth': 'back-forth',
+        'look-around': 'look-around',
         'nod': 'nod',
         'headshake': 'headshake',
         'look-left': 'look-left',
         'look-right': 'look-right',
         'super': 'super',
-        'chant': 'chant',
       };
 
       const emotionType = validEmotions[emotion];
@@ -696,7 +696,10 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
     // Map ExpressionName to EmotionType
     const validEmotions: Record<string, EmotionType> = {
       'happy': 'happy',
-      'excited': 'excited',
+      'excited': 'excited',      // Level 4 positive (jump+spin)
+      'celebrate': 'celebrate',  // Level 5 positive (confetti!)
+      'pleased': 'pleased',      // Level 2 positive
+      'smize': 'smize',          // Level 1 positive (eyes only)
       'sad': 'sad',
       'angry': 'angry',
       'shocked': 'shocked',
@@ -705,12 +708,12 @@ export const AntyCharacterV3 = forwardRef<AntyCharacterHandle, AntyCharacterV3Pr
       'jump': 'jump',
       'idea': 'idea',
       'back-forth': 'back-forth',
+      'look-around': 'look-around',
       'nod': 'nod',
       'headshake': 'headshake',
       'look-left': 'look-left',
       'look-right': 'look-right',
       'super': 'super',
-      'chant': 'chant',
     };
 
     const emotionType = validEmotions[expression];

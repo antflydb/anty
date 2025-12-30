@@ -751,13 +751,14 @@ export function useAnimationController(
         elements.eyeRight,
       ].filter(Boolean))) as Element[];
 
-      // Pass resetIdle flag from emotion config (default: true for clean idle restart)
-      const optionsWithResetIdle = {
+      // Pass flags from emotion config
+      const optionsWithFlags = {
         ...animationOptions,
         resetIdle: emotionConfig.resetIdle,
+        preserveIdle: emotionConfig.preserveIdle,
       };
 
-      return controllerRef.current.playEmotion(emotion, tl, emotionElements, optionsWithResetIdle);
+      return controllerRef.current.playEmotion(emotion, tl, emotionElements, optionsWithFlags);
     },
     [elements, enableLogging]
   );

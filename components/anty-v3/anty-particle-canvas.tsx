@@ -34,7 +34,6 @@ export const AntyParticleCanvas = forwardRef<ParticleCanvasHandle, AntyParticleC
     // Expose spawn method to parent
     useImperativeHandle(ref, () => ({
       spawnParticle: (type: ParticleType, x: number, y: number, color?: string) => {
-        console.log('[PARTICLE SPAWN]', type, 'at', { x, y, color });
         const config = PARTICLE_CONFIGS[type];
         const timestamp = Date.now();
         const random = Math.random();
@@ -52,19 +51,6 @@ export const AntyParticleCanvas = forwardRef<ParticleCanvasHandle, AntyParticleC
           life: 1,
           color: color || getParticleColor(type),
         };
-
-        if (type === 'confetti') {
-          console.log('[PARTICLE] Created confetti particle:', {
-            x,
-            y,
-            vx: newParticle.vx,
-            vy: newParticle.vy,
-            color: newParticle.color,
-            scale: newParticle.scale,
-            opacity: newParticle.opacity,
-            life: newParticle.life
-          });
-        }
 
         particlesRef.current = [...particlesRef.current, newParticle];
       },
@@ -116,19 +102,11 @@ export const AntyParticleCanvas = forwardRef<ParticleCanvasHandle, AntyParticleC
 
         // Memory leak fix: Replace map/filter with efficient for-loop
         const alive: Particle[] = [];
-        const confettiCount = particlesRef.current.filter(p => p.type === 'confetti').length;
-        if (confettiCount > 0) {
-          console.log('[RENDER] Processing confetti particles:', confettiCount);
-        }
 
         for (let i = 0; i < particlesRef.current.length; i++) {
           const updated = updateParticle(particlesRef.current[i], dt);
           if (updated.life > 0) {
             alive.push(updated);
-            // Draw particle immediately (single pass)
-            if (updated.type === 'confetti') {
-              console.log('[RENDER] Drawing confetti particle');
-            }
             drawParticle(ctx, updated);
           }
         }
@@ -286,8 +264,6 @@ function drawZzz(ctx: CanvasRenderingContext2D) {
 }
 
 function drawConfetti(ctx: CanvasRenderingContext2D, particle: Particle) {
-  console.log('[DRAW] Drawing confetti at:', { x: particle.x, y: particle.y, opacity: particle.opacity, life: particle.life });
-
   // Draw colorful rectangles/squares
   ctx.fillStyle = particle.color || '#ffd700';
 

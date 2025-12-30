@@ -77,7 +77,7 @@ export function initializeCharacter(
     scale: isOff ? 0.65 : 1,
     rotation: 0,
     rotationY: 0,
-    opacity: isOff ? 0.45 : 1,
+    opacity: isOff ? 0.25 : 1,
     transformOrigin: 'center center',
   });
 

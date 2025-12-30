@@ -588,7 +588,7 @@ export const POWER_OFF = {
   /** Fade-out ease */
   fadeOutEase: 'power2.in',
   /** Character opacity when OFF */
-  opacityOff: 0.45,
+  opacityOff: 0.25,
   /** Eye morph delay from snap start (milliseconds) */
   eyeMorphDelay: 540,
   /** Glow/shadow fade delay from animation start (milliseconds) */

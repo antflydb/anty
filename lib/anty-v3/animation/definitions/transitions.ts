@@ -69,7 +69,7 @@ export function createWakeUpAnimation(
   timeline.fromTo(
     character,
     {
-      opacity: 0.45,
+      opacity: 0.25,
       scale: 0.65,
       y: 50,
       x: 0,
@@ -235,7 +235,7 @@ export function createPowerOffAnimation(
 
   // Phase 3: Fade character to transparent IMMEDIATELY after snap (0.05s)
   timeline.to(character, {
-    opacity: 0.45, // Dim logo state
+    opacity: 0.25, // Dim logo state (lighter gray)
     duration: 0.05, // Lightning fast - 50ms
     ease: 'power2.in',
   });

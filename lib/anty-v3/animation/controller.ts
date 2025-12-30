@@ -270,6 +270,12 @@ export class AnimationController {
         if (this.config.enableLogging) {
           console.log(`[AnimationController] Killing previous emotion: ${id}`);
         }
+        // CRITICAL: Manually trigger onInterrupt before killing
+        // GSAP's kill() does NOT trigger onInterrupt callback automatically
+        const onInterruptCallback = ref.timeline.eventCallback('onInterrupt');
+        if (onInterruptCallback) {
+          onInterruptCallback.call(ref.timeline);
+        }
         ref.timeline.kill();
         this.activeTimelines.delete(id);
       }
@@ -283,8 +289,11 @@ export class AnimationController {
       return false;
     }
 
-    // Pause idle
-    this.pauseIdle();
+    // Pause idle (unless preserveIdle is true for eye-only emotions like smize)
+    const preserveIdle = options.preserveIdle ?? false;
+    if (!preserveIdle) {
+      this.pauseIdle();
+    }
 
     const animationId = `emotion-${emotion}-${Date.now()}`;
 
@@ -354,12 +363,17 @@ export class AnimationController {
       // Return to idle (force transition to bypass priority check)
       this.stateMachine.transition(AnimationState.IDLE, true);
 
-      // Restart or resume idle based on resetIdle flag (default: restart for clean handoff)
-      const shouldResetIdle = options.resetIdle !== false;
-      if (shouldResetIdle) {
-        this.restartIdle();
-      } else {
-        this.resumeIdle();
+      // Handle idle animation based on flags:
+      // - preserveIdle: idle was never paused, do nothing
+      // - resetIdle=false: resume idle from current position
+      // - resetIdle=true (default): restart idle from origin
+      if (!preserveIdle) {
+        const shouldResetIdle = options.resetIdle !== false;
+        if (shouldResetIdle) {
+          this.restartIdle();
+        } else {
+          this.resumeIdle();
+        }
       }
 
       // Process queue

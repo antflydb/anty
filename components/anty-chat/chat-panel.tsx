@@ -2,10 +2,10 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Send, Loader2, Key, ChevronDown, ChevronUp, MoreVertical } from 'lucide-react';
+import { X, Send, Loader2, Key, MoreVertical, MessageSquarePlus, History } from 'lucide-react';
 import gsap from 'gsap';
 import { AntyChat, type ChatMessage } from '@/lib/chat/openai-client';
-import { mapEmotionToExpression, stripEmotionTags } from '@/lib/chat/emotion-mapper';
+import { mapEmotionToExpression, stripEmotionTags, stripEmotionTagsStreaming } from '@/lib/chat/emotion-mapper';
 import type { EmotionType } from '@/lib/anty-v3/animation/types';
 
 interface ChatPanelProps {
@@ -13,6 +13,51 @@ interface ChatPanelProps {
   onClose: () => void;
   onEmotion?: (emotion: EmotionType) => void;
 }
+
+// Session expires after 5 minutes of inactivity
+const SESSION_EXPIRY_MS = 5 * 60 * 1000;
+const STORAGE_KEY_MESSAGES = 'anty-chat-messages';
+const STORAGE_KEY_LAST_ACTIVITY = 'anty-chat-last-activity';
+
+// Serialize messages for storage (convert Date to ISO string)
+function serializeMessages(messages: Message[]): string {
+  return JSON.stringify(messages.map(m => ({
+    ...m,
+    timestamp: m.timestamp.toISOString(),
+  })));
+}
+
+// Deserialize messages from storage (convert ISO string back to Date)
+function deserializeMessages(json: string): Message[] {
+  try {
+    const parsed = JSON.parse(json);
+    return parsed.map((m: any) => ({
+      ...m,
+      timestamp: new Date(m.timestamp),
+    }));
+  } catch {
+    return [];
+  }
+}
+
+// Random greeting messages for Anty
+const ANTY_GREETINGS = [
+  "Hey! What's up?",
+  "How's it going?",
+  "What can I help you with?",
+  "Heyo!",
+  "Hey!",
+  "What's going on?",
+  "What's new?",
+  "What can I do for you?",
+  "What do you want to chat about?",
+  "Hi there!",
+  "Hey, good to see you!",
+  "What's on your mind?",
+  "Ready when you are!",
+  "Let's chat!",
+  "Hey friend!",
+];
 
 interface Message {
   id: string;
@@ -32,24 +77,30 @@ export function ChatPanel({ isOpen, onClose, onEmotion }: ChatPanelProps) {
   const [showApiKeyInput, setShowApiKeyInput] = useState(true);
   const [chatClient, setChatClient] = useState<AntyChat | null>(null);
   const [showMenu, setShowMenu] = useState(false);
+  const [hasRestoredSession, setHasRestoredSession] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const inputBorderRef = useRef<HTMLDivElement>(null);
   const borderTweenRef = useRef<gsap.core.Tween | null>(null);
+  const initialLoadDone = useRef(false);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Focus input when panel opens
+  // Focus input when panel opens or API key input is dismissed
   useEffect(() => {
-    if (isOpen && !showApiKeyInput) {
-      inputRef.current?.focus();
+    if (isOpen && !showApiKeyInput && !isLoading) {
+      // Small delay to ensure input is rendered after animation starts
+      const timer = setTimeout(() => {
+        inputRef.current?.focus();
+      }, 150);
+      return () => clearTimeout(timer);
     }
-  }, [isOpen, showApiKeyInput]);
+  }, [isOpen, showApiKeyInput, isLoading]);
 
   // Click outside to close menu
   useEffect(() => {
@@ -98,6 +149,63 @@ export function ChatPanel({ isOpen, onClose, onEmotion }: ChatPanelProps) {
       setShowApiKeyInput(false);
     }
   }, []);
+
+  // Load message history from localStorage (check expiry)
+  useEffect(() => {
+    if (initialLoadDone.current) return;
+    initialLoadDone.current = true;
+
+    const lastActivity = localStorage.getItem(STORAGE_KEY_LAST_ACTIVITY);
+    const storedMessages = localStorage.getItem(STORAGE_KEY_MESSAGES);
+
+    if (lastActivity && storedMessages) {
+      const lastActivityTime = parseInt(lastActivity, 10);
+      const now = Date.now();
+
+      // Check if session has expired
+      if (now - lastActivityTime < SESSION_EXPIRY_MS) {
+        const restoredMessages = deserializeMessages(storedMessages);
+        if (restoredMessages.length > 0) {
+          setMessages(restoredMessages);
+          setHasRestoredSession(true);
+        }
+      } else {
+        // Session expired, clear storage
+        localStorage.removeItem(STORAGE_KEY_MESSAGES);
+        localStorage.removeItem(STORAGE_KEY_LAST_ACTIVITY);
+      }
+    }
+  }, []);
+
+  // Save messages to localStorage when they change
+  useEffect(() => {
+    if (messages.length > 0) {
+      localStorage.setItem(STORAGE_KEY_MESSAGES, serializeMessages(messages));
+      localStorage.setItem(STORAGE_KEY_LAST_ACTIVITY, Date.now().toString());
+    }
+  }, [messages]);
+
+  // Add greeting when panel opens (if no messages yet, no restored session, and API key exists)
+  useEffect(() => {
+    if (isOpen && !showApiKeyInput && messages.length === 0 && !hasRestoredSession) {
+      // Show loading state briefly
+      setIsLoading(true);
+
+      const timer = setTimeout(() => {
+        const randomGreeting = ANTY_GREETINGS[Math.floor(Math.random() * ANTY_GREETINGS.length)];
+        const greetingMessage: Message = {
+          id: Date.now().toString(),
+          role: 'assistant',
+          content: randomGreeting,
+          timestamp: new Date(),
+        };
+        setMessages([greetingMessage]);
+        setIsLoading(false);
+      }, 400 + Math.random() * 300); // 400-700ms delay
+
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, showApiKeyInput, hasRestoredSession]);
 
   // Rotating gradient border animation
   useEffect(() => {
@@ -152,20 +260,25 @@ export function ChatPanel({ isOpen, onClose, onEmotion }: ChatPanelProps) {
     setChatClient(new AntyChat(apiKey));
     setShowApiKeyInput(false);
 
-    // Add welcome message
-    const welcomeMessage: Message = {
-      id: Date.now().toString(),
-      role: 'assistant',
-      content: "Hey there! I'm Anty, your AI companion. I'll react emotionally to our conversation. Try asking me something!",
-      timestamp: new Date(),
-    };
-    setMessages([welcomeMessage]);
+    // Show loading then add welcome message with random greeting
+    setIsLoading(true);
+    setTimeout(() => {
+      const randomGreeting = ANTY_GREETINGS[Math.floor(Math.random() * ANTY_GREETINGS.length)];
+      const welcomeMessage: Message = {
+        id: Date.now().toString(),
+        role: 'assistant',
+        content: randomGreeting,
+        timestamp: new Date(),
+      };
+      setMessages([welcomeMessage]);
+      setIsLoading(false);
 
-    // Trigger happy emotion
-    const expression = mapEmotionToExpression('happy');
-    if (expression) {
-      onEmotion?.(expression);
-    }
+      // Trigger happy emotion
+      const expression = mapEmotionToExpression('happy');
+      if (expression) {
+        onEmotion?.(expression);
+      }
+    }, 400 + Math.random() * 300);
   };
 
   const handleSend = async () => {
@@ -180,6 +293,10 @@ export function ChatPanel({ isOpen, onClose, onEmotion }: ChatPanelProps) {
 
     setMessages((prev) => [...prev, userMessage]);
     setInput('');
+    // Reset textarea height
+    if (inputRef.current) {
+      inputRef.current.style.height = '48px';
+    }
     setIsLoading(true);
 
     // Create a placeholder message for streaming
@@ -209,8 +326,8 @@ export function ChatPanel({ isOpen, onClose, onEmotion }: ChatPanelProps) {
       // Stream the response
       const response = await chatClient.sendMessage(chatHistory, (chunk) => {
         rawResponse += chunk;
-        // Strip emotion tags from the displayed content during streaming
-        const cleanChunk = stripEmotionTags(rawResponse);
+        // Strip emotion tags from the displayed content during streaming (handles partial tags)
+        const cleanChunk = stripEmotionTagsStreaming(rawResponse);
 
         setMessages((prev) =>
           prev.map((msg) =>
@@ -274,7 +391,7 @@ export function ChatPanel({ isOpen, onClose, onEmotion }: ChatPanelProps) {
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       if (showApiKeyInput) {
@@ -285,13 +402,56 @@ export function ChatPanel({ isOpen, onClose, onEmotion }: ChatPanelProps) {
     }
   };
 
+  // Auto-resize textarea up to 3 lines
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInput(e.target.value);
+
+    const textarea = e.target;
+    // Reset height to auto to get the correct scrollHeight
+    textarea.style.height = 'auto';
+
+    // Calculate line height (approximately 24px per line with padding)
+    const lineHeight = 24;
+    const maxLines = 3;
+    const maxHeight = lineHeight * maxLines;
+
+    // Set height to scrollHeight, but cap at maxHeight
+    const newHeight = Math.min(textarea.scrollHeight, maxHeight);
+    textarea.style.height = `${newHeight}px`;
+  };
+
   const handleClearApiKey = () => {
     localStorage.removeItem('anty-chat-api-key');
+    localStorage.removeItem(STORAGE_KEY_MESSAGES);
+    localStorage.removeItem(STORAGE_KEY_LAST_ACTIVITY);
     setApiKey('');
     setChatClient(null);
     setShowApiKeyInput(true);
     setMessages([]);
+    setHasRestoredSession(false);
     setShowMenu(false);
+  };
+
+  const handleNewChat = () => {
+    localStorage.removeItem(STORAGE_KEY_MESSAGES);
+    localStorage.removeItem(STORAGE_KEY_LAST_ACTIVITY);
+    setMessages([]);
+    setHasRestoredSession(false);
+    setShowMenu(false);
+
+    // Show new greeting after a brief delay
+    setIsLoading(true);
+    setTimeout(() => {
+      const randomGreeting = ANTY_GREETINGS[Math.floor(Math.random() * ANTY_GREETINGS.length)];
+      const greetingMessage: Message = {
+        id: Date.now().toString(),
+        role: 'assistant',
+        content: randomGreeting,
+        timestamp: new Date(),
+      };
+      setMessages([greetingMessage]);
+      setIsLoading(false);
+    }, 400 + Math.random() * 300);
   };
 
   const toggleDebugInfo = (messageId: string) => {
@@ -333,6 +493,13 @@ export function ChatPanel({ isOpen, onClose, onEmotion }: ChatPanelProps) {
                     {showMenu && (
                       <div className="absolute right-0 top-full mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-10">
                         <button
+                          onClick={handleNewChat}
+                          className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                        >
+                          <MessageSquarePlus className="w-4 h-4" />
+                          New Chat
+                        </button>
+                        <button
                           onClick={handleClearApiKey}
                           className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
                         >
@@ -366,7 +533,7 @@ export function ChatPanel({ isOpen, onClose, onEmotion }: ChatPanelProps) {
                     type="password"
                     value={apiKey}
                     onChange={(e) => setApiKey(e.target.value)}
-                    onKeyPress={handleKeyPress}
+                    onKeyDown={handleKeyDown}
                     placeholder="sk-..."
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8B5CF6] focus:border-transparent"
                   />
@@ -444,29 +611,35 @@ export function ChatPanel({ isOpen, onClose, onEmotion }: ChatPanelProps) {
 
                 {/* Input */}
                 <div className="p-4">
+                  {!messages.some(m => m.role === 'user') && (
+                    <div className="text-xs text-gray-400 text-left mb-2 pl-1">
+                      GPT-4o-mini — API connected
+                    </div>
+                  )}
                   <div
                     ref={inputBorderRef}
-                    className="relative rounded-full"
+                    className="relative rounded-[12px]"
                     style={{
                       padding: '2px',
                       background: 'linear-gradient(white, white) padding-box, conic-gradient(from 0deg, #E5EDFF 0%, #C7D2FE 25%, #D8B4FE 50%, #C7D2FE 75%, #E5EDFF 100%) border-box',
                       border: '2px solid transparent',
                     }}
                   >
-                    <input
+                    <textarea
                       ref={inputRef}
-                      type="text"
                       value={input}
-                      onChange={(e) => setInput(e.target.value)}
-                      onKeyPress={handleKeyPress}
+                      onChange={handleInputChange}
+                      onKeyDown={handleKeyDown}
                       placeholder="Type a message..."
                       disabled={isLoading}
-                      className="w-full pl-4 pr-12 py-3 bg-white rounded-full focus:outline-none disabled:opacity-50 placeholder:text-[#D4D3D3]"
+                      rows={1}
+                      className="w-full pl-4 pr-12 py-3 bg-white rounded-[10px] focus:outline-none disabled:opacity-50 placeholder:text-[#D4D3D3] resize-none overflow-y-auto leading-6"
+                      style={{ minHeight: '48px', maxHeight: '72px' }}
                     />
                     <button
                       onClick={handleSend}
                       disabled={!input.trim() || isLoading}
-                      className={`absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full disabled:cursor-not-allowed transition-colors ${
+                      className={`absolute right-3 bottom-2 w-8 h-8 flex items-center justify-center rounded-full disabled:cursor-not-allowed transition-colors ${
                         !input.trim() || isLoading
                           ? 'bg-gray-200 text-gray-600 opacity-30'
                           : 'bg-[#8B5CF6] text-white hover:bg-[#7C3AED]'

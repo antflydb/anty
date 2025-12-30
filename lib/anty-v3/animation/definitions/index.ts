@@ -12,7 +12,7 @@ export {
 
 // Declarative emotion system
 export { EMOTION_CONFIGS } from './emotions';
-export { interpretEmotionConfig } from './emotion-interpreter';
+export { interpretEmotionConfig, killPendingEyeReset } from './emotion-interpreter';
 export type {
   EmotionConfig,
   EyeConfig,

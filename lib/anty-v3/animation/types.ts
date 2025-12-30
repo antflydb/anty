@@ -34,18 +34,21 @@ export type EmotionType =
   | 'sad'
   | 'angry'
   | 'shocked'
-  | 'excited'
+  | 'excited'    // Level 4 positive - jump + spin (no confetti)
+  | 'celebrate'  // Level 5 positive - EPIC (confetti!)
+  | 'pleased'    // Level 2 positive - bounce + happy eyes
   | 'spin'
   | 'jump'
   | 'idea'
   | 'back-forth'
+  | 'look-around'
   | 'wink'
   | 'nod'
   | 'headshake'
   | 'look-left'
   | 'look-right'
   | 'super'
-  | 'chant';
+  | 'smize';
 
 /**
  * Expression name includes EmotionType plus special states
@@ -517,6 +520,8 @@ export interface AnimationOptions {
   delay?: number;
   /** Whether to restart idle from origin after emotion completes (default: true) */
   resetIdle?: boolean;
+  /** Whether to keep idle animation playing during this emotion (default: false) */
+  preserveIdle?: boolean;
 }
 
 /**
@@ -532,16 +537,20 @@ export function isEmotionType(value: string): value is EmotionType {
     'angry',
     'shocked',
     'excited',
+    'celebrate',   // Level 4 positive
+    'pleased',     // Level 2 positive
     'spin',
     'jump',
+    'idea',
     'back-forth',
+    'look-around',
     'wink',
     'nod',
     'headshake',
     'look-left',
     'look-right',
     'super',
-    'chant',
+    'smize',
   ];
   return emotions.includes(value as EmotionType);
 }
@@ -670,6 +679,10 @@ export interface EyePhase {
   shape: EyeShapeName | { left: EyeShapeName; right: EyeShapeName };
   /** Duration of morph */
   duration: number;
+  /** X offset for eyes (negative = left, positive = right) */
+  xOffset?: number;
+  /** Bunching effect - eyes move closer together */
+  bunch?: number;
 }
 
 /**
@@ -705,6 +718,9 @@ export interface EmotionConfig {
   /** Whether to restart idle from origin after emotion completes (default: true)
    *  Set to false for subtle emotions like wink that shouldn't disrupt breathing */
   resetIdle?: boolean;
+  /** Whether to keep idle animation playing during this emotion (default: false)
+   *  Set to true for eye-only emotions like smize that shouldn't interrupt breathing */
+  preserveIdle?: boolean;
 }
 
 // ============================================================================

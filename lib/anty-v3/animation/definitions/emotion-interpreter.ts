@@ -13,6 +13,21 @@ import { createEyeAnimation } from './eye-animations';
 import { resetEyesToIdle } from '../initialize';
 // NOTE: GLOW_CONSTANTS removed - glow following now handled by GlowSystem
 
+// Module-level tracking of pending eye reset calls
+// This allows us to kill pending resets when a new emotion starts
+let globalPendingResetCall: gsap.core.Tween | null = null;
+
+/**
+ * Kill any pending eye reset from a previous emotion
+ * Call this before starting a new emotion animation
+ */
+export function killPendingEyeReset(): void {
+  if (globalPendingResetCall) {
+    globalPendingResetCall.kill();
+    globalPendingResetCall = null;
+  }
+}
+
 /**
  * Elements required for emotion animations
  */
@@ -44,10 +59,13 @@ export function interpretEmotionConfig(
   const { character, eyeLeft, eyeRight, eyeLeftPath, eyeRightPath, eyeLeftSvg, eyeRightSvg, innerGlow, outerGlow, leftBody, rightBody } = elements;
   const glowElements = [innerGlow, outerGlow].filter(Boolean) as HTMLElement[];
 
-  // Track pending delayed reset so we can kill it on interrupt
-  let pendingResetCall: gsap.core.Tween | null = null;
+  // Kill any pending reset from previous emotion BEFORE setting up new one
+  killPendingEyeReset();
 
   const doReset = () => {
+    // Clear the global pending reset since we're executing it
+    globalPendingResetCall = null;
+
     // Reset rotation if configured
     if (config.resetRotation) {
       gsap.set(character, { rotation: 0 });
@@ -70,19 +88,23 @@ export function interpretEmotionConfig(
     onComplete: () => {
       // If holdDuration is set, wait before resetting (for look animations)
       if (config.holdDuration) {
-        pendingResetCall = gsap.delayedCall(config.holdDuration, doReset);
+        globalPendingResetCall = gsap.delayedCall(config.holdDuration, doReset);
       } else {
         doReset();
       }
     },
     onInterrupt: () => {
       // Kill any pending delayed reset when interrupted
-      if (pendingResetCall) {
-        pendingResetCall.kill();
-        pendingResetCall = null;
+      killPendingEyeReset();
+      // Reset eye rotation/position immediately so next emotion starts clean
+      // (critical for sad→idea where eye rotations would otherwise persist)
+      if (eyeLeft && eyeRight) {
+        gsap.set([eyeLeft, eyeRight], { rotation: 0, x: 0, y: 0, scaleX: 1, scaleY: 1 });
       }
-      // Do immediate reset on interrupt (no delay)
-      doReset();
+      // Reset body brackets immediately (critical for shocked interruption)
+      if (leftBody && rightBody) {
+        gsap.set([leftBody, rightBody], { x: 0, y: 0 });
+      }
     },
   });
 
@@ -240,6 +262,26 @@ function addEyePhases(
     );
 
     timeline.add(eyeTl, phase.position);
+
+    // Handle eye position changes (xOffset, bunch)
+    if (phase.xOffset !== undefined || phase.bunch !== undefined) {
+      const bunch = phase.bunch ?? 0;
+      const xOffset = phase.xOffset ?? 0;
+
+      // Left eye: xOffset + bunch towards center
+      timeline.to(eyeLeft, {
+        x: xOffset + bunch,
+        duration: phase.duration,
+        ease: 'power2.out',
+      }, phase.position);
+
+      // Right eye: xOffset - bunch towards center
+      timeline.to(eyeRight, {
+        x: xOffset - bunch,
+        duration: phase.duration,
+        ease: 'power2.out',
+      }, phase.position);
+    }
   }
 }
 

@@ -268,15 +268,12 @@ export default function AntyV3() {
 
         // Spawn yellow sparkle burst from right eye during wink
         if (expr === 'wink') {
-          console.log('[WINK] Spawning sparkles');
           const canvasOffset = (160 * 5) / 2;
           // Right eye position (slightly right of center, at eye level)
           const rightEyeX = canvasOffset + 35;
           const rightEyeY = canvasOffset - 10;
-          console.log('[WINK] Canvas offset:', canvasOffset, 'Right eye pos:', rightEyeX, rightEyeY);
           for (let i = 0; i < 6; i++) {
             setTimeout(() => {
-              console.log('[WINK] Spawning sparkle', i, 'at', rightEyeX, rightEyeY);
               antyRef.current?.spawnSparkle?.(
                 rightEyeX + gsap.utils.random(-15, 15),
                 rightEyeY + gsap.utils.random(-15, 15),
@@ -1052,29 +1049,30 @@ export default function AntyV3() {
     // STEP 3.5: Animated gradient border fades in and starts rotating
     const searchBorderGradient = searchBorderGradientRef.current;
     if (searchBorderGradient) {
+      // Set initial state with gradient at 0deg (matches animation start)
+      searchBorderGradient.style.background = `linear-gradient(white, white) padding-box, conic-gradient(from 0deg, #E5EDFF 0%, #C7D2FE 25%, #D8B4FE 50%, #C7D2FE 75%, #E5EDFF 100%) border-box`;
       gsap.set(searchBorderGradient, { opacity: 0 });
 
+      // Start rotation animation immediately (while still invisible)
+      const rotationAnim = { deg: 0 };
+      gsap.to(rotationAnim, {
+        deg: 360,
+        duration: 4,
+        ease: 'none',
+        repeat: -1,
+        onUpdate: () => {
+          if (searchBorderGradient) {
+            searchBorderGradient.style.background = `linear-gradient(white, white) padding-box, conic-gradient(from ${rotationAnim.deg}deg, #E5EDFF 0%, #C7D2FE 25%, #D8B4FE 50%, #C7D2FE 75%, #E5EDFF 100%) border-box`;
+          }
+        }
+      });
+
+      // Fade in the border (rotation already running smoothly)
       tl.to(searchBorderGradient, {
         opacity: 1,
         duration: 0.3,
         ease: 'power1.out'
-      }, 0.45); // Delayed to sync with bracket arrival
-
-      // Start continuous gradient rotation (separate from timeline)
-      tl.call(() => {
-        const rotationAnim = { deg: 0 };
-        gsap.to(rotationAnim, {
-          deg: 360,
-          duration: 4,
-          ease: 'none',
-          repeat: -1,
-          onUpdate: () => {
-            if (searchBorderGradient) {
-              searchBorderGradient.style.background = `linear-gradient(white, white) padding-box, conic-gradient(from ${rotationAnim.deg}deg, #E5EDFF 0%, #C7D2FE 25%, #D8B4FE 50%, #C7D2FE 75%, #E5EDFF 100%) border-box`;
-            }
-          }
-        });
-      }, [], 0.75);
+      }, 0.45);
     }
 
     // STEP 3.75: Placeholder reveals with subtle blur and upward drift (180ms)
@@ -1359,9 +1357,9 @@ export default function AntyV3() {
         }
         // Toggle chat panel
         setIsChatOpen(prev => {
-          // Only trigger chant (happy eyes, no wiggle) when opening chat
+          // Only trigger smize (happy eyes, no wiggle) when opening chat
           if (!prev) {
-            setExpression('chant');
+            setExpression('smize');
             scheduleExpressionReset(2000);
           }
           return !prev;
@@ -1433,7 +1431,7 @@ export default function AntyV3() {
 
         // Earn a heart and trigger pulse at happy eyes moment
         animationTimerRef.current = setTimeout(() => {
-          setExpression('chant');
+          setExpression('smize');
           // Find first grey (not earned) heart and earn it
           const firstGreyHeart = [0, 1, 2].find(
             (index) => !earnedHearts.find((h) => h.index === index)
@@ -1496,7 +1494,7 @@ export default function AntyV3() {
   };
 
   return (
-    <div className="bg-white min-h-screen flex flex-col relative">
+    <div className="bg-white min-h-screen flex flex-col relative overflow-hidden">
       <FPSMeter />
       <SearchBarDemoMenu visible={searchActive} />
 

@@ -51,10 +51,15 @@ export const EMOTION_CONFIGS: Partial<Record<EmotionType, EmotionConfig>> = {
   },
 
   // ===========================
-  // EXCITED - Epic jump with 360 spin
+  // POSITIVE EMOTION SCALE (Level 5 to 1)
   // ===========================
-  excited: {
-    id: 'excited',
+
+  // ===========================
+  // CELEBRATE (Level 5) - EPIC celebration with confetti
+  // For: Major wins, big achievements, celebrations
+  // ===========================
+  celebrate: {
+    id: 'celebrate',
     eyes: {
       shape: 'HAPPY',
       duration: 0.2,
@@ -76,7 +81,72 @@ export const EMOTION_CONFIGS: Partial<Record<EmotionType, EmotionConfig>> = {
     glow: { follow: true },
     totalDuration: 1.5,
     resetRotation: true,
+    // Note: Confetti is spawned separately in anty-character-v3.tsx for this emotion
   },
+
+  // ===========================
+  // EXCITED (Level 4) - Jump + spin without confetti
+  // For: Good accomplishments, victories, success
+  // ===========================
+  excited: {
+    id: 'excited',
+    eyes: {
+      shape: 'HAPPY',
+      duration: 0.2,
+      yOffset: -10,
+      delay: 0.2,
+    },
+    character: [
+      // Quick squat
+      { props: { y: 8 }, duration: 0.15, ease: 'power2.in' },
+      // Jump up with spin
+      { props: { y: -50, rotation: 360 }, duration: 0.35, ease: 'power2.out' },
+      // Brief hang
+      { props: { y: -50, rotation: 360 }, duration: 0.2, ease: 'none' },
+      // Come down
+      { props: { y: 0 }, duration: 0.25, ease: 'power2.in' },
+      // Small bounce
+      { props: { y: -8 }, duration: 0.1, ease: 'power2.out' },
+      { props: { y: 0 }, duration: 0.08, ease: 'power2.in' },
+    ],
+    glow: { follow: true },
+    totalDuration: 1.1,
+    resetRotation: true,
+  },
+
+  // ===========================
+  // HAPPY (Level 3) - Expressive wiggle
+  // For: Good news, positive responses
+  // (defined above)
+  // ===========================
+
+  // ===========================
+  // PLEASED (Level 2) - Gentle bounce + happy eyes
+  // For: Mild positive, acknowledgments, satisfaction
+  // ===========================
+  pleased: {
+    id: 'pleased',
+    eyes: {
+      shape: 'HAPPY',
+      duration: 0.15,
+      yOffset: -8,
+    },
+    character: [
+      // Small satisfied bounce up
+      { props: { y: -18 }, duration: 0.2, ease: 'power2.out' },
+      // Settle back down
+      { props: { y: 0 }, duration: 0.25, ease: 'power2.in' },
+      // Tiny rebound
+      { props: { y: -4 }, duration: 0.1, ease: 'power1.out' },
+      { props: { y: 0 }, duration: 0.1, ease: 'power1.in' },
+    ],
+    glow: { follow: true },
+    totalDuration: 0.65,
+    holdDuration: 0.4, // Hold happy eyes a bit after bounce
+  },
+
+  // CHANT (Level 1) - Happy eyes only
+  // (defined at bottom of file)
 
   // ===========================
   // SAD - Droop down
@@ -323,6 +393,30 @@ export const EMOTION_CONFIGS: Partial<Record<EmotionType, EmotionConfig>> = {
   },
 
   // ===========================
+  // LOOK-AROUND - Look left then right (eye-only)
+  // Like holding [ for 1s then ] for 1s - doesn't interrupt idle
+  // ===========================
+  'look-around': {
+    id: 'look-around',
+    eyes: {
+      shape: 'LOOK',
+      duration: 0.15,
+      xOffset: -12, // Start looking left
+      bunch: 4,
+    },
+    eyePhases: [
+      // Transition to looking right at 1.1s
+      { position: 1.1, shape: 'LOOK', duration: 0.15, xOffset: 12, bunch: 4 },
+      // Return to center at 2.2s
+      { position: 2.2, shape: 'IDLE', duration: 0.15, xOffset: 0, bunch: 0 },
+    ],
+    character: [], // Eye-only, no body movement
+    totalDuration: 2.35,
+    preserveIdle: true, // Don't interrupt idle breathing
+    resetIdle: false,
+  },
+
+  // ===========================
   // LOOK-LEFT - Eye-only look (no body movement)
   // Secondary action - doesn't interrupt main animation flow
   // ===========================
@@ -378,11 +472,11 @@ export const EMOTION_CONFIGS: Partial<Record<EmotionType, EmotionConfig>> = {
   },
 
   // ===========================
-  // CHANT - Eye-only happy eyes (triggered by chant output)
-  // No body movement, no UI button - just happy eyes for ~1.5s
+  // SMIZE - Eye-only happy eyes (smile with eyes)
+  // No body movement - just happy eyes for ~1.5s
   // ===========================
-  chant: {
-    id: 'chant',
+  smize: {
+    id: 'smize',
     eyes: {
       shape: 'HAPPY',
       duration: 0.2,
@@ -391,7 +485,8 @@ export const EMOTION_CONFIGS: Partial<Record<EmotionType, EmotionConfig>> = {
     character: [], // Eye-only, no body movement
     totalDuration: 1.5,
     holdDuration: 1.2, // Hold happy eyes before returning to idle
-    resetIdle: false, // Don't disrupt breathing
+    resetIdle: false, // Don't restart idle from origin
+    preserveIdle: true, // Keep breathing animation running during eye change
   },
 };
 

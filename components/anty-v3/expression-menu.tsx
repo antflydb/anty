@@ -12,17 +12,24 @@ interface ExpressionMenuProps {
 }
 
 const EXPRESSIONS: { name: EmotionType; emoji: string; label: string; hotkey: string }[] = [
-  { name: 'happy', emoji: '😊', label: 'Happy', hotkey: '1' },
-  { name: 'excited', emoji: '🎉', label: 'Excited', hotkey: '2' },
-  { name: 'spin', emoji: '🌀', label: 'Spin', hotkey: '3' },
-  { name: 'shocked', emoji: '😲', label: 'Shocked', hotkey: '4' },
-  { name: 'wink', emoji: '😉', label: 'Wink', hotkey: '5' },
-  { name: 'angry', emoji: '😠', label: 'Angry', hotkey: '6' },
-  { name: 'sad', emoji: '😢', label: 'Sad', hotkey: '7' },
-  { name: 'idea', emoji: '💡', label: 'Idea', hotkey: '8' },
-  { name: 'back-forth', emoji: '👀', label: 'Back-Forth', hotkey: '9' },
-  { name: 'nod', emoji: '👍', label: 'Nod', hotkey: '0' },
-  { name: 'headshake', emoji: '👎', label: 'Headshake', hotkey: '-' },
+  // Positive scale (1 to 5, intensity increases with number)
+  { name: 'smize', emoji: '☺️', label: 'Smize', hotkey: '1' },        // Level 1 - SUBTLE (eyes only)
+  { name: 'pleased', emoji: '😌', label: 'Pleased', hotkey: '2' },    // Level 2 - MODERATE (bounce+eyes)
+  { name: 'happy', emoji: '😊', label: 'Happy', hotkey: '3' },        // Level 3 - EXPRESSIVE (wiggle)
+  { name: 'excited', emoji: '🏆', label: 'Excited', hotkey: '4' },    // Level 4 - BIG (jump+spin)
+  { name: 'celebrate', emoji: '🎉', label: 'Celebrate', hotkey: '5' }, // Level 5 - EPIC (confetti)
+  // Other emotions
+  { name: 'shocked', emoji: '😲', label: 'Shocked', hotkey: '6' },
+  { name: 'wink', emoji: '😉', label: 'Wink', hotkey: '7' },
+  { name: 'angry', emoji: '😠', label: 'Angry', hotkey: '8' },
+  { name: 'sad', emoji: '😢', label: 'Sad', hotkey: '9' },
+  { name: 'idea', emoji: '💡', label: 'Idea', hotkey: '0' },
+  // Additional emotions (no hotkeys - click only)
+  { name: 'nod', emoji: '👍', label: 'Nod', hotkey: '' },
+  { name: 'headshake', emoji: '👎', label: 'Headshake', hotkey: '' },
+  { name: 'back-forth', emoji: '🤔', label: 'Back-Forth', hotkey: '' },
+  { name: 'look-around', emoji: '👀', label: 'Look Around', hotkey: '' },
+  { name: 'spin', emoji: '🌀', label: 'Spin', hotkey: '' },
   // look-left and look-right removed - handled by hold-style keyboard handler in page.tsx
   // Press and hold [ or ] for direct eye control
 ];
@@ -68,7 +75,7 @@ export function ExpressionMenu({ onExpressionSelect, currentExpression, isExpand
         return;
       }
 
-      const expression = EXPRESSIONS.find((expr) => e.key === expr.hotkey);
+      const expression = EXPRESSIONS.find((expr) => expr.hotkey && e.key === expr.hotkey);
 
       if (expression) {
         e.preventDefault();
@@ -125,7 +132,11 @@ export function ExpressionMenu({ onExpressionSelect, currentExpression, isExpand
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                <Kbd className="text-[9px] px-1 py-0.5">{expr.hotkey}</Kbd>
+                {expr.hotkey ? (
+                  <Kbd className="text-[9px] px-1 py-0.5">{expr.hotkey}</Kbd>
+                ) : (
+                  <div className="h-[18px]" /> // Spacer for consistent layout
+                )}
                 <span className="text-xl">{expr.emoji}</span>
               </motion.button>
             ))}
