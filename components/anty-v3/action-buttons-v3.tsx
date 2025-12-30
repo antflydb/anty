@@ -24,11 +24,11 @@ export function ActionButtonsV3({ onButtonClick, isOff, moodsButtonRef }: Action
         <motion.button
           key={button.name}
           ref={button.name === 'moods' ? moodsButtonRef : undefined}
-          whileHover={!isOff ? { scale: 1.05 } : {}}
-          whileTap={!isOff ? { scale: 0.95 } : {}}
-          transition={{ duration: 0.2 }}
+          whileHover={!isOff ? { scale: 1.08 } : {}}
+          whileTap={!isOff ? { scale: 0.92 } : {}}
+          transition={{ duration: 0.15 }}
           onClick={() => onButtonClick(button.name)}
-          className="focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-lg"
+          className="p-2 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 hover:bg-gray-100 active:bg-gray-200 transition-colors duration-150"
           animate={
             isOff
               ? {

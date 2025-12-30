@@ -2,11 +2,24 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Send, Loader2, Key, MoreVertical, MessageSquarePlus, History } from 'lucide-react';
+import { X, Send, Loader2, Key, MoreVertical, MessageSquarePlus, History, Trash2, ChevronLeft } from 'lucide-react';
 import gsap from 'gsap';
 import { AntyChat, type ChatMessage } from '@/lib/chat/openai-client';
 import { mapEmotionToExpression, stripEmotionTags, stripEmotionTagsStreaming } from '@/lib/chat/emotion-mapper';
 import type { EmotionType } from '@/lib/anty-v3/animation/types';
+import {
+  type ChatSession,
+  type ChatMessage as StoredChatMessage,
+  getSessions,
+  getSession,
+  saveSession,
+  deleteSession,
+  createNewSession,
+  getCurrentSessionId,
+  setCurrentSessionId,
+  generateTitle,
+  formatSessionDate,
+} from '@/lib/chat/history';
 
 interface ChatPanelProps {
   isOpen: boolean;
@@ -14,30 +27,25 @@ interface ChatPanelProps {
   onEmotion?: (emotion: EmotionType) => void;
 }
 
-// Session expires after 5 minutes of inactivity
-const SESSION_EXPIRY_MS = 5 * 60 * 1000;
-const STORAGE_KEY_MESSAGES = 'anty-chat-messages';
-const STORAGE_KEY_LAST_ACTIVITY = 'anty-chat-last-activity';
-
-// Serialize messages for storage (convert Date to ISO string)
-function serializeMessages(messages: Message[]): string {
-  return JSON.stringify(messages.map(m => ({
-    ...m,
-    timestamp: m.timestamp.toISOString(),
-  })));
+// Convert between UI Message and stored ChatMessage formats
+function toStoredMessage(msg: Message): StoredChatMessage {
+  return {
+    id: msg.id,
+    role: msg.role,
+    content: msg.content,
+    timestamp: msg.timestamp.toISOString(),
+    emotion: msg.emotion,
+  };
 }
 
-// Deserialize messages from storage (convert ISO string back to Date)
-function deserializeMessages(json: string): Message[] {
-  try {
-    const parsed = JSON.parse(json);
-    return parsed.map((m: any) => ({
-      ...m,
-      timestamp: new Date(m.timestamp),
-    }));
-  } catch {
-    return [];
-  }
+function fromStoredMessage(msg: StoredChatMessage): Message {
+  return {
+    id: msg.id,
+    role: msg.role,
+    content: msg.content,
+    timestamp: new Date(msg.timestamp),
+    emotion: msg.emotion,
+  };
 }
 
 // Random greeting messages for Anty
@@ -77,7 +85,9 @@ export function ChatPanel({ isOpen, onClose, onEmotion }: ChatPanelProps) {
   const [showApiKeyInput, setShowApiKeyInput] = useState(true);
   const [chatClient, setChatClient] = useState<AntyChat | null>(null);
   const [showMenu, setShowMenu] = useState(false);
-  const [hasRestoredSession, setHasRestoredSession] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [sessions, setSessions] = useState<ChatSession[]>([]);
+  const [currentSessionId, setCurrentSessionIdState] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -156,47 +166,50 @@ export function ChatPanel({ isOpen, onClose, onEmotion }: ChatPanelProps) {
     }
   }, []);
 
-  // Load message history from localStorage (check expiry)
+  // Load sessions and current session on mount
   useEffect(() => {
     if (initialLoadDone.current) return;
     initialLoadDone.current = true;
 
-    const lastActivity = localStorage.getItem(STORAGE_KEY_LAST_ACTIVITY);
-    const storedMessages = localStorage.getItem(STORAGE_KEY_MESSAGES);
+    // Load all sessions for history view
+    setSessions(getSessions());
 
-    if (lastActivity && storedMessages) {
-      const lastActivityTime = parseInt(lastActivity, 10);
-      const now = Date.now();
-
-      // Check if session has expired
-      if (now - lastActivityTime < SESSION_EXPIRY_MS) {
-        const restoredMessages = deserializeMessages(storedMessages);
-        if (restoredMessages.length > 0) {
-          setMessages(restoredMessages);
-          setHasRestoredSession(true);
-        }
-      } else {
-        // Session expired, clear storage
-        localStorage.removeItem(STORAGE_KEY_MESSAGES);
-        localStorage.removeItem(STORAGE_KEY_LAST_ACTIVITY);
+    // Try to restore current session
+    const savedSessionId = getCurrentSessionId();
+    if (savedSessionId) {
+      const session = getSession(savedSessionId);
+      if (session && session.messages.length > 0) {
+        setCurrentSessionIdState(savedSessionId);
+        setMessages(session.messages.map(fromStoredMessage));
       }
     }
   }, []);
 
-  // Save messages to localStorage when they change
+  // Save messages to current session when they change
   useEffect(() => {
-    if (messages.length > 0) {
-      localStorage.setItem(STORAGE_KEY_MESSAGES, serializeMessages(messages));
-      localStorage.setItem(STORAGE_KEY_LAST_ACTIVITY, Date.now().toString());
+    if (!currentSessionId || messages.length === 0) return;
+
+    const session = getSession(currentSessionId);
+    if (session) {
+      const updatedSession: ChatSession = {
+        ...session,
+        messages: messages.map(toStoredMessage),
+        title: generateTitle(messages.map(toStoredMessage)),
+        updatedAt: new Date().toISOString(),
+      };
+      saveSession(updatedSession);
+      setSessions(getSessions()); // Refresh sessions list
     }
-  }, [messages]);
+  }, [messages, currentSessionId]);
 
-  // Add greeting when panel opens (if no messages yet, no restored session, and API key exists)
+  // Add greeting when panel opens with no session
   useEffect(() => {
-    if (isOpen && !showApiKeyInput && messages.length === 0 && !hasRestoredSession) {
-      // Show loading state briefly
-      setIsLoading(true);
+    if (isOpen && !showApiKeyInput && messages.length === 0 && !currentSessionId) {
+      // Create a new session and show greeting
+      const newSession = createNewSession();
+      setCurrentSessionIdState(newSession.id);
 
+      setIsLoading(true);
       const timer = setTimeout(() => {
         const randomGreeting = ANTY_GREETINGS[Math.floor(Math.random() * ANTY_GREETINGS.length)];
         const greetingMessage: Message = {
@@ -207,11 +220,11 @@ export function ChatPanel({ isOpen, onClose, onEmotion }: ChatPanelProps) {
         };
         setMessages([greetingMessage]);
         setIsLoading(false);
-      }, 400 + Math.random() * 300); // 400-700ms delay
+      }, 400 + Math.random() * 300);
 
       return () => clearTimeout(timer);
     }
-  }, [isOpen, showApiKeyInput, hasRestoredSession]);
+  }, [isOpen, showApiKeyInput, currentSessionId, messages.length]);
 
   // Rotating gradient border animation
   useEffect(() => {
@@ -428,22 +441,23 @@ export function ChatPanel({ isOpen, onClose, onEmotion }: ChatPanelProps) {
 
   const handleClearApiKey = () => {
     localStorage.removeItem('anty-chat-api-key');
-    localStorage.removeItem(STORAGE_KEY_MESSAGES);
-    localStorage.removeItem(STORAGE_KEY_LAST_ACTIVITY);
     setApiKey('');
     setChatClient(null);
     setShowApiKeyInput(true);
     setMessages([]);
-    setHasRestoredSession(false);
+    setCurrentSessionIdState(null);
     setShowMenu(false);
+    setShowHistory(false);
   };
 
   const handleNewChat = () => {
-    localStorage.removeItem(STORAGE_KEY_MESSAGES);
-    localStorage.removeItem(STORAGE_KEY_LAST_ACTIVITY);
+    // Create a new session
+    const newSession = createNewSession();
+    setCurrentSessionIdState(newSession.id);
     setMessages([]);
-    setHasRestoredSession(false);
     setShowMenu(false);
+    setShowHistory(false);
+    setSessions(getSessions());
 
     // Show new greeting after a brief delay
     setIsLoading(true);
@@ -458,6 +472,28 @@ export function ChatPanel({ isOpen, onClose, onEmotion }: ChatPanelProps) {
       setMessages([greetingMessage]);
       setIsLoading(false);
     }, 400 + Math.random() * 300);
+  };
+
+  const handleSelectSession = (sessionId: string) => {
+    const session = getSession(sessionId);
+    if (session) {
+      setCurrentSessionIdState(sessionId);
+      setCurrentSessionId(sessionId);
+      setMessages(session.messages.map(fromStoredMessage));
+      setShowHistory(false);
+    }
+  };
+
+  const handleDeleteSession = (sessionId: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Don't trigger select
+    deleteSession(sessionId);
+    setSessions(getSessions());
+
+    // If we deleted the current session, clear it
+    if (sessionId === currentSessionId) {
+      setCurrentSessionIdState(null);
+      setMessages([]);
+    }
   };
 
   const toggleDebugInfo = (messageId: string) => {
@@ -485,9 +521,19 @@ export function ChatPanel({ isOpen, onClose, onEmotion }: ChatPanelProps) {
           >
             {/* Header */}
             <div className="flex items-center justify-between p-4">
-              <h2 className="text-lg font-semibold text-gray-900 pl-2">Anty Chat</h2>
+              {showHistory ? (
+                <button
+                  onClick={() => setShowHistory(false)}
+                  className="flex items-center gap-1 text-gray-600 hover:text-gray-900 transition-colors pl-1"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                  <span className="text-lg font-semibold">History</span>
+                </button>
+              ) : (
+                <h2 className="text-lg font-semibold text-gray-900 pl-2">Anty Chat</h2>
+              )}
               <div className="flex items-center gap-1">
-                {!showApiKeyInput && (
+                {!showApiKeyInput && !showHistory && (
                   <>
                     <button
                       onClick={handleNewChat}
@@ -495,6 +541,16 @@ export function ChatPanel({ isOpen, onClose, onEmotion }: ChatPanelProps) {
                       title="New Chat"
                     >
                       <MessageSquarePlus className="w-5 h-5 text-gray-600" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        setSessions(getSessions()); // Refresh before showing
+                        setShowHistory(true);
+                      }}
+                      className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                      title="Chat History"
+                    >
+                      <History className="w-5 h-5 text-gray-600" />
                     </button>
                     <div className="relative" ref={menuRef}>
                       <button
@@ -567,8 +623,48 @@ export function ChatPanel({ isOpen, onClose, onEmotion }: ChatPanelProps) {
               </div>
             )}
 
+            {/* History View */}
+            {!showApiKeyInput && showHistory && (
+              <div className="flex-1 overflow-y-auto">
+                {sessions.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-full text-gray-400 p-8">
+                    <History className="w-12 h-12 mb-3 opacity-50" />
+                    <p className="text-sm">No chat history yet</p>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-gray-100">
+                    {sessions.map((session) => (
+                      <div
+                        key={session.id}
+                        onClick={() => handleSelectSession(session.id)}
+                        className={`flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors ${
+                          session.id === currentSessionId ? 'bg-purple-50' : ''
+                        }`}
+                      >
+                        <div className="flex-1 min-w-0 pr-3">
+                          <p className="text-sm font-medium text-gray-900 truncate">
+                            {session.title}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-0.5">
+                            {formatSessionDate(session.updatedAt)} · {session.messages.length} messages
+                          </p>
+                        </div>
+                        <button
+                          onClick={(e) => handleDeleteSession(session.id, e)}
+                          className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
+                          title="Delete chat"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Messages */}
-            {!showApiKeyInput && (
+            {!showApiKeyInput && !showHistory && (
               <>
                 <div className="flex-1 overflow-y-auto p-4 space-y-4">
                   {messages.map((message) => (

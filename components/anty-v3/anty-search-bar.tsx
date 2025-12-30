@@ -46,7 +46,7 @@ export function AntySearchBar({
   // If bar is tall enough for 2+ lines, top-align; otherwise center
   const singleLineThreshold = 90; // px - anything above this is considered multi-line capable
   const isMultiLineHeight = height > singleLineThreshold;
-  const contentTopPadding = 16; // px - top padding when top-aligned
+  const contentTopPadding = 2; // px - top padding when top-aligned
 
   return (
     <div
