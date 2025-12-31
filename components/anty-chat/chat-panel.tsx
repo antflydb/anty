@@ -96,6 +96,10 @@ export function ChatPanel({ isOpen, onClose, onEmotion }: ChatPanelProps) {
   const borderTweenRef = useRef<gsap.core.Tween | null>(null);
   const initialLoadDone = useRef(false);
   const greetingInitiated = useRef(false);
+  const inactivityTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const lastActivityRef = useRef<number>(Date.now());
+
+  const INACTIVITY_TIMEOUT = 5 * 60 * 1000; // 5 minutes
 
   // Auto-scroll to bottom when new messages arrive or panel opens
   useEffect(() => {
@@ -287,6 +291,54 @@ export function ChatPanel({ isOpen, onClose, onEmotion }: ChatPanelProps) {
     };
   }, [isOpen, onClose]);
 
+  // Inactivity timer - reset chat after 5 minutes of no user messages
+  useEffect(() => {
+    // Only run when panel is open and we have a session with user messages
+    const hasUserMessages = messages.some(m => m.role === 'user');
+    if (!isOpen || !currentSessionId || !hasUserMessages || showApiKeyInput) {
+      return;
+    }
+
+    const checkInactivity = () => {
+      const now = Date.now();
+      const timeSinceLastActivity = now - lastActivityRef.current;
+
+      if (timeSinceLastActivity >= INACTIVITY_TIMEOUT) {
+        // Save current session (already saved via messages effect) and start new chat
+        const newSession = createNewSession();
+        setCurrentSessionIdState(newSession.id);
+        setMessages([]);
+        greetingInitiated.current = false;
+        setSessions(getSessions());
+
+        // Show new greeting
+        setIsLoading(true);
+        setTimeout(() => {
+          const randomGreeting = ANTY_GREETINGS[Math.floor(Math.random() * ANTY_GREETINGS.length)];
+          const greetingMessage: Message = {
+            id: Date.now().toString(),
+            role: 'assistant',
+            content: randomGreeting,
+            timestamp: new Date(),
+          };
+          setMessages([greetingMessage]);
+          setIsLoading(false);
+          lastActivityRef.current = Date.now();
+        }, 400 + Math.random() * 300);
+      }
+    };
+
+    // Check every 30 seconds
+    inactivityTimerRef.current = setInterval(checkInactivity, 30000);
+
+    return () => {
+      if (inactivityTimerRef.current) {
+        clearInterval(inactivityTimerRef.current);
+        inactivityTimerRef.current = null;
+      }
+    };
+  }, [isOpen, currentSessionId, messages, showApiKeyInput]);
+
   const handleSetApiKey = () => {
     if (!apiKey.trim()) return;
     localStorage.setItem('anty-chat-api-key', apiKey);
@@ -316,6 +368,9 @@ export function ChatPanel({ isOpen, onClose, onEmotion }: ChatPanelProps) {
 
   const handleSend = async () => {
     if (!input.trim() || !chatClient || isLoading) return;
+
+    // Reset inactivity timer
+    lastActivityRef.current = Date.now();
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -495,6 +550,8 @@ export function ChatPanel({ isOpen, onClose, onEmotion }: ChatPanelProps) {
       setCurrentSessionId(sessionId);
       setMessages(session.messages.map(fromStoredMessage));
       setShowHistory(false);
+      // Reset inactivity timer when loading a session
+      lastActivityRef.current = Date.now();
     }
   };
 
