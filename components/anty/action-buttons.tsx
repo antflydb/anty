@@ -14,7 +14,6 @@ const buttons: Array<{ name: ButtonName; svg: string; alt: string }> = [
   { name: 'chat', svg: '/button-chat.svg', alt: 'Chat' },
   { name: 'moods', svg: '/button-moods.svg', alt: 'Moods' },
   { name: 'feed', svg: '/button-eat.svg', alt: 'Eat' },
-  { name: 'play', svg: '/button-play.svg', alt: 'Play' },
 ];
 
 export function ActionButtons({ onButtonClick, isOff, moodsButtonRef }: ActionButtonsProps) {
