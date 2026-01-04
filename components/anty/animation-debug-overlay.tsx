@@ -31,6 +31,8 @@ interface AnimationDebugOverlayProps {
   outerGlowRef?: React.RefObject<HTMLDivElement | null>;
   currentSequence?: string;
   randomAction?: string;
+  /** Optional ref to AntyCharacter handle - if provided, uses inner character ref for accurate tracking */
+  antyHandle?: { characterRef?: React.RefObject<HTMLDivElement | null> } | null;
 }
 
 export function AnimationDebugOverlay({
@@ -40,6 +42,7 @@ export function AnimationDebugOverlay({
   outerGlowRef,
   currentSequence = 'IDLE',
   randomAction = '',
+  antyHandle,
 }: AnimationDebugOverlayProps) {
   const [debugData, setDebugData] = useState<AnimationDebugData>({
     rotation: 0,
@@ -712,11 +715,21 @@ export function AnimationDebugOverlay({
         return;
       }
 
-      // Find the actual character element that gets animated (has class "relative w-full h-full")
-      const actualCharacter = characterRef.current.querySelector('.relative.w-full.h-full') as HTMLElement;
+      // Find the actual character element that gets animated
+      // Priority 1: Use antyHandle's characterRef if available (most accurate - the inner animated div)
+      let actualCharacter: HTMLElement | null = antyHandle?.characterRef?.current || null;
+
       if (!actualCharacter) {
-        animationFrameId = requestAnimationFrame(updateDebugData);
-        return;
+        // Priority 2: Try the new inline-styles structure (div with position: relative, width/height: 100%)
+        actualCharacter = characterRef.current.querySelector('[style*="position: relative"][style*="width: 100%"]') as HTMLElement;
+      }
+      if (!actualCharacter) {
+        // Priority 3: Fall back to old Tailwind selector
+        actualCharacter = characterRef.current.querySelector('.relative.w-full.h-full') as HTMLElement;
+      }
+      if (!actualCharacter) {
+        // Last resort: use the characterRef itself if it's the animated element
+        actualCharacter = characterRef.current;
       }
 
       const characterStyle = window.getComputedStyle(actualCharacter);
@@ -856,7 +869,7 @@ export function AnimationDebugOverlay({
         cancelAnimationFrame(animationFrameId);
       }
     };
-  }, [characterRef, shadowRef, innerGlowRef, outerGlowRef, currentSequence, lastY, showPositionTracker]);
+  }, [characterRef, shadowRef, innerGlowRef, outerGlowRef, currentSequence, lastY, showPositionTracker, antyHandle]);
 
   // Alert styling by type
   const getAlertStyle = (type: DebugAlert['type']) => {

@@ -1,8 +1,7 @@
-export { AntyCharacter, type AntyCharacterHandle } from './anty-character';
+// Playground-specific UI components (not part of @searchaf/anty-embed)
+// For the main AntyCharacter component, import from '@searchaf/anty-embed'
 export { ActionButtons } from './action-buttons';
 export { HeartMeter, type EarnedHeart } from './heart-meter';
-export { AntyExpressionLayer } from './anty-expression-layer';
-export { AntyParticleCanvas, type ParticleCanvasHandle } from './anty-particle-canvas';
 export { ExpressionMenu } from './expression-menu';
 export { PowerButton } from './power-button';
 export { FlappyGame } from './flappy-game';
