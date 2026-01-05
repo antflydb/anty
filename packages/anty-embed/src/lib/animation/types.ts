@@ -1,11 +1,12 @@
 /**
  * Animation System Types
  *
- * Type definitions for the Anty V3 animation system.
+ * Type definitions for the Anty animation system.
  * Provides strict typing for animation states, emotions, and configurations.
  */
 
 import type gsap from 'gsap';
+import type { EyeShapeName } from './definitions/eye-shapes';
 
 /**
  * Animation state machine states
@@ -581,8 +582,6 @@ export function isSearchMode(value: string): value is SearchMode {
 // Emotion Configuration Types (declarative system)
 // ============================================================================
 
-import type { EyeShapeName } from './definitions/eye-shapes';
-
 /**
  * Eye configuration for an emotion
  */
@@ -758,3 +757,6 @@ export const DEFAULT_SEARCH_BAR_CONFIG: SearchBarConfig = {
   bracketScale: 0.14,
   borderWidth: 2.75,
 };
+
+// Re-export EyeShapeName for convenience
+export type { EyeShapeName };

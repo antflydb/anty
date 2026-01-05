@@ -1,4 +1,4 @@
-import type { EmotionType } from '../anty/animation/types';
+import type { EmotionType } from '@searchaf/anty-embed';
 
 /**
  * Maps emotion tags from chat responses to Anty's emotion types

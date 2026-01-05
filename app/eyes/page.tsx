@@ -1,4 +1,6 @@
-import { EYE_SHAPES, EYE_DIMENSIONS } from '@/lib/anty/animation/definitions/eye-shapes';
+'use client';
+
+import { EYE_SHAPES, EYE_DIMENSIONS } from '@searchaf/anty-embed';
 
 export default function EyesPage() {
   const eyeShapes = Object.keys(EYE_SHAPES) as Array<keyof typeof EYE_SHAPES>;

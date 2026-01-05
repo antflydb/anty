@@ -2,7 +2,7 @@
 
 import { useRef, useEffect, forwardRef, useImperativeHandle, useState } from 'react';
 import gsap from 'gsap';
-import { type Particle, type ParticleType, PARTICLE_CONFIGS } from '@/lib/anty/particles';
+import { type Particle, type ParticleType, PARTICLE_CONFIGS } from '../lib/particles';
 
 interface AntyParticleCanvasProps {
   particles: Particle[];
@@ -17,7 +17,7 @@ export interface ParticleCanvasHandle {
 }
 
 /**
- * Canvas-based particle system for Anty V3
+ * Canvas-based particle system for Anty
  * Uses GSAP ticker for 60fps rendering
  */
 export const AntyParticleCanvas = forwardRef<ParticleCanvasHandle, AntyParticleCanvasProps>(
@@ -46,7 +46,7 @@ export const AntyParticleCanvas = forwardRef<ParticleCanvasHandle, AntyParticleC
           vy: gsap.utils.random(config.initialVelocity.y.min, config.initialVelocity.y.max),
           scale: gsap.utils.random(config.initialScale.min, config.initialScale.max),
           rotation: 0,
-          rotationSpeed: gsap.utils.random(config.rotationSpeed.min, config.rotationSpeed.max), // Performance: calc once at creation
+          rotationSpeed: gsap.utils.random(config.rotationSpeed.min, config.rotationSpeed.max),
           opacity: 1,
           life: 1,
           color: color || getParticleColor(type),
@@ -87,7 +87,6 @@ export const AntyParticleCanvas = forwardRef<ParticleCanvasHandle, AntyParticleC
         if (searchGlowActive) {
           const centerX = width / 2;
           const centerY = height / 2;
-          // Create large elliptical glow to cover search bar (642×70px)
           const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, 500);
           gradient.addColorStop(0, 'rgba(229, 237, 255, 0.5)');
           gradient.addColorStop(0.4, 'rgba(229, 237, 255, 0.3)');
@@ -98,9 +97,8 @@ export const AntyParticleCanvas = forwardRef<ParticleCanvasHandle, AntyParticleC
         }
 
         // Update and draw particles
-        const dt = deltaTime / 1000; // Convert to seconds
+        const dt = deltaTime / 1000;
 
-        // Memory leak fix: Replace map/filter with efficient for-loop
         const alive: Particle[] = [];
 
         for (let i = 0; i < particlesRef.current.length; i++) {
@@ -112,25 +110,24 @@ export const AntyParticleCanvas = forwardRef<ParticleCanvasHandle, AntyParticleC
         }
         particlesRef.current = alive;
 
-        // Diagnostic logging when particle count is high (no limits yet)
         if (particlesRef.current.length > 150) {
           console.warn(`[PARTICLES] High particle count: ${particlesRef.current.length}`);
         }
       };
 
-      // Add to GSAP ticker for 60fps updates
       gsap.ticker.add(updateParticles);
 
       return () => {
         gsap.ticker.remove(updateParticles);
       };
-    }, [width, height]);
+    }, [width, height, searchGlowActive]);
 
     return (
       <canvas
         ref={canvasRef}
-        className="absolute pointer-events-none"
         style={{
+          position: 'absolute',
+          pointerEvents: 'none',
           width,
           height,
           left: '50%',
@@ -150,21 +147,13 @@ AntyParticleCanvas.displayName = 'AntyParticleCanvas';
 function updateParticle(particle: Particle, dt: number): Particle {
   const config = PARTICLE_CONFIGS[particle.type];
 
-  // Update velocity with gravity
   const newVy = particle.vy + config.gravity * dt;
-
-  // Update position
   const newX = particle.x + particle.vx * dt;
   const newY = particle.y + particle.vy * dt;
-
-  // Update rotation using stored rotationSpeed (performance: no recalc per frame)
   const newRotation = particle.rotation + particle.rotationSpeed * dt;
-
-  // Update life (decreases based on lifetime)
   const lifeDecay = dt / config.lifetime;
   const newLife = Math.max(0, particle.life - lifeDecay);
 
-  // Update opacity (fade out near end of life)
   let newOpacity = particle.opacity;
   if (newLife < config.fadeStart) {
     newOpacity = newLife / config.fadeStart;
@@ -184,18 +173,16 @@ function updateParticle(particle: Particle, dt: number): Particle {
 }
 
 /**
- * Draw particle on canvas (placeholder shapes for now)
+ * Draw particle on canvas
  */
 function drawParticle(ctx: CanvasRenderingContext2D, particle: Particle) {
   ctx.save();
 
-  // Apply transforms
   ctx.translate(particle.x, particle.y);
   ctx.rotate((particle.rotation * Math.PI) / 180);
   ctx.scale(particle.scale, particle.scale);
   ctx.globalAlpha = particle.opacity;
 
-  // Draw based on particle type (placeholder circles for now)
   ctx.fillStyle = particle.color || '#ff0000';
 
   switch (particle.type) {
@@ -219,9 +206,6 @@ function drawParticle(ctx: CanvasRenderingContext2D, particle: Particle) {
   ctx.restore();
 }
 
-/**
- * Placeholder shape renderers (will be replaced with SVG assets later)
- */
 function drawCircle(ctx: CanvasRenderingContext2D, radius: number, color: string) {
   ctx.fillStyle = color;
   ctx.beginPath();
@@ -230,7 +214,6 @@ function drawCircle(ctx: CanvasRenderingContext2D, radius: number, color: string
 }
 
 function drawHeart(ctx: CanvasRenderingContext2D) {
-  // Simple heart shape
   ctx.fillStyle = '#ff69b4';
   ctx.beginPath();
   ctx.arc(-5, -5, 5, 0, Math.PI * 2);
@@ -241,7 +224,6 @@ function drawHeart(ctx: CanvasRenderingContext2D) {
 }
 
 function drawSparkle(ctx: CanvasRenderingContext2D) {
-  // Star shape - uses fillStyle already set by drawParticle
   ctx.beginPath();
   for (let i = 0; i < 4; i++) {
     const angle = (i * Math.PI) / 2;
@@ -255,7 +237,6 @@ function drawSparkle(ctx: CanvasRenderingContext2D) {
 }
 
 function drawZzz(ctx: CanvasRenderingContext2D) {
-  // Simple Z letter
   ctx.fillStyle = '#9370db';
   ctx.font = 'bold 16px sans-serif';
   ctx.textAlign = 'center';
@@ -264,17 +245,13 @@ function drawZzz(ctx: CanvasRenderingContext2D) {
 }
 
 function drawConfetti(ctx: CanvasRenderingContext2D, particle: Particle) {
-  // Draw colorful rectangles/squares
   ctx.fillStyle = particle.color || '#ffd700';
 
-  // Alternate between rectangle and square based on particle ID
   const isSquare = particle.id.charCodeAt(0) % 2 === 0;
 
   if (isSquare) {
-    // Square confetti
     ctx.fillRect(-6, -6, 12, 12);
   } else {
-    // Rectangular confetti
     ctx.fillRect(-8, -4, 16, 8);
   }
 }
@@ -290,7 +267,6 @@ function getParticleColor(type: ParticleType): string {
     case 'zzz':
       return '#9370db';
     case 'confetti':
-      // Random from celebration palette
       const colors = ['#FF6B9D', '#4ECDC4', '#95E1D3', '#F38181', '#AA96DA',
                       '#FCBAD3', '#FFE66D', '#A8DADC', '#F1C40F', '#3498DB'];
       return colors[Math.floor(Math.random() * colors.length)];

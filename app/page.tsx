@@ -2,16 +2,16 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import gsap from 'gsap';
-import { AntyCharacter, ActionButtons, HeartMeter, ExpressionMenu, PowerButton, FlappyGame, FPSMeter, type ButtonName, type AntyCharacterHandle, type EarnedHeart } from '@/components/anty';
+// Import Anty from the package (source of truth)
+import { AntyCharacter, type AntyCharacterHandle, type EmotionType, DEFAULT_SEARCH_BAR_CONFIG, ENABLE_ANIMATION_DEBUG_LOGS } from '@searchaf/anty-embed';
+// Playground-specific components (not part of the package)
+import { ActionButtons, HeartMeter, ExpressionMenu, PowerButton, FlappyGame, FPSMeter, type ButtonName, type EarnedHeart } from '@/components/anty';
 import { AntySearchBar } from '@/components/anty/anty-search-bar';
 import { AnimationDebugOverlay } from '@/components/anty/animation-debug-overlay';
 import { EyeDebugBoxes } from '@/components/anty/eye-debug-boxes';
 import { SearchBarDemoMenu, getStoredSearchBarConfig } from '@/components/anty/search-bar-demo-menu';
 import { ChatPanel } from '@/components/anty-chat';
-import type { EmotionType } from '@/lib/anty/animation/types';
-import { DEFAULT_SEARCH_BAR_CONFIG } from '@/lib/anty/animation/types';
 import type { AntyStats } from '@/lib/anty/stat-system';
-import { ENABLE_ANIMATION_DEBUG_LOGS } from '@/lib/anty/animation/feature-flags';
 
 // Chat panel layout constants
 const CHAT_PANEL_WIDTH = 384;
@@ -59,10 +59,11 @@ export default function Anty() {
   const heartsHideTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const characterRef = useRef<HTMLDivElement>(null);
-  const glowRef = useRef<HTMLDivElement>(null);
-  const innerGlowRef = useRef<HTMLDivElement>(null);
-  const shadowRef = useRef<HTMLDivElement>(null);
   const antyRef = useRef<AntyCharacterHandle>(null);
+  // External shadow and glow refs for playground (character component will use these instead of internal)
+  const shadowRef = useRef<HTMLDivElement>(null);
+  const innerGlowRef = useRef<HTMLDivElement>(null);
+  const glowRef = useRef<HTMLDivElement>(null);
   const moodsButtonRef = useRef<HTMLButtonElement>(null);
   const heartTimersRef = useRef<Map<number, NodeJS.Timeout>>(new Map());
   const superModeTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -133,9 +134,9 @@ export default function Anty() {
     let animationFrameId: number;
 
     const updateDebugBoxes = () => {
-      const shadow = shadowRef.current;
-      const innerGlow = innerGlowRef.current;
-      const outerGlow = glowRef.current;
+      const shadow = antyRef.current?.shadowRef?.current;
+      const innerGlow = antyRef.current?.innerGlowRef?.current;
+      const outerGlow = antyRef.current?.outerGlowRef?.current;
 
       const shadowDebug = document.getElementById('debug-shadow');
       const innerGlowDebug = document.getElementById('debug-inner-glow');
@@ -519,7 +520,7 @@ export default function Anty() {
         antyRef.current?.setSuperMode?.(null);
 
         // Animate scale back to normal, THEN restart idle
-        const characterElement = document.querySelector('[class*="character"]') as HTMLElement;
+        const characterElement = antyRef.current?.characterRef?.current;
         if (characterElement) {
           gsap.to(characterElement, {
             scale: 1,
@@ -645,7 +646,7 @@ export default function Anty() {
 
     // 2. Fade out UI and character
     tl.to(
-      ['.heart-meter', '.expression-menu', characterElement, '.inner-glow', glowRef.current],
+      ['.heart-meter', '.expression-menu', characterElement, '.inner-glow', antyRef.current?.outerGlowRef?.current].filter(Boolean),
       {
         opacity: 0,
         duration: 0.25,
@@ -740,11 +741,11 @@ export default function Anty() {
     const characterElement = characterRef.current;
     if (!characterElement) return;
 
-    const shadow = shadowRef.current;
+    const shadow = antyRef.current?.shadowRef?.current;
 
     // Kill any existing animations and timers
     // NOTE: Don't kill glow tweens - GlowSystem manages glow animations
-    gsap.killTweensOf([characterElement, shadow]);
+    gsap.killTweensOf([characterElement, shadow].filter(Boolean));
     if (antyRef.current?.leftBodyRef?.current) {
       gsap.killTweensOf(antyRef.current.leftBodyRef.current);
       gsap.set(antyRef.current.leftBodyRef.current, { x: 0, y: 0 });
@@ -855,9 +856,9 @@ export default function Anty() {
     const leftEye = antyRef.current?.leftEyeRef?.current;
     const rightEye = antyRef.current?.rightEyeRef?.current;
     const searchBar = searchBarRef.current;
-    const shadow = shadowRef.current;
-    const innerGlow = innerGlowRef.current;
-    const outerGlow = glowRef.current;
+    const shadow = antyRef.current?.shadowRef?.current;
+    const innerGlow = antyRef.current?.innerGlowRef?.current;
+    const outerGlow = antyRef.current?.outerGlowRef?.current;
 
     if (ENABLE_ANIMATION_DEBUG_LOGS) {
       console.log('[SEARCH] Elements:', {
@@ -1178,9 +1179,9 @@ export default function Anty() {
     const rightEye = antyRef.current?.rightEyeRef?.current;
     const searchBar = searchBarRef.current;
     const searchBorder = searchBorderRef.current;
-    const shadow = shadowRef.current;
-    const innerGlow = innerGlowRef.current;
-    const outerGlow = glowRef.current;
+    const shadow = antyRef.current?.shadowRef?.current;
+    const innerGlow = antyRef.current?.innerGlowRef?.current;
+    const outerGlow = antyRef.current?.outerGlowRef?.current;
 
     if (!leftBody || !rightBody || !searchBar) return;
 
@@ -1591,14 +1592,16 @@ export default function Anty() {
               >
                 <AntyCharacter
                   ref={antyRef}
-                  stats={stats}
                   expression={expression}
                   isSuperMode={isSuperMode}
                   searchMode={searchActive}
                   debugMode={debugMode}
+                  // Playground renders shadow/glow externally for morph animation control
+                  showShadow={false}
+                  showGlow={false}
+                  shadowRef={shadowRef}
                   innerGlowRef={innerGlowRef}
                   outerGlowRef={glowRef}
-                  shadowRef={shadowRef}
                   onAnimationSequenceChange={(sequence) => {
                     setCurrentAnimationSequence(sequence);
                   }}
@@ -1762,6 +1765,7 @@ export default function Anty() {
           outerGlowRef={glowRef}
           currentSequence={currentAnimationSequence}
           randomAction={lastRandomAction}
+          antyHandle={antyRef.current}
         />
       )}
 

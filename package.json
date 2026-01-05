@@ -11,6 +11,7 @@
     "generate-api-docs": "node scripts/generate-api-docs.js"
   },
   "dependencies": {
+    "@searchaf/anty-embed": "file:./packages/anty-embed",
     "@gsap/react": "^2.1.2",
     "@hookform/resolvers": "^5.2.2",
     "@mdx-js/loader": "^3.1.1",

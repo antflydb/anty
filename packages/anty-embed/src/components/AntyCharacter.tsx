@@ -3,90 +3,304 @@
 import { useRef, useState, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
-import { type ButtonName } from '@/lib/anty/ui-types';
-import { type Particle } from '@/lib/anty/particles';
-import { type AntyStats } from '@/lib/anty/stat-system';
-import { AntyExpressionLayer } from './anty-expression-layer';
-import { AntyParticleCanvas, type ParticleCanvasHandle } from './anty-particle-canvas';
-import { useAnimationController } from '@/lib/anty/animation/use-animation-controller';
-import { type EmotionType, type ExpressionName } from '@/lib/anty/animation/types';
+import { AntyParticleCanvas, type ParticleCanvasHandle } from './AntyParticleCanvas';
+import { useAnimationController } from '../hooks/use-animation-controller';
+import { type EmotionType, type ExpressionName } from '../lib/animation/types';
+import { type Particle } from '../lib/particles';
 import {
   ENABLE_ANIMATION_DEBUG_LOGS,
   logAnimationEvent,
-} from '@/lib/anty/animation/feature-flags';
-import { getEyeShape, getEyeDimensions } from '@/lib/anty/animation/definitions/eye-shapes';
-import { createLookAnimation, createReturnFromLookAnimation } from '@/lib/anty/animation/definitions/eye-animations';
+} from '../lib/animation/feature-flags';
+import { getEyeShape, getEyeDimensions } from '../lib/animation/definitions/eye-shapes';
+import { createLookAnimation, createReturnFromLookAnimation } from '../lib/animation/definitions/eye-animations';
 
 gsap.registerPlugin(useGSAP);
 
-interface AntyCharacterProps {
-  stats: AntyStats;
+// ============================================================================
+// Types
+// ============================================================================
+
+export interface AntyCharacterProps {
+  /** Current expression/emotion to display */
   expression?: ExpressionName;
-  onButtonClick?: (button: ButtonName) => void;
-  onSpontaneousExpression?: (expression: ExpressionName) => void;
-  onEmotionComplete?: (emotion: string) => void;
-  className?: string;
+  /** Character size in pixels (default: 160) */
   size?: number;
+  /** Whether super mode is active */
   isSuperMode?: boolean;
+  /** Whether search mode is active */
   searchMode?: boolean;
+  /** Whether to show debug overlays */
   debugMode?: boolean;
+  /** Whether to show shadow (default: true) */
+  showShadow?: boolean;
+  /** Whether to show glow effects (default: true) */
+  showGlow?: boolean;
+  /** Callback when a spontaneous expression occurs */
+  onSpontaneousExpression?: (expression: ExpressionName) => void;
+  /** Callback when an emotion animation completes */
+  onEmotionComplete?: (emotion: string) => void;
+  /** Callback when animation sequence changes (for debugging) */
   onAnimationSequenceChange?: (sequence: string) => void;
+  /** Callback for random actions (for debugging) */
   onRandomAction?: (action: string) => void;
-  /** Ref for inner glow element (for portable animations) */
-  innerGlowRef?: React.RefObject<HTMLDivElement | null>;
-  /** Ref for outer glow element (for portable animations) */
-  outerGlowRef?: React.RefObject<HTMLDivElement | null>;
-  /** Ref for shadow element (for portable animations) */
+  /** Additional CSS class name */
+  className?: string;
+  /** Additional inline styles */
+  style?: React.CSSProperties;
+  // Optional external refs (for playground/advanced usage where shadow/glow are external)
+  /** External ref for shadow element (if managing shadow externally) */
   shadowRef?: React.RefObject<HTMLDivElement | null>;
+  /** External ref for inner glow element (if managing glow externally) */
+  innerGlowRef?: React.RefObject<HTMLDivElement | null>;
+  /** External ref for outer glow element (if managing glow externally) */
+  outerGlowRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 export interface AntyCharacterHandle {
+  // Particle effects
   spawnFeedingParticles: () => void;
   spawnSparkle?: (x: number, y: number, color?: string) => void;
   spawnLoveHearts?: () => void;
   spawnConfetti?: (x: number, y: number, count?: number) => void;
+  // Search glow
   showSearchGlow?: () => void;
   hideSearchGlow?: () => void;
+  // Emotion control
   playEmotion?: (emotion: ExpressionName, options?: { isChatOpen?: boolean; showLightbulb?: boolean; quickDescent?: boolean }) => boolean;
   killAll?: () => void;
   pauseIdle?: () => void;
   resumeIdle?: () => void;
+  // Eye control (for hold-style keyboard look)
   startLook?: (direction: 'left' | 'right') => void;
   endLook?: () => void;
+  // Super mode
   setSuperMode?: (scale: number | null) => void;
+  // Glow control
   showGlows?: (fadeIn?: boolean) => void;
   hideGlows?: () => void;
+  // Refs for external animation (search morph)
   leftBodyRef?: React.RefObject<HTMLDivElement | null>;
   rightBodyRef?: React.RefObject<HTMLDivElement | null>;
   leftEyeRef?: React.RefObject<HTMLDivElement | null>;
   rightEyeRef?: React.RefObject<HTMLDivElement | null>;
   leftEyePathRef?: React.RefObject<SVGPathElement | null>;
   rightEyePathRef?: React.RefObject<SVGPathElement | null>;
+  // Internal element refs for morph animations
+  shadowRef?: React.RefObject<HTMLDivElement | null>;
+  innerGlowRef?: React.RefObject<HTMLDivElement | null>;
+  outerGlowRef?: React.RefObject<HTMLDivElement | null>;
+  characterRef?: React.RefObject<HTMLDivElement | null>;
 }
+
+// ============================================================================
+// Inline Style Helpers (replacing Tailwind)
+// ============================================================================
+
+const styles = {
+  // Container: relative positioning with visible overflow
+  container: (size: number): React.CSSProperties => ({
+    position: 'relative',
+    width: size,
+    height: size,
+    overflow: 'visible',
+  }),
+
+  // Full container wrapper with shadow/glow space
+  fullContainer: (size: number): React.CSSProperties => ({
+    position: 'relative',
+    width: size,
+    height: size * 1.5, // Extra height for shadow
+    overflow: 'visible',
+  }),
+
+  // Character wrapper
+  character: {
+    position: 'relative' as const,
+    width: '100%',
+    height: '100%',
+    willChange: 'transform',
+    overflow: 'visible' as const,
+  },
+
+  // Super mode golden glow
+  superGlow: {
+    position: 'absolute' as const,
+    left: '50%',
+    top: '50%',
+    transform: 'translate(-50%, -50%)',
+    pointerEvents: 'none' as const,
+    width: '200px',
+    height: '200px',
+    borderRadius: '50%',
+    background: 'radial-gradient(circle, rgba(255, 215, 0, 0.6) 0%, rgba(255, 165, 0, 0.4) 50%, rgba(255, 215, 0, 0) 100%)',
+    filter: 'blur(20px)',
+    zIndex: 0,
+  },
+
+  // Body parts - using inset percentages from Figma
+  rightBody: {
+    position: 'absolute' as const,
+    top: '13.46%',
+    right: '0',
+    bottom: '0',
+    left: '13.46%',
+  },
+
+  leftBody: {
+    position: 'absolute' as const,
+    top: '0',
+    right: '13.15%',
+    bottom: '13.15%',
+    left: '0',
+  },
+
+  bodyImage: {
+    display: 'block',
+    maxWidth: 'none',
+    width: '100%',
+    height: '100%',
+  },
+
+  // Eye containers - using inset percentages from Figma
+  leftEyeContainer: {
+    position: 'absolute' as const,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    top: '33.44%',
+    right: '56.93%',
+    bottom: '38.44%',
+    left: '30.57%',
+  },
+
+  rightEyeContainer: {
+    position: 'absolute' as const,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    top: '33.44%',
+    right: '31.21%',
+    bottom: '38.44%',
+    left: '56.29%',
+  },
+
+  eyeWrapper: (width: number, height: number): React.CSSProperties => ({
+    flexShrink: 0,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+    width: `${width}px`,
+    height: `${height}px`,
+    transformOrigin: 'center center',
+  }),
+
+  // Inner glow (behind character)
+  innerGlow: {
+    position: 'absolute' as const,
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    top: '80px',
+    width: '120px',
+    height: '90px',
+    borderRadius: '50%',
+    opacity: 1,
+    background: 'linear-gradient(90deg, #C5D4FF 0%, #E0C5FF 100%)',
+    filter: 'blur(25px)',
+    transformOrigin: 'center center',
+    pointerEvents: 'none' as const,
+  },
+
+  // Outer glow (behind character, larger)
+  outerGlow: {
+    position: 'absolute' as const,
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    top: '80px',
+    width: '170px',
+    height: '130px',
+    borderRadius: '50%',
+    opacity: 1,
+    background: 'linear-gradient(90deg, #D5E2FF 0%, #EED5FF 100%)',
+    filter: 'blur(32px)',
+    transformOrigin: 'center center',
+    pointerEvents: 'none' as const,
+  },
+
+  // Shadow (below character)
+  shadow: {
+    position: 'absolute' as const,
+    left: '50%',
+    transform: 'translateX(-50%) scaleX(1) scaleY(1)',
+    bottom: '0px',
+    width: '160px',
+    height: '40px',
+    background: 'radial-gradient(ellipse, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0) 70%)',
+    filter: 'blur(12px)',
+    borderRadius: '50%',
+    opacity: 0.7,
+    transformOrigin: 'center center',
+    pointerEvents: 'none' as const,
+  },
+
+  // Debug overlays
+  debugBorder: {
+    position: 'absolute' as const,
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    border: '3px solid lime',
+    pointerEvents: 'none' as const,
+    zIndex: 9999,
+  },
+
+  debugCrosshair: (top: string, left: string, color: string, isHorizontal: boolean): React.CSSProperties => ({
+    position: 'absolute',
+    top,
+    left,
+    width: isHorizontal ? '12px' : '2px',
+    height: isHorizontal ? '2px' : '12px',
+    backgroundColor: color,
+    pointerEvents: 'none',
+    zIndex: 9999,
+  }),
+};
+
+// ============================================================================
+// Component
+// ============================================================================
 
 /**
  * Main Anty Character component with GSAP animations
+ *
  * Features:
  * - Continuous idle animations (floating, rotation, breathing)
- * - Expression changes with crossfades
- * - Interactive button responses
+ * - Emotion animations with eye morphing
  * - Canvas-based particle system
+ * - Self-contained shadow and glow effects
+ * - Power on/off animations
  */
 export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>(({
   expression = 'idle',
-  onSpontaneousExpression,
-  onEmotionComplete,
-  className = '',
   size = 160,
   isSuperMode = false,
   searchMode = false,
   debugMode = false,
+  showShadow = true,
+  showGlow = true,
+  onSpontaneousExpression,
+  onEmotionComplete,
   onAnimationSequenceChange,
   onRandomAction,
-  innerGlowRef,
-  outerGlowRef,
-  shadowRef,
+  className = '',
+  style,
+  // Optional external refs (for playground where shadow/glow are rendered externally)
+  shadowRef: externalShadowRef,
+  innerGlowRef: externalInnerGlowRef,
+  outerGlowRef: externalOuterGlowRef,
 }, ref) => {
+  // Refs for DOM elements
   const containerRef = useRef<HTMLDivElement>(null);
   const characterRef = useRef<HTMLDivElement>(null);
   const leftEyeRef = useRef<HTMLDivElement>(null);
@@ -99,13 +313,29 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
   const rightBodyRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<ParticleCanvasHandle>(null);
 
+  // Internal refs for shadow/glow (self-contained, used if external refs not provided)
+  const internalShadowRef = useRef<HTMLDivElement>(null);
+  const internalInnerGlowRef = useRef<HTMLDivElement>(null);
+  const internalOuterGlowRef = useRef<HTMLDivElement>(null);
+
+  // Use external refs if provided, otherwise use internal
+  const shadowRef = externalShadowRef || internalShadowRef;
+  const innerGlowRef = externalInnerGlowRef || internalInnerGlowRef;
+  const outerGlowRef = externalOuterGlowRef || internalOuterGlowRef;
+
+  // Track whether we're using external refs (if so, don't render internal shadow/glow)
+  const hasExternalShadow = !!externalShadowRef;
+  const hasExternalGlow = !!externalInnerGlowRef || !!externalOuterGlowRef;
+
+  // Super mode glow
+  const superGlowRef = useRef<HTMLDivElement>(null);
+  const superGlowTimelineRef = useRef<gsap.core.Timeline | null>(null);
+
+  // State
   const [currentExpression, setCurrentExpression] = useState<ExpressionName>(expression);
   const [particles] = useState<Particle[]>([]);
   const isOff = expression === 'off';
   const initialEyeDimensions = getEyeDimensions('IDLE');
-
-  const superGlowRef = useRef<HTMLDivElement>(null);
-  const superGlowTimelineRef = useRef<gsap.core.Timeline | null>(null);
 
   const [refsReady, setRefsReady] = useState(false);
   useEffect(() => {
@@ -114,11 +344,12 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
     }
   }, [refsReady]);
 
+  // Animation controller
   const animationController = useAnimationController(
     {
       container: containerRef.current,
       character: characterRef.current,
-      shadow: shadowRef?.current,
+      shadow: shadowRef.current,
       eyeLeft: leftEyeRef.current,
       eyeRight: rightEyeRef.current,
       eyeLeftPath: leftEyePathRef.current,
@@ -127,8 +358,8 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
       eyeRightSvg: rightEyeSvgRef.current,
       leftBody: leftBodyRef.current,
       rightBody: rightBodyRef.current,
-      innerGlow: innerGlowRef?.current,
-      outerGlow: outerGlowRef?.current,
+      innerGlow: innerGlowRef.current,
+      outerGlow: outerGlowRef.current,
     },
     {
       enableLogging: ENABLE_ANIMATION_DEBUG_LOGS,
@@ -142,17 +373,15 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
         if (ENABLE_ANIMATION_DEBUG_LOGS) {
           logAnimationEvent('State Change', { from, to });
         }
-        // Update animation sequence for debug overlay
         if (onAnimationSequenceChange) {
           onAnimationSequenceChange(`CONTROLLER: ${from} → ${to}`);
         }
       },
-      onAnimationSequenceChange: onAnimationSequenceChange, // Pass through to controller
+      onAnimationSequenceChange: onAnimationSequenceChange,
       callbacks: {
         onEmotionMotionStart: (emotion) => {
           // Spawn confetti for celebrate animation
           if (emotion === 'celebrate' && canvasRef.current?.spawnParticle) {
-            // Spawn confetti burst near apex (0.35s rise + brief hang)
             setTimeout(() => {
               const count = 40;
               const canvasCenterX = (size * 5) / 2;
@@ -163,14 +392,13 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
                   canvasRef.current?.spawnParticle?.('confetti', canvasCenterX, canvasCenterY - 50);
                 }, i * 10);
               }
-            }, 550); // Near apex (0.18s squat + 0.4s rise)
+            }, 550);
           }
 
           // Spawn yellow sparkles from right eye during wink
           if (emotion === 'wink' && canvasRef.current?.spawnParticle) {
             const canvasCenterX = (size * 5) / 2;
             const canvasCenterY = (size * 5) / 2;
-            // Right eye position (slightly right of center, at eye level)
             const rightEyeX = canvasCenterX + 25;
             const rightEyeY = canvasCenterY - 15;
 
@@ -182,23 +410,21 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
                   'sparkle',
                   spawnX,
                   spawnY,
-                  '#FFD700' // Gold/yellow
+                  '#FFD700'
                 );
               }, 50 + i * 40);
             }
           }
 
           // Spawn lightbulb emoji for idea animation
-          // Timing: leap up 0.25s, hold 0.5s, descend 0.25s (total 1.0s)
           if (emotion === 'idea' && containerRef.current) {
             setTimeout(() => {
               const rect = containerRef.current?.getBoundingClientRect();
               if (!rect) return;
               const lightbulb = document.createElement('div');
               lightbulb.textContent = '💡';
-              // Scale up lightbulb during super mode (48 * 1.45 ≈ 70)
               const bulbSize = isSuperMode ? 70 : 48;
-              const bulbOffset = isSuperMode ? 32 : 22; // Adjust centering for larger size
+              const bulbOffset = isSuperMode ? 32 : 22;
               lightbulb.style.cssText = `
                 position: fixed;
                 left: ${rect.left + rect.width / 2 - bulbOffset}px;
@@ -210,27 +436,21 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
               `;
               document.body.appendChild(lightbulb);
               const bulbTl = gsap.timeline({ onComplete: () => lightbulb.remove() });
-              // Gentle upward drift (slower, longer visible)
               bulbTl.to(lightbulb, { y: -25, duration: 0.9, ease: 'power2.out' }, 0);
-              // Fade in quickly
               bulbTl.to(lightbulb, { opacity: 1, duration: 0.12, ease: 'power2.out' }, 0);
-              // Fade out as he descends
               bulbTl.to(lightbulb, { opacity: 0, duration: 0.3, ease: 'power2.in' }, 0.65);
-            }, 180); // Appear near apex
+            }, 180);
           }
 
           // Spawn teardrop emoji for sad animation
-          // Appears in upper-right quadrant, drifts downward (opposite of lightbulb)
           if (emotion === 'sad' && containerRef.current) {
             setTimeout(() => {
               const rect = containerRef.current?.getBoundingClientRect();
               if (!rect) return;
               const teardrop = document.createElement('div');
               teardrop.textContent = '💧';
-              // Smaller than lightbulb, scale up during super mode
               const dropSize = isSuperMode ? 52 : 36;
               const dropOffset = isSuperMode ? 24 : 16;
-              // Position: upper-right quadrant, horizontal center at inner edge of right side (~65% from center)
               const xOffset = rect.width * 0.35;
               teardrop.style.cssText = `
                 position: fixed;
@@ -243,27 +463,21 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
               `;
               document.body.appendChild(teardrop);
               const dropTl = gsap.timeline({ onComplete: () => teardrop.remove() });
-              // Gentle downward drift (opposite of lightbulb)
               dropTl.to(teardrop, { y: 35, duration: 1.2, ease: 'power2.in' }, 0);
-              // Fade in quickly
               dropTl.to(teardrop, { opacity: 1, duration: 0.15, ease: 'power2.out' }, 0);
-              // Fade out as it falls
               dropTl.to(teardrop, { opacity: 0, duration: 0.4, ease: 'power2.in' }, 0.85);
-            }, 250); // Appear shortly after Anty starts drooping
+            }, 250);
           }
 
           // Spawn exclamation emoji for shocked animation
-          // Appears in upper-right quadrant (like teardrop), drifts upward (like lightbulb)
           if (emotion === 'shocked' && containerRef.current) {
             setTimeout(() => {
               const rect = containerRef.current?.getBoundingClientRect();
               if (!rect) return;
               const exclamation = document.createElement('div');
               exclamation.textContent = '❗';
-              // Same size as lightbulb, scale up during super mode
               const emojiSize = isSuperMode ? 70 : 48;
               const emojiOffset = isSuperMode ? 32 : 22;
-              // Position: upper-right quadrant (like teardrop), but higher
               const xOffset = rect.width * 0.35;
               exclamation.style.cssText = `
                 position: fixed;
@@ -276,24 +490,18 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
               `;
               document.body.appendChild(exclamation);
               const exclamationTl = gsap.timeline({ onComplete: () => exclamation.remove() });
-              // Gentle upward drift (like lightbulb, opposite of teardrop)
               exclamationTl.to(exclamation, { y: -25, duration: 0.9, ease: 'power2.out' }, 0);
-              // Fade in quickly
               exclamationTl.to(exclamation, { opacity: 1, duration: 0.12, ease: 'power2.out' }, 0);
-              // Fade out
               exclamationTl.to(exclamation, { opacity: 0, duration: 0.3, ease: 'power2.in' }, 0.65);
-            }, 180); // Appear near the start of shock reaction
+            }, 180);
           }
         },
         onEmotionMotionComplete: (emotion, timelineId, duration) => {
-          // Eye-only actions (look-left, look-right) are secondary animations like blinks
-          // They shouldn't generate verbose logging
           const isEyeOnlyAction = emotion === 'look-left' || emotion === 'look-right';
 
           if (ENABLE_ANIMATION_DEBUG_LOGS && !isEyeOnlyAction) {
             logAnimationEvent('Emotion Motion Complete', { emotion, timelineId, duration });
           }
-          // Notify parent that emotion animation has completed
           if (onEmotionComplete) {
             onEmotionComplete(emotion);
           }
@@ -302,7 +510,7 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
     }
   );
 
-  // Log controller initialization status
+  // Log controller initialization
   useEffect(() => {
     if (ENABLE_ANIMATION_DEBUG_LOGS) {
       logAnimationEvent('Controller Initialization', {
@@ -310,10 +518,9 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
         currentState: animationController.getState(),
       });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [animationController.isReady]);
 
-  // Log when controller state changes based on props
+  // Log when props change
   useEffect(() => {
     if (!ENABLE_ANIMATION_DEBUG_LOGS) return;
 
@@ -325,10 +532,9 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
       controllerEmotion: animationController.getEmotion(),
       isIdle: animationController.isIdle(),
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [expression, isOff, searchMode]);
 
-  // Expose particle spawning methods and refs to parent
+  // Expose methods and refs to parent
   useImperativeHandle(ref, () => ({
     spawnSparkle: (x: number, y: number, color?: string) => {
       if (canvasRef.current && canvasRef.current.spawnParticle) {
@@ -337,16 +543,18 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
     },
     leftBodyRef,
     rightBodyRef,
+    shadowRef,
+    innerGlowRef,
+    outerGlowRef,
+    characterRef,
     spawnLoveHearts: () => {
       const container = containerRef.current;
       if (!container) return;
 
-      // Get Anty's position on screen
       const containerRect = container.getBoundingClientRect();
       const antyX = containerRect.left + containerRect.width / 2;
       const antyY = containerRect.top + containerRect.height / 2;
 
-      // Spawn 8 purple heart SVGs radiating out
       for (let i = 0; i < 8; i++) {
         setTimeout(() => {
           const heart = document.createElement('div');
@@ -378,17 +586,11 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
 
           document.body.appendChild(heart);
 
-          // Animate heart radiating outward
           const angle = (i / 8) * Math.PI * 2;
           const distance = gsap.utils.random(60, 100);
 
           gsap.fromTo(heart,
-            {
-              x: 0,
-              y: 0,
-              scale: 0.5,
-              opacity: 0,
-            },
+            { x: 0, y: 0, scale: 0.5, opacity: 0 },
             {
               x: Math.cos(angle) * distance,
               y: Math.sin(angle) * distance,
@@ -397,7 +599,6 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
               duration: 0.4,
               ease: 'power2.out',
               onComplete: () => {
-                // Fade out
                 gsap.to(heart, {
                   opacity: 0,
                   scale: 0.3,
@@ -415,52 +616,41 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
       const container = containerRef.current;
       if (!container) return;
 
-      // EPIC EMOJI FOOD IMPLOSION - Flying INTO Anty! 🍰➡️🐜
       const emojiFood = ['🧁', '🍪', '🍩', '🍰', '🎂', '🍬', '🍭', '🍫', '🍓', '🍌', '🍎', '🍊', '⭐', '✨', '💖', '🌟'];
       const particleCount = 60;
 
-      // Create emoji elements starting from outside
       const particles: HTMLDivElement[] = [];
 
       for (let i = 0; i < particleCount; i++) {
         const particle = document.createElement('div');
-        particle.className = 'food-confetti';
         particle.textContent = emojiFood[Math.floor(Math.random() * emojiFood.length)];
-        particle.style.position = 'fixed'; // Fixed to viewport
+        particle.style.position = 'fixed';
         particle.style.fontSize = `${gsap.utils.random(32, 56)}px`;
         particle.style.pointerEvents = 'none';
         particle.style.zIndex = '1000';
 
-        // Start from random position OUTSIDE the viewport
         const angle = (i / particleCount) * Math.PI * 2;
-        const startDistance = gsap.utils.random(400, 800); // Far outside
+        const startDistance = gsap.utils.random(400, 800);
         const startX = window.innerWidth / 2 + Math.cos(angle) * startDistance;
         const startY = window.innerHeight / 2 + Math.sin(angle) * startDistance;
 
         particle.style.left = `${startX}px`;
         particle.style.top = `${startY}px`;
 
-        document.body.appendChild(particle); // Append to body for viewport positioning
+        document.body.appendChild(particle);
         particles.push(particle);
       }
 
-      // Get Anty's position on screen (offset for better visual convergence)
       const containerRect = container.getBoundingClientRect();
-      const antyX = containerRect.left + containerRect.width / 2 - 12; // Offset left
-      const antyY = containerRect.top + containerRect.height / 2 - 30; // Offset up more
+      const antyX = containerRect.left + containerRect.width / 2 - 12;
+      const antyY = containerRect.top + containerRect.height / 2 - 30;
 
-      // Animate with GSAP - converging INTO Anty!
       particles.forEach((particle, i) => {
         const currentX = parseFloat(particle.style.left);
         const currentY = parseFloat(particle.style.top);
 
-        const tl = gsap.timeline({
-          onComplete: () => {
-            particle.remove(); // Cleanup
-          }
-        });
+        const tl = gsap.timeline({ onComplete: () => particle.remove() });
 
-        // Fly towards Anty with a swooping curve
         tl.fromTo(particle,
           {
             x: 0,
@@ -470,17 +660,16 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
             rotation: gsap.utils.random(-180, 180),
           },
           {
-            duration: gsap.utils.random(0.8, 1.4), // Original speed - arrive while hovering
+            duration: gsap.utils.random(0.8, 1.4),
             x: antyX - currentX,
             y: antyY - currentY,
-            rotation: gsap.utils.random(180, 540), // Continue tumbling
+            rotation: gsap.utils.random(180, 540),
             scale: gsap.utils.random(0.8, 1.3),
             opacity: 1,
-            ease: 'power2.in', // Smooth acceleration
+            ease: 'power2.in',
           }
         );
 
-        // Fade out as they reach Anty (being absorbed)
         tl.to(particle, {
           duration: 0.15,
           scale: 0,
@@ -488,52 +677,35 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
           ease: 'power4.in',
         });
 
-        // Stagger the start times for cascading effect
         tl.delay(i * 0.01);
       });
     },
     spawnConfetti: (x: number, y: number, count = 30) => {
-      console.log('[CONFETTI] Spawning confetti:', { screenX: x, screenY: y, count, hasCanvas: !!canvasRef.current });
       if (!canvasRef.current || !canvasRef.current.spawnParticle || !containerRef.current) {
-        console.warn('[CONFETTI] Canvas or container ref not available');
         return;
       }
 
-      // Convert screen coordinates to canvas-relative coordinates
-      // Canvas is centered on the character with size * 5 dimensions
       const canvasWidth = size * 5;
       const canvasHeight = size * 5;
       const canvasCenterX = canvasWidth / 2;
       const canvasCenterY = canvasHeight / 2;
 
-      // Get character's position on screen
       const containerRect = containerRef.current.getBoundingClientRect();
       const charCenterX = containerRect.left + containerRect.width / 2;
       const charCenterY = containerRect.top + containerRect.height / 2;
 
-      // Calculate offset from character center
       const offsetX = x - charCenterX;
       const offsetY = y - charCenterY;
 
-      // Convert to canvas coordinates (canvas center is at character center)
       const canvasX = canvasCenterX + offsetX;
       const canvasY = canvasCenterY + offsetY;
 
-      console.log('[CONFETTI] Converted coords:', {
-        screenPos: { x, y },
-        charCenter: { x: charCenterX, y: charCenterY },
-        offset: { x: offsetX, y: offsetY },
-        canvasPos: { x: canvasX, y: canvasY }
-      });
-
-      // Spawn burst of confetti at specified position
       for (let i = 0; i < count; i++) {
-        // Stagger spawn for more natural burst
         setTimeout(() => {
           if (canvasRef.current?.spawnParticle) {
             canvasRef.current.spawnParticle('confetti', canvasX, canvasY);
           }
-        }, i * 15); // 15ms stagger
+        }, i * 15);
       }
     },
     showSearchGlow: () => {
@@ -551,7 +723,6 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
         logAnimationEvent('playEmotion called via handle', { emotion, options });
       }
 
-      // Map ExpressionName to EmotionType
       const validEmotions: Record<string, EmotionType> = {
         'happy': 'happy',
         'excited': 'excited',
@@ -584,14 +755,11 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
       }
       return false;
     },
-    // Hold-style look for keyboard (start on keydown, end on keyup)
-    // Completely bypasses the emotion system - direct eye control
     startLook: (direction: 'left' | 'right') => {
       if (!leftEyeRef.current || !rightEyeRef.current || !leftEyePathRef.current || !rightEyePathRef.current || !leftEyeSvgRef.current || !rightEyeSvgRef.current) {
         return;
       }
 
-      // Pause idle animation and blink scheduler to prevent interference
       animationController.pause();
 
       const lookTl = createLookAnimation(
@@ -621,7 +789,6 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
         rightEyeSvg: rightEyeSvgRef.current,
       });
       returnTl.eventCallback('onComplete', () => {
-        // Resume idle animation and blink scheduler after returning to idle
         animationController.resume();
       });
       returnTl.play();
@@ -648,7 +815,7 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
     rightEyeRef,
     leftEyePathRef,
     rightEyePathRef,
-  }), [size, animationController]);
+  }), [size, animationController, isSuperMode]);
 
   useEffect(() => {
     setCurrentExpression(expression);
@@ -657,7 +824,7 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
   // Play emotion when expression changes
   useEffect(() => {
     if (!animationController.isReady) return;
-    if (isOff) return; // Don't play emotions when powered off
+    if (isOff) return;
 
     const validEmotions: Record<string, EmotionType> = {
       'happy': 'happy',
@@ -686,12 +853,11 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
       if (ENABLE_ANIMATION_DEBUG_LOGS) {
         logAnimationEvent('Expression changed → playEmotion', { expression, emotionType });
       }
-      // Allow re-triggers - controller handles deduplication if needed
       animationController.playEmotion(emotionType, { priority: 2 });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [expression, isOff]);
+  }, [expression, isOff, animationController]);
 
+  // Super mode glow animation
   useEffect(() => {
     if (!superGlowRef.current) return;
 
@@ -709,25 +875,23 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
     return () => { superGlowTimelineRef.current?.kill(); };
   }, [isSuperMode]);
 
-  // Track current expression in a ref to avoid recreating the scheduler
+  // Track expression in ref for scheduler
   const currentExpressionRef = useRef(expression);
   useEffect(() => {
     currentExpressionRef.current = expression;
   }, [expression]);
 
-  // Track searchMode in a ref to avoid recreating the scheduler
   const searchModeRef = useRef(searchMode);
   useEffect(() => {
     searchModeRef.current = searchMode;
   }, [searchMode]);
 
   const onSpontaneousExpressionRef = useRef(onSpontaneousExpression);
-
   useEffect(() => {
     onSpontaneousExpressionRef.current = onSpontaneousExpression;
   }, [onSpontaneousExpression]);
 
-  // Track idle duration for bored behaviors
+  // Idle duration tracking
   const idleStartTimeRef = useRef<number>(Date.now());
   useEffect(() => {
     if (expression === 'idle') {
@@ -735,7 +899,7 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
     }
   }, [expression]);
 
-  // Bored behavior scheduler (triggers after extended idle)
+  // Bored behavior scheduler
   useGSAP(
     () => {
       let isActive = true;
@@ -766,61 +930,64 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
     { scope: containerRef, dependencies: [] }
   );
 
-  const img = "/anty/body-right.svg";
-  const img1 = "/anty/body-left.svg";
+  // SVG paths for body
+  const bodyRightSvg = "/anty/body-right.svg";
+  const bodyLeftSvg = "/anty/body-left.svg";
 
   return (
     <div
       ref={containerRef}
-      className={`relative ${className}`}
-      style={{ width: size, height: size, overflow: 'visible' }}
+      style={{
+        ...styles.container(size),
+        ...style,
+      }}
+      className={className}
     >
-      {/* Canvas overlay for particles - positioned to extend beyond character */}
+      {/* Canvas overlay for particles */}
       <AntyParticleCanvas ref={canvasRef} particles={particles} width={size * 5} height={size * 5} />
+
+      {/* Outer glow (behind everything) - only render if not using external ref */}
+      {showGlow && !hasExternalGlow && (
+        <div
+          ref={internalOuterGlowRef}
+          style={styles.outerGlow}
+        />
+      )}
+
+      {/* Inner glow - only render if not using external ref */}
+      {showGlow && !hasExternalGlow && (
+        <div
+          ref={internalInnerGlowRef}
+          style={styles.innerGlow}
+        />
+      )}
 
       {/* Super Mode Golden Glow */}
       {isSuperMode && (
         <div
           ref={superGlowRef}
-          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
-          style={{
-            width: '200px',
-            height: '200px',
-            borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(255, 215, 0, 0.6) 0%, rgba(255, 165, 0, 0.4) 50%, rgba(255, 215, 0, 0) 100%)',
-            filter: 'blur(20px)',
-            zIndex: 0,
-          }}
+          style={styles.superGlow}
         />
       )}
 
       {/* Character body with animations */}
       <div
         ref={characterRef}
-        className={`relative w-full h-full ${isSuperMode ? 'super-mode' : ''}`}
-        style={{
-          willChange: 'transform',
-          overflow: 'visible',
-          // opacity controlled by animation, not React state (prevents double-gray flicker)
-        }}
+        style={styles.character}
       >
         {/* Anty body layers from Figma */}
-        <div ref={rightBodyRef} className="absolute inset-[13.46%_0_0_13.46%]">
-          <img alt="" className="block max-w-none size-full" src={img} />
+        <div ref={rightBodyRef} style={styles.rightBody}>
+          <img alt="" style={styles.bodyImage} src={bodyRightSvg} />
         </div>
-        <div ref={leftBodyRef} className="absolute inset-[0_13.15%_13.15%_0]">
-          <img alt="" className="block max-w-none size-full" src={img1} />
+        <div ref={leftBodyRef} style={styles.leftBody}>
+          <img alt="" style={styles.bodyImage} src={bodyLeftSvg} />
         </div>
+
         {/* Left eye */}
-        <div className="absolute flex inset-[33.44%_56.93%_38.44%_30.57%] items-center justify-center">
+        <div style={styles.leftEyeContainer}>
           <div
             ref={leftEyeRef}
-            className="flex-none flex items-center justify-center relative"
-            style={{
-              height: `${initialEyeDimensions.height}px`,
-              width: `${initialEyeDimensions.width}px`,
-              transformOrigin: 'center center',
-            }}
+            style={styles.eyeWrapper(initialEyeDimensions.width, initialEyeDimensions.height)}
           >
             <svg
               ref={leftEyeSvgRef}
@@ -841,15 +1008,10 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
         </div>
 
         {/* Right eye */}
-        <div className="absolute flex inset-[33.44%_31.21%_38.44%_56.29%] items-center justify-center">
+        <div style={styles.rightEyeContainer}>
           <div
             ref={rightEyeRef}
-            className="flex-none flex items-center justify-center relative"
-            style={{
-              height: `${initialEyeDimensions.height}px`,
-              width: `${initialEyeDimensions.width}px`,
-              transformOrigin: 'center center',
-            }}
+            style={styles.eyeWrapper(initialEyeDimensions.width, initialEyeDimensions.height)}
           >
             <svg
               ref={rightEyeSvgRef}
@@ -869,77 +1031,37 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
           </div>
         </div>
 
+        {/* Debug overlays */}
         {debugMode && (
           <>
-            <div
-              className="absolute inset-0 pointer-events-none"
-              style={{
-                border: '3px solid lime',
-                zIndex: 9999,
-              }}
-            />
+            <div style={styles.debugBorder} />
 
             {!isOff && (
               <>
-                <div
-                  className="absolute pointer-events-none"
-                  style={{
-                    top: 'calc(33.41% + 13.915% - 1px)',
-                    left: 'calc(31.63% + 5.825% - 7px)',
-                    width: '12px',
-                    height: '2px',
-                    backgroundColor: 'yellow',
-                    zIndex: 9999,
-                  }}
-                />
-                <div
-                  className="absolute pointer-events-none"
-                  style={{
-                    top: 'calc(33.41% + 13.915% - 6px)',
-                    left: 'calc(31.63% + 5.825% - 2px)',
-                    width: '2px',
-                    height: '12px',
-                    backgroundColor: 'yellow',
-                    zIndex: 9999,
-                  }}
-                />
+                <div style={styles.debugCrosshair('calc(33.41% + 13.915% - 1px)', 'calc(31.63% + 5.825% - 7px)', 'yellow', true)} />
+                <div style={styles.debugCrosshair('calc(33.41% + 13.915% - 6px)', 'calc(31.63% + 5.825% - 2px)', 'yellow', false)} />
               </>
             )}
 
             {!isOff && (
               <>
-                <div
-                  className="absolute pointer-events-none"
-                  style={{
-                    top: 'calc(33.41% + 13.915% - 1px)',
-                    left: 'calc(57.36% + 5.82% - 7px)',
-                    width: '12px',
-                    height: '2px',
-                    backgroundColor: 'orange',
-                    zIndex: 9999,
-                  }}
-                />
-                <div
-                  className="absolute pointer-events-none"
-                  style={{
-                    top: 'calc(33.41% + 13.915% - 6px)',
-                    left: 'calc(57.36% + 5.82% - 2px)',
-                    width: '2px',
-                    height: '12px',
-                    backgroundColor: 'orange',
-                    zIndex: 9999,
-                  }}
-                />
+                <div style={styles.debugCrosshair('calc(33.41% + 13.915% - 1px)', 'calc(57.36% + 5.82% - 7px)', 'orange', true)} />
+                <div style={styles.debugCrosshair('calc(33.41% + 13.915% - 6px)', 'calc(57.36% + 5.82% - 2px)', 'orange', false)} />
               </>
             )}
           </>
         )}
       </div>
+
+      {/* Shadow (below character) - only render if not using external ref */}
+      {showShadow && !hasExternalShadow && (
+        <div
+          ref={internalShadowRef}
+          style={styles.shadow}
+        />
+      )}
     </div>
   );
 });
 
 AntyCharacter.displayName = 'AntyCharacter';
-
-// Export type for button click handler
-export type { ButtonName };

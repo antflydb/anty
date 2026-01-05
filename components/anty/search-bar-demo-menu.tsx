@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { MoreVertical, X } from 'lucide-react';
-import { DEFAULT_SEARCH_BAR_CONFIG, type SearchBarConfig } from '@/lib/anty/animation/types';
+import { DEFAULT_SEARCH_BAR_CONFIG, type SearchBarConfig } from '@searchaf/anty-embed';
 
 const STORAGE_KEY = 'anty-search-bar-config';
 

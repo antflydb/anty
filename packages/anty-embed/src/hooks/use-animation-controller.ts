@@ -7,7 +7,7 @@
 
 import { useRef, useEffect, useCallback, useMemo } from 'react';
 import gsap from 'gsap';
-import { AnimationController } from './controller';
+import { AnimationController } from '../lib/animation/controller';
 import {
   AnimationState,
   type EmotionType,
@@ -15,15 +15,15 @@ import {
   type ControllerConfig,
   type AnimationOptions,
   isEmotionType,
-} from './types';
-import { createIdleAnimation } from './definitions/idle';
-import { createEyeAnimation } from './definitions/eye-animations';
-import { interpretEmotionConfig } from './definitions/emotion-interpreter';
-import { EMOTION_CONFIGS } from './definitions/emotions';
-import { initializeCharacter } from './initialize';
-import { createWakeUpAnimation, createPowerOffAnimation } from './definitions/transitions';
-import { createShadowTracker, type ShadowTrackerControls } from './shadow';
-import { createGlowSystem, type GlowSystemControls } from './glow-system';
+} from '../lib/animation/types';
+import { createIdleAnimation } from '../lib/animation/definitions/idle';
+import { createEyeAnimation } from '../lib/animation/definitions/eye-animations';
+import { interpretEmotionConfig } from '../lib/animation/definitions/emotion-interpreter';
+import { EMOTION_CONFIGS } from '../lib/animation/definitions/emotions';
+import { initializeCharacter } from '../lib/animation/initialize';
+import { createWakeUpAnimation, createPowerOffAnimation } from '../lib/animation/definitions/transitions';
+import { createShadowTracker, type ShadowTrackerControls } from '../lib/animation/shadow';
+import { createGlowSystem, type GlowSystemControls } from '../lib/animation/glow-system';
 
 /**
  * Elements required by the animation controller
