@@ -520,7 +520,7 @@ export default function Anty() {
         antyRef.current?.setSuperMode?.(null);
 
         // Animate scale back to normal, THEN restart idle
-        const characterElement = document.querySelector('[class*="character"]') as HTMLElement;
+        const characterElement = antyRef.current?.characterRef?.current;
         if (characterElement) {
           gsap.to(characterElement, {
             scale: 1,
