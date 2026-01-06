@@ -63,7 +63,7 @@ export function AntySearchBar({
   glowRef,
   config = DEFAULT_SEARCH_BAR_CONFIG,
   placeholder = 'Search...',
-  keyboardShortcut = '⌘K',
+  keyboardShortcut,
 }: AntySearchBarProps) {
   // Only hide placeholder when there's actual text typed
   const showPlaceholder = !value;
@@ -189,7 +189,9 @@ export function AntySearchBar({
                 transition: showPlaceholder ? 'none' : 'opacity 0.15s ease-out',
               }}
             >
-              <Kbd style={{ fontSize: '12px', color: '#9ca3af' }}>{keyboardShortcut}</Kbd>
+              {keyboardShortcut && (
+                <Kbd style={{ fontSize: '12px', color: '#9ca3af' }}>{keyboardShortcut}</Kbd>
+              )}
             </div>
 
             <input

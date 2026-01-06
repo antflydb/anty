@@ -17,10 +17,15 @@ export interface SearchBarRefs {
   input: RefObject<HTMLInputElement | null>;
 }
 
+// Reference size at which bracketScale produces the desired visual size
+const BRACKET_REFERENCE_SIZE = 160;
+
 export interface UseSearchMorphOptions {
   characterRef: RefObject<AntyCharacterHandle | null>;
   searchBarRefs: SearchBarRefs;
   config?: SearchBarConfig;
+  /** Character size in pixels - used to maintain consistent bracket size */
+  characterSize?: number;
   onMorphStart?: () => void;
   onMorphComplete?: () => void;
   onReturnStart?: () => void;
@@ -37,6 +42,7 @@ export function useSearchMorph({
   characterRef,
   searchBarRefs,
   config = DEFAULT_SEARCH_BAR_CONFIG,
+  characterSize = BRACKET_REFERENCE_SIZE,
   onMorphStart,
   onMorphComplete,
   onReturnStart,
@@ -119,7 +125,9 @@ export function useSearchMorph({
     // Note: Shadow is now handled by hideShadow() which pauses tracker and animates out
 
     // Calculate positions
-    const { bracketScale } = config;
+    // Compensate bracket scale so brackets are always the same visual size regardless of character size
+    const baseBracketScale = config.bracketScale;
+    const bracketScale = baseBracketScale * (BRACKET_REFERENCE_SIZE / characterSize);
 
     // Set search bar to final scale BEFORE reading position
     gsap.set(searchBar, { scale: 1, opacity: 0 });

@@ -366,7 +366,7 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
   onSearchChange,
   onSearchSubmit,
   searchPlaceholder = 'Search...',
-  searchShortcut = '⌘K',
+  searchShortcut,
   searchConfig = DEFAULT_SEARCH_BAR_CONFIG,
   onSearchOpen,
   onSearchOpenComplete,
@@ -685,6 +685,7 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
     characterRef: selfRef,
     searchBarRefs,
     config: searchConfig,
+    characterSize: size,
     onMorphStart: () => {
       setIsSearchActive(true);
       onSearchOpen?.();

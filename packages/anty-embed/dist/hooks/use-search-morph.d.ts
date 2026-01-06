@@ -14,6 +14,8 @@ export interface UseSearchMorphOptions {
     characterRef: RefObject<AntyCharacterHandle | null>;
     searchBarRefs: SearchBarRefs;
     config?: SearchBarConfig;
+    /** Character size in pixels - used to maintain consistent bracket size */
+    characterSize?: number;
     onMorphStart?: () => void;
     onMorphComplete?: () => void;
     onReturnStart?: () => void;
@@ -24,4 +26,4 @@ export interface UseSearchMorphReturn {
     morphToCharacter: () => void;
     isMorphing: boolean;
 }
-export declare function useSearchMorph({ characterRef, searchBarRefs, config, onMorphStart, onMorphComplete, onReturnStart, onReturnComplete, }: UseSearchMorphOptions): UseSearchMorphReturn;
+export declare function useSearchMorph({ characterRef, searchBarRefs, config, characterSize, onMorphStart, onMorphComplete, onReturnStart, onReturnComplete, }: UseSearchMorphOptions): UseSearchMorphReturn;

@@ -6524,7 +6524,7 @@ function Kbd({ children, style }) {
             ...style,
         }, children: children }));
 }
-function AntySearchBar({ active, value, onChange, inputRef, barRef, borderRef, borderGradientRef, placeholderRef, kbdRef, glowRef, config = DEFAULT_SEARCH_BAR_CONFIG, placeholder = 'Search...', keyboardShortcut = '⌘K', }) {
+function AntySearchBar({ active, value, onChange, inputRef, barRef, borderRef, borderGradientRef, placeholderRef, kbdRef, glowRef, config = DEFAULT_SEARCH_BAR_CONFIG, placeholder = 'Search...', keyboardShortcut, }) {
     // Only hide placeholder when there's actual text typed
     const showPlaceholder = !value;
     // Extract config values
@@ -6608,7 +6608,7 @@ function AntySearchBar({ active, value, onChange, inputRef, barRef, borderRef, b
                                     userSelect: 'none',
                                     opacity: showPlaceholder ? 1 : 0,
                                     transition: showPlaceholder ? 'none' : 'opacity 0.15s ease-out',
-                                }, children: jsx(Kbd, { style: { fontSize: '12px', color: '#9ca3af' }, children: keyboardShortcut }) }), jsx("input", { ref: inputRef, type: "text", value: value, onChange: (e) => onChange(e.target.value), placeholder: "" // Empty placeholder since we use fake one
+                                }, children: keyboardShortcut && (jsx(Kbd, { style: { fontSize: '12px', color: '#9ca3af' }, children: keyboardShortcut })) }), jsx("input", { ref: inputRef, type: "text", value: value, onChange: (e) => onChange(e.target.value), placeholder: "" // Empty placeholder since we use fake one
                                 , style: {
                                     width: '100%',
                                     height: '100%',
@@ -10410,7 +10410,9 @@ function logAnimationEvent(event, details) {
     console.log(`🎬 [AnimationController] ${event}${detailsStr}`);
 }
 
-function useSearchMorph({ characterRef, searchBarRefs, config = DEFAULT_SEARCH_BAR_CONFIG, onMorphStart, onMorphComplete, onReturnStart, onReturnComplete, }) {
+// Reference size at which bracketScale produces the desired visual size
+const BRACKET_REFERENCE_SIZE = 160;
+function useSearchMorph({ characterRef, searchBarRefs, config = DEFAULT_SEARCH_BAR_CONFIG, characterSize = BRACKET_REFERENCE_SIZE, onMorphStart, onMorphComplete, onReturnStart, onReturnComplete, }) {
     const morphingRef = useRef(false);
     // Track all active tweens so we can kill them if needed
     const activeTweensRef = useRef([]);
@@ -10476,7 +10478,9 @@ function useSearchMorph({ characterRef, searchBarRefs, config = DEFAULT_SEARCH_B
         }
         // Note: Shadow is now handled by hideShadow() which pauses tracker and animates out
         // Calculate positions
-        const { bracketScale } = config;
+        // Compensate bracket scale so brackets are always the same visual size regardless of character size
+        const baseBracketScale = config.bracketScale;
+        const bracketScale = baseBracketScale * (BRACKET_REFERENCE_SIZE / characterSize);
         // Set search bar to final scale BEFORE reading position
         gsapWithCSS.set(searchBar, { scale: 1, opacity: 0 });
         // Get actual search bar position (at final scale)
@@ -10967,7 +10971,7 @@ const AntyCharacter = forwardRef(({ expression = 'idle', size = 160, isSuperMode
 // Optional external refs (for playground where shadow/glow are rendered externally)
 shadowRef: externalShadowRef, innerGlowRef: externalInnerGlowRef, outerGlowRef: externalOuterGlowRef, 
 // Search bar integration
-searchEnabled = false, searchValue: externalSearchValue, onSearchChange, onSearchSubmit, searchPlaceholder = 'Search...', searchShortcut = '⌘K', searchConfig = DEFAULT_SEARCH_BAR_CONFIG, onSearchOpen, onSearchOpenComplete, onSearchClose, onSearchCloseComplete, }, ref) => {
+searchEnabled = false, searchValue: externalSearchValue, onSearchChange, onSearchSubmit, searchPlaceholder = 'Search...', searchShortcut, searchConfig = DEFAULT_SEARCH_BAR_CONFIG, onSearchOpen, onSearchOpenComplete, onSearchClose, onSearchCloseComplete, }, ref) => {
     // Refs for DOM elements
     const containerRef = useRef(null);
     const characterRef = useRef(null);
@@ -11253,6 +11257,7 @@ searchEnabled = false, searchValue: externalSearchValue, onSearchChange, onSearc
         characterRef: selfRef,
         searchBarRefs,
         config: searchConfig,
+        characterSize: size,
         onMorphStart: () => {
             setIsSearchActive(true);
             onSearchOpen?.();

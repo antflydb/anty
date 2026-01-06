@@ -1,10 +1,11 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import {
   AntyCharacter,
   type AntyCharacterHandle,
   type EmotionType,
+  DEFAULT_SEARCH_BAR_CONFIG,
 } from '@antfly/anty-embed';
 
 const EMOTIONS: EmotionType[] = [
@@ -30,6 +31,107 @@ const EMOTIONS: EmotionType[] = [
 
 const SIZES = [80, 120, 160, 200, 240];
 
+// Helper to format a key event into a shortcut string
+function formatShortcut(e: KeyboardEvent): string {
+  const parts: string[] = [];
+  if (e.metaKey) parts.push('⌘');
+  if (e.ctrlKey) parts.push('⌃');
+  if (e.altKey) parts.push('⌥');
+  if (e.shiftKey) parts.push('⇧');
+
+  // Add the actual key if it's not just a modifier
+  const key = e.key;
+  if (!['Meta', 'Control', 'Alt', 'Shift'].includes(key)) {
+    // Format special keys
+    const keyMap: Record<string, string> = {
+      'Enter': '↵',
+      'Escape': 'Esc',
+      'ArrowUp': '↑',
+      'ArrowDown': '↓',
+      'ArrowLeft': '←',
+      'ArrowRight': '→',
+      'Backspace': '⌫',
+      'Delete': '⌦',
+      'Tab': '⇥',
+      ' ': 'Space',
+    };
+    parts.push(keyMap[key] || key.toUpperCase());
+  }
+
+  return parts.join('');
+}
+
+// Shortcut capture component
+function ShortcutCapture({
+  value,
+  onChange
+}: {
+  value: string;
+  onChange: (shortcut: string) => void;
+}) {
+  const [isCapturing, setIsCapturing] = useState(false);
+  const [tempShortcut, setTempShortcut] = useState('');
+
+  useEffect(() => {
+    if (!isCapturing) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const formatted = formatShortcut(e);
+      setTempShortcut(formatted);
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      // Only finalize if we have a non-modifier key
+      if (tempShortcut && !['⌘', '⌃', '⌥', '⇧'].includes(tempShortcut)) {
+        onChange(tempShortcut);
+        setIsCapturing(false);
+        setTempShortcut('');
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, [isCapturing, tempShortcut, onChange]);
+
+  return (
+    <button
+      onClick={() => {
+        setIsCapturing(true);
+        setTempShortcut('');
+      }}
+      onBlur={() => {
+        if (isCapturing && !tempShortcut) {
+          setIsCapturing(false);
+        }
+      }}
+      style={{
+        padding: '6px 12px',
+        borderRadius: '6px',
+        border: isCapturing ? '2px solid #8B5CF6' : '1px solid #e2e8f0',
+        background: isCapturing ? 'rgba(139, 92, 246, 0.1)' : '#ffffff',
+        color: '#334155',
+        cursor: 'pointer',
+        fontSize: '14px',
+        fontFamily: 'system-ui, -apple-system, sans-serif',
+        minWidth: '60px',
+        textAlign: 'center',
+        transition: 'all 0.15s',
+      }}
+    >
+      {isCapturing ? (tempShortcut || '...') : value}
+    </button>
+  );
+}
+
 export default function EmbedDemoPage() {
   const antyRef = useRef<AntyCharacterHandle>(null);
   const [size, setSize] = useState(160);
@@ -40,6 +142,18 @@ export default function EmbedDemoPage() {
   const [searchEnabled, setSearchEnabled] = useState(false);
   const [isSearchMode, setIsSearchMode] = useState(false);
   const [lastEmotion, setLastEmotion] = useState<string | null>(null);
+
+  // Search bar options
+  const [barWidth, setBarWidth] = useState(DEFAULT_SEARCH_BAR_CONFIG.width);
+  const [barHeight, setBarHeight] = useState(DEFAULT_SEARCH_BAR_CONFIG.height);
+  const [placeholder, setPlaceholder] = useState('Ask about SearchAF...');
+  const [showHotkey, setShowHotkey] = useState(true);
+  const [hotkey, setHotkey] = useState('⌘K');
+
+  // Reset search mode when component will remount due to key change
+  useEffect(() => {
+    setIsSearchMode(false);
+  }, [size, searchEnabled, frozen, barWidth, barHeight, showHotkey]);
 
   const playEmotion = (emotion: EmotionType) => {
     antyRef.current?.playEmotion?.(emotion);
@@ -95,7 +209,7 @@ export default function EmbedDemoPage() {
             }}
           >
             <AntyCharacter
-              key={`anty-${size}-${searchEnabled}-${frozen}`}
+              key={`anty-${size}-${searchEnabled}-${frozen}-${barWidth}-${barHeight}-${showHotkey}`}
               ref={antyRef}
               size={size}
               expression="idle"
@@ -104,8 +218,13 @@ export default function EmbedDemoPage() {
               frozen={frozen}
               isSuperMode={isSuperMode}
               searchEnabled={searchEnabled}
-              searchPlaceholder="Ask about SearchAF..."
-              searchShortcut="⌘K"
+              searchPlaceholder={placeholder}
+              searchShortcut={showHotkey ? hotkey : undefined}
+              searchConfig={{
+                ...DEFAULT_SEARCH_BAR_CONFIG,
+                width: barWidth,
+                height: barHeight,
+              }}
               onSearchOpen={() => setIsSearchMode(true)}
               onSearchCloseComplete={() => setIsSearchMode(false)}
             />
@@ -246,6 +365,128 @@ export default function EmbedDemoPage() {
                 </label>
               </div>
             </div>
+
+            {/* Search Bar Options */}
+            {searchEnabled && (
+              <div style={{ marginBottom: '24px' }}>
+                <label style={{ fontSize: '14px', color: '#64748b', marginBottom: '12px', display: 'block' }}>
+                  Search Bar
+                </label>
+
+                {/* Bar Dimensions */}
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', alignItems: 'flex-end' }}>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '4px', display: 'block' }}>
+                      Width
+                    </label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <input
+                        type="number"
+                        value={barWidth}
+                        onChange={(e) => setBarWidth(Number(e.target.value))}
+                        min={200}
+                        max={1000}
+                        style={{
+                          width: '100%',
+                          padding: '6px 8px',
+                          borderRadius: '6px',
+                          border: '1px solid #e2e8f0',
+                          fontSize: '14px',
+                          textAlign: 'right',
+                        }}
+                      />
+                      <span style={{ fontSize: '12px', color: '#94a3b8' }}>px</span>
+                    </div>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '4px', display: 'block' }}>
+                      Height
+                    </label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <input
+                        type="number"
+                        value={barHeight}
+                        onChange={(e) => setBarHeight(Number(e.target.value))}
+                        min={40}
+                        max={200}
+                        style={{
+                          width: '100%',
+                          padding: '6px 8px',
+                          borderRadius: '6px',
+                          border: '1px solid #e2e8f0',
+                          fontSize: '14px',
+                          textAlign: 'right',
+                        }}
+                      />
+                      <span style={{ fontSize: '12px', color: '#94a3b8' }}>px</span>
+                    </div>
+                  </div>
+                  {/* Fixed-width reset slot */}
+                  <div style={{ width: '28px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {(barWidth !== DEFAULT_SEARCH_BAR_CONFIG.width || barHeight !== DEFAULT_SEARCH_BAR_CONFIG.height) && (
+                      <button
+                        onClick={() => {
+                          setBarWidth(DEFAULT_SEARCH_BAR_CONFIG.width);
+                          setBarHeight(DEFAULT_SEARCH_BAR_CONFIG.height);
+                        }}
+                        title="Reset to default (642×70)"
+                        style={{
+                          padding: '4px 6px',
+                          borderRadius: '4px',
+                          border: '1px solid #e2e8f0',
+                          background: '#ffffff',
+                          color: '#64748b',
+                          cursor: 'pointer',
+                          fontSize: '12px',
+                          lineHeight: 1,
+                        }}
+                      >
+                        ↺
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Placeholder Text */}
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '4px', display: 'block' }}>
+                    Placeholder
+                  </label>
+                  <input
+                    type="text"
+                    value={placeholder}
+                    onChange={(e) => setPlaceholder(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '6px 8px',
+                      borderRadius: '6px',
+                      border: '1px solid #e2e8f0',
+                      fontSize: '14px',
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                </div>
+
+                {/* Hotkey Options */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={showHotkey}
+                      onChange={(e) => setShowHotkey(e.target.checked)}
+                      style={{ width: '16px', height: '16px', accentColor: '#8B5CF6' }}
+                    />
+                    <span style={{ fontSize: '13px', color: '#334155' }}>Hotkey</span>
+                  </label>
+                  {showHotkey && (
+                    <ShortcutCapture
+                      value={hotkey}
+                      onChange={setHotkey}
+                    />
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Actions */}
             <div>
