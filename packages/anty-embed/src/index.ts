@@ -57,6 +57,7 @@ export {
 } from './types';
 
 // Animation utilities (for advanced usage)
+import { EMOTION_CONFIGS as _EMOTION_CONFIGS } from './lib/animation';
 export {
   EMOTION_CONFIGS,
   getEmotionConfig,
@@ -72,6 +73,9 @@ export {
   EYE_DIMENSIONS,
   type EyeShapeName,
 } from './lib/animation';
+
+// List of available emotions (derived from EMOTION_CONFIGS)
+export const AVAILABLE_EMOTIONS = Object.keys(_EMOTION_CONFIGS) as (keyof typeof _EMOTION_CONFIGS)[];
 
 // Particle utilities
 export { PARTICLE_CONFIGS } from './lib/particles';

@@ -10280,7 +10280,7 @@ const styles = {
         position: 'absolute',
         left: '50%',
         transform: 'translateX(-50%) scaleX(1) scaleY(1)',
-        bottom: `${ -30 * scale}px`,
+        bottom: '0px',
         width: `${160 * scale}px`,
         height: `${40 * scale}px`,
         background: 'radial-gradient(ellipse, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0) 70%)',
@@ -10892,12 +10892,45 @@ shadowRef: externalShadowRef, innerGlowRef: externalInnerGlowRef, outerGlowRef: 
     const bodyRightSvg = "/anty/body-right.svg";
     const bodyLeftSvg = "/anty/body-left.svg";
     return (jsxRuntime.jsxs("div", { ref: containerRef, style: {
-            ...styles.container(size),
+            ...styles.fullContainer(size),
             ...style,
         }, className: className, children: [jsxRuntime.jsx(AntyParticleCanvas, { ref: canvasRef, particles: particles, width: size * 5, height: size * 5 }), showGlow && !hasExternalGlow && (jsxRuntime.jsx("div", { ref: internalOuterGlowRef, style: styles.outerGlow(sizeScale) })), showGlow && !hasExternalGlow && (jsxRuntime.jsx("div", { ref: internalInnerGlowRef, style: styles.innerGlow(sizeScale) })), isSuperMode && (jsxRuntime.jsx("div", { ref: superGlowRef, style: styles.superGlow })), jsxRuntime.jsxs("div", { ref: characterRef, className: isSuperMode ? 'super-mode' : undefined, style: styles.character, children: [jsxRuntime.jsx("div", { ref: rightBodyRef, style: styles.rightBody, children: jsxRuntime.jsx("img", { alt: "", style: styles.bodyImage, src: bodyRightSvg }) }), jsxRuntime.jsx("div", { ref: leftBodyRef, style: styles.leftBody, children: jsxRuntime.jsx("img", { alt: "", style: styles.bodyImage, src: bodyLeftSvg }) }), jsxRuntime.jsx("div", { style: styles.leftEyeContainer, children: jsxRuntime.jsx("div", { ref: leftEyeRef, style: styles.eyeWrapper(initialEyeDimensions.width, initialEyeDimensions.height, sizeScale), children: jsxRuntime.jsx("svg", { ref: leftEyeSvgRef, width: "100%", height: "100%", viewBox: initialEyeDimensions.viewBox, fill: "none", xmlns: "http://www.w3.org/2000/svg", style: { display: 'block' }, children: jsxRuntime.jsx("path", { ref: leftEyePathRef, d: getEyeShape('IDLE', 'left'), fill: "#052333" }) }) }) }), jsxRuntime.jsx("div", { style: styles.rightEyeContainer, children: jsxRuntime.jsx("div", { ref: rightEyeRef, style: styles.eyeWrapper(initialEyeDimensions.width, initialEyeDimensions.height, sizeScale), children: jsxRuntime.jsx("svg", { ref: rightEyeSvgRef, width: "100%", height: "100%", viewBox: initialEyeDimensions.viewBox, fill: "none", xmlns: "http://www.w3.org/2000/svg", style: { display: 'block' }, children: jsxRuntime.jsx("path", { ref: rightEyePathRef, d: getEyeShape('IDLE', 'right'), fill: "#052333" }) }) }) }), debugMode && (jsxRuntime.jsxs(jsxRuntime.Fragment, { children: [jsxRuntime.jsx("div", { style: styles.debugBorder }), !isOff && (jsxRuntime.jsxs(jsxRuntime.Fragment, { children: [jsxRuntime.jsx("div", { style: styles.debugCrosshair('calc(33.41% + 13.915% - 1px)', 'calc(31.63% + 5.825% - 7px)', 'yellow', true) }), jsxRuntime.jsx("div", { style: styles.debugCrosshair('calc(33.41% + 13.915% - 6px)', 'calc(31.63% + 5.825% - 2px)', 'yellow', false) })] })), !isOff && (jsxRuntime.jsxs(jsxRuntime.Fragment, { children: [jsxRuntime.jsx("div", { style: styles.debugCrosshair('calc(33.41% + 13.915% - 1px)', 'calc(57.36% + 5.82% - 7px)', 'orange', true) }), jsxRuntime.jsx("div", { style: styles.debugCrosshair('calc(33.41% + 13.915% - 6px)', 'calc(57.36% + 5.82% - 2px)', 'orange', false) })] }))] }))] }), showShadow && !hasExternalShadow && (jsxRuntime.jsx("div", { ref: internalShadowRef, style: styles.shadow(sizeScale) }))] }));
 });
 AntyCharacter.displayName = 'AntyCharacter';
 
+/**
+ * @antfly/anty-embed
+ *
+ * Embeddable Anty character animation for web applications.
+ *
+ * @example
+ * ```tsx
+ * import { AntyCharacter } from '@antfly/anty-embed';
+ *
+ * function App() {
+ *   const antyRef = useRef<AntyCharacterHandle>(null);
+ *
+ *   const handleClick = () => {
+ *     antyRef.current?.playEmotion('happy');
+ *   };
+ *
+ *   return (
+ *     <AntyCharacter
+ *       ref={antyRef}
+ *       size={160}
+ *       expression="idle"
+ *       showShadow={true}
+ *       showGlow={true}
+ *     />
+ *   );
+ * }
+ * ```
+ */
+// Main components
+// List of available emotions (derived from EMOTION_CONFIGS)
+const AVAILABLE_EMOTIONS = Object.keys(EMOTION_CONFIGS);
+
+exports.AVAILABLE_EMOTIONS = AVAILABLE_EMOTIONS;
 exports.AntyCharacter = AntyCharacter;
 exports.AntyParticleCanvas = AntyParticleCanvas;
 exports.DEFAULT_SEARCH_BAR_CONFIG = DEFAULT_SEARCH_BAR_CONFIG;

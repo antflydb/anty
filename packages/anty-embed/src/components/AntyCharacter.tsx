@@ -232,7 +232,7 @@ const styles = {
     position: 'absolute' as const,
     left: '50%',
     transform: 'translateX(-50%) scaleX(1) scaleY(1)',
-    bottom: `${-30 * scale}px`,
+    bottom: '0px',
     width: `${160 * scale}px`,
     height: `${40 * scale}px`,
     background: 'radial-gradient(ellipse, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0) 70%)',
@@ -941,7 +941,7 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
     <div
       ref={containerRef}
       style={{
-        ...styles.container(size),
+        ...styles.fullContainer(size),
         ...style,
       }}
       className={className}

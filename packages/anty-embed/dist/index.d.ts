@@ -29,6 +29,8 @@
 export { AntyCharacter, type AntyCharacterProps, type AntyCharacterHandle, AntyParticleCanvas, type ParticleCanvasHandle, } from './components';
 export { useAnimationController } from './hooks/use-animation-controller';
 export { AnimationState, type EmotionType, type ExpressionName, type SearchMode, type EmotionOptions, type AnimationCallbacks, type EmotionConfig, type SearchBarConfig, DEFAULT_SEARCH_BAR_CONFIG, isEmotionType, type Particle, type ParticleType, type ParticleConfig, } from './types';
+import { EMOTION_CONFIGS as _EMOTION_CONFIGS } from './lib/animation';
 export { EMOTION_CONFIGS, getEmotionConfig, createIdleAnimation, createEyeAnimation, createLookAnimation, createReturnFromLookAnimation, createWakeUpAnimation, createPowerOffAnimation, getEyeShape, getEyeDimensions, EYE_SHAPES, EYE_DIMENSIONS, type EyeShapeName, } from './lib/animation';
+export declare const AVAILABLE_EMOTIONS: (keyof typeof _EMOTION_CONFIGS)[];
 export { PARTICLE_CONFIGS } from './lib/particles';
 export { ENABLE_ANIMATION_DEBUG_LOGS, logAnimationEvent, logAnimationSystemInfo } from './lib/animation/feature-flags';
