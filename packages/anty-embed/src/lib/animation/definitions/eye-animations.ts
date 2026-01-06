@@ -151,12 +151,13 @@ export function createEyeAnimation(
   config: EyeAnimationConfig = {}
 ): gsap.core.Timeline {
   const {
-    duration = DEFAULTS.MORPH_DURATION,
     ease = DEFAULTS.MORPH_EASE,
-    delay = 0,
     onComplete,
     sizeScale = 1,
   } = config;
+  // Duration/delay NOT scaled - same timing at all sizes
+  const duration = config.duration ?? DEFAULTS.MORPH_DURATION;
+  const delay = config.delay ?? 0;
 
   const timeline = gsap.timeline({
     delay,
@@ -285,11 +286,13 @@ export function createBlinkAnimation(
 ): gsap.core.Timeline {
   const {
     closedScale = DEFAULTS.BLINK_CLOSED_SCALE,
-    closeDuration = DEFAULTS.BLINK_CLOSE_DURATION,
-    openDuration = DEFAULTS.BLINK_OPEN_DURATION,
-    delay = 0,
     onComplete,
+    sizeScale = 1,
   } = config;
+  // Duration/delay NOT scaled - same timing at all sizes
+  const closeDuration = config.closeDuration ?? DEFAULTS.BLINK_CLOSE_DURATION;
+  const openDuration = config.openDuration ?? DEFAULTS.BLINK_OPEN_DURATION;
+  const delay = config.delay ?? 0;
 
   const timeline = gsap.timeline({
     delay,
@@ -341,11 +344,14 @@ export function createDoubleBlinkAnimation(
 ): gsap.core.Timeline {
   const {
     closedScale = DEFAULTS.BLINK_CLOSED_SCALE,
-    closeDuration = DEFAULTS.DOUBLE_BLINK_CLOSE_DURATION,
-    openDuration = DEFAULTS.DOUBLE_BLINK_OPEN_DURATION,
-    delay = 0,
     onComplete,
+    sizeScale = 1,
   } = config;
+  // Duration/delay NOT scaled - same timing at all sizes
+  const closeDuration = config.closeDuration ?? DEFAULTS.DOUBLE_BLINK_CLOSE_DURATION;
+  const openDuration = config.openDuration ?? DEFAULTS.DOUBLE_BLINK_OPEN_DURATION;
+  const delay = config.delay ?? 0;
+  const blinkPause = DEFAULTS.DOUBLE_BLINK_PAUSE;
 
   const timeline = gsap.timeline({
     delay,
@@ -378,7 +384,7 @@ export function createDoubleBlinkAnimation(
   timeline.to(eyeElements, {
     scaleY: 1,
     transformOrigin: '50% 50%',
-    duration: DEFAULTS.DOUBLE_BLINK_PAUSE,
+    duration: blinkPause,
   });
 
   // Second blink - close
@@ -433,14 +439,15 @@ export function createLookAnimation(
 ): gsap.core.Timeline {
   const {
     direction,
-    duration = DEFAULTS.LOOK_DURATION,
     ease = DEFAULTS.MORPH_EASE,
     xOffset = DEFAULTS.LOOK_X_OFFSET,
     bunch = DEFAULTS.LOOK_BUNCH,
-    delay = 0,
     onComplete,
     sizeScale = 1,
   } = config;
+  // Duration/delay NOT scaled - same timing at all sizes
+  const duration = config.duration ?? DEFAULTS.LOOK_DURATION;
+  const delay = config.delay ?? 0;
 
   const timeline = gsap.timeline({
     delay,
@@ -507,12 +514,13 @@ export function createReturnFromLookAnimation(
   config: EyeAnimationConfig = {}
 ): gsap.core.Timeline {
   const {
-    duration = DEFAULTS.LOOK_DURATION,
     ease = DEFAULTS.MORPH_EASE,
-    delay = 0,
     onComplete,
     sizeScale = 1,
   } = config;
+  // Duration/delay NOT scaled - same timing at all sizes
+  const duration = config.duration ?? DEFAULTS.LOOK_DURATION;
+  const delay = config.delay ?? 0;
 
   const timeline = gsap.timeline({
     delay,

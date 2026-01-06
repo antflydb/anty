@@ -40,7 +40,7 @@ export function EyeDebugBoxes({ leftEyeRef, rightEyeRef }: EyeDebugBoxesProps) {
       {/* Left Eye Bounding Box - Orange */}
       {boxes.left && (
         <div
-          className="fixed pointer-events-none z-[100]"
+          className="fixed pointer-events-none z-[10000]"
           style={{
             left: boxes.left.left,
             top: boxes.left.top,
@@ -55,7 +55,7 @@ export function EyeDebugBoxes({ leftEyeRef, rightEyeRef }: EyeDebugBoxesProps) {
       {/* Right Eye Bounding Box - Yellow */}
       {boxes.right && (
         <div
-          className="fixed pointer-events-none z-[100]"
+          className="fixed pointer-events-none z-[10000]"
           style={{
             left: boxes.right.left,
             top: boxes.right.top,

@@ -6233,7 +6233,7 @@ const PARTICLE_CONFIGS = {
  * Canvas-based particle system for Anty
  * Uses GSAP ticker for 60fps rendering
  */
-const AntyParticleCanvas = React.forwardRef(({ particles, width = 400, height = 400 }, ref) => {
+const AntyParticleCanvas = React.forwardRef(({ particles, width = 400, height = 400, sizeScale = 1 }, ref) => {
     const canvasRef = React.useRef(null);
     const particlesRef = React.useRef(particles);
     const [searchGlowActive, setSearchGlowActive] = React.useState(false);
@@ -6247,13 +6247,14 @@ const AntyParticleCanvas = React.forwardRef(({ particles, width = 400, height = 
             const config = PARTICLE_CONFIGS[type];
             const timestamp = Date.now();
             const random = Math.random();
+            // Scale initial velocities with sizeScale
             const newParticle = {
                 id: `${type}-${timestamp}-${random}`,
                 type,
                 x,
                 y,
-                vx: gsapWithCSS.utils.random(config.initialVelocity.x.min, config.initialVelocity.x.max),
-                vy: gsapWithCSS.utils.random(config.initialVelocity.y.min, config.initialVelocity.y.max),
+                vx: gsapWithCSS.utils.random(config.initialVelocity.x.min, config.initialVelocity.x.max) * sizeScale,
+                vy: gsapWithCSS.utils.random(config.initialVelocity.y.min, config.initialVelocity.y.max) * sizeScale,
                 scale: gsapWithCSS.utils.random(config.initialScale.min, config.initialScale.max),
                 rotation: 0,
                 rotationSpeed: gsapWithCSS.utils.random(config.rotationSpeed.min, config.rotationSpeed.max),
@@ -6305,10 +6306,10 @@ const AntyParticleCanvas = React.forwardRef(({ particles, width = 400, height = 
             const dt = deltaTime / 1000;
             const alive = [];
             for (let i = 0; i < particlesRef.current.length; i++) {
-                const updated = updateParticle(particlesRef.current[i], dt);
+                const updated = updateParticle(particlesRef.current[i], dt, sizeScale);
                 if (updated.life > 0) {
                     alive.push(updated);
-                    drawParticle(ctx, updated);
+                    drawParticle(ctx, updated, sizeScale);
                 }
             }
             particlesRef.current = alive;
@@ -6320,7 +6321,7 @@ const AntyParticleCanvas = React.forwardRef(({ particles, width = 400, height = 
         return () => {
             gsapWithCSS.ticker.remove(updateParticles);
         };
-    }, [width, height, searchGlowActive]);
+    }, [width, height, searchGlowActive, sizeScale]);
     return (jsxRuntime.jsx("canvas", { ref: canvasRef, style: {
             position: 'absolute',
             pointerEvents: 'none',
@@ -6335,9 +6336,11 @@ AntyParticleCanvas.displayName = 'AntyParticleCanvas';
 /**
  * Update particle physics
  */
-function updateParticle(particle, dt) {
+function updateParticle(particle, dt, sizeScale) {
     const config = PARTICLE_CONFIGS[particle.type];
-    const newVy = particle.vy + config.gravity * dt;
+    // Scale gravity and velocities with sizeScale
+    const scaledGravity = config.gravity * sizeScale;
+    const newVy = particle.vy + scaledGravity * dt;
     const newX = particle.x + particle.vx * dt;
     const newY = particle.y + particle.vy * dt;
     const newRotation = particle.rotation + particle.rotationSpeed * dt;
@@ -6362,11 +6365,11 @@ function updateParticle(particle, dt) {
 /**
  * Draw particle on canvas
  */
-function drawParticle(ctx, particle) {
+function drawParticle(ctx, particle, sizeScale) {
     ctx.save();
     ctx.translate(particle.x, particle.y);
     ctx.rotate((particle.rotation * Math.PI) / 180);
-    ctx.scale(particle.scale, particle.scale);
+    ctx.scale(particle.scale * sizeScale, particle.scale * sizeScale);
     ctx.globalAlpha = particle.opacity;
     ctx.fillStyle = particle.color || '#ff0000';
     switch (particle.type) {
@@ -7658,7 +7661,10 @@ const DEFAULTS = {
  * createEyeAnimation(elements, { left: 'WINK_LEFT', right: 'IDLE' }, { duration: 0.2 });
  */
 function createEyeAnimation(elements, shapeSpec, config = {}) {
-    const { duration = DEFAULTS.MORPH_DURATION, ease = DEFAULTS.MORPH_EASE, delay = 0, onComplete, sizeScale = 1, } = config;
+    const { ease = DEFAULTS.MORPH_EASE, onComplete, sizeScale = 1, } = config;
+    // Duration/delay NOT scaled - same timing at all sizes
+    const duration = config.duration ?? DEFAULTS.MORPH_DURATION;
+    const delay = config.delay ?? 0;
     const timeline = gsapWithCSS.timeline({
         delay,
         onComplete,
@@ -7746,7 +7752,11 @@ function createEyeAnimation(elements, shapeSpec, config = {}) {
  * blinkTl.play();
  */
 function createBlinkAnimation(elements, config = {}) {
-    const { closedScale = DEFAULTS.BLINK_CLOSED_SCALE, closeDuration = DEFAULTS.BLINK_CLOSE_DURATION, openDuration = DEFAULTS.BLINK_OPEN_DURATION, delay = 0, onComplete, } = config;
+    const { closedScale = DEFAULTS.BLINK_CLOSED_SCALE, onComplete, sizeScale = 1, } = config;
+    // Duration/delay NOT scaled - same timing at all sizes
+    const closeDuration = config.closeDuration ?? DEFAULTS.BLINK_CLOSE_DURATION;
+    const openDuration = config.openDuration ?? DEFAULTS.BLINK_OPEN_DURATION;
+    const delay = config.delay ?? 0;
     const timeline = gsapWithCSS.timeline({
         delay,
         onComplete,
@@ -7786,7 +7796,12 @@ function createBlinkAnimation(elements, config = {}) {
  * doubleBlinkTl.play();
  */
 function createDoubleBlinkAnimation(elements, config = {}) {
-    const { closedScale = DEFAULTS.BLINK_CLOSED_SCALE, closeDuration = DEFAULTS.DOUBLE_BLINK_CLOSE_DURATION, openDuration = DEFAULTS.DOUBLE_BLINK_OPEN_DURATION, delay = 0, onComplete, } = config;
+    const { closedScale = DEFAULTS.BLINK_CLOSED_SCALE, onComplete, sizeScale = 1, } = config;
+    // Duration/delay NOT scaled - same timing at all sizes
+    const closeDuration = config.closeDuration ?? DEFAULTS.DOUBLE_BLINK_CLOSE_DURATION;
+    const openDuration = config.openDuration ?? DEFAULTS.DOUBLE_BLINK_OPEN_DURATION;
+    const delay = config.delay ?? 0;
+    const blinkPause = DEFAULTS.DOUBLE_BLINK_PAUSE;
     const timeline = gsapWithCSS.timeline({
         delay,
         onComplete,
@@ -7813,7 +7828,7 @@ function createDoubleBlinkAnimation(elements, config = {}) {
     timeline.to(eyeElements, {
         scaleY: 1,
         transformOrigin: '50% 50%',
-        duration: DEFAULTS.DOUBLE_BLINK_PAUSE,
+        duration: blinkPause,
     });
     // Second blink - close
     timeline.to(eyeElements, {
@@ -7859,7 +7874,10 @@ function createDoubleBlinkAnimation(elements, config = {}) {
  * });
  */
 function createLookAnimation(elements, config) {
-    const { direction, duration = DEFAULTS.LOOK_DURATION, ease = DEFAULTS.MORPH_EASE, xOffset = DEFAULTS.LOOK_X_OFFSET, bunch = DEFAULTS.LOOK_BUNCH, delay = 0, onComplete, sizeScale = 1, } = config;
+    const { direction, ease = DEFAULTS.MORPH_EASE, xOffset = DEFAULTS.LOOK_X_OFFSET, bunch = DEFAULTS.LOOK_BUNCH, onComplete, sizeScale = 1, } = config;
+    // Duration/delay NOT scaled - same timing at all sizes
+    const duration = config.duration ?? DEFAULTS.LOOK_DURATION;
+    const delay = config.delay ?? 0;
     const timeline = gsapWithCSS.timeline({
         delay,
         onComplete,
@@ -7902,7 +7920,10 @@ function createLookAnimation(elements, config) {
  * const returnTl = createReturnFromLookAnimation(elements);
  */
 function createReturnFromLookAnimation(elements, config = {}) {
-    const { duration = DEFAULTS.LOOK_DURATION, ease = DEFAULTS.MORPH_EASE, delay = 0, onComplete, sizeScale = 1, } = config;
+    const { ease = DEFAULTS.MORPH_EASE, onComplete, sizeScale = 1, } = config;
+    // Duration/delay NOT scaled - same timing at all sizes
+    const duration = config.duration ?? DEFAULTS.LOOK_DURATION;
+    const delay = config.delay ?? 0;
     const timeline = gsapWithCSS.timeline({
         delay,
         onComplete,
@@ -8289,6 +8310,22 @@ function resetEyesToIdle(elements, duration = 0, sizeScale = 1) {
  * ~100 lines replacing the 960-line createEmotionAnimation function.
  */
 // NOTE: GLOW_CONSTANTS removed - glow following now handled by GlowSystem
+/**
+ * Duration scale factor - adjusts how much sizeScale affects animation speed.
+ * Uses INVERSE scaling: smaller = slower, larger = faster
+ * 0 = no scaling (same speed at all sizes)
+ * 1 = full inverse scaling
+ * 0.3 = subtle inverse scaling (recommended)
+ */
+const DURATION_SCALE_FACTOR = 0;
+/** Calculate scaled duration based on sizeScale and DURATION_SCALE_FACTOR */
+function getScaledDuration(baseDuration, sizeScale) {
+    // Inverse scaling: smaller characters get longer durations (slower)
+    // larger characters get shorter durations (faster)
+    const inverseScale = 1 / sizeScale;
+    const effectiveScale = 1 + (inverseScale - 1) * DURATION_SCALE_FACTOR;
+    return baseDuration * effectiveScale;
+}
 // Module-level tracking of pending eye reset calls
 // This allows us to kill pending resets when a new emotion starts
 let globalPendingResetCall = null;
@@ -8325,7 +8362,7 @@ function interpretEmotionConfig(config, elements, sizeScale = 1) {
         if (config.resetRotationY) {
             gsapWithCSS.set(character, { rotationY: 0 });
         }
-        // Reset eyes to IDLE (duration configurable per emotion)
+        // Reset eyes to IDLE (duration NOT scaled - same timing at all sizes)
         resetEyesToIdle(elements, config.eyeResetDuration ?? 0, sizeScale);
         // Reset body brackets if they were animated
         if (config.body && leftBody && rightBody) {
@@ -8336,6 +8373,7 @@ function interpretEmotionConfig(config, elements, sizeScale = 1) {
         paused: true, // Don't auto-play - controller will play when ready
         onComplete: () => {
             // If holdDuration is set, wait before resetting (for look animations)
+            // Duration NOT scaled - same timing at all sizes
             if (config.holdDuration) {
                 globalPendingResetCall = gsapWithCSS.delayedCall(config.holdDuration, doReset);
             }
@@ -8390,6 +8428,8 @@ function addEyeAnimation(timeline, eyeConfig, elements, sizeScale) {
     if (!eyeLeft || !eyeRight || !eyeLeftPath || !eyeRightPath || !eyeLeftSvg || !eyeRightSvg) {
         return;
     }
+    // Scale duration based on DURATION_SCALE_FACTOR (0 = no scaling, 1 = full scaling)
+    const scaledDuration = getScaledDuration(eyeConfig.duration ?? 0.2, sizeScale);
     // Create eye morph animation
     const eyeTl = createEyeAnimation({
         leftEye: eyeLeft,
@@ -8398,7 +8438,8 @@ function addEyeAnimation(timeline, eyeConfig, elements, sizeScale) {
         rightEyePath: eyeRightPath,
         leftEyeSvg: eyeLeftSvg,
         rightEyeSvg: eyeRightSvg,
-    }, eyeConfig.shape, { duration: eyeConfig.duration, sizeScale });
+    }, eyeConfig.shape, { duration: scaledDuration, sizeScale });
+    // Timeline position NOT scaled - same timing at all sizes
     const eyePosition = eyeConfig.delay ?? 0;
     timeline.add(eyeTl, eyePosition);
     // Eye position/transform animations
@@ -8416,7 +8457,7 @@ function addEyeAnimation(timeline, eyeConfig, elements, sizeScale) {
             x: leftXOffset + bunch,
             scaleX: eyeConfig.scale ?? 1,
             scaleY: eyeConfig.scale ?? 1,
-            duration: eyeConfig.duration,
+            duration: scaledDuration,
             ease: 'power2.out',
         }, eyePosition);
         // Right eye: moves in direction - bunches towards center
@@ -8425,7 +8466,7 @@ function addEyeAnimation(timeline, eyeConfig, elements, sizeScale) {
             x: rightXOffset - bunch,
             scaleX: eyeConfig.scale ?? 1,
             scaleY: eyeConfig.scale ?? 1,
-            duration: eyeConfig.duration,
+            duration: scaledDuration,
             ease: 'power2.out',
         }, eyePosition);
     }
@@ -8435,20 +8476,22 @@ function addEyeAnimation(timeline, eyeConfig, elements, sizeScale) {
     if (eyeConfig.leftRotation !== undefined) {
         timeline.to(eyeLeft, {
             rotation: eyeConfig.leftRotation,
-            duration: eyeConfig.duration,
+            duration: scaledDuration,
             ease: 'power2.out',
         }, eyePosition);
     }
     if (eyeConfig.rightRotation !== undefined) {
         timeline.to(eyeRight, {
             rotation: eyeConfig.rightRotation,
-            duration: eyeConfig.duration,
+            duration: scaledDuration,
             ease: 'power2.out',
         }, eyePosition);
     }
     // Eye return animation (for shocked - scale back down)
     if (eyeConfig.returnPosition !== undefined) {
+        // Duration/position NOT scaled - same timing at all sizes
         const returnDuration = eyeConfig.returnDuration ?? 0.25;
+        const scaledReturnPosition = eyeConfig.returnPosition;
         timeline.to([eyeLeft, eyeRight], {
             scaleX: 1,
             scaleY: 1,
@@ -8456,7 +8499,7 @@ function addEyeAnimation(timeline, eyeConfig, elements, sizeScale) {
             x: 0,
             duration: returnDuration,
             ease: 'power2.out',
-        }, eyeConfig.returnPosition);
+        }, scaledReturnPosition);
     }
 }
 /**
@@ -8468,6 +8511,10 @@ function addEyePhases(timeline, eyePhases, elements, sizeScale) {
         return;
     }
     for (const phase of eyePhases) {
+        // Scale duration based on DURATION_SCALE_FACTOR (0 = no scaling, 1 = full scaling)
+        const scaledDuration = getScaledDuration(phase.duration ?? 0.2, sizeScale);
+        // Timeline position NOT scaled - same timing at all sizes
+        const scaledPosition = phase.position;
         const eyeTl = createEyeAnimation({
             leftEye: eyeLeft,
             rightEye: eyeRight,
@@ -8475,8 +8522,8 @@ function addEyePhases(timeline, eyePhases, elements, sizeScale) {
             rightEyePath: eyeRightPath,
             leftEyeSvg: eyeLeftSvg,
             rightEyeSvg: eyeRightSvg,
-        }, phase.shape, { duration: phase.duration, sizeScale });
-        timeline.add(eyeTl, phase.position);
+        }, phase.shape, { duration: scaledDuration, sizeScale });
+        timeline.add(eyeTl, scaledPosition);
         // Handle eye position changes (xOffset, bunch)
         // All pixel values are scaled by sizeScale (designed for 160px base)
         if (phase.xOffset !== undefined || phase.bunch !== undefined) {
@@ -8485,15 +8532,15 @@ function addEyePhases(timeline, eyePhases, elements, sizeScale) {
             // Left eye: xOffset + bunch towards center
             timeline.to(eyeLeft, {
                 x: xOffset + bunch,
-                duration: phase.duration,
+                duration: scaledDuration,
                 ease: 'power2.out',
-            }, phase.position);
+            }, scaledPosition);
             // Right eye: xOffset - bunch towards center
             timeline.to(eyeRight, {
                 x: xOffset - bunch,
-                duration: phase.duration,
+                duration: scaledDuration,
                 ease: 'power2.out',
-            }, phase.position);
+            }, scaledPosition);
         }
     }
 }
@@ -8501,6 +8548,7 @@ function addEyePhases(timeline, eyePhases, elements, sizeScale) {
  * Add body bracket animation (shocked)
  */
 function addBodyAnimation(timeline, bodyConfig, leftBody, rightBody, sizeScale = 1) {
+    // Duration/position NOT scaled - same timing at all sizes
     const duration = bodyConfig.duration ?? 0.2;
     const ease = bodyConfig.ease ?? 'back.out(2)';
     const returnPosition = bodyConfig.returnPosition ?? '+=1.15';
@@ -8535,6 +8583,7 @@ function addCharacterPhases(timeline, phases, character, _glowElements, _glowCon
     let isFirstPhase = true;
     for (const phase of phases) {
         // First phase starts at 0, others sequence naturally or use explicit position
+        // Timeline position NOT scaled - same timing at all sizes
         const position = phase.position ?? (isFirstPhase ? 0 : undefined);
         isFirstPhase = false;
         // Scale x and y pixel values by sizeScale (designed for 160px base)
@@ -8546,10 +8595,12 @@ function addCharacterPhases(timeline, phases, character, _glowElements, _glowCon
         if (typeof scaledProps.y === 'number') {
             scaledProps.y = scaledProps.y * sizeScale;
         }
+        // Scale duration based on DURATION_SCALE_FACTOR (0 = no scaling, 1 = full scaling)
+        const scaledDuration = getScaledDuration(phase.duration, sizeScale);
         // Animate character
         timeline.to(character, {
             ...scaledProps,
-            duration: phase.duration,
+            duration: scaledDuration,
             ease: phase.ease,
         }, position);
         // NOTE: Glow following removed - GlowSystem tracks character position via physics
@@ -9058,6 +9109,7 @@ function createWakeUpAnimation(elements, sizeScale = 1) {
     // ============================================
     // OFF does: climb to -60 (0.5s) → snap to 50 (0.1s) → fade
     // ON does:  snap to -60 (0.12s) → hang → settle to 0 (0.5s)
+    // Scale all durations by sizeScale so smaller characters animate faster
     // ============================================
     // Phase 1: POP UP - quick but readable rise to apex
     // Opacity and scale come in with the rise
@@ -9163,6 +9215,7 @@ function createPowerOffAnimation(elements, sizeScale = 1) {
     // Kill any existing animations
     // NOTE: Don't kill glow tweens - GlowSystem manages glow animations
     gsapWithCSS.killTweensOf([character, shadow]);
+    // NOTE: Duration scaling disabled - adjust DURATION_SCALE_FACTOR in emotion-interpreter.ts if needed
     // Phase 1: Climb up (0.5s) - eyes stay as idle
     timeline.to(character, {
         y: -60,
@@ -9185,7 +9238,7 @@ function createPowerOffAnimation(elements, sizeScale = 1) {
         scaleY: 0.65,
         duration: 0.1,
         ease: 'expo.in',
-    }, '-=0.1' // Parallel with character snap
+    }, `-=0.1` // Parallel with character snap
     );
     // Phase 3: Fade character to transparent IMMEDIATELY after snap (0.05s)
     timeline.to(character, {
@@ -9199,7 +9252,7 @@ function createPowerOffAnimation(elements, sizeScale = 1) {
         opacity: 0,
         duration: 0.06, // Lightning fast - 60ms
         ease: 'power2.in',
-    }, '-=0.05' // Start slightly before character fade finishes
+    }, `-=0.05` // Start slightly before character fade finishes
     );
     // CRITICAL: Freeze rotation at 0° for logo state
     timeline.set(character, { rotation: 0 }, '>');
@@ -9377,11 +9430,22 @@ const DEFAULT_CONFIG = {
  * @param character - The character element to track position from
  * @param outerGlow - The outer (larger, softer) glow element
  * @param innerGlow - The inner (smaller, tighter) glow element
+ * @param sizeScale - Scale factor for oscillation amplitudes (size / 160)
  * @param config - Optional configuration overrides
  * @returns Controls for the glow system
  */
-function createGlowSystem(character, outerGlow, innerGlow, config = {}) {
-    const cfg = { ...DEFAULT_CONFIG, ...config };
+function createGlowSystem(character, outerGlow, innerGlow, sizeScale = 1, config = {}) {
+    // Mutable config that can be updated when sizeScale changes
+    let currentSizeScale = sizeScale;
+    const cfg = {
+        ...DEFAULT_CONFIG,
+        // Scale oscillation amplitudes by sizeScale (frequency stays in Hz, not pixels)
+        outerOscillationAmplitudeX: DEFAULT_CONFIG.outerOscillationAmplitudeX * currentSizeScale,
+        innerOscillationAmplitudeX: DEFAULT_CONFIG.innerOscillationAmplitudeX * currentSizeScale,
+        outerOscillationAmplitudeY: DEFAULT_CONFIG.outerOscillationAmplitudeY * currentSizeScale,
+        innerOscillationAmplitudeY: DEFAULT_CONFIG.innerOscillationAmplitudeY * currentSizeScale,
+        ...config,
+    };
     // State
     let isRunning = false;
     let isPaused = false;
@@ -9516,6 +9580,17 @@ function createGlowSystem(character, outerGlow, innerGlow, config = {}) {
         gsapWithCSS.set(outerGlow, { x: characterX, y: characterY });
         gsapWithCSS.set(innerGlow, { x: characterX, y: characterY });
     }
+    /**
+     * Update the size scale dynamically (e.g., when character size changes)
+     * Recalculates oscillation amplitudes based on new scale
+     */
+    function updateSizeScale(newSizeScale) {
+        currentSizeScale = newSizeScale;
+        cfg.outerOscillationAmplitudeX = DEFAULT_CONFIG.outerOscillationAmplitudeX * currentSizeScale;
+        cfg.innerOscillationAmplitudeX = DEFAULT_CONFIG.innerOscillationAmplitudeX * currentSizeScale;
+        cfg.outerOscillationAmplitudeY = DEFAULT_CONFIG.outerOscillationAmplitudeY * currentSizeScale;
+        cfg.innerOscillationAmplitudeY = DEFAULT_CONFIG.innerOscillationAmplitudeY * currentSizeScale;
+    }
     // =============================================================================
     // RETURN CONTROLS
     // =============================================================================
@@ -9530,6 +9605,7 @@ function createGlowSystem(character, outerGlow, innerGlow, config = {}) {
         show,
         hide,
         snapToCharacter,
+        updateSizeScale,
     };
 }
 
@@ -9721,7 +9797,7 @@ function useAnimationController(elements, options = {}) {
             // Create glow system - physics-based tracking with snake-like oscillation
             // This replaces all the disjointed glow animations scattered throughout
             if (elements.innerGlow && elements.outerGlow && !glowSystemRef.current) {
-                glowSystemRef.current = createGlowSystem(elements.character, elements.outerGlow, elements.innerGlow);
+                glowSystemRef.current = createGlowSystem(elements.character, elements.outerGlow, elements.innerGlow, sizeScale);
                 // Start immediately (will track character position at 60fps)
                 // Don't start if in OFF mode - wake-up transition handles glow fade-in
                 if (!isOff) {
@@ -9737,6 +9813,17 @@ function useAnimationController(elements, options = {}) {
             }
         }
     }, [elements, enableLogging, isOff]);
+    /**
+     * Update glow system when sizeScale changes
+     * This ensures oscillation amplitudes stay proportional to character size
+     * AND resets spring positions to account for CSS base position changes
+     */
+    React.useEffect(() => {
+        if (glowSystemRef.current) {
+            glowSystemRef.current.updateSizeScale(sizeScale);
+            glowSystemRef.current.snapToCharacter();
+        }
+    }, [sizeScale]);
     /**
      * Handle OFF state changes (wake-up and power-off sequences)
      */
@@ -10807,35 +10894,45 @@ const styles = {
         height: `${height * scale}px`,
     }),
     // Inner glow (behind character)
-    innerGlow: (scale = 1) => ({
-        position: 'absolute',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-        top: `${80 * scale}px`,
-        width: `${120 * scale}px`,
-        height: `${90 * scale}px`,
-        borderRadius: '50%',
-        opacity: 1,
-        background: 'linear-gradient(90deg, #C5D4FF 0%, #E0C5FF 100%)',
-        filter: `blur(${25 * scale}px)`,
-        transformOrigin: 'center center',
-        pointerEvents: 'none',
-    }),
+    // NOTE: Using calc() for centering instead of transform, because GSAP needs full control of transforms
+    innerGlow: (scale = 1) => {
+        const width = 120 * scale;
+        const height = 90 * scale;
+        const centerY = 95 * scale; // Center point Y - positioned at body/face area
+        return {
+            position: 'absolute',
+            left: `calc(50% - ${width / 2}px)`,
+            top: `${centerY - height / 2}px`,
+            width: `${width}px`,
+            height: `${height}px`,
+            borderRadius: '50%',
+            opacity: 1,
+            background: 'linear-gradient(90deg, #C5D4FF 0%, #E0C5FF 100%)',
+            filter: `blur(${25 * scale}px)`,
+            transformOrigin: 'center center',
+            pointerEvents: 'none',
+        };
+    },
     // Outer glow (behind character, larger)
-    outerGlow: (scale = 1) => ({
-        position: 'absolute',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-        top: `${80 * scale}px`,
-        width: `${170 * scale}px`,
-        height: `${130 * scale}px`,
-        borderRadius: '50%',
-        opacity: 1,
-        background: 'linear-gradient(90deg, #D5E2FF 0%, #EED5FF 100%)',
-        filter: `blur(${32 * scale}px)`,
-        transformOrigin: 'center center',
-        pointerEvents: 'none',
-    }),
+    // NOTE: Using calc() for centering instead of transform, because GSAP needs full control of transforms
+    outerGlow: (scale = 1) => {
+        const width = 170 * scale;
+        const height = 130 * scale;
+        const centerY = 95 * scale; // Center point Y - positioned at body/face area
+        return {
+            position: 'absolute',
+            left: `calc(50% - ${width / 2}px)`,
+            top: `${centerY - height / 2}px`,
+            width: `${width}px`,
+            height: `${height}px`,
+            borderRadius: '50%',
+            opacity: 1,
+            background: 'linear-gradient(90deg, #D5E2FF 0%, #EED5FF 100%)',
+            filter: `blur(${32 * scale}px)`,
+            transformOrigin: 'center center',
+            pointerEvents: 'none',
+        };
+    },
     // Shadow (below character) - positioned at bottom of fullContainer
     shadow: (scale = 1) => ({
         position: 'absolute',
@@ -11003,7 +11100,7 @@ searchEnabled = false, searchValue: externalSearchValue, onSearchChange, onSearc
                         const canvasCenterY = (size * 5) / 2;
                         for (let i = 0; i < count; i++) {
                             setTimeout(() => {
-                                canvasRef.current?.spawnParticle?.('confetti', canvasCenterX, canvasCenterY - 50);
+                                canvasRef.current?.spawnParticle?.('confetti', canvasCenterX, canvasCenterY - 50 * sizeScale);
                             }, i * 10);
                         }
                     }, 550);
@@ -11030,12 +11127,12 @@ searchEnabled = false, searchValue: externalSearchValue, onSearchChange, onSearc
                             return;
                         const lightbulb = document.createElement('div');
                         lightbulb.textContent = '💡';
-                        const bulbSize = isSuperMode ? 70 : 48;
-                        const bulbOffset = isSuperMode ? 32 : 22;
+                        const bulbSize = (isSuperMode ? 70 : 48) * sizeScale;
+                        const bulbOffset = (isSuperMode ? 32 : 22) * sizeScale;
                         lightbulb.style.cssText = `
                 position: fixed;
                 left: ${rect.left + rect.width / 2 - bulbOffset}px;
-                top: ${rect.top - 80}px;
+                top: ${rect.top - 80 * sizeScale}px;
                 font-size: ${bulbSize}px;
                 z-index: 1000;
                 pointer-events: none;
@@ -11056,13 +11153,13 @@ searchEnabled = false, searchValue: externalSearchValue, onSearchChange, onSearc
                             return;
                         const teardrop = document.createElement('div');
                         teardrop.textContent = '💧';
-                        const dropSize = isSuperMode ? 52 : 36;
-                        const dropOffset = isSuperMode ? 24 : 16;
+                        const dropSize = (isSuperMode ? 52 : 36) * sizeScale;
+                        const dropOffset = (isSuperMode ? 24 : 16) * sizeScale;
                         const xOffset = rect.width * 0.35;
                         teardrop.style.cssText = `
                 position: fixed;
                 left: ${rect.left + rect.width / 2 + xOffset - dropOffset}px;
-                top: ${rect.top - 20}px;
+                top: ${rect.top - 20 * sizeScale}px;
                 font-size: ${dropSize}px;
                 z-index: 1000;
                 pointer-events: none;
@@ -11083,13 +11180,13 @@ searchEnabled = false, searchValue: externalSearchValue, onSearchChange, onSearc
                             return;
                         const exclamation = document.createElement('div');
                         exclamation.textContent = '❗';
-                        const emojiSize = isSuperMode ? 70 : 48;
-                        const emojiOffset = isSuperMode ? 32 : 22;
+                        const emojiSize = (isSuperMode ? 70 : 48) * sizeScale;
+                        const emojiOffset = (isSuperMode ? 32 : 22) * sizeScale;
                         const xOffset = rect.width * 0.35;
                         exclamation.style.cssText = `
                 position: fixed;
                 left: ${rect.left + rect.width / 2 + xOffset - emojiOffset}px;
-                top: ${rect.top - 50}px;
+                top: ${rect.top - 50 * sizeScale}px;
                 font-size: ${emojiSize}px;
                 z-index: 1000;
                 pointer-events: none;
@@ -11548,7 +11645,7 @@ searchEnabled = false, searchValue: externalSearchValue, onSearchChange, onSearc
     return (jsxRuntime.jsxs("div", { ref: containerRef, style: {
             ...containerStyle,
             ...style,
-        }, className: className, children: [jsxRuntime.jsx(AntyParticleCanvas, { ref: canvasRef, particles: particles, width: size * 5, height: size * 5 }), jsxRuntime.jsxs("div", { style: useFullContainer ? styles.characterArea(size) : { position: 'relative', width: size, height: size }, children: [showGlow && !hasExternalGlow && (jsxRuntime.jsx("div", { ref: internalOuterGlowRef, style: styles.outerGlow(sizeScale) })), showGlow && !hasExternalGlow && (jsxRuntime.jsx("div", { ref: internalInnerGlowRef, style: styles.innerGlow(sizeScale) })), isSuperMode && (jsxRuntime.jsx("div", { ref: superGlowRef, style: styles.superGlow })), jsxRuntime.jsxs("div", { ref: characterRef, className: isSuperMode ? 'super-mode' : undefined, style: styles.character, children: [jsxRuntime.jsx("div", { ref: rightBodyRef, style: styles.rightBody, children: jsxRuntime.jsx("img", { alt: "", style: styles.bodyImage, src: bodyRightSvg }) }), jsxRuntime.jsx("div", { ref: leftBodyRef, style: styles.leftBody, children: jsxRuntime.jsx("img", { alt: "", style: styles.bodyImage, src: bodyLeftSvg }) }), jsxRuntime.jsx("div", { style: styles.leftEyeContainer, children: jsxRuntime.jsx("div", { ref: leftEyeRef, style: styles.eyeWrapper(initialEyeDimensions.width, initialEyeDimensions.height, sizeScale), children: jsxRuntime.jsx("svg", { ref: leftEyeSvgRef, width: "100%", height: "100%", viewBox: initialEyeDimensions.viewBox, fill: "none", xmlns: "http://www.w3.org/2000/svg", style: { display: 'block' }, children: jsxRuntime.jsx("path", { ref: leftEyePathRef, d: getEyeShape('IDLE', 'left'), fill: "#052333" }) }) }) }), jsxRuntime.jsx("div", { style: styles.rightEyeContainer, children: jsxRuntime.jsx("div", { ref: rightEyeRef, style: styles.eyeWrapper(initialEyeDimensions.width, initialEyeDimensions.height, sizeScale), children: jsxRuntime.jsx("svg", { ref: rightEyeSvgRef, width: "100%", height: "100%", viewBox: initialEyeDimensions.viewBox, fill: "none", xmlns: "http://www.w3.org/2000/svg", style: { display: 'block' }, children: jsxRuntime.jsx("path", { ref: rightEyePathRef, d: getEyeShape('IDLE', 'right'), fill: "#052333" }) }) }) }), debugMode && (jsxRuntime.jsxs(jsxRuntime.Fragment, { children: [jsxRuntime.jsx("div", { style: styles.debugBorder }), !isOff && (jsxRuntime.jsxs(jsxRuntime.Fragment, { children: [jsxRuntime.jsx("div", { style: styles.debugCrosshair('calc(33.41% + 13.915% - 1px)', 'calc(31.63% + 5.825% - 7px)', 'yellow', true) }), jsxRuntime.jsx("div", { style: styles.debugCrosshair('calc(33.41% + 13.915% - 6px)', 'calc(31.63% + 5.825% - 2px)', 'yellow', false) })] })), !isOff && (jsxRuntime.jsxs(jsxRuntime.Fragment, { children: [jsxRuntime.jsx("div", { style: styles.debugCrosshair('calc(33.41% + 13.915% - 1px)', 'calc(57.36% + 5.82% - 7px)', 'orange', true) }), jsxRuntime.jsx("div", { style: styles.debugCrosshair('calc(33.41% + 13.915% - 6px)', 'calc(57.36% + 5.82% - 2px)', 'orange', false) })] }))] }))] }), searchEnabled && (jsxRuntime.jsx(AntySearchBar, { active: isSearchActive, value: searchValueState, onChange: handleSearchChange, inputRef: searchInputRef, barRef: searchBarRef, borderRef: searchBorderRef, borderGradientRef: searchBorderGradientRef, placeholderRef: searchPlaceholderRef, kbdRef: searchKbdRef, glowRef: searchGlowRef, config: searchConfig, placeholder: searchPlaceholder, keyboardShortcut: searchShortcut }))] }), showShadow && !hasExternalShadow && (jsxRuntime.jsx("div", { ref: internalShadowRef, style: styles.shadow(sizeScale) }))] }));
+        }, className: className, children: [jsxRuntime.jsx(AntyParticleCanvas, { ref: canvasRef, particles: particles, width: size * 5, height: size * 5, sizeScale: sizeScale }), jsxRuntime.jsxs("div", { style: useFullContainer ? styles.characterArea(size) : { position: 'relative', width: size, height: size }, children: [showGlow && !hasExternalGlow && (jsxRuntime.jsx("div", { ref: internalOuterGlowRef, style: styles.outerGlow(sizeScale) })), showGlow && !hasExternalGlow && (jsxRuntime.jsx("div", { ref: internalInnerGlowRef, style: styles.innerGlow(sizeScale) })), isSuperMode && (jsxRuntime.jsx("div", { ref: superGlowRef, style: styles.superGlow })), jsxRuntime.jsxs("div", { ref: characterRef, className: isSuperMode ? 'super-mode' : undefined, style: styles.character, children: [jsxRuntime.jsx("div", { ref: rightBodyRef, style: styles.rightBody, children: jsxRuntime.jsx("img", { alt: "", style: styles.bodyImage, src: bodyRightSvg }) }), jsxRuntime.jsx("div", { ref: leftBodyRef, style: styles.leftBody, children: jsxRuntime.jsx("img", { alt: "", style: styles.bodyImage, src: bodyLeftSvg }) }), jsxRuntime.jsx("div", { style: styles.leftEyeContainer, children: jsxRuntime.jsx("div", { ref: leftEyeRef, style: styles.eyeWrapper(initialEyeDimensions.width, initialEyeDimensions.height, sizeScale), children: jsxRuntime.jsx("svg", { ref: leftEyeSvgRef, width: "100%", height: "100%", viewBox: initialEyeDimensions.viewBox, fill: "none", xmlns: "http://www.w3.org/2000/svg", style: { display: 'block' }, children: jsxRuntime.jsx("path", { ref: leftEyePathRef, d: getEyeShape('IDLE', 'left'), fill: "#052333" }) }) }) }), jsxRuntime.jsx("div", { style: styles.rightEyeContainer, children: jsxRuntime.jsx("div", { ref: rightEyeRef, style: styles.eyeWrapper(initialEyeDimensions.width, initialEyeDimensions.height, sizeScale), children: jsxRuntime.jsx("svg", { ref: rightEyeSvgRef, width: "100%", height: "100%", viewBox: initialEyeDimensions.viewBox, fill: "none", xmlns: "http://www.w3.org/2000/svg", style: { display: 'block' }, children: jsxRuntime.jsx("path", { ref: rightEyePathRef, d: getEyeShape('IDLE', 'right'), fill: "#052333" }) }) }) }), debugMode && (jsxRuntime.jsxs(jsxRuntime.Fragment, { children: [jsxRuntime.jsx("div", { style: styles.debugBorder }), !isOff && (jsxRuntime.jsxs(jsxRuntime.Fragment, { children: [jsxRuntime.jsx("div", { style: styles.debugCrosshair('calc(33.41% + 13.915% - 1px)', 'calc(31.63% + 5.825% - 7px)', 'yellow', true) }), jsxRuntime.jsx("div", { style: styles.debugCrosshair('calc(33.41% + 13.915% - 6px)', 'calc(31.63% + 5.825% - 2px)', 'yellow', false) })] })), !isOff && (jsxRuntime.jsxs(jsxRuntime.Fragment, { children: [jsxRuntime.jsx("div", { style: styles.debugCrosshair('calc(33.41% + 13.915% - 1px)', 'calc(57.36% + 5.82% - 7px)', 'orange', true) }), jsxRuntime.jsx("div", { style: styles.debugCrosshair('calc(33.41% + 13.915% - 6px)', 'calc(57.36% + 5.82% - 2px)', 'orange', false) })] }))] }))] }), searchEnabled && (jsxRuntime.jsx(AntySearchBar, { active: isSearchActive, value: searchValueState, onChange: handleSearchChange, inputRef: searchInputRef, barRef: searchBarRef, borderRef: searchBorderRef, borderGradientRef: searchBorderGradientRef, placeholderRef: searchPlaceholderRef, kbdRef: searchKbdRef, glowRef: searchGlowRef, config: searchConfig, placeholder: searchPlaceholder, keyboardShortcut: searchShortcut }))] }), showShadow && !hasExternalShadow && (jsxRuntime.jsx("div", { ref: internalShadowRef, style: styles.shadow(sizeScale) }))] }));
 });
 AntyCharacter.displayName = 'AntyCharacter';
 

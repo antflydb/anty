@@ -64,6 +64,7 @@ export function createWakeUpAnimation(
   // ============================================
   // OFF does: climb to -60 (0.5s) → snap to 50 (0.1s) → fade
   // ON does:  snap to -60 (0.12s) → hang → settle to 0 (0.5s)
+  // Scale all durations by sizeScale so smaller characters animate faster
   // ============================================
 
   // Phase 1: POP UP - quick but readable rise to apex
@@ -205,6 +206,8 @@ export function createPowerOffAnimation(
   // NOTE: Don't kill glow tweens - GlowSystem manages glow animations
   gsap.killTweensOf([character, shadow]);
 
+  // NOTE: Duration scaling disabled - adjust DURATION_SCALE_FACTOR in emotion-interpreter.ts if needed
+
   // Phase 1: Climb up (0.5s) - eyes stay as idle
   timeline.to(character, {
     y: -60,
@@ -233,7 +236,7 @@ export function createPowerOffAnimation(
       duration: 0.1,
       ease: 'expo.in',
     },
-    '-=0.1' // Parallel with character snap
+    `-=0.1` // Parallel with character snap
   );
 
   // Phase 3: Fade character to transparent IMMEDIATELY after snap (0.05s)
@@ -253,7 +256,7 @@ export function createPowerOffAnimation(
       duration: 0.06, // Lightning fast - 60ms
       ease: 'power2.in',
     },
-    '-=0.05' // Start slightly before character fade finishes
+    `-=0.05` // Start slightly before character fade finishes
   );
 
   // CRITICAL: Freeze rotation at 0° for logo state

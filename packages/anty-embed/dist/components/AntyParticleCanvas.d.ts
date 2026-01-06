@@ -3,6 +3,7 @@ interface AntyParticleCanvasProps {
     particles: Particle[];
     width?: number;
     height?: number;
+    sizeScale?: number;
 }
 export interface ParticleCanvasHandle {
     spawnParticle: (type: ParticleType, x: number, y: number, color?: string) => void;

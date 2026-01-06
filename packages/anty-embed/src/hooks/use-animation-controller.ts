@@ -356,7 +356,8 @@ export function useAnimationController(
         glowSystemRef.current = createGlowSystem(
           elements.character,
           elements.outerGlow,
-          elements.innerGlow
+          elements.innerGlow,
+          sizeScale
         );
         // Start immediately (will track character position at 60fps)
         // Don't start if in OFF mode - wake-up transition handles glow fade-in
@@ -372,6 +373,18 @@ export function useAnimationController(
       }
     }
   }, [elements, enableLogging, isOff]);
+
+  /**
+   * Update glow system when sizeScale changes
+   * This ensures oscillation amplitudes stay proportional to character size
+   * AND resets spring positions to account for CSS base position changes
+   */
+  useEffect(() => {
+    if (glowSystemRef.current) {
+      glowSystemRef.current.updateSizeScale(sizeScale);
+      glowSystemRef.current.snapToCharacter();
+    }
+  }, [sizeScale]);
 
   /**
    * Handle OFF state changes (wake-up and power-off sequences)

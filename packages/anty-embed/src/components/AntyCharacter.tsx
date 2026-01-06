@@ -246,36 +246,46 @@ const styles = {
   }),
 
   // Inner glow (behind character)
-  innerGlow: (scale: number = 1): React.CSSProperties => ({
-    position: 'absolute' as const,
-    left: '50%',
-    transform: 'translate(-50%, -50%)',
-    top: `${80 * scale}px`,
-    width: `${120 * scale}px`,
-    height: `${90 * scale}px`,
-    borderRadius: '50%',
-    opacity: 1,
-    background: 'linear-gradient(90deg, #C5D4FF 0%, #E0C5FF 100%)',
-    filter: `blur(${25 * scale}px)`,
-    transformOrigin: 'center center',
-    pointerEvents: 'none' as const,
-  }),
+  // NOTE: Using calc() for centering instead of transform, because GSAP needs full control of transforms
+  innerGlow: (scale: number = 1): React.CSSProperties => {
+    const width = 120 * scale;
+    const height = 90 * scale;
+    const centerY = 95 * scale; // Center point Y - positioned at body/face area
+    return {
+      position: 'absolute' as const,
+      left: `calc(50% - ${width / 2}px)`,
+      top: `${centerY - height / 2}px`,
+      width: `${width}px`,
+      height: `${height}px`,
+      borderRadius: '50%',
+      opacity: 1,
+      background: 'linear-gradient(90deg, #C5D4FF 0%, #E0C5FF 100%)',
+      filter: `blur(${25 * scale}px)`,
+      transformOrigin: 'center center',
+      pointerEvents: 'none' as const,
+    };
+  },
 
   // Outer glow (behind character, larger)
-  outerGlow: (scale: number = 1): React.CSSProperties => ({
-    position: 'absolute' as const,
-    left: '50%',
-    transform: 'translate(-50%, -50%)',
-    top: `${80 * scale}px`,
-    width: `${170 * scale}px`,
-    height: `${130 * scale}px`,
-    borderRadius: '50%',
-    opacity: 1,
-    background: 'linear-gradient(90deg, #D5E2FF 0%, #EED5FF 100%)',
-    filter: `blur(${32 * scale}px)`,
-    transformOrigin: 'center center',
-    pointerEvents: 'none' as const,
-  }),
+  // NOTE: Using calc() for centering instead of transform, because GSAP needs full control of transforms
+  outerGlow: (scale: number = 1): React.CSSProperties => {
+    const width = 170 * scale;
+    const height = 130 * scale;
+    const centerY = 95 * scale; // Center point Y - positioned at body/face area
+    return {
+      position: 'absolute' as const,
+      left: `calc(50% - ${width / 2}px)`,
+      top: `${centerY - height / 2}px`,
+      width: `${width}px`,
+      height: `${height}px`,
+      borderRadius: '50%',
+      opacity: 1,
+      background: 'linear-gradient(90deg, #D5E2FF 0%, #EED5FF 100%)',
+      filter: `blur(${32 * scale}px)`,
+      transformOrigin: 'center center',
+      pointerEvents: 'none' as const,
+    };
+  },
 
   // Shadow (below character) - positioned at bottom of fullContainer
   shadow: (scale: number = 1): React.CSSProperties => ({
@@ -488,7 +498,7 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
 
               for (let i = 0; i < count; i++) {
                 setTimeout(() => {
-                  canvasRef.current?.spawnParticle?.('confetti', canvasCenterX, canvasCenterY - 50);
+                  canvasRef.current?.spawnParticle?.('confetti', canvasCenterX, canvasCenterY - 50 * sizeScale);
                 }, i * 10);
               }
             }, 550);
@@ -522,12 +532,12 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
               if (!rect) return;
               const lightbulb = document.createElement('div');
               lightbulb.textContent = '💡';
-              const bulbSize = isSuperMode ? 70 : 48;
-              const bulbOffset = isSuperMode ? 32 : 22;
+              const bulbSize = (isSuperMode ? 70 : 48) * sizeScale;
+              const bulbOffset = (isSuperMode ? 32 : 22) * sizeScale;
               lightbulb.style.cssText = `
                 position: fixed;
                 left: ${rect.left + rect.width / 2 - bulbOffset}px;
-                top: ${rect.top - 80}px;
+                top: ${rect.top - 80 * sizeScale}px;
                 font-size: ${bulbSize}px;
                 z-index: 1000;
                 pointer-events: none;
@@ -548,13 +558,13 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
               if (!rect) return;
               const teardrop = document.createElement('div');
               teardrop.textContent = '💧';
-              const dropSize = isSuperMode ? 52 : 36;
-              const dropOffset = isSuperMode ? 24 : 16;
+              const dropSize = (isSuperMode ? 52 : 36) * sizeScale;
+              const dropOffset = (isSuperMode ? 24 : 16) * sizeScale;
               const xOffset = rect.width * 0.35;
               teardrop.style.cssText = `
                 position: fixed;
                 left: ${rect.left + rect.width / 2 + xOffset - dropOffset}px;
-                top: ${rect.top - 20}px;
+                top: ${rect.top - 20 * sizeScale}px;
                 font-size: ${dropSize}px;
                 z-index: 1000;
                 pointer-events: none;
@@ -575,13 +585,13 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
               if (!rect) return;
               const exclamation = document.createElement('div');
               exclamation.textContent = '❗';
-              const emojiSize = isSuperMode ? 70 : 48;
-              const emojiOffset = isSuperMode ? 32 : 22;
+              const emojiSize = (isSuperMode ? 70 : 48) * sizeScale;
+              const emojiOffset = (isSuperMode ? 32 : 22) * sizeScale;
               const xOffset = rect.width * 0.35;
               exclamation.style.cssText = `
                 position: fixed;
                 left: ${rect.left + rect.width / 2 + xOffset - emojiOffset}px;
-                top: ${rect.top - 50}px;
+                top: ${rect.top - 50 * sizeScale}px;
                 font-size: ${emojiSize}px;
                 z-index: 1000;
                 pointer-events: none;
@@ -1108,7 +1118,7 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
       className={className}
     >
       {/* Canvas overlay for particles */}
-      <AntyParticleCanvas ref={canvasRef} particles={particles} width={size * 5} height={size * 5} />
+      <AntyParticleCanvas ref={canvasRef} particles={particles} width={size * 5} height={size * 5} sizeScale={sizeScale} />
 
       {/* Character area - positioned at top of fullContainer, or fills regular container */}
       <div style={useFullContainer ? styles.characterArea(size) : { position: 'relative', width: size, height: size }}>

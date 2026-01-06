@@ -54,6 +54,8 @@ export interface GlowSystemControls {
     hide: () => void;
     /** Reset positions to character position (no spring lag) */
     snapToCharacter: () => void;
+    /** Update the size scale (recalculates oscillation amplitudes) */
+    updateSizeScale: (newSizeScale: number) => void;
 }
 /**
  * Creates a glow tracking system with spring physics and oscillation
@@ -61,7 +63,8 @@ export interface GlowSystemControls {
  * @param character - The character element to track position from
  * @param outerGlow - The outer (larger, softer) glow element
  * @param innerGlow - The inner (smaller, tighter) glow element
+ * @param sizeScale - Scale factor for oscillation amplitudes (size / 160)
  * @param config - Optional configuration overrides
  * @returns Controls for the glow system
  */
-export declare function createGlowSystem(character: HTMLElement, outerGlow: HTMLElement, innerGlow: HTMLElement, config?: Partial<GlowSystemConfig>): GlowSystemControls;
+export declare function createGlowSystem(character: HTMLElement, outerGlow: HTMLElement, innerGlow: HTMLElement, sizeScale?: number, config?: Partial<GlowSystemConfig>): GlowSystemControls;

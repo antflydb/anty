@@ -58,10 +58,8 @@ export default function Anty() {
 
   const characterRef = useRef<HTMLDivElement>(null);
   const antyRef = useRef<AntyCharacterHandle>(null);
-  // External shadow and glow refs for playground (character component will use these instead of internal)
+  // External shadow ref for playground (character component will use this instead of internal)
   const shadowRef = useRef<HTMLDivElement>(null);
-  const innerGlowRef = useRef<HTMLDivElement>(null);
-  const glowRef = useRef<HTMLDivElement>(null);
   const moodsButtonRef = useRef<HTMLButtonElement>(null);
   const heartTimersRef = useRef<Map<number, NodeJS.Timeout>>(new Map());
   const superModeTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -139,14 +137,20 @@ export default function Anty() {
       }
 
       if (innerGlow && innerGlowDebug) {
-        const transform = window.getComputedStyle(innerGlow).transform;
-        innerGlowDebug.style.transform = transform;
+        const rect = innerGlow.getBoundingClientRect();
+        innerGlowDebug.style.left = `${rect.left}px`;
+        innerGlowDebug.style.top = `${rect.top}px`;
+        innerGlowDebug.style.width = `${rect.width}px`;
+        innerGlowDebug.style.height = `${rect.height}px`;
         innerGlowDebug.style.opacity = window.getComputedStyle(innerGlow).opacity;
       }
 
       if (outerGlow && outerGlowDebug) {
-        const transform = window.getComputedStyle(outerGlow).transform;
-        outerGlowDebug.style.transform = transform;
+        const rect = outerGlow.getBoundingClientRect();
+        outerGlowDebug.style.left = `${rect.left}px`;
+        outerGlowDebug.style.top = `${rect.top}px`;
+        outerGlowDebug.style.width = `${rect.width}px`;
+        outerGlowDebug.style.height = `${rect.height}px`;
         outerGlowDebug.style.opacity = window.getComputedStyle(outerGlow).opacity;
       }
 
@@ -658,7 +662,7 @@ export default function Anty() {
 
     // 2. Fade out UI and character
     tl.to(
-      ['.heart-meter', '.expression-menu', characterElement, '.inner-glow', antyRef.current?.outerGlowRef?.current].filter(Boolean),
+      ['.heart-meter', '.expression-menu', characterElement, antyRef.current?.innerGlowRef?.current, antyRef.current?.outerGlowRef?.current].filter(Boolean),
       {
         opacity: 0,
         duration: 0.25,
@@ -1038,73 +1042,7 @@ export default function Anty() {
                 transform: isChatOpen ? `translateX(-${CHAT_OFFSET}px)` : 'translateX(0)',
               }}
             >
-              {/* Floating glow behind Anty - Layer 1 (inner, more saturated) */}
-              <div
-                ref={innerGlowRef}
-                className="inner-glow anty-z-glow absolute left-1/2 -translate-x-1/2 -translate-y-1/2"
-                style={{
-                  top: '80px',
-                  width: '120px',
-                  height: '90px',
-                  borderRadius: '50%',
-                  opacity: 1,
-                  background: 'linear-gradient(90deg, #C5D4FF 0%, #E0C5FF 100%)',
-                  filter: 'blur(25px)',
-                  transformOrigin: 'center center',
-                  pointerEvents: 'none',
-                }}
-              />
-
-              {/* Debug overlay for inner glow */}
-              {debugMode && (
-                <div
-                  id="debug-inner-glow"
-                  className="anty-z-debug absolute left-1/2 pointer-events-none"
-                  style={{
-                    top: '80px',
-                    width: '120px',
-                    height: '90px',
-                    borderRadius: '50%',
-                    border: '3px solid cyan',
-                    transform: 'translate(-50%, -50%)',
-                  }}
-                />
-              )}
-
-              {/* Floating glow behind Anty - Layer 2 (outer, softer) */}
-              <div
-                ref={glowRef}
-                className="outer-glow anty-z-glow absolute left-1/2 -translate-x-1/2 -translate-y-1/2"
-                style={{
-                  top: '80px',
-                  width: '170px',
-                  height: '130px',
-                  borderRadius: '50%',
-                  opacity: 1,
-                  background: 'linear-gradient(90deg, #D5E2FF 0%, #EED5FF 100%)',
-                  filter: 'blur(32px)',
-                  transformOrigin: 'center center',
-                  pointerEvents: 'none',
-                }}
-              />
-
-              {/* Debug overlay for outer glow */}
-              {debugMode && (
-                <div
-                  id="debug-outer-glow"
-                  className="anty-z-debug absolute left-1/2 pointer-events-none"
-                  style={{
-                    top: '80px',
-                    width: '170px',
-                    height: '130px',
-                    borderRadius: '50%',
-                    border: '3px solid magenta',
-                    transform: 'translate(-50%, -50%)',
-                  }}
-                />
-              )}
-
-              {/* Anty character in idle mode */}
+              {/* Anty character - glow is now rendered internally by AntyCharacter */}
               <div
                 ref={characterRef}
                 className="anty-z-character"
@@ -1120,12 +1058,10 @@ export default function Anty() {
                   expression={expression}
                   isSuperMode={isSuperMode}
                   debugMode={debugMode}
-                  // Playground renders shadow/glow externally for morph animation control
+                  // Shadow still external for morph animation, but glow is internal
                   showShadow={false}
-                  showGlow={false}
+                  showGlow={true}
                   shadowRef={shadowRef}
-                  innerGlowRef={innerGlowRef}
-                  outerGlowRef={glowRef}
                   // Search mode - now internal to AntyCharacter
                   searchEnabled={true}
                   searchPlaceholder="Ask about SearchAF"
@@ -1194,6 +1130,32 @@ export default function Anty() {
                     borderRadius: '50%',
                   }}
                 />
+              )}
+
+              {/* Debug overlays for glows - track internal AntyCharacter glow elements */}
+              {debugMode && (
+                <>
+                  <div
+                    id="debug-inner-glow"
+                    className="fixed pointer-events-none z-[10000]"
+                    style={{
+                      width: '120px',
+                      height: '90px',
+                      border: '2px dashed #a855f7',
+                      borderRadius: '50%',
+                    }}
+                  />
+                  <div
+                    id="debug-outer-glow"
+                    className="fixed pointer-events-none z-[10000]"
+                    style={{
+                      width: '200px',
+                      height: '150px',
+                      border: '2px dashed #ec4899',
+                      borderRadius: '50%',
+                    }}
+                  />
+                </>
               )}
             </div>
           </div>
@@ -1279,8 +1241,8 @@ export default function Anty() {
         <AnimationDebugOverlay
           characterRef={characterRef}
           shadowRef={shadowRef}
-          innerGlowRef={innerGlowRef}
-          outerGlowRef={glowRef}
+          innerGlowRef={antyRef.current?.innerGlowRef}
+          outerGlowRef={antyRef.current?.outerGlowRef}
           currentSequence={currentAnimationSequence}
           randomAction={lastRandomAction}
           antyHandle={antyRef.current}

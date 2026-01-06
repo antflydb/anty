@@ -13,6 +13,24 @@ import { createEyeAnimation } from './eye-animations';
 import { resetEyesToIdle } from '../initialize';
 // NOTE: GLOW_CONSTANTS removed - glow following now handled by GlowSystem
 
+/**
+ * Duration scale factor - adjusts how much sizeScale affects animation speed.
+ * Uses INVERSE scaling: smaller = slower, larger = faster
+ * 0 = no scaling (same speed at all sizes)
+ * 1 = full inverse scaling
+ * 0.3 = subtle inverse scaling (recommended)
+ */
+const DURATION_SCALE_FACTOR = 0;
+
+/** Calculate scaled duration based on sizeScale and DURATION_SCALE_FACTOR */
+function getScaledDuration(baseDuration: number, sizeScale: number): number {
+  // Inverse scaling: smaller characters get longer durations (slower)
+  // larger characters get shorter durations (faster)
+  const inverseScale = 1 / sizeScale;
+  const effectiveScale = 1 + (inverseScale - 1) * DURATION_SCALE_FACTOR;
+  return baseDuration * effectiveScale;
+}
+
 // Module-level tracking of pending eye reset calls
 // This allows us to kill pending resets when a new emotion starts
 let globalPendingResetCall: gsap.core.Tween | null = null;
@@ -76,7 +94,7 @@ export function interpretEmotionConfig(
       gsap.set(character, { rotationY: 0 });
     }
 
-    // Reset eyes to IDLE (duration configurable per emotion)
+    // Reset eyes to IDLE (duration NOT scaled - same timing at all sizes)
     resetEyesToIdle(elements, config.eyeResetDuration ?? 0, sizeScale);
 
     // Reset body brackets if they were animated
@@ -89,6 +107,7 @@ export function interpretEmotionConfig(
     paused: true, // Don't auto-play - controller will play when ready
     onComplete: () => {
       // If holdDuration is set, wait before resetting (for look animations)
+      // Duration NOT scaled - same timing at all sizes
       if (config.holdDuration) {
         globalPendingResetCall = gsap.delayedCall(config.holdDuration, doReset);
       } else {
@@ -155,6 +174,9 @@ function addEyeAnimation(
     return;
   }
 
+  // Scale duration based on DURATION_SCALE_FACTOR (0 = no scaling, 1 = full scaling)
+  const scaledDuration = getScaledDuration(eyeConfig.duration ?? 0.2, sizeScale);
+
   // Create eye morph animation
   const eyeTl = createEyeAnimation(
     {
@@ -166,9 +188,10 @@ function addEyeAnimation(
       rightEyeSvg: eyeRightSvg,
     },
     eyeConfig.shape,
-    { duration: eyeConfig.duration, sizeScale }
+    { duration: scaledDuration, sizeScale }
   );
 
+  // Timeline position NOT scaled - same timing at all sizes
   const eyePosition = eyeConfig.delay ?? 0;
   timeline.add(eyeTl, eyePosition);
 
@@ -189,7 +212,7 @@ function addEyeAnimation(
       x: leftXOffset + bunch,
       scaleX: eyeConfig.scale ?? 1,
       scaleY: eyeConfig.scale ?? 1,
-      duration: eyeConfig.duration,
+      duration: scaledDuration,
       ease: 'power2.out',
     }, eyePosition);
 
@@ -199,7 +222,7 @@ function addEyeAnimation(
       x: rightXOffset - bunch,
       scaleX: eyeConfig.scale ?? 1,
       scaleY: eyeConfig.scale ?? 1,
-      duration: eyeConfig.duration,
+      duration: scaledDuration,
       ease: 'power2.out',
     }, eyePosition);
   }
@@ -210,7 +233,7 @@ function addEyeAnimation(
   if (eyeConfig.leftRotation !== undefined) {
     timeline.to(eyeLeft, {
       rotation: eyeConfig.leftRotation,
-      duration: eyeConfig.duration,
+      duration: scaledDuration,
       ease: 'power2.out',
     }, eyePosition);
   }
@@ -218,14 +241,16 @@ function addEyeAnimation(
   if (eyeConfig.rightRotation !== undefined) {
     timeline.to(eyeRight, {
       rotation: eyeConfig.rightRotation,
-      duration: eyeConfig.duration,
+      duration: scaledDuration,
       ease: 'power2.out',
     }, eyePosition);
   }
 
   // Eye return animation (for shocked - scale back down)
   if (eyeConfig.returnPosition !== undefined) {
+    // Duration/position NOT scaled - same timing at all sizes
     const returnDuration = eyeConfig.returnDuration ?? 0.25;
+    const scaledReturnPosition = eyeConfig.returnPosition;
     timeline.to([eyeLeft, eyeRight], {
       scaleX: 1,
       scaleY: 1,
@@ -233,7 +258,7 @@ function addEyeAnimation(
       x: 0,
       duration: returnDuration,
       ease: 'power2.out',
-    }, eyeConfig.returnPosition);
+    }, scaledReturnPosition);
   }
 }
 
@@ -253,6 +278,11 @@ function addEyePhases(
   }
 
   for (const phase of eyePhases) {
+    // Scale duration based on DURATION_SCALE_FACTOR (0 = no scaling, 1 = full scaling)
+    const scaledDuration = getScaledDuration(phase.duration ?? 0.2, sizeScale);
+    // Timeline position NOT scaled - same timing at all sizes
+    const scaledPosition = phase.position;
+
     const eyeTl = createEyeAnimation(
       {
         leftEye: eyeLeft,
@@ -263,10 +293,10 @@ function addEyePhases(
         rightEyeSvg: eyeRightSvg,
       },
       phase.shape,
-      { duration: phase.duration, sizeScale }
+      { duration: scaledDuration, sizeScale }
     );
 
-    timeline.add(eyeTl, phase.position);
+    timeline.add(eyeTl, scaledPosition);
 
     // Handle eye position changes (xOffset, bunch)
     // All pixel values are scaled by sizeScale (designed for 160px base)
@@ -277,16 +307,16 @@ function addEyePhases(
       // Left eye: xOffset + bunch towards center
       timeline.to(eyeLeft, {
         x: xOffset + bunch,
-        duration: phase.duration,
+        duration: scaledDuration,
         ease: 'power2.out',
-      }, phase.position);
+      }, scaledPosition);
 
       // Right eye: xOffset - bunch towards center
       timeline.to(eyeRight, {
         x: xOffset - bunch,
-        duration: phase.duration,
+        duration: scaledDuration,
         ease: 'power2.out',
-      }, phase.position);
+      }, scaledPosition);
     }
   }
 }
@@ -301,6 +331,7 @@ function addBodyAnimation(
   rightBody: HTMLElement,
   sizeScale: number = 1
 ): void {
+  // Duration/position NOT scaled - same timing at all sizes
   const duration = bodyConfig.duration ?? 0.2;
   const ease = bodyConfig.ease ?? 'back.out(2)';
   const returnPosition = bodyConfig.returnPosition ?? '+=1.15';
@@ -346,6 +377,7 @@ function addCharacterPhases(
   let isFirstPhase = true;
   for (const phase of phases) {
     // First phase starts at 0, others sequence naturally or use explicit position
+    // Timeline position NOT scaled - same timing at all sizes
     const position = phase.position ?? (isFirstPhase ? 0 : undefined);
     isFirstPhase = false;
 
@@ -359,10 +391,13 @@ function addCharacterPhases(
       scaledProps.y = scaledProps.y * sizeScale;
     }
 
+    // Scale duration based on DURATION_SCALE_FACTOR (0 = no scaling, 1 = full scaling)
+    const scaledDuration = getScaledDuration(phase.duration, sizeScale);
+
     // Animate character
     timeline.to(character, {
       ...scaledProps,
-      duration: phase.duration,
+      duration: scaledDuration,
       ease: phase.ease,
     }, position);
 

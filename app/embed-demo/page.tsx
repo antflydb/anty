@@ -82,6 +82,7 @@ export default function EmbedDemoPage() {
           {/* Character Display */}
           <div
             style={{
+              position: 'relative',
               backgroundColor: '#f8fafc',
               borderRadius: '16px',
               padding: '48px',
@@ -111,10 +112,14 @@ export default function EmbedDemoPage() {
             {lastEmotion && (
               <p
                 style={{
-                  marginTop: '24px',
+                  position: 'absolute',
+                  bottom: '16px',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
                   fontSize: '14px',
                   color: '#8B5CF6',
                   fontFamily: 'monospace',
+                  margin: 0,
                 }}
               >
                 playEmotion(&apos;{lastEmotion}&apos;)
@@ -137,43 +142,64 @@ export default function EmbedDemoPage() {
 
             {/* Size Control */}
             <div style={{ marginBottom: '24px' }}>
-              <label style={{ fontSize: '14px', color: '#64748b', marginBottom: '8px', display: 'block' }}>
-                Size: {size}px
-              </label>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                <label style={{ fontSize: '14px', color: '#64748b' }}>
+                  Size: <span style={{ fontWeight: 600, color: '#334155' }}>{size}px</span>
+                </label>
+                {size !== 160 && (
+                  <button
+                    onClick={() => setSize(160)}
+                    style={{
+                      padding: '4px 8px',
+                      borderRadius: '4px',
+                      border: '1px solid #e2e8f0',
+                      background: '#ffffff',
+                      color: '#64748b',
+                      cursor: 'pointer',
+                      fontSize: '11px',
+                    }}
+                  >
+                    Reset
+                  </button>
+                )}
+              </div>
+              <input
+                type="range"
+                min="24"
+                max="320"
+                value={size}
+                onChange={(e) => setSize(parseInt(e.target.value))}
+                style={{
+                  width: '100%',
+                  height: '6px',
+                  borderRadius: '3px',
+                  background: `linear-gradient(to right, #8B5CF6 0%, #8B5CF6 ${((size - 24) / (320 - 24)) * 100}%, #e2e8f0 ${((size - 24) / (320 - 24)) * 100}%, #e2e8f0 100%)`,
+                  appearance: 'none',
+                  cursor: 'pointer',
+                  outline: 'none',
+                }}
+              />
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px' }}>
                 {SIZES.map((s) => (
                   <button
                     key={s}
                     onClick={() => setSize(s)}
                     style={{
-                      padding: '8px 16px',
-                      borderRadius: '8px',
+                      padding: '4px 8px',
+                      borderRadius: '6px',
                       border: size === s ? 'none' : '1px solid #e2e8f0',
                       background: size === s ? '#8B5CF6' : '#ffffff',
-                      color: size === s ? 'white' : '#64748b',
+                      color: size === s ? 'white' : '#94a3b8',
                       cursor: 'pointer',
-                      fontSize: '14px',
+                      fontSize: '12px',
                       fontWeight: 500,
+                      minWidth: '40px',
                     }}
                   >
                     {s}
                   </button>
                 ))}
               </div>
-              <input
-                type="number"
-                value={size}
-                onChange={(e) => setSize(Math.max(20, Math.min(500, parseInt(e.target.value) || 80)))}
-                placeholder="Custom size"
-                style={{
-                  width: '100%',
-                  padding: '8px 12px',
-                  borderRadius: '8px',
-                  border: '1px solid #e2e8f0',
-                  fontSize: '14px',
-                  outline: 'none',
-                }}
-              />
             </div>
 
             {/* Toggle Controls */}

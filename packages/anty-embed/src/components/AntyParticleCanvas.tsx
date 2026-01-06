@@ -8,6 +8,7 @@ interface AntyParticleCanvasProps {
   particles: Particle[];
   width?: number;
   height?: number;
+  sizeScale?: number;
 }
 
 export interface ParticleCanvasHandle {
@@ -21,7 +22,7 @@ export interface ParticleCanvasHandle {
  * Uses GSAP ticker for 60fps rendering
  */
 export const AntyParticleCanvas = forwardRef<ParticleCanvasHandle, AntyParticleCanvasProps>(
-  ({ particles, width = 400, height = 400 }, ref) => {
+  ({ particles, width = 400, height = 400, sizeScale = 1 }, ref) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const particlesRef = useRef<Particle[]>(particles);
     const [searchGlowActive, setSearchGlowActive] = useState(false);
@@ -37,13 +38,14 @@ export const AntyParticleCanvas = forwardRef<ParticleCanvasHandle, AntyParticleC
         const config = PARTICLE_CONFIGS[type];
         const timestamp = Date.now();
         const random = Math.random();
+        // Scale initial velocities with sizeScale
         const newParticle: Particle = {
           id: `${type}-${timestamp}-${random}`,
           type,
           x,
           y,
-          vx: gsap.utils.random(config.initialVelocity.x.min, config.initialVelocity.x.max),
-          vy: gsap.utils.random(config.initialVelocity.y.min, config.initialVelocity.y.max),
+          vx: gsap.utils.random(config.initialVelocity.x.min, config.initialVelocity.x.max) * sizeScale,
+          vy: gsap.utils.random(config.initialVelocity.y.min, config.initialVelocity.y.max) * sizeScale,
           scale: gsap.utils.random(config.initialScale.min, config.initialScale.max),
           rotation: 0,
           rotationSpeed: gsap.utils.random(config.rotationSpeed.min, config.rotationSpeed.max),
@@ -102,10 +104,10 @@ export const AntyParticleCanvas = forwardRef<ParticleCanvasHandle, AntyParticleC
         const alive: Particle[] = [];
 
         for (let i = 0; i < particlesRef.current.length; i++) {
-          const updated = updateParticle(particlesRef.current[i], dt);
+          const updated = updateParticle(particlesRef.current[i], dt, sizeScale);
           if (updated.life > 0) {
             alive.push(updated);
-            drawParticle(ctx, updated);
+            drawParticle(ctx, updated, sizeScale);
           }
         }
         particlesRef.current = alive;
@@ -120,7 +122,7 @@ export const AntyParticleCanvas = forwardRef<ParticleCanvasHandle, AntyParticleC
       return () => {
         gsap.ticker.remove(updateParticles);
       };
-    }, [width, height, searchGlowActive]);
+    }, [width, height, searchGlowActive, sizeScale]);
 
     return (
       <canvas
@@ -144,10 +146,12 @@ AntyParticleCanvas.displayName = 'AntyParticleCanvas';
 /**
  * Update particle physics
  */
-function updateParticle(particle: Particle, dt: number): Particle {
+function updateParticle(particle: Particle, dt: number, sizeScale: number): Particle {
   const config = PARTICLE_CONFIGS[particle.type];
 
-  const newVy = particle.vy + config.gravity * dt;
+  // Scale gravity and velocities with sizeScale
+  const scaledGravity = config.gravity * sizeScale;
+  const newVy = particle.vy + scaledGravity * dt;
   const newX = particle.x + particle.vx * dt;
   const newY = particle.y + particle.vy * dt;
   const newRotation = particle.rotation + particle.rotationSpeed * dt;
@@ -175,12 +179,12 @@ function updateParticle(particle: Particle, dt: number): Particle {
 /**
  * Draw particle on canvas
  */
-function drawParticle(ctx: CanvasRenderingContext2D, particle: Particle) {
+function drawParticle(ctx: CanvasRenderingContext2D, particle: Particle, sizeScale: number) {
   ctx.save();
 
   ctx.translate(particle.x, particle.y);
   ctx.rotate((particle.rotation * Math.PI) / 180);
-  ctx.scale(particle.scale, particle.scale);
+  ctx.scale(particle.scale * sizeScale, particle.scale * sizeScale);
   ctx.globalAlpha = particle.opacity;
 
   ctx.fillStyle = particle.color || '#ff0000';

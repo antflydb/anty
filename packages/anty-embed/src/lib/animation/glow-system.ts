@@ -64,6 +64,8 @@ export interface GlowSystemControls {
   hide: () => void;
   /** Reset positions to character position (no spring lag) */
   snapToCharacter: () => void;
+  /** Update the size scale (recalculates oscillation amplitudes) */
+  updateSizeScale: (newSizeScale: number) => void;
 }
 
 // =============================================================================
@@ -110,6 +112,7 @@ const DEFAULT_CONFIG: GlowSystemConfig = {
  * @param character - The character element to track position from
  * @param outerGlow - The outer (larger, softer) glow element
  * @param innerGlow - The inner (smaller, tighter) glow element
+ * @param sizeScale - Scale factor for oscillation amplitudes (size / 160)
  * @param config - Optional configuration overrides
  * @returns Controls for the glow system
  */
@@ -117,9 +120,20 @@ export function createGlowSystem(
   character: HTMLElement,
   outerGlow: HTMLElement,
   innerGlow: HTMLElement,
+  sizeScale: number = 1,
   config: Partial<GlowSystemConfig> = {}
 ): GlowSystemControls {
-  const cfg = { ...DEFAULT_CONFIG, ...config };
+  // Mutable config that can be updated when sizeScale changes
+  let currentSizeScale = sizeScale;
+  const cfg = {
+    ...DEFAULT_CONFIG,
+    // Scale oscillation amplitudes by sizeScale (frequency stays in Hz, not pixels)
+    outerOscillationAmplitudeX: DEFAULT_CONFIG.outerOscillationAmplitudeX * currentSizeScale,
+    innerOscillationAmplitudeX: DEFAULT_CONFIG.innerOscillationAmplitudeX * currentSizeScale,
+    outerOscillationAmplitudeY: DEFAULT_CONFIG.outerOscillationAmplitudeY * currentSizeScale,
+    innerOscillationAmplitudeY: DEFAULT_CONFIG.innerOscillationAmplitudeY * currentSizeScale,
+    ...config,
+  };
 
   // State
   let isRunning = false;
@@ -291,6 +305,18 @@ export function createGlowSystem(
     gsap.set(innerGlow, { x: characterX, y: characterY });
   }
 
+  /**
+   * Update the size scale dynamically (e.g., when character size changes)
+   * Recalculates oscillation amplitudes based on new scale
+   */
+  function updateSizeScale(newSizeScale: number): void {
+    currentSizeScale = newSizeScale;
+    cfg.outerOscillationAmplitudeX = DEFAULT_CONFIG.outerOscillationAmplitudeX * currentSizeScale;
+    cfg.innerOscillationAmplitudeX = DEFAULT_CONFIG.innerOscillationAmplitudeX * currentSizeScale;
+    cfg.outerOscillationAmplitudeY = DEFAULT_CONFIG.outerOscillationAmplitudeY * currentSizeScale;
+    cfg.innerOscillationAmplitudeY = DEFAULT_CONFIG.innerOscillationAmplitudeY * currentSizeScale;
+  }
+
   // =============================================================================
   // RETURN CONTROLS
   // =============================================================================
@@ -306,5 +332,6 @@ export function createGlowSystem(
     show,
     hide,
     snapToCharacter,
+    updateSizeScale,
   };
 }
