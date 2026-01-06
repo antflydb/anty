@@ -2,7 +2,7 @@
 
 import { type RefObject } from 'react';
 import { Kbd } from '@/components/ui/kbd';
-import { type SearchBarConfig, DEFAULT_SEARCH_BAR_CONFIG } from '@searchaf/anty-embed';
+import { type SearchBarConfig, DEFAULT_SEARCH_BAR_CONFIG } from '@antfly/anty-embed';
 
 interface AntySearchBarProps {
   active: boolean;

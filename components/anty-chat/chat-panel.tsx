@@ -6,7 +6,7 @@ import { X, Send, Loader2, Key, MoreVertical, MessageSquarePlus, History, Trash2
 import gsap from 'gsap';
 import { AntyChat, type ChatMessage } from '@/lib/chat/openai-client';
 import { mapEmotionToExpression, stripEmotionTags, stripEmotionTagsStreaming } from '@/lib/chat/emotion-mapper';
-import type { EmotionType } from '@searchaf/anty-embed';
+import type { EmotionType } from '@antfly/anty-embed';
 import {
   type ChatSession,
   type ChatMessage as StoredChatMessage,

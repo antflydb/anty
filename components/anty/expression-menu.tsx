@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Power } from 'lucide-react';
 import { Kbd } from '@/components/ui/kbd';
-import type { EmotionType } from '@searchaf/anty-embed';
+import type { EmotionType } from '@antfly/anty-embed';
 
 interface ExpressionMenuProps {
   onExpressionSelect: (expression: EmotionType | 'idle' | 'off') => void;

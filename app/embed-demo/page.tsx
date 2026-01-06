@@ -5,27 +5,27 @@ import {
   AntyCharacter,
   type AntyCharacterHandle,
   type EmotionType,
-} from '@searchaf/anty-embed';
+} from '@antfly/anty-embed';
 
 const EMOTIONS: EmotionType[] = [
   'happy',
   'celebrate',
-  'thinking',
-  'confused',
-  'surprised',
-  'wink',
-  'love',
-  'sleepy',
+  'excited',
+  'pleased',
   'sad',
   'angry',
-  'scared',
-  'determined',
-  'mischievous',
-  'grateful',
-  'curious',
-  'proud',
-  'relieved',
-  'skeptical',
+  'shocked',
+  'wink',
+  'smize',
+  'idea',
+  'spin',
+  'jump',
+  'nod',
+  'headshake',
+  'look-around',
+  'look-left',
+  'look-right',
+  'back-forth',
 ];
 
 const SIZES = [80, 120, 160, 200, 240];
@@ -39,7 +39,7 @@ export default function EmbedDemoPage() {
   const [lastEmotion, setLastEmotion] = useState<string | null>(null);
 
   const playEmotion = (emotion: EmotionType) => {
-    antyRef.current?.playEmotion(emotion);
+    antyRef.current?.playEmotion?.(emotion);
     setLastEmotion(emotion);
   };
 
@@ -282,7 +282,7 @@ export default function EmbedDemoPage() {
               color: '#a5b4fc',
             }}
           >
-{`import { AntyCharacter, type AntyCharacterHandle } from '@searchaf/anty-embed';
+{`import { AntyCharacter, type AntyCharacterHandle } from '@antfly/anty-embed';
 
 function App() {
   const antyRef = useRef<AntyCharacterHandle>(null);

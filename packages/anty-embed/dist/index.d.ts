@@ -1,11 +1,11 @@
 /**
- * @searchaf/anty-embed
+ * @antfly/anty-embed
  *
  * Embeddable Anty character animation for web applications.
  *
  * @example
  * ```tsx
- * import { AntyCharacter } from '@searchaf/anty-embed';
+ * import { AntyCharacter } from '@antfly/anty-embed';
  *
  * function App() {
  *   const antyRef = useRef<AntyCharacterHandle>(null);

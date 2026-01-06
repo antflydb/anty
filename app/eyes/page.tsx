@@ -1,6 +1,6 @@
 'use client';
 
-import { EYE_SHAPES, EYE_DIMENSIONS } from '@searchaf/anty-embed';
+import { EYE_SHAPES, EYE_DIMENSIONS } from '@antfly/anty-embed';
 
 export default function EyesPage() {
   const eyeShapes = Object.keys(EYE_SHAPES) as Array<keyof typeof EYE_SHAPES>;

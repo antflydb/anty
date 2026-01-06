@@ -5,8 +5,8 @@
  * for the canvas-based particle system.
  */
 
-import type { Particle } from '@searchaf/anty-embed';
-import { PARTICLE_CONFIGS } from '@searchaf/anty-embed';
+import type { Particle } from '@antfly/anty-embed';
+import { PARTICLE_CONFIGS } from '@antfly/anty-embed';
 
 /**
  * Generates a random value within a range.

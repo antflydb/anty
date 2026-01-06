@@ -1,5 +1,5 @@
-// Playground-specific UI components (not part of @searchaf/anty-embed)
-// For the main AntyCharacter component, import from '@searchaf/anty-embed'
+// Playground-specific UI components (not part of @antfly/anty-embed)
+// For the main AntyCharacter component, import from '@antfly/anty-embed'
 export { ActionButtons } from './action-buttons';
 export { HeartMeter, type EarnedHeart } from './heart-meter';
 export { ExpressionMenu } from './expression-menu';

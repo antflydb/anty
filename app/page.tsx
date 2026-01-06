@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import gsap from 'gsap';
 // Import Anty from the package (source of truth)
-import { AntyCharacter, type AntyCharacterHandle, type EmotionType, DEFAULT_SEARCH_BAR_CONFIG, ENABLE_ANIMATION_DEBUG_LOGS } from '@searchaf/anty-embed';
+import { AntyCharacter, type AntyCharacterHandle, type EmotionType, DEFAULT_SEARCH_BAR_CONFIG, ENABLE_ANIMATION_DEBUG_LOGS } from '@antfly/anty-embed';
 // Playground-specific components (not part of the package)
 import { ActionButtons, HeartMeter, ExpressionMenu, PowerButton, FlappyGame, FPSMeter, type ButtonName, type EarnedHeart } from '@/components/anty';
 import { AntySearchBar } from '@/components/anty/anty-search-bar';

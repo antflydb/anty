@@ -1,5 +1,5 @@
 {
-  "name": "@searchaf/anty-embed",
+  "name": "@antfly/anty-embed",
   "version": "0.2.0",
   "type": "module",
   "description": "Embeddable Anty character animation for web applications",
