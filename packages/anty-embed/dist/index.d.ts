@@ -26,7 +26,7 @@
  * }
  * ```
  */
-export { AntyCharacter, type AntyCharacterProps, type AntyCharacterHandle, AntyParticleCanvas, type ParticleCanvasHandle, } from './components';
+export { AntyCharacter, type AntyCharacterProps, type AntyCharacterHandle, AntyParticleCanvas, type ParticleCanvasHandle, AntySearchBar, type AntySearchBarProps, } from './components';
 export { useAnimationController } from './hooks/use-animation-controller';
 export { AnimationState, type EmotionType, type ExpressionName, type SearchMode, type EmotionOptions, type AnimationCallbacks, type EmotionConfig, type SearchBarConfig, DEFAULT_SEARCH_BAR_CONFIG, isEmotionType, type Particle, type ParticleType, type ParticleConfig, } from './types';
 import { EMOTION_CONFIGS as _EMOTION_CONFIGS } from './lib/animation';

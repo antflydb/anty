@@ -1,10 +1,37 @@
 'use client';
 
 import { type RefObject } from 'react';
-import { Kbd } from '@/components/ui/kbd';
-import { type SearchBarConfig, DEFAULT_SEARCH_BAR_CONFIG } from '@antfly/anty-embed';
+import { type SearchBarConfig, DEFAULT_SEARCH_BAR_CONFIG } from '../types';
 
-interface AntySearchBarProps {
+// Inline Kbd component (no external dependencies)
+function Kbd({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
+  return (
+    <kbd
+      style={{
+        backgroundColor: '#f4f4f5',
+        color: '#71717a',
+        pointerEvents: 'none',
+        display: 'inline-flex',
+        height: '20px',
+        minWidth: '20px',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '4px',
+        borderRadius: '4px',
+        padding: '0 4px',
+        fontFamily: 'sans-serif',
+        fontSize: '12px',
+        fontWeight: 500,
+        userSelect: 'none',
+        ...style,
+      }}
+    >
+      {children}
+    </kbd>
+  );
+}
+
+export interface AntySearchBarProps {
   active: boolean;
   value: string;
   onChange: (value: string) => void;
@@ -17,6 +44,10 @@ interface AntySearchBarProps {
   glowRef: RefObject<HTMLDivElement | null>;
   /** Search bar configuration - controls dimensions and corner radius */
   config?: SearchBarConfig;
+  /** Placeholder text shown when input is empty */
+  placeholder?: string;
+  /** Keyboard shortcut indicator (e.g., "⌘K") */
+  keyboardShortcut?: string;
 }
 
 export function AntySearchBar({
@@ -31,6 +62,8 @@ export function AntySearchBar({
   kbdRef,
   glowRef,
   config = DEFAULT_SEARCH_BAR_CONFIG,
+  placeholder = 'Search...',
+  keyboardShortcut = '⌘K',
 }: AntySearchBarProps) {
   // Only hide placeholder when there's actual text typed
   const showPlaceholder = !value;
@@ -51,12 +84,11 @@ export function AntySearchBar({
   return (
     <div
       ref={barRef}
-      className="absolute"
       style={{
+        position: 'absolute',
         width: `${width}px`,
         height: `${height}px`,
         left: '50%',
-        // Vertically centered regardless of height
         top: '50%',
         transform: 'translate(-50%, -50%)',
         opacity: 0, // GSAP controls opacity
@@ -67,8 +99,8 @@ export function AntySearchBar({
       {/* AI Gradient Glow - positioned behind search bar, scales with box */}
       <div
         ref={glowRef}
-        className="absolute pointer-events-none"
         style={{
+          position: 'absolute',
           width: `${width}px`,
           height: `${height}px`,
           left: '50%',
@@ -78,13 +110,16 @@ export function AntySearchBar({
           zIndex: -1,
           background: 'radial-gradient(ellipse, rgba(147, 197, 253, 0.4) 0%, rgba(167, 139, 250, 0.35) 40%, transparent 70%)',
           filter: 'blur(60px)',
+          pointerEvents: 'none',
         }}
       />
       {/* Animated gradient border wrapper */}
       <div
         ref={borderGradientRef}
-        className="relative w-full h-full"
         style={{
+          position: 'relative',
+          width: '100%',
+          height: '100%',
           borderRadius: `${borderRadius}px`,
           padding: `${borderWidth}px`,
           background: 'linear-gradient(white, white) padding-box, conic-gradient(from 0deg, #E5EDFF 0%, #C7D2FE 25%, #D8B4FE 50%, #C7D2FE 75%, #E5EDFF 100%) border-box',
@@ -94,17 +129,21 @@ export function AntySearchBar({
       >
         <div
           ref={borderRef}
-          className="relative w-full h-full bg-white"
           style={{
+            position: 'relative',
+            width: '100%',
+            height: '100%',
+            backgroundColor: 'white',
             borderRadius: `${innerRadius}px`,
           }}
         >
           {/* Content container - centered for single-line, top-aligned for multi-line */}
           <div
-            className="absolute left-0 right-0"
             style={{
+              position: 'absolute',
+              left: 0,
+              right: 0,
               height: `${defaultHeight - borderWidth * 2}px`,
-              // Center vertically for single-line, top-align with padding for multi-line
               ...(isMultiLineHeight
                 ? { top: `${contentTopPadding}px` }
                 : { top: '50%', transform: 'translateY(-50%)' }
@@ -114,11 +153,16 @@ export function AntySearchBar({
             {/* Fake animated placeholder */}
             <div
               ref={placeholderRef}
-              className="absolute left-6 pointer-events-none select-none flex items-center"
               style={{
-                opacity: showPlaceholder ? 1 : 0,
+                position: 'absolute',
+                left: '24px',
                 top: 0,
                 height: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                pointerEvents: 'none',
+                userSelect: 'none',
+                opacity: showPlaceholder ? 1 : 0,
                 fontFamily: 'Inter, sans-serif',
                 fontWeight: 500,
                 fontSize: '17.85px',
@@ -126,21 +170,26 @@ export function AntySearchBar({
                 transition: showPlaceholder ? 'none' : 'opacity 0.15s ease-out',
               }}
             >
-              Ask about SearchAF
+              {placeholder}
             </div>
 
-            {/* Animated CMD+K indicator */}
+            {/* Animated keyboard shortcut indicator */}
             <div
               ref={kbdRef}
-              className="absolute right-6 pointer-events-none select-none flex items-center"
               style={{
-                opacity: showPlaceholder ? 1 : 0,
+                position: 'absolute',
+                right: '24px',
                 top: 0,
                 height: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                pointerEvents: 'none',
+                userSelect: 'none',
+                opacity: showPlaceholder ? 1 : 0,
                 transition: showPlaceholder ? 'none' : 'opacity 0.15s ease-out',
               }}
             >
-              <Kbd className="text-xs text-gray-400">⌘K</Kbd>
+              <Kbd style={{ fontSize: '12px', color: '#9ca3af' }}>{keyboardShortcut}</Kbd>
             </div>
 
             <input
@@ -149,8 +198,14 @@ export function AntySearchBar({
               value={value}
               onChange={(e) => onChange(e.target.value)}
               placeholder="" // Empty placeholder since we use fake one
-              className="w-full h-full px-6 bg-transparent outline-none text-[#052333]"
               style={{
+                width: '100%',
+                height: '100%',
+                padding: '0 24px',
+                backgroundColor: 'transparent',
+                outline: 'none',
+                border: 'none',
+                color: '#052333',
                 fontFamily: 'Inter, sans-serif',
                 fontWeight: 500,
                 fontSize: '17.85px',

@@ -34,6 +34,8 @@ export {
   type AntyCharacterHandle,
   AntyParticleCanvas,
   type ParticleCanvasHandle,
+  AntySearchBar,
+  type AntySearchBarProps,
 } from './components';
 
 // Hooks
