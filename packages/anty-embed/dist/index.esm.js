@@ -10233,61 +10233,61 @@ const styles = {
         bottom: '38.44%',
         left: '56.29%',
     },
-    eyeWrapper: (width, height) => ({
+    eyeWrapper: (width, height, scale = 1) => ({
         flexShrink: 0,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         position: 'relative',
-        width: `${width}px`,
-        height: `${height}px`,
+        width: `${width * scale}px`,
+        height: `${height * scale}px`,
         transformOrigin: 'center center',
     }),
     // Inner glow (behind character)
-    innerGlow: {
+    innerGlow: (scale = 1) => ({
         position: 'absolute',
         left: '50%',
         transform: 'translate(-50%, -50%)',
-        top: '80px',
-        width: '120px',
-        height: '90px',
+        top: `${80 * scale}px`,
+        width: `${120 * scale}px`,
+        height: `${90 * scale}px`,
         borderRadius: '50%',
         opacity: 1,
         background: 'linear-gradient(90deg, #C5D4FF 0%, #E0C5FF 100%)',
-        filter: 'blur(25px)',
+        filter: `blur(${25 * scale}px)`,
         transformOrigin: 'center center',
         pointerEvents: 'none',
-    },
+    }),
     // Outer glow (behind character, larger)
-    outerGlow: {
+    outerGlow: (scale = 1) => ({
         position: 'absolute',
         left: '50%',
         transform: 'translate(-50%, -50%)',
-        top: '80px',
-        width: '170px',
-        height: '130px',
+        top: `${80 * scale}px`,
+        width: `${170 * scale}px`,
+        height: `${130 * scale}px`,
         borderRadius: '50%',
         opacity: 1,
         background: 'linear-gradient(90deg, #D5E2FF 0%, #EED5FF 100%)',
-        filter: 'blur(32px)',
+        filter: `blur(${32 * scale}px)`,
         transformOrigin: 'center center',
         pointerEvents: 'none',
-    },
+    }),
     // Shadow (below character)
-    shadow: {
+    shadow: (scale = 1) => ({
         position: 'absolute',
         left: '50%',
         transform: 'translateX(-50%) scaleX(1) scaleY(1)',
-        bottom: '0px',
-        width: '160px',
-        height: '40px',
+        bottom: `${ -30 * scale}px`,
+        width: `${160 * scale}px`,
+        height: `${40 * scale}px`,
         background: 'radial-gradient(ellipse, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0) 70%)',
-        filter: 'blur(12px)',
+        filter: `blur(${12 * scale}px)`,
         borderRadius: '50%',
         opacity: 0.7,
         transformOrigin: 'center center',
         pointerEvents: 'none',
-    },
+    }),
     // Debug overlays
     debugBorder: {
         position: 'absolute',
@@ -10357,6 +10357,7 @@ shadowRef: externalShadowRef, innerGlowRef: externalInnerGlowRef, outerGlowRef: 
     const [particles] = useState([]);
     const isOff = expression === 'off';
     const initialEyeDimensions = getEyeDimensions('IDLE');
+    const sizeScale = size / 160; // Scale factor based on default 160px size
     const [refsReady, setRefsReady] = useState(false);
     useEffect(() => {
         if (containerRef.current && characterRef.current && !refsReady) {
@@ -10891,7 +10892,7 @@ shadowRef: externalShadowRef, innerGlowRef: externalInnerGlowRef, outerGlowRef: 
     return (jsxs("div", { ref: containerRef, style: {
             ...styles.container(size),
             ...style,
-        }, className: className, children: [jsx(AntyParticleCanvas, { ref: canvasRef, particles: particles, width: size * 5, height: size * 5 }), showGlow && !hasExternalGlow && (jsx("div", { ref: internalOuterGlowRef, style: styles.outerGlow })), showGlow && !hasExternalGlow && (jsx("div", { ref: internalInnerGlowRef, style: styles.innerGlow })), isSuperMode && (jsx("div", { ref: superGlowRef, style: styles.superGlow })), jsxs("div", { ref: characterRef, className: isSuperMode ? 'super-mode' : undefined, style: styles.character, children: [jsx("div", { ref: rightBodyRef, style: styles.rightBody, children: jsx("img", { alt: "", style: styles.bodyImage, src: bodyRightSvg }) }), jsx("div", { ref: leftBodyRef, style: styles.leftBody, children: jsx("img", { alt: "", style: styles.bodyImage, src: bodyLeftSvg }) }), jsx("div", { style: styles.leftEyeContainer, children: jsx("div", { ref: leftEyeRef, style: styles.eyeWrapper(initialEyeDimensions.width, initialEyeDimensions.height), children: jsx("svg", { ref: leftEyeSvgRef, width: "100%", height: "100%", viewBox: initialEyeDimensions.viewBox, fill: "none", xmlns: "http://www.w3.org/2000/svg", style: { display: 'block' }, children: jsx("path", { ref: leftEyePathRef, d: getEyeShape('IDLE', 'left'), fill: "#052333" }) }) }) }), jsx("div", { style: styles.rightEyeContainer, children: jsx("div", { ref: rightEyeRef, style: styles.eyeWrapper(initialEyeDimensions.width, initialEyeDimensions.height), children: jsx("svg", { ref: rightEyeSvgRef, width: "100%", height: "100%", viewBox: initialEyeDimensions.viewBox, fill: "none", xmlns: "http://www.w3.org/2000/svg", style: { display: 'block' }, children: jsx("path", { ref: rightEyePathRef, d: getEyeShape('IDLE', 'right'), fill: "#052333" }) }) }) }), debugMode && (jsxs(Fragment, { children: [jsx("div", { style: styles.debugBorder }), !isOff && (jsxs(Fragment, { children: [jsx("div", { style: styles.debugCrosshair('calc(33.41% + 13.915% - 1px)', 'calc(31.63% + 5.825% - 7px)', 'yellow', true) }), jsx("div", { style: styles.debugCrosshair('calc(33.41% + 13.915% - 6px)', 'calc(31.63% + 5.825% - 2px)', 'yellow', false) })] })), !isOff && (jsxs(Fragment, { children: [jsx("div", { style: styles.debugCrosshair('calc(33.41% + 13.915% - 1px)', 'calc(57.36% + 5.82% - 7px)', 'orange', true) }), jsx("div", { style: styles.debugCrosshair('calc(33.41% + 13.915% - 6px)', 'calc(57.36% + 5.82% - 2px)', 'orange', false) })] }))] }))] }), showShadow && !hasExternalShadow && (jsx("div", { ref: internalShadowRef, style: styles.shadow }))] }));
+        }, className: className, children: [jsx(AntyParticleCanvas, { ref: canvasRef, particles: particles, width: size * 5, height: size * 5 }), showGlow && !hasExternalGlow && (jsx("div", { ref: internalOuterGlowRef, style: styles.outerGlow(sizeScale) })), showGlow && !hasExternalGlow && (jsx("div", { ref: internalInnerGlowRef, style: styles.innerGlow(sizeScale) })), isSuperMode && (jsx("div", { ref: superGlowRef, style: styles.superGlow })), jsxs("div", { ref: characterRef, className: isSuperMode ? 'super-mode' : undefined, style: styles.character, children: [jsx("div", { ref: rightBodyRef, style: styles.rightBody, children: jsx("img", { alt: "", style: styles.bodyImage, src: bodyRightSvg }) }), jsx("div", { ref: leftBodyRef, style: styles.leftBody, children: jsx("img", { alt: "", style: styles.bodyImage, src: bodyLeftSvg }) }), jsx("div", { style: styles.leftEyeContainer, children: jsx("div", { ref: leftEyeRef, style: styles.eyeWrapper(initialEyeDimensions.width, initialEyeDimensions.height, sizeScale), children: jsx("svg", { ref: leftEyeSvgRef, width: "100%", height: "100%", viewBox: initialEyeDimensions.viewBox, fill: "none", xmlns: "http://www.w3.org/2000/svg", style: { display: 'block' }, children: jsx("path", { ref: leftEyePathRef, d: getEyeShape('IDLE', 'left'), fill: "#052333" }) }) }) }), jsx("div", { style: styles.rightEyeContainer, children: jsx("div", { ref: rightEyeRef, style: styles.eyeWrapper(initialEyeDimensions.width, initialEyeDimensions.height, sizeScale), children: jsx("svg", { ref: rightEyeSvgRef, width: "100%", height: "100%", viewBox: initialEyeDimensions.viewBox, fill: "none", xmlns: "http://www.w3.org/2000/svg", style: { display: 'block' }, children: jsx("path", { ref: rightEyePathRef, d: getEyeShape('IDLE', 'right'), fill: "#052333" }) }) }) }), debugMode && (jsxs(Fragment, { children: [jsx("div", { style: styles.debugBorder }), !isOff && (jsxs(Fragment, { children: [jsx("div", { style: styles.debugCrosshair('calc(33.41% + 13.915% - 1px)', 'calc(31.63% + 5.825% - 7px)', 'yellow', true) }), jsx("div", { style: styles.debugCrosshair('calc(33.41% + 13.915% - 6px)', 'calc(31.63% + 5.825% - 2px)', 'yellow', false) })] })), !isOff && (jsxs(Fragment, { children: [jsx("div", { style: styles.debugCrosshair('calc(33.41% + 13.915% - 1px)', 'calc(57.36% + 5.82% - 7px)', 'orange', true) }), jsx("div", { style: styles.debugCrosshair('calc(33.41% + 13.915% - 6px)', 'calc(57.36% + 5.82% - 2px)', 'orange', false) })] }))] }))] }), showShadow && !hasExternalShadow && (jsx("div", { ref: internalShadowRef, style: styles.shadow(sizeScale) }))] }));
 });
 AntyCharacter.displayName = 'AntyCharacter';
 

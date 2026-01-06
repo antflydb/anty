@@ -184,64 +184,64 @@ const styles = {
     left: '56.29%',
   },
 
-  eyeWrapper: (width: number, height: number): React.CSSProperties => ({
+  eyeWrapper: (width: number, height: number, scale: number = 1): React.CSSProperties => ({
     flexShrink: 0,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
-    width: `${width}px`,
-    height: `${height}px`,
+    width: `${width * scale}px`,
+    height: `${height * scale}px`,
     transformOrigin: 'center center',
   }),
 
   // Inner glow (behind character)
-  innerGlow: {
+  innerGlow: (scale: number = 1): React.CSSProperties => ({
     position: 'absolute' as const,
     left: '50%',
     transform: 'translate(-50%, -50%)',
-    top: '80px',
-    width: '120px',
-    height: '90px',
+    top: `${80 * scale}px`,
+    width: `${120 * scale}px`,
+    height: `${90 * scale}px`,
     borderRadius: '50%',
     opacity: 1,
     background: 'linear-gradient(90deg, #C5D4FF 0%, #E0C5FF 100%)',
-    filter: 'blur(25px)',
+    filter: `blur(${25 * scale}px)`,
     transformOrigin: 'center center',
     pointerEvents: 'none' as const,
-  },
+  }),
 
   // Outer glow (behind character, larger)
-  outerGlow: {
+  outerGlow: (scale: number = 1): React.CSSProperties => ({
     position: 'absolute' as const,
     left: '50%',
     transform: 'translate(-50%, -50%)',
-    top: '80px',
-    width: '170px',
-    height: '130px',
+    top: `${80 * scale}px`,
+    width: `${170 * scale}px`,
+    height: `${130 * scale}px`,
     borderRadius: '50%',
     opacity: 1,
     background: 'linear-gradient(90deg, #D5E2FF 0%, #EED5FF 100%)',
-    filter: 'blur(32px)',
+    filter: `blur(${32 * scale}px)`,
     transformOrigin: 'center center',
     pointerEvents: 'none' as const,
-  },
+  }),
 
   // Shadow (below character)
-  shadow: {
+  shadow: (scale: number = 1): React.CSSProperties => ({
     position: 'absolute' as const,
     left: '50%',
     transform: 'translateX(-50%) scaleX(1) scaleY(1)',
-    bottom: '0px',
-    width: '160px',
-    height: '40px',
+    bottom: `${-30 * scale}px`,
+    width: `${160 * scale}px`,
+    height: `${40 * scale}px`,
     background: 'radial-gradient(ellipse, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0) 70%)',
-    filter: 'blur(12px)',
+    filter: `blur(${12 * scale}px)`,
     borderRadius: '50%',
     opacity: 0.7,
     transformOrigin: 'center center',
     pointerEvents: 'none' as const,
-  },
+  }),
 
   // Debug overlays
   debugBorder: {
@@ -336,6 +336,7 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
   const [particles] = useState<Particle[]>([]);
   const isOff = expression === 'off';
   const initialEyeDimensions = getEyeDimensions('IDLE');
+  const sizeScale = size / 160; // Scale factor based on default 160px size
 
   const [refsReady, setRefsReady] = useState(false);
   useEffect(() => {
@@ -952,7 +953,7 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
       {showGlow && !hasExternalGlow && (
         <div
           ref={internalOuterGlowRef}
-          style={styles.outerGlow}
+          style={styles.outerGlow(sizeScale)}
         />
       )}
 
@@ -960,7 +961,7 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
       {showGlow && !hasExternalGlow && (
         <div
           ref={internalInnerGlowRef}
-          style={styles.innerGlow}
+          style={styles.innerGlow(sizeScale)}
         />
       )}
 
@@ -990,7 +991,7 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
         <div style={styles.leftEyeContainer}>
           <div
             ref={leftEyeRef}
-            style={styles.eyeWrapper(initialEyeDimensions.width, initialEyeDimensions.height)}
+            style={styles.eyeWrapper(initialEyeDimensions.width, initialEyeDimensions.height, sizeScale)}
           >
             <svg
               ref={leftEyeSvgRef}
@@ -1014,7 +1015,7 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
         <div style={styles.rightEyeContainer}>
           <div
             ref={rightEyeRef}
-            style={styles.eyeWrapper(initialEyeDimensions.width, initialEyeDimensions.height)}
+            style={styles.eyeWrapper(initialEyeDimensions.width, initialEyeDimensions.height, sizeScale)}
           >
             <svg
               ref={rightEyeSvgRef}
@@ -1060,7 +1061,7 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
       {showShadow && !hasExternalShadow && (
         <div
           ref={internalShadowRef}
-          style={styles.shadow}
+          style={styles.shadow(sizeScale)}
         />
       )}
     </div>
