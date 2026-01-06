@@ -36,6 +36,8 @@ export default function EmbedDemoPage() {
   const [showShadow, setShowShadow] = useState(true);
   const [showGlow, setShowGlow] = useState(true);
   const [isSuperMode, setIsSuperMode] = useState(false);
+  const [searchEnabled, setSearchEnabled] = useState(false);
+  const [isSearchMode, setIsSearchMode] = useState(false);
   const [lastEmotion, setLastEmotion] = useState<string | null>(null);
 
   const playEmotion = (emotion: EmotionType) => {
@@ -46,6 +48,14 @@ export default function EmbedDemoPage() {
   const toggleSuperMode = (enabled: boolean) => {
     setIsSuperMode(enabled);
     antyRef.current?.setSuperMode?.(enabled ? 1.45 : null);
+  };
+
+  const toggleSearchMode = () => {
+    if (isSearchMode) {
+      antyRef.current?.morphToCharacter?.();
+    } else {
+      antyRef.current?.morphToSearchBar?.();
+    }
   };
 
   return (
@@ -83,13 +93,18 @@ export default function EmbedDemoPage() {
             }}
           >
             <AntyCharacter
-              key={`anty-${size}`}
+              key={`anty-${size}-${searchEnabled}`}
               ref={antyRef}
               size={size}
               expression="idle"
               showShadow={showShadow}
               showGlow={showGlow}
               isSuperMode={isSuperMode}
+              searchEnabled={searchEnabled}
+              searchPlaceholder="Ask about SearchAF..."
+              searchShortcut="⌘K"
+              onSearchOpen={() => setIsSearchMode(true)}
+              onSearchCloseComplete={() => setIsSearchMode(false)}
             />
             {lastEmotion && (
               <p
@@ -169,6 +184,15 @@ export default function EmbedDemoPage() {
                   />
                   <span style={{ fontSize: '14px', color: '#334155' }}>Show Glow</span>
                 </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={searchEnabled}
+                    onChange={(e) => setSearchEnabled(e.target.checked)}
+                    style={{ width: '18px', height: '18px', accentColor: '#8B5CF6' }}
+                  />
+                  <span style={{ fontSize: '14px', color: '#334155' }}>Enable Search</span>
+                </label>
               </div>
             </div>
 
@@ -209,6 +233,25 @@ export default function EmbedDemoPage() {
                 >
                   {isSuperMode ? 'Exit Super Mode' : 'Super Mode (1.45x)'}
                 </button>
+                {searchEnabled && (
+                  <button
+                    onClick={toggleSearchMode}
+                    style={{
+                      padding: '10px 16px',
+                      borderRadius: '8px',
+                      border: 'none',
+                      background: isSearchMode
+                        ? '#64748b'
+                        : 'linear-gradient(to right, #3b82f6, #8b5cf6)',
+                      color: 'white',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      fontWeight: 500,
+                    }}
+                  >
+                    {isSearchMode ? 'Close Search' : 'Open Search'}
+                  </button>
+                )}
               </div>
             </div>
           </div>
