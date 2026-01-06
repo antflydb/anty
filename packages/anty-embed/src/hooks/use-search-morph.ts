@@ -43,6 +43,8 @@ export function useSearchMorph({
   onReturnComplete,
 }: UseSearchMorphOptions): UseSearchMorphReturn {
   const morphingRef = useRef(false);
+  // Track all active tweens so we can kill them if needed
+  const activeTweensRef = useRef<gsap.core.Tween[]>([]);
 
   const morphToSearchBar = useCallback(() => {
     // Prevent multiple simultaneous morphs
@@ -59,13 +61,9 @@ export function useSearchMorph({
     }
     onMorphStart?.();
 
-    const tl = gsap.timeline({
-      onComplete: () => {
-        morphingRef.current = false;
-        searchBarRefs.input.current?.focus();
-        onMorphComplete?.();
-      }
-    });
+    // Kill any existing tweens
+    activeTweensRef.current.forEach(tween => tween.kill());
+    activeTweensRef.current = [];
 
     const leftBody = characterRef.current?.leftBodyRef?.current;
     const rightBody = characterRef.current?.rightBodyRef?.current;
@@ -83,9 +81,16 @@ export function useSearchMorph({
       });
     }
 
-    if (!leftBody || !rightBody || !searchBar) return;
+    if (!leftBody || !rightBody || !searchBar) {
+      morphingRef.current = false;
+      return;
+    }
 
-    // CRITICAL: Notify AnimationController BEFORE killing animations
+    // CRITICAL: Pause idle BEFORE killing animations to prevent auto-restart
+    if (characterRef.current?.pauseIdle) {
+      characterRef.current.pauseIdle();
+    }
+    // Kill any running animations
     if (characterRef.current?.killAll) {
       characterRef.current.killAll();
     }
@@ -111,13 +116,9 @@ export function useSearchMorph({
       gsap.set(rightEye, { opacity: 1 });
     }
 
-    // Set shadow to 0 immediately
-    if (shadow) {
-      gsap.killTweensOf(shadow);
-      gsap.set(shadow, { xPercent: -50, opacity: 0, scaleX: 1, scaleY: 1 });
-    }
+    // Note: Shadow is now handled by hideShadow() which pauses tracker and animates out
 
-    // STEP 1: Body halves separate, scale down, move to corners
+    // Calculate positions
     const { bracketScale } = config;
 
     // Set search bar to final scale BEFORE reading position
@@ -155,10 +156,9 @@ export function useSearchMorph({
     const rightTransformY = rightTargetCenterY - rightCurrentCenterY;
 
     if (ENABLE_ANIMATION_DEBUG_LOGS) {
-      console.log('[MORPH] Direct from bracket positions:', {
-        leftBracket: { size: leftBracketSize, scaledSize: scaledLeftBracketSize },
-        rightBracket: { size: rightBracketSize, scaledSize: scaledRightBracketSize },
-        transforms: { left: { x: leftTransformX, y: leftTransformY }, right: { x: rightTransformX, y: rightTransformY } }
+      console.log('[MORPH] Transforms:', {
+        left: { x: leftTransformX, y: leftTransformY },
+        right: { x: rightTransformX, y: rightTransformY }
       });
     }
 
@@ -170,168 +170,113 @@ export function useSearchMorph({
       transformOrigin: '50% 50%'
     });
 
-    // Shadow fades out immediately
-    if (shadow) {
-      tl.to(shadow, {
-        opacity: 0,
-        duration: 0.1,
-        ease: 'power2.in'
-      }, 0);
-    }
+    // === ANIMATIONS using setTimeout for delays (GSAP delay was being killed) ===
+    const searchBorderGradient = searchBarRefs.borderGradient.current;
+    const searchPlaceholder = searchBarRefs.placeholder.current;
+    const searchKbd = searchBarRefs.kbd.current;
+    const searchGlow = searchBarRefs.glow.current;
 
-    // Anticipation: slight squash down (80ms)
-    tl.to([leftBody, rightBody], {
-      y: 5,
-      scaleY: 0.92,
-      scaleX: 1.08,
-      duration: 0.08,
-      ease: 'power2.in'
-    }, 0);
+    // Immediate animations (0ms)
+    // Hide shadow (pauses tracker and fades out)
+    characterRef.current?.hideShadow?.();
 
-    // Eyes fade out during anticipation
+    // Hide character glows (innerGlow/outerGlow) - they shouldn't show during search
+    characterRef.current?.hideGlows?.();
+
+    // Squash brackets
+    gsap.to([leftBody, rightBody], { y: 5, scaleY: 0.92, scaleX: 1.08, duration: 0.08, ease: 'power2.in' });
+
+    // Fade out eyes
     const fadeTargets = [leftEye, rightEye].filter(Boolean);
     if (fadeTargets.length > 0) {
-      tl.to(fadeTargets, {
-        opacity: 0,
-        y: -18,
-        duration: 0.15,
-        ease: 'power1.in',
-        overwrite: true
-      }, 0);
+      gsap.to(fadeTargets, { opacity: 0, y: -18, duration: 0.15, ease: 'power1.in' });
     }
 
-    // Leap up with stretch (120ms)
-    tl.to([leftBody, rightBody], {
-      y: -25,
-      scaleY: 1.1,
-      scaleX: 0.95,
-      duration: 0.12,
-      ease: 'power2.out'
-    }, 0.08);
+    // 80ms: Leap up with stretch
+    setTimeout(() => {
+      gsap.to([leftBody, rightBody], { y: -25, scaleY: 1.1, scaleX: 0.95, duration: 0.12, ease: 'power2.out' });
+    }, 80);
 
-    // Morph out to corners while in the air (350ms)
-    tl.to(leftBody, {
-      x: leftTransformX,
-      y: leftTransformY,
-      scale: bracketScale,
-      scaleX: bracketScale,
-      scaleY: bracketScale,
-      rotation: 0,
-      duration: 0.35,
-      ease: 'power2.inOut',
-      overwrite: 'auto'
-    }, 0.2);
+    // 200ms: Morph out to corners + search bar fade in
+    setTimeout(() => {
+      gsap.to(leftBody, {
+        x: leftTransformX, y: leftTransformY,
+        scale: bracketScale, scaleX: bracketScale, scaleY: bracketScale,
+        duration: 0.35, ease: 'power2.inOut'
+      });
+      gsap.to(rightBody, {
+        x: rightTransformX, y: rightTransformY,
+        scale: bracketScale, scaleX: bracketScale, scaleY: bracketScale,
+        duration: 0.35, ease: 'power2.inOut'
+      });
+      gsap.to(searchBar, { opacity: 1, duration: 0.25, ease: 'power1.out' });
+    }, 200);
 
-    tl.to(rightBody, {
-      x: rightTransformX,
-      y: rightTransformY,
-      scale: bracketScale,
-      scaleX: bracketScale,
-      scaleY: bracketScale,
-      rotation: 0,
-      duration: 0.35,
-      ease: 'power2.inOut',
-      overwrite: 'auto'
-    }, 0.2);
+    // 300ms: Search bar ellipse glow starts fading in (after search bar bg is partly visible)
+    setTimeout(() => {
+      if (searchGlow) {
+        // Start glow fade-in - glow element is sized to match search bar, blur creates the peek effect
+        gsap.set(searchGlow, { opacity: 0, scale: 0.92 });
+        gsap.to(searchGlow, { opacity: 0.7, scale: 0.95, duration: 0.35, ease: 'power2.out' });
+      }
+    }, 300);
 
-    // Search bar fades in (250ms)
-    tl.to(searchBar, {
-      opacity: 1,
-      duration: 0.25,
-      ease: 'power1.out'
-    }, 0.2);
+    // 420ms: Placeholder and kbd reveal
+    setTimeout(() => {
+      if (searchPlaceholder) {
+        gsap.set(searchPlaceholder, { opacity: 0, filter: 'blur(6px)', y: 4 });
+        gsap.to(searchPlaceholder, { opacity: 1, filter: 'blur(0px)', y: 0, duration: 0.18, ease: 'power2.out' });
+      }
+      if (searchKbd) {
+        gsap.set(searchKbd, { opacity: 0, filter: 'blur(6px)', y: 4 });
+        gsap.to(searchKbd, { opacity: 1, filter: 'blur(0px)', y: 0, duration: 0.18, ease: 'power2.out' });
+      }
+    }, 420);
 
-    // Animated gradient border fades in and starts rotating
-    const searchBorderGradient = searchBarRefs.borderGradient.current;
-    if (searchBorderGradient) {
-      searchBorderGradient.style.background = `linear-gradient(white, white) padding-box, conic-gradient(from 0deg, #E5EDFF 0%, #C7D2FE 25%, #D8B4FE 50%, #C7D2FE 75%, #E5EDFF 100%) border-box`;
-      gsap.set(searchBorderGradient, { opacity: 0 });
+    // 450ms: Border gradient fade in
+    setTimeout(() => {
+      if (searchBorderGradient) {
+        searchBorderGradient.style.background = `linear-gradient(white, white) padding-box, conic-gradient(from 0deg, #E5EDFF 0%, #C7D2FE 25%, #D8B4FE 50%, #C7D2FE 75%, #E5EDFF 100%) border-box`;
+        gsap.set(searchBorderGradient, { opacity: 0 });
+        gsap.to(searchBorderGradient, { opacity: 1, duration: 0.3, ease: 'power1.out' });
 
-      const rotationAnim = { deg: 0 };
-      gsap.to(rotationAnim, {
-        deg: 360,
-        duration: 4,
-        ease: 'none',
-        repeat: -1,
-        onUpdate: () => {
-          if (searchBorderGradient) {
-            searchBorderGradient.style.background = `linear-gradient(white, white) padding-box, conic-gradient(from ${rotationAnim.deg}deg, #E5EDFF 0%, #C7D2FE 25%, #D8B4FE 50%, #C7D2FE 75%, #E5EDFF 100%) border-box`;
+        // Start rotating gradient
+        const rotationAnim = { deg: 0 };
+        gsap.to(rotationAnim, {
+          deg: 360, duration: 4, ease: 'none', repeat: -1,
+          onUpdate: () => {
+            if (searchBorderGradient) {
+              searchBorderGradient.style.background = `linear-gradient(white, white) padding-box, conic-gradient(from ${rotationAnim.deg}deg, #E5EDFF 0%, #C7D2FE 25%, #D8B4FE 50%, #C7D2FE 75%, #E5EDFF 100%) border-box`;
+            }
           }
-        }
-      });
-
-      tl.to(searchBorderGradient, {
-        opacity: 1,
-        duration: 0.3,
-        ease: 'power1.out'
-      }, 0.45);
-    }
-
-    // Placeholder reveals with subtle blur and upward drift
-    const searchPlaceholder = searchBarRefs.placeholder.current;
-    if (searchPlaceholder) {
-      gsap.set(searchPlaceholder, {
-        opacity: 0,
-        filter: 'blur(6px)',
-        y: 4,
-      });
-
-      tl.to(searchPlaceholder, {
-        opacity: 1,
-        filter: 'blur(0px)',
-        y: 0,
-        duration: 0.18,
-        ease: 'power2.out'
-      }, 0.42);
-    }
-
-    // CMD+K indicator reveals
-    const searchKbd = searchBarRefs.kbd.current;
-    if (searchKbd) {
-      gsap.set(searchKbd, {
-        opacity: 0,
-        filter: 'blur(6px)',
-        y: 4,
-      });
-
-      tl.to(searchKbd, {
-        opacity: 1,
-        filter: 'blur(0px)',
-        y: 0,
-        duration: 0.18,
-        ease: 'power2.out'
-      }, 0.42);
-    }
-
-    // AI gradient glow fades in
-    const searchGlow = searchBarRefs.glow.current;
-    if (searchGlow) {
-      gsap.set(searchGlow, { opacity: 0, scale: 0.95 });
-
-      tl.to(searchGlow, {
-        opacity: 1,
-        scale: 1,
-        duration: 0.4,
-        ease: 'power2.out'
-      }, 0.45);
-
-      // Start continuous breathing animation
-      tl.call(() => {
-        gsap.to(searchGlow, {
-          scale: 1.12,
-          opacity: 0.7,
-          duration: 2,
-          ease: 'sine.inOut',
-          repeat: -1,
-          yoyo: true
         });
-      }, [], 0.85);
-    }
+      }
+      // Glow continues to full opacity
+      if (searchGlow) {
+        gsap.to(searchGlow, { opacity: 1, scale: 1, duration: 0.3, ease: 'power2.out' });
+      }
+    }, 450);
 
-    // Large glow appears
-    tl.call(() => {
-      characterRef.current?.showSearchGlow?.();
-    }, [], 0.25);
+    // 850ms: Start breathing animation on glow
+    setTimeout(() => {
+      if (searchGlow) {
+        gsap.to(searchGlow, { scale: 1.12, opacity: 0.7, duration: 2, ease: 'sine.inOut', repeat: -1, yoyo: true });
+      }
+    }, 850);
+
+    // Complete callback after animation duration (~850ms)
+    setTimeout(() => {
+      if (ENABLE_ANIMATION_DEBUG_LOGS) {
+        console.log('[SEARCH] Animation complete (timeout)');
+      }
+      morphingRef.current = false;
+      searchBarRefs.input.current?.focus();
+      onMorphComplete?.();
+    }, 900);
+
+    if (ENABLE_ANIMATION_DEBUG_LOGS) {
+      console.log('[SEARCH] Animations started with delays');
+    }
   }, [characterRef, searchBarRefs, config, onMorphStart, onMorphComplete]);
 
   const morphToCharacter = useCallback(() => {
@@ -346,17 +291,14 @@ export function useSearchMorph({
     morphingRef.current = true;
     onReturnStart?.();
 
+    // Kill any existing tweens
+    activeTweensRef.current.forEach(tween => tween.kill());
+    activeTweensRef.current = [];
+
     // Show glows when halves come back together
     setTimeout(() => {
       characterRef.current?.showGlows?.(true);
     }, 500);
-
-    const tl = gsap.timeline({
-      onComplete: () => {
-        morphingRef.current = false;
-        onReturnComplete?.();
-      }
-    });
 
     const leftBody = characterRef.current?.leftBodyRef?.current;
     const rightBody = characterRef.current?.rightBodyRef?.current;
@@ -365,9 +307,15 @@ export function useSearchMorph({
     const searchBar = searchBarRefs.bar.current;
     const shadow = characterRef.current?.shadowRef?.current;
 
-    if (!leftBody || !rightBody || !searchBar) return;
+    if (!leftBody || !rightBody || !searchBar) {
+      morphingRef.current = false;
+      return;
+    }
 
-    // Notify AnimationController
+    // Pause idle and kill running animations
+    if (characterRef.current?.pauseIdle) {
+      characterRef.current.pauseIdle();
+    }
     if (characterRef.current?.killAll) {
       characterRef.current.killAll();
     }
@@ -390,49 +338,56 @@ export function useSearchMorph({
       gsap.killTweensOf(searchGlow);
     }
 
-    // Border gradient fades out
+    // Hide search glow canvas effect immediately
+    characterRef.current?.hideSearchGlow?.();
+
+    // Border gradient fades out (0s)
     if (searchBorderGradient) {
-      tl.to(searchBorderGradient, {
-        opacity: 0,
-        duration: 0.15,
-        ease: 'power1.in'
-      }, 0);
+      activeTweensRef.current.push(
+        gsap.to(searchBorderGradient, {
+          opacity: 0,
+          duration: 0.15,
+          ease: 'power1.in'
+        })
+      );
     }
 
-    // Placeholder and kbd blur out
+    // Placeholder and kbd blur out (0s)
     const textElements = [searchPlaceholder, searchKbd].filter(Boolean);
     if (textElements.length > 0) {
-      tl.to(textElements, {
-        opacity: 0,
-        filter: 'blur(6px)',
-        y: -4,
-        duration: 0.15,
-        ease: 'power2.in'
-      }, 0);
+      activeTweensRef.current.push(
+        gsap.to(textElements, {
+          opacity: 0,
+          filter: 'blur(6px)',
+          y: -4,
+          duration: 0.15,
+          ease: 'power2.in'
+        })
+      );
     }
 
-    // Search glow fades
+    // Search glow fades (0s)
     if (searchGlow) {
-      tl.to(searchGlow, {
-        opacity: 0,
-        scale: 0.85,
-        duration: 0.15,
-        ease: 'power1.out'
-      }, 0);
+      activeTweensRef.current.push(
+        gsap.to(searchGlow, {
+          opacity: 0,
+          scale: 0.85,
+          duration: 0.15,
+          ease: 'power1.out'
+        })
+      );
     }
 
-    // Search bar container fades out
-    tl.to(searchBar, {
-      opacity: 0,
-      scale: 0.95,
-      duration: 0.2,
-      ease: 'power2.in'
-    }, 0.15);
-
-    // Hide search glow canvas effect
-    tl.call(() => {
-      characterRef.current?.hideSearchGlow?.();
-    }, [], 0);
+    // Search bar container fades out (150ms delay)
+    activeTweensRef.current.push(
+      gsap.to(searchBar, {
+        opacity: 0,
+        scale: 0.95,
+        duration: 0.2,
+        delay: 0.15,
+        ease: 'power2.in'
+      })
+    );
 
     // Clear z-index from character container
     const characterContainer = leftBody.parentElement;
@@ -440,61 +395,72 @@ export function useSearchMorph({
       gsap.set(characterContainer, { clearProps: 'zIndex' });
     }
 
-    // Snap back to center with upward leap
-    tl.to([leftBody, rightBody], {
-      x: 0,
-      y: -25,
-      scale: 1,
-      scaleX: 0.95,
-      scaleY: 1.1,
-      duration: 0.25,
-      ease: 'power2.out',
-      clearProps: 'zIndex'
-    }, 0.3);
+    // Snap back to center with upward leap (300ms delay)
+    activeTweensRef.current.push(
+      gsap.to([leftBody, rightBody], {
+        x: 0,
+        y: -25,
+        scale: 1,
+        scaleX: 0.95,
+        scaleY: 1.1,
+        duration: 0.25,
+        delay: 0.3,
+        ease: 'power2.out',
+        clearProps: 'zIndex'
+      })
+    );
 
-    // Settle down to rest
-    tl.to([leftBody, rightBody], {
-      y: 0,
-      scaleX: 1,
-      scaleY: 1,
-      duration: 0.17,
-      ease: 'power2.in'
-    }, 0.55);
+    // Settle down to rest (550ms delay)
+    activeTweensRef.current.push(
+      gsap.to([leftBody, rightBody], {
+        y: 0,
+        scaleX: 1,
+        scaleY: 1,
+        duration: 0.17,
+        delay: 0.55,
+        ease: 'power2.in'
+      })
+    );
 
-    // Eyes fade in
+    // Eyes fade in (550ms delay)
     if (leftEye && rightEye) {
       gsap.set([leftEye, rightEye], { y: -18 });
 
-      tl.to([leftEye, rightEye], {
-        opacity: 1,
-        y: 0,
-        duration: 0.17,
-        ease: 'power2.in'
-      }, 0.55);
+      activeTweensRef.current.push(
+        gsap.to([leftEye, rightEye], {
+          opacity: 1,
+          y: 0,
+          duration: 0.17,
+          delay: 0.55,
+          ease: 'power2.in'
+        })
+      );
     }
 
-    // Shadow fades back in
-    if (shadow) {
-      tl.to(shadow, {
-        opacity: 0.7,
-        scaleX: 1,
-        scaleY: 1,
-        duration: 0.22,
-        ease: 'power1.out'
-      }, 0.67);
-    }
+    // Shadow fades back in (670ms delay) - resume tracker which handles opacity
+    setTimeout(() => {
+      characterRef.current?.showShadow?.();
+    }, 670);
 
-    // Force final states when timeline completes
-    tl.call(() => {
+    // Complete and cleanup (720ms delay)
+    setTimeout(() => {
       if (leftEye) gsap.set(leftEye, { opacity: 1, y: 0 });
       if (rightEye) gsap.set(rightEye, { opacity: 1, y: 0 });
-      if (shadow) gsap.set(shadow, { xPercent: -50, opacity: 0.7, scaleX: 1, scaleY: 1 });
+      // Note: shadow is now managed by the shadow tracker (showShadow resumes it)
       if (searchBorderGradient) gsap.set(searchBorderGradient, { opacity: 0 });
       if (searchPlaceholder) gsap.set(searchPlaceholder, { opacity: 0, filter: 'blur(0px)', y: 0 });
       if (searchKbd) gsap.set(searchKbd, { opacity: 0, filter: 'blur(0px)', y: 0 });
       if (searchGlow) gsap.set(searchGlow, { opacity: 0, scale: 1 });
       gsap.set([leftBody, rightBody], { x: 0, y: 0, scale: 1, rotation: 0, scaleX: 1, scaleY: 1 });
-    }, [], 0.72);
+
+      // Resume idle animations after morph back is complete
+      if (characterRef.current?.resumeIdle) {
+        characterRef.current.resumeIdle();
+      }
+
+      morphingRef.current = false;
+      onReturnComplete?.();
+    }, 750);
   }, [characterRef, searchBarRefs, onReturnStart, onReturnComplete]);
 
   return {

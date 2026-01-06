@@ -47,6 +47,7 @@ export class AnimationController {
   // State tracking
   private currentEmotion: EmotionType | null = null;
   private isIdleActive = false;
+  private idlePrevented = false; // Prevents auto-restart of idle (set by pauseIdle)
 
   // Super mode scale (when set, preserves scale during emotions)
   private superModeScale: number | null = null;
@@ -147,8 +148,10 @@ export class AnimationController {
 
   /**
    * Pause idle animation (and blink scheduler)
+   * Also prevents auto-restart of idle until resumeIdle() is called
    */
   pauseIdle(): void {
+    this.idlePrevented = true; // Prevent auto-restart
     if (this.idleTimeline && this.idleTimeline.isActive()) {
       this.idleTimeline.pause();
     }
@@ -157,14 +160,16 @@ export class AnimationController {
       this.blinkControls.pauseBlinks();
     }
     if (this.config.enableLogging) {
-      console.log('[AnimationController] Paused idle animation and blink scheduler');
+      console.log('[AnimationController] Paused idle animation and blink scheduler (auto-restart prevented)');
     }
   }
 
   /**
    * Resume idle animation (and blink scheduler)
+   * Also allows auto-restart of idle again
    */
   resumeIdle(): void {
+    this.idlePrevented = false; // Allow auto-restart again
     if (this.idleTimeline && !this.idleTimeline.isActive()) {
       this.idleTimeline.resume();
     }
@@ -175,6 +180,13 @@ export class AnimationController {
     if (this.config.enableLogging) {
       console.log('[AnimationController] Resumed idle animation and blink scheduler');
     }
+  }
+
+  /**
+   * Check if idle auto-restart is prevented
+   */
+  isIdlePrevented(): boolean {
+    return this.idlePrevented;
   }
 
   /**

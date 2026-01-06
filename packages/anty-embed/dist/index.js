@@ -6501,6 +6501,126 @@ const DEFAULT_SEARCH_BAR_CONFIG = {
     borderWidth: 2.75,
 };
 
+// Inline Kbd component (no external dependencies)
+function Kbd({ children, style }) {
+    return (jsxRuntime.jsx("kbd", { style: {
+            backgroundColor: '#f4f4f5',
+            color: '#71717a',
+            pointerEvents: 'none',
+            display: 'inline-flex',
+            height: '20px',
+            minWidth: '20px',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '4px',
+            borderRadius: '4px',
+            padding: '0 4px',
+            fontFamily: 'sans-serif',
+            fontSize: '12px',
+            fontWeight: 500,
+            userSelect: 'none',
+            ...style,
+        }, children: children }));
+}
+function AntySearchBar({ active, value, onChange, inputRef, barRef, borderRef, borderGradientRef, placeholderRef, kbdRef, glowRef, config = DEFAULT_SEARCH_BAR_CONFIG, placeholder = 'Search...', keyboardShortcut = '⌘K', }) {
+    // Only hide placeholder when there's actual text typed
+    const showPlaceholder = !value;
+    // Extract config values
+    const { width, height, borderRadius, innerRadius, borderWidth } = config;
+    // Default height for content area (input stays at standard size)
+    const defaultHeight = DEFAULT_SEARCH_BAR_CONFIG.height;
+    // Calculate if we should center content or top-align
+    // Single line height ~= font size (17.85px) + padding (~24px top/bottom) ≈ 65px
+    // If bar is tall enough for 2+ lines, top-align; otherwise center
+    const singleLineThreshold = 90; // px - anything above this is considered multi-line capable
+    const isMultiLineHeight = height > singleLineThreshold;
+    const contentTopPadding = 2; // px - top padding when top-aligned
+    return (jsxRuntime.jsxs("div", { ref: barRef, style: {
+            position: 'absolute',
+            width: `${width}px`,
+            height: `${height}px`,
+            left: '50%',
+            top: '50%',
+            transform: 'translate(-50%, -50%)',
+            opacity: 0, // GSAP controls opacity
+            pointerEvents: active ? 'auto' : 'none',
+            zIndex: 2,
+        }, children: [jsxRuntime.jsx("div", { ref: glowRef, style: {
+                    position: 'absolute',
+                    width: `${width * 0.92}px`,
+                    height: `${height * 1.8}px`, // Taller to create elongated ellipse effect
+                    left: '50%',
+                    top: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    opacity: 0, // GSAP controls opacity and animation
+                    zIndex: -1,
+                    background: 'radial-gradient(ellipse 100% 50%, rgba(147, 197, 253, 0.5) 0%, rgba(167, 139, 250, 0.4) 30%, rgba(229, 237, 255, 0.2) 60%, transparent 85%)',
+                    filter: 'blur(50px)',
+                    pointerEvents: 'none',
+                } }), jsxRuntime.jsx("div", { ref: borderGradientRef, style: {
+                    position: 'relative',
+                    width: '100%',
+                    height: '100%',
+                    borderRadius: `${borderRadius}px`,
+                    padding: `${borderWidth}px`,
+                    background: 'linear-gradient(white, white) padding-box, conic-gradient(from 0deg, #E5EDFF 0%, #C7D2FE 25%, #D8B4FE 50%, #C7D2FE 75%, #E5EDFF 100%) border-box',
+                    border: `${borderWidth}px solid transparent`,
+                    opacity: 0, // GSAP controls opacity
+                }, children: jsxRuntime.jsx("div", { ref: borderRef, style: {
+                        position: 'relative',
+                        width: '100%',
+                        height: '100%',
+                        backgroundColor: 'white',
+                        borderRadius: `${innerRadius}px`,
+                    }, children: jsxRuntime.jsxs("div", { style: {
+                            position: 'absolute',
+                            left: 0,
+                            right: 0,
+                            height: `${defaultHeight - borderWidth * 2}px`,
+                            ...(isMultiLineHeight
+                                ? { top: `${contentTopPadding}px` }
+                                : { top: '50%', transform: 'translateY(-50%)' }),
+                        }, children: [jsxRuntime.jsx("div", { ref: placeholderRef, style: {
+                                    position: 'absolute',
+                                    left: '24px',
+                                    top: 0,
+                                    height: '100%',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    pointerEvents: 'none',
+                                    userSelect: 'none',
+                                    opacity: showPlaceholder ? 1 : 0,
+                                    fontFamily: 'Inter, sans-serif',
+                                    fontWeight: 500,
+                                    fontSize: '17.85px',
+                                    color: '#D4D3D3',
+                                    transition: showPlaceholder ? 'none' : 'opacity 0.15s ease-out',
+                                }, children: placeholder }), jsxRuntime.jsx("div", { ref: kbdRef, style: {
+                                    position: 'absolute',
+                                    right: '24px',
+                                    top: 0,
+                                    height: '100%',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    pointerEvents: 'none',
+                                    userSelect: 'none',
+                                    opacity: showPlaceholder ? 1 : 0,
+                                    transition: showPlaceholder ? 'none' : 'opacity 0.15s ease-out',
+                                }, children: jsxRuntime.jsx(Kbd, { style: { fontSize: '12px', color: '#9ca3af' }, children: keyboardShortcut }) }), jsxRuntime.jsx("input", { ref: inputRef, type: "text", value: value, onChange: (e) => onChange(e.target.value), placeholder: "" // Empty placeholder since we use fake one
+                                , style: {
+                                    width: '100%',
+                                    height: '100%',
+                                    padding: '0 24px',
+                                    backgroundColor: 'transparent',
+                                    outline: 'none',
+                                    border: 'none',
+                                    color: '#052333',
+                                    fontFamily: 'Inter, sans-serif',
+                                    fontWeight: 500,
+                                    fontSize: '17.85px',
+                                } })] }) }) })] }));
+}
+
 /**
  * Animation State Machine
  *
@@ -6735,6 +6855,7 @@ class AnimationController {
         // State tracking
         this.currentEmotion = null;
         this.isIdleActive = false;
+        this.idlePrevented = false; // Prevents auto-restart of idle (set by pauseIdle)
         // Super mode scale (when set, preserves scale during emotions)
         this.superModeScale = null;
         this.callbacks = callbacks;
@@ -6812,8 +6933,10 @@ class AnimationController {
     }
     /**
      * Pause idle animation (and blink scheduler)
+     * Also prevents auto-restart of idle until resumeIdle() is called
      */
     pauseIdle() {
+        this.idlePrevented = true; // Prevent auto-restart
         if (this.idleTimeline && this.idleTimeline.isActive()) {
             this.idleTimeline.pause();
         }
@@ -6822,13 +6945,15 @@ class AnimationController {
             this.blinkControls.pauseBlinks();
         }
         if (this.config.enableLogging) {
-            console.log('[AnimationController] Paused idle animation and blink scheduler');
+            console.log('[AnimationController] Paused idle animation and blink scheduler (auto-restart prevented)');
         }
     }
     /**
      * Resume idle animation (and blink scheduler)
+     * Also allows auto-restart of idle again
      */
     resumeIdle() {
+        this.idlePrevented = false; // Allow auto-restart again
         if (this.idleTimeline && !this.idleTimeline.isActive()) {
             this.idleTimeline.resume();
         }
@@ -6839,6 +6964,12 @@ class AnimationController {
         if (this.config.enableLogging) {
             console.log('[AnimationController] Resumed idle animation and blink scheduler');
         }
+    }
+    /**
+     * Check if idle auto-restart is prevented
+     */
+    isIdlePrevented() {
+        return this.idlePrevented;
     }
     /**
      * Restart idle animation from origin
@@ -9798,6 +9929,9 @@ function useAnimationController(elements, options = {}) {
         // Skip if we're in a wake-up transition (wake-up handles its own idle start)
         if (isWakingUpRef.current)
             return;
+        // Skip if idle is explicitly prevented (e.g., during search morph animation)
+        if (controllerRef.current.isIdlePrevented())
+            return;
         // Check controller's idle state, not a local ref
         if (controllerRef.current.isIdle())
             return; // Already running
@@ -10098,6 +10232,25 @@ function useAnimationController(elements, options = {}) {
         glowSystemRef.current.pause();
         glowSystemRef.current.hide();
     }, []);
+    /**
+     * Hide shadow (for search enter - pauses tracker and hides)
+     */
+    const hideShadow = react.useCallback(() => {
+        if (shadowTrackerRef.current) {
+            shadowTrackerRef.current.pause();
+        }
+        if (elements.shadow) {
+            gsapWithCSS.to(elements.shadow, { opacity: 0, duration: 0.1, ease: 'power2.in' });
+        }
+    }, [elements.shadow]);
+    /**
+     * Show shadow (for search exit - resumes tracker)
+     */
+    const showShadow = react.useCallback(() => {
+        if (shadowTrackerRef.current) {
+            shadowTrackerRef.current.resume();
+        }
+    }, []);
     // CRITICAL: Memoize return object to prevent useEffect re-firing in consumers
     return react.useMemo(() => ({
         playEmotion,
@@ -10114,8 +10267,10 @@ function useAnimationController(elements, options = {}) {
         setSuperMode,
         showGlows,
         hideGlows,
+        hideShadow,
+        showShadow,
         isReady: isReady.current,
-    }), [playEmotion, transitionTo, startIdle, pause, resume, killAll, getState, getEmotion, isIdleActive, isIdlePlaying, getDebugInfo, setSuperMode, showGlows, hideGlows]);
+    }), [playEmotion, transitionTo, startIdle, pause, resume, killAll, getState, getEmotion, isIdleActive, isIdlePlaying, getDebugInfo, setSuperMode, showGlows, hideGlows, hideShadow, showShadow]);
 }
 
 /**
@@ -10152,6 +10307,368 @@ function logAnimationEvent(event, details) {
     console.log(`🎬 [AnimationController] ${event}${detailsStr}`);
 }
 
+function useSearchMorph({ characterRef, searchBarRefs, config = DEFAULT_SEARCH_BAR_CONFIG, onMorphStart, onMorphComplete, onReturnStart, onReturnComplete, }) {
+    const morphingRef = react.useRef(false);
+    // Track all active tweens so we can kill them if needed
+    const activeTweensRef = react.useRef([]);
+    const morphToSearchBar = react.useCallback(() => {
+        // Prevent multiple simultaneous morphs
+        if (morphingRef.current) {
+            if (ENABLE_ANIMATION_DEBUG_LOGS) {
+                console.log('[SEARCH] Already morphing, ignoring');
+            }
+            return;
+        }
+        morphingRef.current = true;
+        if (ENABLE_ANIMATION_DEBUG_LOGS) {
+            console.log('[SEARCH] Opening search mode');
+        }
+        onMorphStart?.();
+        // Kill any existing tweens
+        activeTweensRef.current.forEach(tween => tween.kill());
+        activeTweensRef.current = [];
+        const leftBody = characterRef.current?.leftBodyRef?.current;
+        const rightBody = characterRef.current?.rightBodyRef?.current;
+        const leftEye = characterRef.current?.leftEyeRef?.current;
+        const rightEye = characterRef.current?.rightEyeRef?.current;
+        const searchBar = searchBarRefs.bar.current;
+        const shadow = characterRef.current?.shadowRef?.current;
+        if (ENABLE_ANIMATION_DEBUG_LOGS) {
+            console.log('[SEARCH] Elements:', {
+                leftBody: !!leftBody,
+                rightBody: !!rightBody,
+                searchBar: !!searchBar,
+                shadow: !!shadow,
+            });
+        }
+        if (!leftBody || !rightBody || !searchBar) {
+            morphingRef.current = false;
+            return;
+        }
+        // CRITICAL: Pause idle BEFORE killing animations to prevent auto-restart
+        if (characterRef.current?.pauseIdle) {
+            characterRef.current.pauseIdle();
+        }
+        // Kill any running animations
+        if (characterRef.current?.killAll) {
+            characterRef.current.killAll();
+        }
+        // Kill ALL idle animations including character container
+        const character = leftBody.parentElement;
+        if (character) {
+            gsapWithCSS.killTweensOf(character);
+            gsapWithCSS.set(character, { x: 0, y: 0, rotation: 0, scale: 1 });
+        }
+        gsapWithCSS.killTweensOf([leftBody, rightBody, shadow]);
+        // Reset bracket positions to 0 before starting
+        gsapWithCSS.set([leftBody, rightBody], { x: 0, y: 0, scale: 1, rotation: 0 });
+        // Kill any ongoing animations on eyes
+        if (leftEye) {
+            gsapWithCSS.killTweensOf(leftEye);
+            gsapWithCSS.set(leftEye, { opacity: 1 });
+        }
+        if (rightEye) {
+            gsapWithCSS.killTweensOf(rightEye);
+            gsapWithCSS.set(rightEye, { opacity: 1 });
+        }
+        // Note: Shadow is now handled by hideShadow() which pauses tracker and animates out
+        // Calculate positions
+        const { bracketScale } = config;
+        // Set search bar to final scale BEFORE reading position
+        gsapWithCSS.set(searchBar, { scale: 1, opacity: 0 });
+        // Get actual search bar position (at final scale)
+        const searchBarRect = searchBar.getBoundingClientRect();
+        // Get current bracket sizes (BEFORE scaling)
+        const leftBracketRect = leftBody.getBoundingClientRect();
+        const rightBracketRect = rightBody.getBoundingClientRect();
+        const leftBracketSize = leftBracketRect.width;
+        const rightBracketSize = rightBracketRect.width;
+        const scaledLeftBracketSize = leftBracketSize * bracketScale;
+        const scaledRightBracketSize = rightBracketSize * bracketScale;
+        // Get CURRENT center positions of brackets
+        const leftCurrentCenterX = leftBracketRect.left + (leftBracketRect.width / 2);
+        const leftCurrentCenterY = leftBracketRect.top + (leftBracketRect.height / 2);
+        const rightCurrentCenterX = rightBracketRect.left + (rightBracketRect.width / 2);
+        const rightCurrentCenterY = rightBracketRect.top + (rightBracketRect.height / 2);
+        // Calculate target bracket centers (so OUTER EDGES align with search bar)
+        const leftTargetCenterX = searchBarRect.left + (scaledLeftBracketSize / 2);
+        const leftTargetCenterY = searchBarRect.top + (scaledLeftBracketSize / 2);
+        const rightTargetCenterX = searchBarRect.right - (scaledRightBracketSize / 2);
+        const rightTargetCenterY = searchBarRect.bottom - (scaledRightBracketSize / 2);
+        // Calculate transforms
+        const leftTransformX = leftTargetCenterX - leftCurrentCenterX;
+        const leftTransformY = leftTargetCenterY - leftCurrentCenterY;
+        const rightTransformX = rightTargetCenterX - rightCurrentCenterX;
+        const rightTransformY = rightTargetCenterY - rightCurrentCenterY;
+        if (ENABLE_ANIMATION_DEBUG_LOGS) {
+            console.log('[MORPH] Transforms:', {
+                left: { x: leftTransformX, y: leftTransformY },
+                right: { x: rightTransformX, y: rightTransformY }
+            });
+        }
+        // Set z-index on character container AND brackets
+        const characterContainer = leftBody.parentElement;
+        gsapWithCSS.set(characterContainer, { zIndex: 10 });
+        gsapWithCSS.set([leftBody, rightBody], {
+            zIndex: 3,
+            transformOrigin: '50% 50%'
+        });
+        // === ANIMATIONS using setTimeout for delays (GSAP delay was being killed) ===
+        const searchBorderGradient = searchBarRefs.borderGradient.current;
+        const searchPlaceholder = searchBarRefs.placeholder.current;
+        const searchKbd = searchBarRefs.kbd.current;
+        const searchGlow = searchBarRefs.glow.current;
+        // Immediate animations (0ms)
+        // Hide shadow (pauses tracker and fades out)
+        characterRef.current?.hideShadow?.();
+        // Hide character glows (innerGlow/outerGlow) - they shouldn't show during search
+        characterRef.current?.hideGlows?.();
+        // Squash brackets
+        gsapWithCSS.to([leftBody, rightBody], { y: 5, scaleY: 0.92, scaleX: 1.08, duration: 0.08, ease: 'power2.in' });
+        // Fade out eyes
+        const fadeTargets = [leftEye, rightEye].filter(Boolean);
+        if (fadeTargets.length > 0) {
+            gsapWithCSS.to(fadeTargets, { opacity: 0, y: -18, duration: 0.15, ease: 'power1.in' });
+        }
+        // 80ms: Leap up with stretch
+        setTimeout(() => {
+            gsapWithCSS.to([leftBody, rightBody], { y: -25, scaleY: 1.1, scaleX: 0.95, duration: 0.12, ease: 'power2.out' });
+        }, 80);
+        // 200ms: Morph out to corners + search bar fade in
+        setTimeout(() => {
+            gsapWithCSS.to(leftBody, {
+                x: leftTransformX, y: leftTransformY,
+                scale: bracketScale, scaleX: bracketScale, scaleY: bracketScale,
+                duration: 0.35, ease: 'power2.inOut'
+            });
+            gsapWithCSS.to(rightBody, {
+                x: rightTransformX, y: rightTransformY,
+                scale: bracketScale, scaleX: bracketScale, scaleY: bracketScale,
+                duration: 0.35, ease: 'power2.inOut'
+            });
+            gsapWithCSS.to(searchBar, { opacity: 1, duration: 0.25, ease: 'power1.out' });
+        }, 200);
+        // 300ms: Search bar ellipse glow starts fading in (after search bar bg is partly visible)
+        setTimeout(() => {
+            if (searchGlow) {
+                // Start glow fade-in - glow element is sized to match search bar, blur creates the peek effect
+                gsapWithCSS.set(searchGlow, { opacity: 0, scale: 0.92 });
+                gsapWithCSS.to(searchGlow, { opacity: 0.7, scale: 0.95, duration: 0.35, ease: 'power2.out' });
+            }
+        }, 300);
+        // 420ms: Placeholder and kbd reveal
+        setTimeout(() => {
+            if (searchPlaceholder) {
+                gsapWithCSS.set(searchPlaceholder, { opacity: 0, filter: 'blur(6px)', y: 4 });
+                gsapWithCSS.to(searchPlaceholder, { opacity: 1, filter: 'blur(0px)', y: 0, duration: 0.18, ease: 'power2.out' });
+            }
+            if (searchKbd) {
+                gsapWithCSS.set(searchKbd, { opacity: 0, filter: 'blur(6px)', y: 4 });
+                gsapWithCSS.to(searchKbd, { opacity: 1, filter: 'blur(0px)', y: 0, duration: 0.18, ease: 'power2.out' });
+            }
+        }, 420);
+        // 450ms: Border gradient fade in
+        setTimeout(() => {
+            if (searchBorderGradient) {
+                searchBorderGradient.style.background = `linear-gradient(white, white) padding-box, conic-gradient(from 0deg, #E5EDFF 0%, #C7D2FE 25%, #D8B4FE 50%, #C7D2FE 75%, #E5EDFF 100%) border-box`;
+                gsapWithCSS.set(searchBorderGradient, { opacity: 0 });
+                gsapWithCSS.to(searchBorderGradient, { opacity: 1, duration: 0.3, ease: 'power1.out' });
+                // Start rotating gradient
+                const rotationAnim = { deg: 0 };
+                gsapWithCSS.to(rotationAnim, {
+                    deg: 360, duration: 4, ease: 'none', repeat: -1,
+                    onUpdate: () => {
+                        if (searchBorderGradient) {
+                            searchBorderGradient.style.background = `linear-gradient(white, white) padding-box, conic-gradient(from ${rotationAnim.deg}deg, #E5EDFF 0%, #C7D2FE 25%, #D8B4FE 50%, #C7D2FE 75%, #E5EDFF 100%) border-box`;
+                        }
+                    }
+                });
+            }
+            // Glow continues to full opacity
+            if (searchGlow) {
+                gsapWithCSS.to(searchGlow, { opacity: 1, scale: 1, duration: 0.3, ease: 'power2.out' });
+            }
+        }, 450);
+        // 850ms: Start breathing animation on glow
+        setTimeout(() => {
+            if (searchGlow) {
+                gsapWithCSS.to(searchGlow, { scale: 1.12, opacity: 0.7, duration: 2, ease: 'sine.inOut', repeat: -1, yoyo: true });
+            }
+        }, 850);
+        // Complete callback after animation duration (~850ms)
+        setTimeout(() => {
+            if (ENABLE_ANIMATION_DEBUG_LOGS) {
+                console.log('[SEARCH] Animation complete (timeout)');
+            }
+            morphingRef.current = false;
+            searchBarRefs.input.current?.focus();
+            onMorphComplete?.();
+        }, 900);
+        if (ENABLE_ANIMATION_DEBUG_LOGS) {
+            console.log('[SEARCH] Animations started with delays');
+        }
+    }, [characterRef, searchBarRefs, config, onMorphStart, onMorphComplete]);
+    const morphToCharacter = react.useCallback(() => {
+        // Prevent multiple simultaneous morphs
+        if (morphingRef.current) {
+            if (ENABLE_ANIMATION_DEBUG_LOGS) {
+                console.log('[SEARCH] Already morphing, ignoring close');
+            }
+            return;
+        }
+        morphingRef.current = true;
+        onReturnStart?.();
+        // Kill any existing tweens
+        activeTweensRef.current.forEach(tween => tween.kill());
+        activeTweensRef.current = [];
+        // Show glows when halves come back together
+        setTimeout(() => {
+            characterRef.current?.showGlows?.(true);
+        }, 500);
+        const leftBody = characterRef.current?.leftBodyRef?.current;
+        const rightBody = characterRef.current?.rightBodyRef?.current;
+        const leftEye = characterRef.current?.leftEyeRef?.current;
+        const rightEye = characterRef.current?.rightEyeRef?.current;
+        const searchBar = searchBarRefs.bar.current;
+        characterRef.current?.shadowRef?.current;
+        if (!leftBody || !rightBody || !searchBar) {
+            morphingRef.current = false;
+            return;
+        }
+        // Pause idle and kill running animations
+        if (characterRef.current?.pauseIdle) {
+            characterRef.current.pauseIdle();
+        }
+        if (characterRef.current?.killAll) {
+            characterRef.current.killAll();
+        }
+        // Kill ongoing animations
+        const searchBorderGradient = searchBarRefs.borderGradient.current;
+        if (searchBorderGradient) {
+            gsapWithCSS.killTweensOf(searchBorderGradient);
+        }
+        const searchPlaceholder = searchBarRefs.placeholder.current;
+        if (searchPlaceholder) {
+            gsapWithCSS.killTweensOf(searchPlaceholder);
+        }
+        const searchKbd = searchBarRefs.kbd.current;
+        if (searchKbd) {
+            gsapWithCSS.killTweensOf(searchKbd);
+        }
+        const searchGlow = searchBarRefs.glow.current;
+        if (searchGlow) {
+            gsapWithCSS.killTweensOf(searchGlow);
+        }
+        // Hide search glow canvas effect immediately
+        characterRef.current?.hideSearchGlow?.();
+        // Border gradient fades out (0s)
+        if (searchBorderGradient) {
+            activeTweensRef.current.push(gsapWithCSS.to(searchBorderGradient, {
+                opacity: 0,
+                duration: 0.15,
+                ease: 'power1.in'
+            }));
+        }
+        // Placeholder and kbd blur out (0s)
+        const textElements = [searchPlaceholder, searchKbd].filter(Boolean);
+        if (textElements.length > 0) {
+            activeTweensRef.current.push(gsapWithCSS.to(textElements, {
+                opacity: 0,
+                filter: 'blur(6px)',
+                y: -4,
+                duration: 0.15,
+                ease: 'power2.in'
+            }));
+        }
+        // Search glow fades (0s)
+        if (searchGlow) {
+            activeTweensRef.current.push(gsapWithCSS.to(searchGlow, {
+                opacity: 0,
+                scale: 0.85,
+                duration: 0.15,
+                ease: 'power1.out'
+            }));
+        }
+        // Search bar container fades out (150ms delay)
+        activeTweensRef.current.push(gsapWithCSS.to(searchBar, {
+            opacity: 0,
+            scale: 0.95,
+            duration: 0.2,
+            delay: 0.15,
+            ease: 'power2.in'
+        }));
+        // Clear z-index from character container
+        const characterContainer = leftBody.parentElement;
+        if (characterContainer) {
+            gsapWithCSS.set(characterContainer, { clearProps: 'zIndex' });
+        }
+        // Snap back to center with upward leap (300ms delay)
+        activeTweensRef.current.push(gsapWithCSS.to([leftBody, rightBody], {
+            x: 0,
+            y: -25,
+            scale: 1,
+            scaleX: 0.95,
+            scaleY: 1.1,
+            duration: 0.25,
+            delay: 0.3,
+            ease: 'power2.out',
+            clearProps: 'zIndex'
+        }));
+        // Settle down to rest (550ms delay)
+        activeTweensRef.current.push(gsapWithCSS.to([leftBody, rightBody], {
+            y: 0,
+            scaleX: 1,
+            scaleY: 1,
+            duration: 0.17,
+            delay: 0.55,
+            ease: 'power2.in'
+        }));
+        // Eyes fade in (550ms delay)
+        if (leftEye && rightEye) {
+            gsapWithCSS.set([leftEye, rightEye], { y: -18 });
+            activeTweensRef.current.push(gsapWithCSS.to([leftEye, rightEye], {
+                opacity: 1,
+                y: 0,
+                duration: 0.17,
+                delay: 0.55,
+                ease: 'power2.in'
+            }));
+        }
+        // Shadow fades back in (670ms delay) - resume tracker which handles opacity
+        setTimeout(() => {
+            characterRef.current?.showShadow?.();
+        }, 670);
+        // Complete and cleanup (720ms delay)
+        setTimeout(() => {
+            if (leftEye)
+                gsapWithCSS.set(leftEye, { opacity: 1, y: 0 });
+            if (rightEye)
+                gsapWithCSS.set(rightEye, { opacity: 1, y: 0 });
+            // Note: shadow is now managed by the shadow tracker (showShadow resumes it)
+            if (searchBorderGradient)
+                gsapWithCSS.set(searchBorderGradient, { opacity: 0 });
+            if (searchPlaceholder)
+                gsapWithCSS.set(searchPlaceholder, { opacity: 0, filter: 'blur(0px)', y: 0 });
+            if (searchKbd)
+                gsapWithCSS.set(searchKbd, { opacity: 0, filter: 'blur(0px)', y: 0 });
+            if (searchGlow)
+                gsapWithCSS.set(searchGlow, { opacity: 0, scale: 1 });
+            gsapWithCSS.set([leftBody, rightBody], { x: 0, y: 0, scale: 1, rotation: 0, scaleX: 1, scaleY: 1 });
+            // Resume idle animations after morph back is complete
+            if (characterRef.current?.resumeIdle) {
+                characterRef.current.resumeIdle();
+            }
+            morphingRef.current = false;
+            onReturnComplete?.();
+        }, 750);
+    }, [characterRef, searchBarRefs, onReturnStart, onReturnComplete]);
+    return {
+        morphToSearchBar,
+        morphToCharacter,
+        isMorphing: morphingRef.current,
+    };
+}
+
 gsapWithCSS.registerPlugin(useGSAP);
 // ============================================================================
 // Inline Style Helpers (replacing Tailwind)
@@ -10169,6 +10686,15 @@ const styles = {
         position: 'relative',
         width: size,
         height: size * 1.5, // Extra height for shadow
+        overflow: 'visible',
+    }),
+    // Inner wrapper to position character at top of fullContainer
+    characterArea: (size) => ({
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: size,
+        height: size,
         overflow: 'visible',
     }),
     // Character wrapper
@@ -10275,12 +10801,12 @@ const styles = {
         transformOrigin: 'center center',
         pointerEvents: 'none',
     }),
-    // Shadow (below character)
+    // Shadow (below character) - positioned at bottom of fullContainer
     shadow: (scale = 1) => ({
         position: 'absolute',
         left: '50%',
         transform: 'translateX(-50%) scaleX(1) scaleY(1)',
-        bottom: '0px',
+        bottom: '0px', // At bottom of fullContainer, not outside bounds
         width: `${160 * scale}px`,
         height: `${40 * scale}px`,
         background: 'radial-gradient(ellipse, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0) 70%)',
@@ -10327,7 +10853,9 @@ const styles = {
  */
 const AntyCharacter = react.forwardRef(({ expression = 'idle', size = 160, isSuperMode = false, searchMode = false, debugMode = false, showShadow = true, showGlow = true, onSpontaneousExpression, onEmotionComplete, onAnimationSequenceChange, onRandomAction, className = '', style, 
 // Optional external refs (for playground where shadow/glow are rendered externally)
-shadowRef: externalShadowRef, innerGlowRef: externalInnerGlowRef, outerGlowRef: externalOuterGlowRef, }, ref) => {
+shadowRef: externalShadowRef, innerGlowRef: externalInnerGlowRef, outerGlowRef: externalOuterGlowRef, 
+// Search bar integration
+searchEnabled = false, searchValue: externalSearchValue, onSearchChange, onSearchSubmit, searchPlaceholder = 'Search...', searchShortcut = '⌘K', searchConfig = DEFAULT_SEARCH_BAR_CONFIG, onSearchOpen, onSearchOpenComplete, onSearchClose, onSearchCloseComplete, }, ref) => {
     // Refs for DOM elements
     const containerRef = react.useRef(null);
     const characterRef = react.useRef(null);
@@ -10340,6 +10868,37 @@ shadowRef: externalShadowRef, innerGlowRef: externalInnerGlowRef, outerGlowRef: 
     const leftBodyRef = react.useRef(null);
     const rightBodyRef = react.useRef(null);
     const canvasRef = react.useRef(null);
+    // Internal search bar refs (when searchEnabled)
+    const searchBarRef = react.useRef(null);
+    const searchBorderRef = react.useRef(null);
+    const searchBorderGradientRef = react.useRef(null);
+    const searchPlaceholderRef = react.useRef(null);
+    const searchKbdRef = react.useRef(null);
+    const searchGlowRef = react.useRef(null);
+    const searchInputRef = react.useRef(null);
+    // Internal search state
+    const [internalSearchValue, setInternalSearchValue] = react.useState('');
+    const [isSearchActive, setIsSearchActive] = react.useState(false);
+    // Use external value if provided, otherwise internal
+    const searchValueState = externalSearchValue !== undefined ? externalSearchValue : internalSearchValue;
+    const handleSearchChange = react.useCallback((value) => {
+        if (onSearchChange) {
+            onSearchChange(value);
+        }
+        else {
+            setInternalSearchValue(value);
+        }
+    }, [onSearchChange]);
+    // Build search bar refs object for the hook
+    const searchBarRefs = {
+        bar: searchBarRef,
+        border: searchBorderRef,
+        borderGradient: searchBorderGradientRef,
+        placeholder: searchPlaceholderRef,
+        kbd: searchKbdRef,
+        glow: searchGlowRef,
+        input: searchInputRef,
+    };
     // Internal refs for shadow/glow (self-contained, used if external refs not provided)
     const internalShadowRef = react.useRef(null);
     const internalInnerGlowRef = react.useRef(null);
@@ -10387,7 +10946,7 @@ shadowRef: externalShadowRef, innerGlowRef: externalInnerGlowRef, outerGlowRef: 
         maxQueueSize: 10,
         defaultPriority: 2,
         isOff,
-        searchMode,
+        searchMode: searchMode || isSearchActive, // Include internal search state
         autoStartIdle: true,
         onStateChange: (from, to) => {
             if (ENABLE_ANIMATION_DEBUG_LOGS) {
@@ -10541,6 +11100,57 @@ shadowRef: externalShadowRef, innerGlowRef: externalInnerGlowRef, outerGlowRef: 
             isIdle: animationController.isIdle(),
         });
     }, [expression, isOff, searchMode]);
+    // Create a self-ref object for the search morph hook
+    // This mimics the AntyCharacterHandle interface so the hook can access internal refs
+    const selfRef = react.useRef({
+        spawnFeedingParticles: () => { },
+        leftBodyRef,
+        rightBodyRef,
+        leftEyeRef,
+        rightEyeRef,
+        leftEyePathRef,
+        rightEyePathRef,
+        shadowRef,
+        innerGlowRef,
+        outerGlowRef,
+        characterRef,
+        killAll: () => animationController.killAll(),
+        pauseIdle: () => animationController.pause(),
+        resumeIdle: () => animationController.resume(),
+        hideGlows: () => animationController.hideGlows(),
+        showGlows: (fadeIn) => animationController.showGlows(fadeIn),
+        hideShadow: () => animationController.hideShadow(),
+        showShadow: () => animationController.showShadow(),
+    });
+    // Keep self-ref updated with latest refs
+    react.useEffect(() => {
+        selfRef.current = {
+            ...selfRef.current,
+            killAll: () => animationController.killAll(),
+            pauseIdle: () => animationController.pause(),
+            resumeIdle: () => animationController.resume(),
+            hideGlows: () => animationController.hideGlows(),
+            showGlows: (fadeIn) => animationController.showGlows(fadeIn),
+            hideShadow: () => animationController.hideShadow(),
+            showShadow: () => animationController.showShadow(),
+        };
+    }, [animationController]);
+    // Use search morph hook (when searchEnabled)
+    const { morphToSearchBar: internalMorphToSearchBar, morphToCharacter: internalMorphToCharacter, isMorphing } = useSearchMorph({
+        characterRef: selfRef,
+        searchBarRefs,
+        config: searchConfig,
+        onMorphStart: () => {
+            setIsSearchActive(true);
+            onSearchOpen?.();
+        },
+        onMorphComplete: onSearchOpenComplete,
+        onReturnStart: onSearchClose,
+        onReturnComplete: () => {
+            setIsSearchActive(false);
+            onSearchCloseComplete?.();
+        },
+    });
     // Expose methods and refs to parent
     react.useImperativeHandle(ref, () => ({
         spawnSparkle: (x, y, color) => {
@@ -10783,11 +11393,15 @@ shadowRef: externalShadowRef, innerGlowRef: externalInnerGlowRef, outerGlowRef: 
         hideGlows: () => {
             animationController.hideGlows();
         },
+        // Search bar morph (when searchEnabled)
+        morphToSearchBar: searchEnabled ? internalMorphToSearchBar : undefined,
+        morphToCharacter: searchEnabled ? internalMorphToCharacter : undefined,
+        isSearchMode: () => isSearchActive,
         leftEyeRef,
         rightEyeRef,
         leftEyePathRef,
         rightEyePathRef,
-    }), [size, animationController, isSuperMode]);
+    }), [size, animationController, isSuperMode, searchEnabled, internalMorphToSearchBar, internalMorphToCharacter, isSearchActive]);
     react.useEffect(() => {
         setCurrentExpression(expression);
     }, [expression]);
@@ -10891,543 +11505,16 @@ shadowRef: externalShadowRef, innerGlowRef: externalInnerGlowRef, outerGlowRef: 
     // SVG paths for body
     const bodyRightSvg = "/anty/body-right.svg";
     const bodyLeftSvg = "/anty/body-left.svg";
+    // Use fullContainer (1.5x height) when rendering internal shadow/glow
+    // Use regular container when using external refs (main page manages its own container size)
+    const useFullContainer = (showShadow && !hasExternalShadow) || (showGlow && !hasExternalGlow);
+    const containerStyle = useFullContainer ? styles.fullContainer(size) : styles.container(size);
     return (jsxRuntime.jsxs("div", { ref: containerRef, style: {
-            ...styles.fullContainer(size),
+            ...containerStyle,
             ...style,
-        }, className: className, children: [jsxRuntime.jsx(AntyParticleCanvas, { ref: canvasRef, particles: particles, width: size * 5, height: size * 5 }), showGlow && !hasExternalGlow && (jsxRuntime.jsx("div", { ref: internalOuterGlowRef, style: styles.outerGlow(sizeScale) })), showGlow && !hasExternalGlow && (jsxRuntime.jsx("div", { ref: internalInnerGlowRef, style: styles.innerGlow(sizeScale) })), isSuperMode && (jsxRuntime.jsx("div", { ref: superGlowRef, style: styles.superGlow })), jsxRuntime.jsxs("div", { ref: characterRef, className: isSuperMode ? 'super-mode' : undefined, style: styles.character, children: [jsxRuntime.jsx("div", { ref: rightBodyRef, style: styles.rightBody, children: jsxRuntime.jsx("img", { alt: "", style: styles.bodyImage, src: bodyRightSvg }) }), jsxRuntime.jsx("div", { ref: leftBodyRef, style: styles.leftBody, children: jsxRuntime.jsx("img", { alt: "", style: styles.bodyImage, src: bodyLeftSvg }) }), jsxRuntime.jsx("div", { style: styles.leftEyeContainer, children: jsxRuntime.jsx("div", { ref: leftEyeRef, style: styles.eyeWrapper(initialEyeDimensions.width, initialEyeDimensions.height, sizeScale), children: jsxRuntime.jsx("svg", { ref: leftEyeSvgRef, width: "100%", height: "100%", viewBox: initialEyeDimensions.viewBox, fill: "none", xmlns: "http://www.w3.org/2000/svg", style: { display: 'block' }, children: jsxRuntime.jsx("path", { ref: leftEyePathRef, d: getEyeShape('IDLE', 'left'), fill: "#052333" }) }) }) }), jsxRuntime.jsx("div", { style: styles.rightEyeContainer, children: jsxRuntime.jsx("div", { ref: rightEyeRef, style: styles.eyeWrapper(initialEyeDimensions.width, initialEyeDimensions.height, sizeScale), children: jsxRuntime.jsx("svg", { ref: rightEyeSvgRef, width: "100%", height: "100%", viewBox: initialEyeDimensions.viewBox, fill: "none", xmlns: "http://www.w3.org/2000/svg", style: { display: 'block' }, children: jsxRuntime.jsx("path", { ref: rightEyePathRef, d: getEyeShape('IDLE', 'right'), fill: "#052333" }) }) }) }), debugMode && (jsxRuntime.jsxs(jsxRuntime.Fragment, { children: [jsxRuntime.jsx("div", { style: styles.debugBorder }), !isOff && (jsxRuntime.jsxs(jsxRuntime.Fragment, { children: [jsxRuntime.jsx("div", { style: styles.debugCrosshair('calc(33.41% + 13.915% - 1px)', 'calc(31.63% + 5.825% - 7px)', 'yellow', true) }), jsxRuntime.jsx("div", { style: styles.debugCrosshair('calc(33.41% + 13.915% - 6px)', 'calc(31.63% + 5.825% - 2px)', 'yellow', false) })] })), !isOff && (jsxRuntime.jsxs(jsxRuntime.Fragment, { children: [jsxRuntime.jsx("div", { style: styles.debugCrosshair('calc(33.41% + 13.915% - 1px)', 'calc(57.36% + 5.82% - 7px)', 'orange', true) }), jsxRuntime.jsx("div", { style: styles.debugCrosshair('calc(33.41% + 13.915% - 6px)', 'calc(57.36% + 5.82% - 2px)', 'orange', false) })] }))] }))] }), showShadow && !hasExternalShadow && (jsxRuntime.jsx("div", { ref: internalShadowRef, style: styles.shadow(sizeScale) }))] }));
+        }, className: className, children: [jsxRuntime.jsx(AntyParticleCanvas, { ref: canvasRef, particles: particles, width: size * 5, height: size * 5 }), jsxRuntime.jsxs("div", { style: useFullContainer ? styles.characterArea(size) : { position: 'relative', width: size, height: size }, children: [showGlow && !hasExternalGlow && (jsxRuntime.jsx("div", { ref: internalOuterGlowRef, style: styles.outerGlow(sizeScale) })), showGlow && !hasExternalGlow && (jsxRuntime.jsx("div", { ref: internalInnerGlowRef, style: styles.innerGlow(sizeScale) })), isSuperMode && (jsxRuntime.jsx("div", { ref: superGlowRef, style: styles.superGlow })), jsxRuntime.jsxs("div", { ref: characterRef, className: isSuperMode ? 'super-mode' : undefined, style: styles.character, children: [jsxRuntime.jsx("div", { ref: rightBodyRef, style: styles.rightBody, children: jsxRuntime.jsx("img", { alt: "", style: styles.bodyImage, src: bodyRightSvg }) }), jsxRuntime.jsx("div", { ref: leftBodyRef, style: styles.leftBody, children: jsxRuntime.jsx("img", { alt: "", style: styles.bodyImage, src: bodyLeftSvg }) }), jsxRuntime.jsx("div", { style: styles.leftEyeContainer, children: jsxRuntime.jsx("div", { ref: leftEyeRef, style: styles.eyeWrapper(initialEyeDimensions.width, initialEyeDimensions.height, sizeScale), children: jsxRuntime.jsx("svg", { ref: leftEyeSvgRef, width: "100%", height: "100%", viewBox: initialEyeDimensions.viewBox, fill: "none", xmlns: "http://www.w3.org/2000/svg", style: { display: 'block' }, children: jsxRuntime.jsx("path", { ref: leftEyePathRef, d: getEyeShape('IDLE', 'left'), fill: "#052333" }) }) }) }), jsxRuntime.jsx("div", { style: styles.rightEyeContainer, children: jsxRuntime.jsx("div", { ref: rightEyeRef, style: styles.eyeWrapper(initialEyeDimensions.width, initialEyeDimensions.height, sizeScale), children: jsxRuntime.jsx("svg", { ref: rightEyeSvgRef, width: "100%", height: "100%", viewBox: initialEyeDimensions.viewBox, fill: "none", xmlns: "http://www.w3.org/2000/svg", style: { display: 'block' }, children: jsxRuntime.jsx("path", { ref: rightEyePathRef, d: getEyeShape('IDLE', 'right'), fill: "#052333" }) }) }) }), debugMode && (jsxRuntime.jsxs(jsxRuntime.Fragment, { children: [jsxRuntime.jsx("div", { style: styles.debugBorder }), !isOff && (jsxRuntime.jsxs(jsxRuntime.Fragment, { children: [jsxRuntime.jsx("div", { style: styles.debugCrosshair('calc(33.41% + 13.915% - 1px)', 'calc(31.63% + 5.825% - 7px)', 'yellow', true) }), jsxRuntime.jsx("div", { style: styles.debugCrosshair('calc(33.41% + 13.915% - 6px)', 'calc(31.63% + 5.825% - 2px)', 'yellow', false) })] })), !isOff && (jsxRuntime.jsxs(jsxRuntime.Fragment, { children: [jsxRuntime.jsx("div", { style: styles.debugCrosshair('calc(33.41% + 13.915% - 1px)', 'calc(57.36% + 5.82% - 7px)', 'orange', true) }), jsxRuntime.jsx("div", { style: styles.debugCrosshair('calc(33.41% + 13.915% - 6px)', 'calc(57.36% + 5.82% - 2px)', 'orange', false) })] }))] }))] }), searchEnabled && (jsxRuntime.jsx(AntySearchBar, { active: isSearchActive, value: searchValueState, onChange: handleSearchChange, inputRef: searchInputRef, barRef: searchBarRef, borderRef: searchBorderRef, borderGradientRef: searchBorderGradientRef, placeholderRef: searchPlaceholderRef, kbdRef: searchKbdRef, glowRef: searchGlowRef, config: searchConfig, placeholder: searchPlaceholder, keyboardShortcut: searchShortcut }))] }), showShadow && !hasExternalShadow && (jsxRuntime.jsx("div", { ref: internalShadowRef, style: styles.shadow(sizeScale) }))] }));
 });
 AntyCharacter.displayName = 'AntyCharacter';
-
-// Inline Kbd component (no external dependencies)
-function Kbd({ children, style }) {
-    return (jsxRuntime.jsx("kbd", { style: {
-            backgroundColor: '#f4f4f5',
-            color: '#71717a',
-            pointerEvents: 'none',
-            display: 'inline-flex',
-            height: '20px',
-            minWidth: '20px',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '4px',
-            borderRadius: '4px',
-            padding: '0 4px',
-            fontFamily: 'sans-serif',
-            fontSize: '12px',
-            fontWeight: 500,
-            userSelect: 'none',
-            ...style,
-        }, children: children }));
-}
-function AntySearchBar({ active, value, onChange, inputRef, barRef, borderRef, borderGradientRef, placeholderRef, kbdRef, glowRef, config = DEFAULT_SEARCH_BAR_CONFIG, placeholder = 'Search...', keyboardShortcut = '⌘K', }) {
-    // Only hide placeholder when there's actual text typed
-    const showPlaceholder = !value;
-    // Extract config values
-    const { width, height, borderRadius, innerRadius, borderWidth } = config;
-    // Default height for content area (input stays at standard size)
-    const defaultHeight = DEFAULT_SEARCH_BAR_CONFIG.height;
-    // Calculate if we should center content or top-align
-    // Single line height ~= font size (17.85px) + padding (~24px top/bottom) ≈ 65px
-    // If bar is tall enough for 2+ lines, top-align; otherwise center
-    const singleLineThreshold = 90; // px - anything above this is considered multi-line capable
-    const isMultiLineHeight = height > singleLineThreshold;
-    const contentTopPadding = 2; // px - top padding when top-aligned
-    return (jsxRuntime.jsxs("div", { ref: barRef, style: {
-            position: 'absolute',
-            width: `${width}px`,
-            height: `${height}px`,
-            left: '50%',
-            top: '50%',
-            transform: 'translate(-50%, -50%)',
-            opacity: 0, // GSAP controls opacity
-            pointerEvents: active ? 'auto' : 'none',
-            zIndex: 2,
-        }, children: [jsxRuntime.jsx("div", { ref: glowRef, style: {
-                    position: 'absolute',
-                    width: `${width}px`,
-                    height: `${height}px`,
-                    left: '50%',
-                    top: '50%',
-                    transform: 'translate(-50%, -50%)',
-                    opacity: 0, // GSAP controls opacity and animation
-                    zIndex: -1,
-                    background: 'radial-gradient(ellipse, rgba(147, 197, 253, 0.4) 0%, rgba(167, 139, 250, 0.35) 40%, transparent 70%)',
-                    filter: 'blur(60px)',
-                    pointerEvents: 'none',
-                } }), jsxRuntime.jsx("div", { ref: borderGradientRef, style: {
-                    position: 'relative',
-                    width: '100%',
-                    height: '100%',
-                    borderRadius: `${borderRadius}px`,
-                    padding: `${borderWidth}px`,
-                    background: 'linear-gradient(white, white) padding-box, conic-gradient(from 0deg, #E5EDFF 0%, #C7D2FE 25%, #D8B4FE 50%, #C7D2FE 75%, #E5EDFF 100%) border-box',
-                    border: `${borderWidth}px solid transparent`,
-                    opacity: 0, // GSAP controls opacity
-                }, children: jsxRuntime.jsx("div", { ref: borderRef, style: {
-                        position: 'relative',
-                        width: '100%',
-                        height: '100%',
-                        backgroundColor: 'white',
-                        borderRadius: `${innerRadius}px`,
-                    }, children: jsxRuntime.jsxs("div", { style: {
-                            position: 'absolute',
-                            left: 0,
-                            right: 0,
-                            height: `${defaultHeight - borderWidth * 2}px`,
-                            ...(isMultiLineHeight
-                                ? { top: `${contentTopPadding}px` }
-                                : { top: '50%', transform: 'translateY(-50%)' }),
-                        }, children: [jsxRuntime.jsx("div", { ref: placeholderRef, style: {
-                                    position: 'absolute',
-                                    left: '24px',
-                                    top: 0,
-                                    height: '100%',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    pointerEvents: 'none',
-                                    userSelect: 'none',
-                                    opacity: showPlaceholder ? 1 : 0,
-                                    fontFamily: 'Inter, sans-serif',
-                                    fontWeight: 500,
-                                    fontSize: '17.85px',
-                                    color: '#D4D3D3',
-                                    transition: showPlaceholder ? 'none' : 'opacity 0.15s ease-out',
-                                }, children: placeholder }), jsxRuntime.jsx("div", { ref: kbdRef, style: {
-                                    position: 'absolute',
-                                    right: '24px',
-                                    top: 0,
-                                    height: '100%',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    pointerEvents: 'none',
-                                    userSelect: 'none',
-                                    opacity: showPlaceholder ? 1 : 0,
-                                    transition: showPlaceholder ? 'none' : 'opacity 0.15s ease-out',
-                                }, children: jsxRuntime.jsx(Kbd, { style: { fontSize: '12px', color: '#9ca3af' }, children: keyboardShortcut }) }), jsxRuntime.jsx("input", { ref: inputRef, type: "text", value: value, onChange: (e) => onChange(e.target.value), placeholder: "" // Empty placeholder since we use fake one
-                                , style: {
-                                    width: '100%',
-                                    height: '100%',
-                                    padding: '0 24px',
-                                    backgroundColor: 'transparent',
-                                    outline: 'none',
-                                    border: 'none',
-                                    color: '#052333',
-                                    fontFamily: 'Inter, sans-serif',
-                                    fontWeight: 500,
-                                    fontSize: '17.85px',
-                                } })] }) }) })] }));
-}
-
-function useSearchMorph({ characterRef, searchBarRefs, config = DEFAULT_SEARCH_BAR_CONFIG, onMorphStart, onMorphComplete, onReturnStart, onReturnComplete, }) {
-    const morphingRef = react.useRef(false);
-    const morphToSearchBar = react.useCallback(() => {
-        // Prevent multiple simultaneous morphs
-        if (morphingRef.current) {
-            if (ENABLE_ANIMATION_DEBUG_LOGS) {
-                console.log('[SEARCH] Already morphing, ignoring');
-            }
-            return;
-        }
-        morphingRef.current = true;
-        if (ENABLE_ANIMATION_DEBUG_LOGS) {
-            console.log('[SEARCH] Opening search mode');
-        }
-        onMorphStart?.();
-        const tl = gsapWithCSS.timeline({
-            onComplete: () => {
-                morphingRef.current = false;
-                searchBarRefs.input.current?.focus();
-                onMorphComplete?.();
-            }
-        });
-        const leftBody = characterRef.current?.leftBodyRef?.current;
-        const rightBody = characterRef.current?.rightBodyRef?.current;
-        const leftEye = characterRef.current?.leftEyeRef?.current;
-        const rightEye = characterRef.current?.rightEyeRef?.current;
-        const searchBar = searchBarRefs.bar.current;
-        const shadow = characterRef.current?.shadowRef?.current;
-        if (ENABLE_ANIMATION_DEBUG_LOGS) {
-            console.log('[SEARCH] Elements:', {
-                leftBody: !!leftBody,
-                rightBody: !!rightBody,
-                searchBar: !!searchBar,
-                shadow: !!shadow,
-            });
-        }
-        if (!leftBody || !rightBody || !searchBar)
-            return;
-        // CRITICAL: Notify AnimationController BEFORE killing animations
-        if (characterRef.current?.killAll) {
-            characterRef.current.killAll();
-        }
-        // Kill ALL idle animations including character container
-        const character = leftBody.parentElement;
-        if (character) {
-            gsapWithCSS.killTweensOf(character);
-            gsapWithCSS.set(character, { x: 0, y: 0, rotation: 0, scale: 1 });
-        }
-        gsapWithCSS.killTweensOf([leftBody, rightBody, shadow]);
-        // Reset bracket positions to 0 before starting
-        gsapWithCSS.set([leftBody, rightBody], { x: 0, y: 0, scale: 1, rotation: 0 });
-        // Kill any ongoing animations on eyes
-        if (leftEye) {
-            gsapWithCSS.killTweensOf(leftEye);
-            gsapWithCSS.set(leftEye, { opacity: 1 });
-        }
-        if (rightEye) {
-            gsapWithCSS.killTweensOf(rightEye);
-            gsapWithCSS.set(rightEye, { opacity: 1 });
-        }
-        // Set shadow to 0 immediately
-        if (shadow) {
-            gsapWithCSS.killTweensOf(shadow);
-            gsapWithCSS.set(shadow, { xPercent: -50, opacity: 0, scaleX: 1, scaleY: 1 });
-        }
-        // STEP 1: Body halves separate, scale down, move to corners
-        const { bracketScale } = config;
-        // Set search bar to final scale BEFORE reading position
-        gsapWithCSS.set(searchBar, { scale: 1, opacity: 0 });
-        // Get actual search bar position (at final scale)
-        const searchBarRect = searchBar.getBoundingClientRect();
-        // Get current bracket sizes (BEFORE scaling)
-        const leftBracketRect = leftBody.getBoundingClientRect();
-        const rightBracketRect = rightBody.getBoundingClientRect();
-        const leftBracketSize = leftBracketRect.width;
-        const rightBracketSize = rightBracketRect.width;
-        const scaledLeftBracketSize = leftBracketSize * bracketScale;
-        const scaledRightBracketSize = rightBracketSize * bracketScale;
-        // Get CURRENT center positions of brackets
-        const leftCurrentCenterX = leftBracketRect.left + (leftBracketRect.width / 2);
-        const leftCurrentCenterY = leftBracketRect.top + (leftBracketRect.height / 2);
-        const rightCurrentCenterX = rightBracketRect.left + (rightBracketRect.width / 2);
-        const rightCurrentCenterY = rightBracketRect.top + (rightBracketRect.height / 2);
-        // Calculate target bracket centers (so OUTER EDGES align with search bar)
-        const leftTargetCenterX = searchBarRect.left + (scaledLeftBracketSize / 2);
-        const leftTargetCenterY = searchBarRect.top + (scaledLeftBracketSize / 2);
-        const rightTargetCenterX = searchBarRect.right - (scaledRightBracketSize / 2);
-        const rightTargetCenterY = searchBarRect.bottom - (scaledRightBracketSize / 2);
-        // Calculate transforms
-        const leftTransformX = leftTargetCenterX - leftCurrentCenterX;
-        const leftTransformY = leftTargetCenterY - leftCurrentCenterY;
-        const rightTransformX = rightTargetCenterX - rightCurrentCenterX;
-        const rightTransformY = rightTargetCenterY - rightCurrentCenterY;
-        if (ENABLE_ANIMATION_DEBUG_LOGS) {
-            console.log('[MORPH] Direct from bracket positions:', {
-                leftBracket: { size: leftBracketSize, scaledSize: scaledLeftBracketSize },
-                rightBracket: { size: rightBracketSize, scaledSize: scaledRightBracketSize },
-                transforms: { left: { x: leftTransformX, y: leftTransformY }, right: { x: rightTransformX, y: rightTransformY } }
-            });
-        }
-        // Set z-index on character container AND brackets
-        const characterContainer = leftBody.parentElement;
-        gsapWithCSS.set(characterContainer, { zIndex: 10 });
-        gsapWithCSS.set([leftBody, rightBody], {
-            zIndex: 3,
-            transformOrigin: '50% 50%'
-        });
-        // Shadow fades out immediately
-        if (shadow) {
-            tl.to(shadow, {
-                opacity: 0,
-                duration: 0.1,
-                ease: 'power2.in'
-            }, 0);
-        }
-        // Anticipation: slight squash down (80ms)
-        tl.to([leftBody, rightBody], {
-            y: 5,
-            scaleY: 0.92,
-            scaleX: 1.08,
-            duration: 0.08,
-            ease: 'power2.in'
-        }, 0);
-        // Eyes fade out during anticipation
-        const fadeTargets = [leftEye, rightEye].filter(Boolean);
-        if (fadeTargets.length > 0) {
-            tl.to(fadeTargets, {
-                opacity: 0,
-                y: -18,
-                duration: 0.15,
-                ease: 'power1.in',
-                overwrite: true
-            }, 0);
-        }
-        // Leap up with stretch (120ms)
-        tl.to([leftBody, rightBody], {
-            y: -25,
-            scaleY: 1.1,
-            scaleX: 0.95,
-            duration: 0.12,
-            ease: 'power2.out'
-        }, 0.08);
-        // Morph out to corners while in the air (350ms)
-        tl.to(leftBody, {
-            x: leftTransformX,
-            y: leftTransformY,
-            scale: bracketScale,
-            scaleX: bracketScale,
-            scaleY: bracketScale,
-            rotation: 0,
-            duration: 0.35,
-            ease: 'power2.inOut',
-            overwrite: 'auto'
-        }, 0.2);
-        tl.to(rightBody, {
-            x: rightTransformX,
-            y: rightTransformY,
-            scale: bracketScale,
-            scaleX: bracketScale,
-            scaleY: bracketScale,
-            rotation: 0,
-            duration: 0.35,
-            ease: 'power2.inOut',
-            overwrite: 'auto'
-        }, 0.2);
-        // Search bar fades in (250ms)
-        tl.to(searchBar, {
-            opacity: 1,
-            duration: 0.25,
-            ease: 'power1.out'
-        }, 0.2);
-        // Animated gradient border fades in and starts rotating
-        const searchBorderGradient = searchBarRefs.borderGradient.current;
-        if (searchBorderGradient) {
-            searchBorderGradient.style.background = `linear-gradient(white, white) padding-box, conic-gradient(from 0deg, #E5EDFF 0%, #C7D2FE 25%, #D8B4FE 50%, #C7D2FE 75%, #E5EDFF 100%) border-box`;
-            gsapWithCSS.set(searchBorderGradient, { opacity: 0 });
-            const rotationAnim = { deg: 0 };
-            gsapWithCSS.to(rotationAnim, {
-                deg: 360,
-                duration: 4,
-                ease: 'none',
-                repeat: -1,
-                onUpdate: () => {
-                    if (searchBorderGradient) {
-                        searchBorderGradient.style.background = `linear-gradient(white, white) padding-box, conic-gradient(from ${rotationAnim.deg}deg, #E5EDFF 0%, #C7D2FE 25%, #D8B4FE 50%, #C7D2FE 75%, #E5EDFF 100%) border-box`;
-                    }
-                }
-            });
-            tl.to(searchBorderGradient, {
-                opacity: 1,
-                duration: 0.3,
-                ease: 'power1.out'
-            }, 0.45);
-        }
-        // Placeholder reveals with subtle blur and upward drift
-        const searchPlaceholder = searchBarRefs.placeholder.current;
-        if (searchPlaceholder) {
-            gsapWithCSS.set(searchPlaceholder, {
-                opacity: 0,
-                filter: 'blur(6px)',
-                y: 4,
-            });
-            tl.to(searchPlaceholder, {
-                opacity: 1,
-                filter: 'blur(0px)',
-                y: 0,
-                duration: 0.18,
-                ease: 'power2.out'
-            }, 0.42);
-        }
-        // CMD+K indicator reveals
-        const searchKbd = searchBarRefs.kbd.current;
-        if (searchKbd) {
-            gsapWithCSS.set(searchKbd, {
-                opacity: 0,
-                filter: 'blur(6px)',
-                y: 4,
-            });
-            tl.to(searchKbd, {
-                opacity: 1,
-                filter: 'blur(0px)',
-                y: 0,
-                duration: 0.18,
-                ease: 'power2.out'
-            }, 0.42);
-        }
-        // AI gradient glow fades in
-        const searchGlow = searchBarRefs.glow.current;
-        if (searchGlow) {
-            gsapWithCSS.set(searchGlow, { opacity: 0, scale: 0.95 });
-            tl.to(searchGlow, {
-                opacity: 1,
-                scale: 1,
-                duration: 0.4,
-                ease: 'power2.out'
-            }, 0.45);
-            // Start continuous breathing animation
-            tl.call(() => {
-                gsapWithCSS.to(searchGlow, {
-                    scale: 1.12,
-                    opacity: 0.7,
-                    duration: 2,
-                    ease: 'sine.inOut',
-                    repeat: -1,
-                    yoyo: true
-                });
-            }, [], 0.85);
-        }
-        // Large glow appears
-        tl.call(() => {
-            characterRef.current?.showSearchGlow?.();
-        }, [], 0.25);
-    }, [characterRef, searchBarRefs, config, onMorphStart, onMorphComplete]);
-    const morphToCharacter = react.useCallback(() => {
-        // Prevent multiple simultaneous morphs
-        if (morphingRef.current) {
-            if (ENABLE_ANIMATION_DEBUG_LOGS) {
-                console.log('[SEARCH] Already morphing, ignoring close');
-            }
-            return;
-        }
-        morphingRef.current = true;
-        onReturnStart?.();
-        // Show glows when halves come back together
-        setTimeout(() => {
-            characterRef.current?.showGlows?.(true);
-        }, 500);
-        const tl = gsapWithCSS.timeline({
-            onComplete: () => {
-                morphingRef.current = false;
-                onReturnComplete?.();
-            }
-        });
-        const leftBody = characterRef.current?.leftBodyRef?.current;
-        const rightBody = characterRef.current?.rightBodyRef?.current;
-        const leftEye = characterRef.current?.leftEyeRef?.current;
-        const rightEye = characterRef.current?.rightEyeRef?.current;
-        const searchBar = searchBarRefs.bar.current;
-        const shadow = characterRef.current?.shadowRef?.current;
-        if (!leftBody || !rightBody || !searchBar)
-            return;
-        // Notify AnimationController
-        if (characterRef.current?.killAll) {
-            characterRef.current.killAll();
-        }
-        // Kill ongoing animations
-        const searchBorderGradient = searchBarRefs.borderGradient.current;
-        if (searchBorderGradient) {
-            gsapWithCSS.killTweensOf(searchBorderGradient);
-        }
-        const searchPlaceholder = searchBarRefs.placeholder.current;
-        if (searchPlaceholder) {
-            gsapWithCSS.killTweensOf(searchPlaceholder);
-        }
-        const searchKbd = searchBarRefs.kbd.current;
-        if (searchKbd) {
-            gsapWithCSS.killTweensOf(searchKbd);
-        }
-        const searchGlow = searchBarRefs.glow.current;
-        if (searchGlow) {
-            gsapWithCSS.killTweensOf(searchGlow);
-        }
-        // Border gradient fades out
-        if (searchBorderGradient) {
-            tl.to(searchBorderGradient, {
-                opacity: 0,
-                duration: 0.15,
-                ease: 'power1.in'
-            }, 0);
-        }
-        // Placeholder and kbd blur out
-        const textElements = [searchPlaceholder, searchKbd].filter(Boolean);
-        if (textElements.length > 0) {
-            tl.to(textElements, {
-                opacity: 0,
-                filter: 'blur(6px)',
-                y: -4,
-                duration: 0.15,
-                ease: 'power2.in'
-            }, 0);
-        }
-        // Search glow fades
-        if (searchGlow) {
-            tl.to(searchGlow, {
-                opacity: 0,
-                scale: 0.85,
-                duration: 0.15,
-                ease: 'power1.out'
-            }, 0);
-        }
-        // Search bar container fades out
-        tl.to(searchBar, {
-            opacity: 0,
-            scale: 0.95,
-            duration: 0.2,
-            ease: 'power2.in'
-        }, 0.15);
-        // Hide search glow canvas effect
-        tl.call(() => {
-            characterRef.current?.hideSearchGlow?.();
-        }, [], 0);
-        // Clear z-index from character container
-        const characterContainer = leftBody.parentElement;
-        if (characterContainer) {
-            gsapWithCSS.set(characterContainer, { clearProps: 'zIndex' });
-        }
-        // Snap back to center with upward leap
-        tl.to([leftBody, rightBody], {
-            x: 0,
-            y: -25,
-            scale: 1,
-            scaleX: 0.95,
-            scaleY: 1.1,
-            duration: 0.25,
-            ease: 'power2.out',
-            clearProps: 'zIndex'
-        }, 0.3);
-        // Settle down to rest
-        tl.to([leftBody, rightBody], {
-            y: 0,
-            scaleX: 1,
-            scaleY: 1,
-            duration: 0.17,
-            ease: 'power2.in'
-        }, 0.55);
-        // Eyes fade in
-        if (leftEye && rightEye) {
-            gsapWithCSS.set([leftEye, rightEye], { y: -18 });
-            tl.to([leftEye, rightEye], {
-                opacity: 1,
-                y: 0,
-                duration: 0.17,
-                ease: 'power2.in'
-            }, 0.55);
-        }
-        // Shadow fades back in
-        if (shadow) {
-            tl.to(shadow, {
-                opacity: 0.7,
-                scaleX: 1,
-                scaleY: 1,
-                duration: 0.22,
-                ease: 'power1.out'
-            }, 0.67);
-        }
-        // Force final states when timeline completes
-        tl.call(() => {
-            if (leftEye)
-                gsapWithCSS.set(leftEye, { opacity: 1, y: 0 });
-            if (rightEye)
-                gsapWithCSS.set(rightEye, { opacity: 1, y: 0 });
-            if (shadow)
-                gsapWithCSS.set(shadow, { xPercent: -50, opacity: 0.7, scaleX: 1, scaleY: 1 });
-            if (searchBorderGradient)
-                gsapWithCSS.set(searchBorderGradient, { opacity: 0 });
-            if (searchPlaceholder)
-                gsapWithCSS.set(searchPlaceholder, { opacity: 0, filter: 'blur(0px)', y: 0 });
-            if (searchKbd)
-                gsapWithCSS.set(searchKbd, { opacity: 0, filter: 'blur(0px)', y: 0 });
-            if (searchGlow)
-                gsapWithCSS.set(searchGlow, { opacity: 0, scale: 1 });
-            gsapWithCSS.set([leftBody, rightBody], { x: 0, y: 0, scale: 1, rotation: 0, scaleX: 1, scaleY: 1 });
-        }, [], 0.72);
-    }, [characterRef, searchBarRefs, onReturnStart, onReturnComplete]);
-    return {
-        morphToSearchBar,
-        morphToCharacter,
-        isMorphing: morphingRef.current,
-    };
-}
 
 /**
  * Anty Style Helpers

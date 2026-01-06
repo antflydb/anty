@@ -96,6 +96,10 @@ export interface UseAnimationControllerReturn {
     showGlows: (fadeIn?: boolean) => void;
     /** Hide glows (for search enter) */
     hideGlows: () => void;
+    /** Hide shadow (for search enter - pauses tracker and hides) */
+    hideShadow: () => void;
+    /** Show shadow (for search exit - resumes tracker) */
+    showShadow: () => void;
 }
 /**
  * React hook that wraps AnimationController

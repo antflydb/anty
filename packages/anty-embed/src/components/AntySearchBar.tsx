@@ -96,20 +96,20 @@ export function AntySearchBar({
         zIndex: 2,
       }}
     >
-      {/* AI Gradient Glow - positioned behind search bar, scales with box */}
+      {/* AI Gradient Glow - positioned behind search bar, slightly smaller so blur peeks out */}
       <div
         ref={glowRef}
         style={{
           position: 'absolute',
-          width: `${width}px`,
-          height: `${height}px`,
+          width: `${width * 0.92}px`,
+          height: `${height * 1.8}px`, // Taller to create elongated ellipse effect
           left: '50%',
           top: '50%',
           transform: 'translate(-50%, -50%)',
           opacity: 0, // GSAP controls opacity and animation
           zIndex: -1,
-          background: 'radial-gradient(ellipse, rgba(147, 197, 253, 0.4) 0%, rgba(167, 139, 250, 0.35) 40%, transparent 70%)',
-          filter: 'blur(60px)',
+          background: 'radial-gradient(ellipse 100% 50%, rgba(147, 197, 253, 0.5) 0%, rgba(167, 139, 250, 0.4) 30%, rgba(229, 237, 255, 0.2) 60%, transparent 85%)',
+          filter: 'blur(50px)',
           pointerEvents: 'none',
         }}
       />

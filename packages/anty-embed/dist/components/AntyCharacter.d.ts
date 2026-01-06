@@ -1,4 +1,5 @@
 import { type ExpressionName } from '../lib/animation/types';
+import { type SearchBarConfig } from '../types';
 export interface AntyCharacterProps {
     /** Current expression/emotion to display */
     expression?: ExpressionName;
@@ -6,7 +7,7 @@ export interface AntyCharacterProps {
     size?: number;
     /** Whether super mode is active */
     isSuperMode?: boolean;
-    /** Whether search mode is active */
+    /** Whether search mode is active (external control - deprecated, use searchEnabled instead) */
     searchMode?: boolean;
     /** Whether to show debug overlays */
     debugMode?: boolean;
@@ -32,6 +33,28 @@ export interface AntyCharacterProps {
     innerGlowRef?: React.RefObject<HTMLDivElement | null>;
     /** External ref for outer glow element (if managing glow externally) */
     outerGlowRef?: React.RefObject<HTMLDivElement | null>;
+    /** Enable integrated search bar (renders internally, controlled via ref) */
+    searchEnabled?: boolean;
+    /** Current search value (controlled) */
+    searchValue?: string;
+    /** Callback when search value changes */
+    onSearchChange?: (value: string) => void;
+    /** Callback when search is submitted (Enter pressed) */
+    onSearchSubmit?: (value: string) => void;
+    /** Search bar placeholder text */
+    searchPlaceholder?: string;
+    /** Keyboard shortcut indicator (e.g., "⌘K") */
+    searchShortcut?: string;
+    /** Search bar configuration */
+    searchConfig?: SearchBarConfig;
+    /** Callback when morph to search starts */
+    onSearchOpen?: () => void;
+    /** Callback when morph to search completes */
+    onSearchOpenComplete?: () => void;
+    /** Callback when morph back to character starts */
+    onSearchClose?: () => void;
+    /** Callback when morph back to character completes */
+    onSearchCloseComplete?: () => void;
 }
 export interface AntyCharacterHandle {
     spawnFeedingParticles: () => void;
@@ -53,6 +76,14 @@ export interface AntyCharacterHandle {
     setSuperMode?: (scale: number | null) => void;
     showGlows?: (fadeIn?: boolean) => void;
     hideGlows?: () => void;
+    hideShadow?: () => void;
+    showShadow?: () => void;
+    /** Morph character into search bar */
+    morphToSearchBar?: () => void;
+    /** Morph search bar back to character */
+    morphToCharacter?: () => void;
+    /** Check if currently in search mode */
+    isSearchMode?: () => boolean;
     leftBodyRef?: React.RefObject<HTMLDivElement | null>;
     rightBodyRef?: React.RefObject<HTMLDivElement | null>;
     leftEyeRef?: React.RefObject<HTMLDivElement | null>;

@@ -117,6 +117,10 @@ export interface UseAnimationControllerReturn {
   showGlows: (fadeIn?: boolean) => void;
   /** Hide glows (for search enter) */
   hideGlows: () => void;
+  /** Hide shadow (for search enter - pauses tracker and hides) */
+  hideShadow: () => void;
+  /** Show shadow (for search exit - resumes tracker) */
+  showShadow: () => void;
 }
 
 /**
@@ -627,6 +631,8 @@ export function useAnimationController(
     if (isOff || searchMode) return;
     // Skip if we're in a wake-up transition (wake-up handles its own idle start)
     if (isWakingUpRef.current) return;
+    // Skip if idle is explicitly prevented (e.g., during search morph animation)
+    if (controllerRef.current.isIdlePrevented()) return;
     // Check controller's idle state, not a local ref
     if (controllerRef.current.isIdle()) return; // Already running
 
@@ -979,6 +985,27 @@ export function useAnimationController(
     glowSystemRef.current.hide();
   }, []);
 
+  /**
+   * Hide shadow (for search enter - pauses tracker and hides)
+   */
+  const hideShadow = useCallback(() => {
+    if (shadowTrackerRef.current) {
+      shadowTrackerRef.current.pause();
+    }
+    if (elements.shadow) {
+      gsap.to(elements.shadow, { opacity: 0, duration: 0.1, ease: 'power2.in' });
+    }
+  }, [elements.shadow]);
+
+  /**
+   * Show shadow (for search exit - resumes tracker)
+   */
+  const showShadow = useCallback(() => {
+    if (shadowTrackerRef.current) {
+      shadowTrackerRef.current.resume();
+    }
+  }, []);
+
   // CRITICAL: Memoize return object to prevent useEffect re-firing in consumers
   return useMemo(() => ({
     playEmotion,
@@ -995,6 +1022,8 @@ export function useAnimationController(
     setSuperMode,
     showGlows,
     hideGlows,
+    hideShadow,
+    showShadow,
     isReady: isReady.current,
-  }), [playEmotion, transitionTo, startIdle, pause, resume, killAll, getState, getEmotion, isIdleActive, isIdlePlaying, getDebugInfo, setSuperMode, showGlows, hideGlows]);
+  }), [playEmotion, transitionTo, startIdle, pause, resume, killAll, getState, getEmotion, isIdleActive, isIdlePlaying, getDebugInfo, setSuperMode, showGlows, hideGlows, hideShadow, showShadow]);
 }

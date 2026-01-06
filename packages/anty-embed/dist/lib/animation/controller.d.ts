@@ -29,6 +29,7 @@ export declare class AnimationController {
     private isProcessingQueue;
     private currentEmotion;
     private isIdleActive;
+    private idlePrevented;
     private superModeScale;
     constructor(callbacks?: AnimationCallbacks, config?: ControllerConfig);
     /**
@@ -53,12 +54,18 @@ export declare class AnimationController {
     startIdle(timeline: gsap.core.Timeline, _elements: (Element | string)[], blinkControls?: BlinkControls): void;
     /**
      * Pause idle animation (and blink scheduler)
+     * Also prevents auto-restart of idle until resumeIdle() is called
      */
     pauseIdle(): void;
     /**
      * Resume idle animation (and blink scheduler)
+     * Also allows auto-restart of idle again
      */
     resumeIdle(): void;
+    /**
+     * Check if idle auto-restart is prevented
+     */
+    isIdlePrevented(): boolean;
     /**
      * Restart idle animation from origin
      * Use this for a clean handoff after emotions that significantly move the character

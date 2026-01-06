@@ -4,8 +4,11 @@ import { useRef, useState, useEffect, useCallback, forwardRef, useImperativeHand
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 import { AntyParticleCanvas, type ParticleCanvasHandle } from './AntyParticleCanvas';
+import { AntySearchBar } from './AntySearchBar';
 import { useAnimationController } from '../hooks/use-animation-controller';
+import { useSearchMorph, type SearchBarRefs } from '../hooks/use-search-morph';
 import { type EmotionType, type ExpressionName } from '../lib/animation/types';
+import { type SearchBarConfig, DEFAULT_SEARCH_BAR_CONFIG } from '../types';
 import { type Particle } from '../lib/particles';
 import {
   ENABLE_ANIMATION_DEBUG_LOGS,
@@ -27,7 +30,7 @@ export interface AntyCharacterProps {
   size?: number;
   /** Whether super mode is active */
   isSuperMode?: boolean;
-  /** Whether search mode is active */
+  /** Whether search mode is active (external control - deprecated, use searchEnabled instead) */
   searchMode?: boolean;
   /** Whether to show debug overlays */
   debugMode?: boolean;
@@ -54,6 +57,30 @@ export interface AntyCharacterProps {
   innerGlowRef?: React.RefObject<HTMLDivElement | null>;
   /** External ref for outer glow element (if managing glow externally) */
   outerGlowRef?: React.RefObject<HTMLDivElement | null>;
+
+  // === INTEGRATED SEARCH BAR ===
+  /** Enable integrated search bar (renders internally, controlled via ref) */
+  searchEnabled?: boolean;
+  /** Current search value (controlled) */
+  searchValue?: string;
+  /** Callback when search value changes */
+  onSearchChange?: (value: string) => void;
+  /** Callback when search is submitted (Enter pressed) */
+  onSearchSubmit?: (value: string) => void;
+  /** Search bar placeholder text */
+  searchPlaceholder?: string;
+  /** Keyboard shortcut indicator (e.g., "⌘K") */
+  searchShortcut?: string;
+  /** Search bar configuration */
+  searchConfig?: SearchBarConfig;
+  /** Callback when morph to search starts */
+  onSearchOpen?: () => void;
+  /** Callback when morph to search completes */
+  onSearchOpenComplete?: () => void;
+  /** Callback when morph back to character starts */
+  onSearchClose?: () => void;
+  /** Callback when morph back to character completes */
+  onSearchCloseComplete?: () => void;
 }
 
 export interface AntyCharacterHandle {
@@ -78,6 +105,18 @@ export interface AntyCharacterHandle {
   // Glow control
   showGlows?: (fadeIn?: boolean) => void;
   hideGlows?: () => void;
+  // Shadow control
+  hideShadow?: () => void;
+  showShadow?: () => void;
+
+  // === SEARCH BAR MORPH (when searchEnabled) ===
+  /** Morph character into search bar */
+  morphToSearchBar?: () => void;
+  /** Morph search bar back to character */
+  morphToCharacter?: () => void;
+  /** Check if currently in search mode */
+  isSearchMode?: () => boolean;
+
   // Refs for external animation (search morph)
   leftBodyRef?: React.RefObject<HTMLDivElement | null>;
   rightBodyRef?: React.RefObject<HTMLDivElement | null>;
@@ -110,6 +149,16 @@ const styles = {
     position: 'relative',
     width: size,
     height: size * 1.5, // Extra height for shadow
+    overflow: 'visible',
+  }),
+
+  // Inner wrapper to position character at top of fullContainer
+  characterArea: (size: number): React.CSSProperties => ({
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: size,
+    height: size,
     overflow: 'visible',
   }),
 
@@ -227,12 +276,12 @@ const styles = {
     pointerEvents: 'none' as const,
   }),
 
-  // Shadow (below character)
+  // Shadow (below character) - positioned at bottom of fullContainer
   shadow: (scale: number = 1): React.CSSProperties => ({
     position: 'absolute' as const,
     left: '50%',
     transform: 'translateX(-50%) scaleX(1) scaleY(1)',
-    bottom: '0px',
+    bottom: '0px', // At bottom of fullContainer, not outside bounds
     width: `${160 * scale}px`,
     height: `${40 * scale}px`,
     background: 'radial-gradient(ellipse, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0) 70%)',
@@ -299,6 +348,18 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
   shadowRef: externalShadowRef,
   innerGlowRef: externalInnerGlowRef,
   outerGlowRef: externalOuterGlowRef,
+  // Search bar integration
+  searchEnabled = false,
+  searchValue: externalSearchValue,
+  onSearchChange,
+  onSearchSubmit,
+  searchPlaceholder = 'Search...',
+  searchShortcut = '⌘K',
+  searchConfig = DEFAULT_SEARCH_BAR_CONFIG,
+  onSearchOpen,
+  onSearchOpenComplete,
+  onSearchClose,
+  onSearchCloseComplete,
 }, ref) => {
   // Refs for DOM elements
   const containerRef = useRef<HTMLDivElement>(null);
@@ -312,6 +373,40 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
   const leftBodyRef = useRef<HTMLDivElement>(null);
   const rightBodyRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<ParticleCanvasHandle>(null);
+
+  // Internal search bar refs (when searchEnabled)
+  const searchBarRef = useRef<HTMLDivElement>(null);
+  const searchBorderRef = useRef<HTMLDivElement>(null);
+  const searchBorderGradientRef = useRef<HTMLDivElement>(null);
+  const searchPlaceholderRef = useRef<HTMLDivElement>(null);
+  const searchKbdRef = useRef<HTMLDivElement>(null);
+  const searchGlowRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Internal search state
+  const [internalSearchValue, setInternalSearchValue] = useState('');
+  const [isSearchActive, setIsSearchActive] = useState(false);
+
+  // Use external value if provided, otherwise internal
+  const searchValueState = externalSearchValue !== undefined ? externalSearchValue : internalSearchValue;
+  const handleSearchChange = useCallback((value: string) => {
+    if (onSearchChange) {
+      onSearchChange(value);
+    } else {
+      setInternalSearchValue(value);
+    }
+  }, [onSearchChange]);
+
+  // Build search bar refs object for the hook
+  const searchBarRefs: SearchBarRefs = {
+    bar: searchBarRef,
+    border: searchBorderRef,
+    borderGradient: searchBorderGradientRef,
+    placeholder: searchPlaceholderRef,
+    kbd: searchKbdRef,
+    glow: searchGlowRef,
+    input: searchInputRef,
+  };
 
   // Internal refs for shadow/glow (self-contained, used if external refs not provided)
   const internalShadowRef = useRef<HTMLDivElement>(null);
@@ -368,7 +463,7 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
       maxQueueSize: 10,
       defaultPriority: 2,
       isOff,
-      searchMode,
+      searchMode: searchMode || isSearchActive, // Include internal search state
       autoStartIdle: true,
       onStateChange: (from, to) => {
         if (ENABLE_ANIMATION_DEBUG_LOGS) {
@@ -534,6 +629,60 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
       isIdle: animationController.isIdle(),
     });
   }, [expression, isOff, searchMode]);
+
+  // Create a self-ref object for the search morph hook
+  // This mimics the AntyCharacterHandle interface so the hook can access internal refs
+  const selfRef = useRef<AntyCharacterHandle>({
+    spawnFeedingParticles: () => {},
+    leftBodyRef,
+    rightBodyRef,
+    leftEyeRef,
+    rightEyeRef,
+    leftEyePathRef,
+    rightEyePathRef,
+    shadowRef,
+    innerGlowRef,
+    outerGlowRef,
+    characterRef,
+    killAll: () => animationController.killAll(),
+    pauseIdle: () => animationController.pause(),
+    resumeIdle: () => animationController.resume(),
+    hideGlows: () => animationController.hideGlows(),
+    showGlows: (fadeIn?: boolean) => animationController.showGlows(fadeIn),
+    hideShadow: () => animationController.hideShadow(),
+    showShadow: () => animationController.showShadow(),
+  });
+
+  // Keep self-ref updated with latest refs
+  useEffect(() => {
+    selfRef.current = {
+      ...selfRef.current,
+      killAll: () => animationController.killAll(),
+      pauseIdle: () => animationController.pause(),
+      resumeIdle: () => animationController.resume(),
+      hideGlows: () => animationController.hideGlows(),
+      showGlows: (fadeIn?: boolean) => animationController.showGlows(fadeIn),
+      hideShadow: () => animationController.hideShadow(),
+      showShadow: () => animationController.showShadow(),
+    };
+  }, [animationController]);
+
+  // Use search morph hook (when searchEnabled)
+  const { morphToSearchBar: internalMorphToSearchBar, morphToCharacter: internalMorphToCharacter, isMorphing } = useSearchMorph({
+    characterRef: selfRef,
+    searchBarRefs,
+    config: searchConfig,
+    onMorphStart: () => {
+      setIsSearchActive(true);
+      onSearchOpen?.();
+    },
+    onMorphComplete: onSearchOpenComplete,
+    onReturnStart: onSearchClose,
+    onReturnComplete: () => {
+      setIsSearchActive(false);
+      onSearchCloseComplete?.();
+    },
+  });
 
   // Expose methods and refs to parent
   useImperativeHandle(ref, () => ({
@@ -812,11 +961,15 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
     hideGlows: () => {
       animationController.hideGlows();
     },
+    // Search bar morph (when searchEnabled)
+    morphToSearchBar: searchEnabled ? internalMorphToSearchBar : undefined,
+    morphToCharacter: searchEnabled ? internalMorphToCharacter : undefined,
+    isSearchMode: () => isSearchActive,
     leftEyeRef,
     rightEyeRef,
     leftEyePathRef,
     rightEyePathRef,
-  }), [size, animationController, isSuperMode]);
+  }), [size, animationController, isSuperMode, searchEnabled, internalMorphToSearchBar, internalMorphToCharacter, isSearchActive]);
 
   useEffect(() => {
     setCurrentExpression(expression);
@@ -937,11 +1090,16 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
   const bodyRightSvg = "/anty/body-right.svg";
   const bodyLeftSvg = "/anty/body-left.svg";
 
+  // Use fullContainer (1.5x height) when rendering internal shadow/glow
+  // Use regular container when using external refs (main page manages its own container size)
+  const useFullContainer = (showShadow && !hasExternalShadow) || (showGlow && !hasExternalGlow);
+  const containerStyle = useFullContainer ? styles.fullContainer(size) : styles.container(size);
+
   return (
     <div
       ref={containerRef}
       style={{
-        ...styles.fullContainer(size),
+        ...containerStyle,
         ...style,
       }}
       className={className}
@@ -949,111 +1107,133 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
       {/* Canvas overlay for particles */}
       <AntyParticleCanvas ref={canvasRef} particles={particles} width={size * 5} height={size * 5} />
 
-      {/* Outer glow (behind everything) - only render if not using external ref */}
-      {showGlow && !hasExternalGlow && (
-        <div
-          ref={internalOuterGlowRef}
-          style={styles.outerGlow(sizeScale)}
-        />
-      )}
-
-      {/* Inner glow - only render if not using external ref */}
-      {showGlow && !hasExternalGlow && (
-        <div
-          ref={internalInnerGlowRef}
-          style={styles.innerGlow(sizeScale)}
-        />
-      )}
-
-      {/* Super Mode Golden Glow */}
-      {isSuperMode && (
-        <div
-          ref={superGlowRef}
-          style={styles.superGlow}
-        />
-      )}
-
-      {/* Character body with animations */}
-      <div
-        ref={characterRef}
-        className={isSuperMode ? 'super-mode' : undefined}
-        style={styles.character}
-      >
-        {/* Anty body layers from Figma */}
-        <div ref={rightBodyRef} style={styles.rightBody}>
-          <img alt="" style={styles.bodyImage} src={bodyRightSvg} />
-        </div>
-        <div ref={leftBodyRef} style={styles.leftBody}>
-          <img alt="" style={styles.bodyImage} src={bodyLeftSvg} />
-        </div>
-
-        {/* Left eye */}
-        <div style={styles.leftEyeContainer}>
+      {/* Character area - positioned at top of fullContainer, or fills regular container */}
+      <div style={useFullContainer ? styles.characterArea(size) : { position: 'relative', width: size, height: size }}>
+        {/* Outer glow (behind everything) - only render if not using external ref */}
+        {showGlow && !hasExternalGlow && (
           <div
-            ref={leftEyeRef}
-            style={styles.eyeWrapper(initialEyeDimensions.width, initialEyeDimensions.height, sizeScale)}
-          >
-            <svg
-              ref={leftEyeSvgRef}
-              width="100%"
-              height="100%"
-              viewBox={initialEyeDimensions.viewBox}
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              style={{ display: 'block' }}
-            >
-              <path
-                ref={leftEyePathRef}
-                d={getEyeShape('IDLE', 'left')}
-                fill="#052333"
-              />
-            </svg>
-          </div>
-        </div>
+            ref={internalOuterGlowRef}
+            style={styles.outerGlow(sizeScale)}
+          />
+        )}
 
-        {/* Right eye */}
-        <div style={styles.rightEyeContainer}>
+        {/* Inner glow - only render if not using external ref */}
+        {showGlow && !hasExternalGlow && (
           <div
-            ref={rightEyeRef}
-            style={styles.eyeWrapper(initialEyeDimensions.width, initialEyeDimensions.height, sizeScale)}
-          >
-            <svg
-              ref={rightEyeSvgRef}
-              width="100%"
-              height="100%"
-              viewBox={initialEyeDimensions.viewBox}
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              style={{ display: 'block' }}
-            >
-              <path
-                ref={rightEyePathRef}
-                d={getEyeShape('IDLE', 'right')}
-                fill="#052333"
-              />
-            </svg>
+            ref={internalInnerGlowRef}
+            style={styles.innerGlow(sizeScale)}
+          />
+        )}
+
+        {/* Super Mode Golden Glow */}
+        {isSuperMode && (
+          <div
+            ref={superGlowRef}
+            style={styles.superGlow}
+          />
+        )}
+
+        {/* Character body with animations */}
+        <div
+          ref={characterRef}
+          className={isSuperMode ? 'super-mode' : undefined}
+          style={styles.character}
+        >
+          {/* Anty body layers from Figma */}
+          <div ref={rightBodyRef} style={styles.rightBody}>
+            <img alt="" style={styles.bodyImage} src={bodyRightSvg} />
           </div>
+          <div ref={leftBodyRef} style={styles.leftBody}>
+            <img alt="" style={styles.bodyImage} src={bodyLeftSvg} />
+          </div>
+
+          {/* Left eye */}
+          <div style={styles.leftEyeContainer}>
+            <div
+              ref={leftEyeRef}
+              style={styles.eyeWrapper(initialEyeDimensions.width, initialEyeDimensions.height, sizeScale)}
+            >
+              <svg
+                ref={leftEyeSvgRef}
+                width="100%"
+                height="100%"
+                viewBox={initialEyeDimensions.viewBox}
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                style={{ display: 'block' }}
+              >
+                <path
+                  ref={leftEyePathRef}
+                  d={getEyeShape('IDLE', 'left')}
+                  fill="#052333"
+                />
+              </svg>
+            </div>
+          </div>
+
+          {/* Right eye */}
+          <div style={styles.rightEyeContainer}>
+            <div
+              ref={rightEyeRef}
+              style={styles.eyeWrapper(initialEyeDimensions.width, initialEyeDimensions.height, sizeScale)}
+            >
+              <svg
+                ref={rightEyeSvgRef}
+                width="100%"
+                height="100%"
+                viewBox={initialEyeDimensions.viewBox}
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                style={{ display: 'block' }}
+              >
+                <path
+                  ref={rightEyePathRef}
+                  d={getEyeShape('IDLE', 'right')}
+                  fill="#052333"
+                />
+              </svg>
+            </div>
+          </div>
+
+          {/* Debug overlays */}
+          {debugMode && (
+            <>
+              <div style={styles.debugBorder} />
+
+              {!isOff && (
+                <>
+                  <div style={styles.debugCrosshair('calc(33.41% + 13.915% - 1px)', 'calc(31.63% + 5.825% - 7px)', 'yellow', true)} />
+                  <div style={styles.debugCrosshair('calc(33.41% + 13.915% - 6px)', 'calc(31.63% + 5.825% - 2px)', 'yellow', false)} />
+                </>
+              )}
+
+              {!isOff && (
+                <>
+                  <div style={styles.debugCrosshair('calc(33.41% + 13.915% - 1px)', 'calc(57.36% + 5.82% - 7px)', 'orange', true)} />
+                  <div style={styles.debugCrosshair('calc(33.41% + 13.915% - 6px)', 'calc(57.36% + 5.82% - 2px)', 'orange', false)} />
+                </>
+              )}
+            </>
+          )}
         </div>
 
-        {/* Debug overlays */}
-        {debugMode && (
-          <>
-            <div style={styles.debugBorder} />
-
-            {!isOff && (
-              <>
-                <div style={styles.debugCrosshair('calc(33.41% + 13.915% - 1px)', 'calc(31.63% + 5.825% - 7px)', 'yellow', true)} />
-                <div style={styles.debugCrosshair('calc(33.41% + 13.915% - 6px)', 'calc(31.63% + 5.825% - 2px)', 'yellow', false)} />
-              </>
-            )}
-
-            {!isOff && (
-              <>
-                <div style={styles.debugCrosshair('calc(33.41% + 13.915% - 1px)', 'calc(57.36% + 5.82% - 7px)', 'orange', true)} />
-                <div style={styles.debugCrosshair('calc(33.41% + 13.915% - 6px)', 'calc(57.36% + 5.82% - 2px)', 'orange', false)} />
-              </>
-            )}
-          </>
+        {/* Integrated search bar (when searchEnabled) */}
+        {searchEnabled && (
+          <AntySearchBar
+            active={isSearchActive}
+            value={searchValueState}
+            onChange={handleSearchChange}
+            inputRef={searchInputRef}
+            barRef={searchBarRef}
+            borderRef={searchBorderRef}
+            borderGradientRef={searchBorderGradientRef}
+            placeholderRef={searchPlaceholderRef}
+            kbdRef={searchKbdRef}
+            glowRef={searchGlowRef}
+            config={searchConfig}
+            placeholder={searchPlaceholder}
+            keyboardShortcut={searchShortcut}
+          />
         )}
       </div>
 
