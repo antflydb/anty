@@ -34,4 +34,5 @@ import { EMOTION_CONFIGS as _EMOTION_CONFIGS } from './lib/animation';
 export { EMOTION_CONFIGS, getEmotionConfig, createIdleAnimation, createEyeAnimation, createLookAnimation, createReturnFromLookAnimation, createWakeUpAnimation, createPowerOffAnimation, getEyeShape, getEyeDimensions, EYE_SHAPES, EYE_DIMENSIONS, type EyeShapeName, } from './lib/animation';
 export declare const AVAILABLE_EMOTIONS: (keyof typeof _EMOTION_CONFIGS)[];
 export { PARTICLE_CONFIGS } from './lib/particles';
+export { ANTY_STYLES, type AntyStyles } from './lib/styles';
 export { ENABLE_ANIMATION_DEBUG_LOGS, logAnimationEvent, logAnimationSystemInfo } from './lib/animation/feature-flags';

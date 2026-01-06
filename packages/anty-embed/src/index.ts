@@ -83,5 +83,8 @@ export const AVAILABLE_EMOTIONS = Object.keys(_EMOTION_CONFIGS) as (keyof typeof
 // Particle utilities
 export { PARTICLE_CONFIGS } from './lib/particles';
 
+// Style utilities
+export { ANTY_STYLES, type AntyStyles } from './lib/styles';
+
 // Debug utilities
 export { ENABLE_ANIMATION_DEBUG_LOGS, logAnimationEvent, logAnimationSystemInfo } from './lib/animation/feature-flags';
