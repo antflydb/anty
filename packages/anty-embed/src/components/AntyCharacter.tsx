@@ -853,9 +853,11 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
       if (ENABLE_ANIMATION_DEBUG_LOGS) {
         logAnimationEvent('Expression changed → playEmotion', { expression, emotionType });
       }
+      // Allow re-triggers - controller handles deduplication if needed
       animationController.playEmotion(emotionType, { priority: 2 });
     }
-  }, [expression, isOff, animationController]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [expression, isOff]);
 
   // Super mode glow animation
   useEffect(() => {
@@ -973,6 +975,7 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
       {/* Character body with animations */}
       <div
         ref={characterRef}
+        className={isSuperMode ? 'super-mode' : undefined}
         style={styles.character}
       >
         {/* Anty body layers from Figma */}

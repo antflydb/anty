@@ -516,41 +516,61 @@ export default function Anty() {
 
       // Stay SUPER for 15 seconds
       superModeTimerRef.current = setTimeout(() => {
-        // Clear super mode scale first
+        // Clear super mode scale FIRST so any idle recreation uses baseScale = 1
         antyRef.current?.setSuperMode?.(null);
 
-        // Animate scale back to normal, THEN restart idle
+        // Kill all animations to ensure idle is recreated fresh with scale 1
+        // This prevents the old idle (which may have captured scale 1.45) from interfering
+        antyRef.current?.killAll?.();
+
+        // Reset eyes to normal state (killAll may have interrupted mid-emotion with weird eye transforms)
+        const leftEye = antyRef.current?.leftEyeRef?.current;
+        const rightEye = antyRef.current?.rightEyeRef?.current;
+        if (leftEye && rightEye) {
+          gsap.set([leftEye, rightEye], {
+            scaleX: 1,
+            scaleY: 1,
+            rotation: 0,
+            x: 0,
+            y: 0,
+          });
+        }
+
+        // Animate scale back to normal, THEN update all state
+        // CRITICAL: Use the INNER character div (where scale was applied), not the outer wrapper
         const characterElement = antyRef.current?.characterRef?.current;
+
+        const cleanupSuperMode = () => {
+          // All state updates happen AFTER animation completes
+          // This prevents React re-renders from interfering with the scale animation
+          setIsSuperMode(false);
+          setExpression('idle');
+          superModeTimerRef.current = null;
+
+          // Reset all earned hearts when reverting to normal
+          setEarnedHearts([]);
+          // Clear all heart timers
+          heartTimersRef.current.forEach((timer) => clearTimeout(timer));
+          heartTimersRef.current.clear();
+
+          // Hide hearts when super mode ends (until next eat)
+          setShowHearts(false);
+          if (heartsHideTimerRef.current) {
+            clearTimeout(heartsHideTimerRef.current);
+            heartsHideTimerRef.current = null;
+          }
+        };
+
         if (characterElement) {
           gsap.to(characterElement, {
             scale: 1,
             duration: 0.3,
             ease: 'power2.out',
-            onComplete: () => {
-              // Return to idle AFTER scale animation completes
-              // This ensures idle captures scale: 1, not 1.45
-              setExpression('idle');
-            }
+            onComplete: cleanupSuperMode
           });
         } else {
           // Fallback if no character element
-          setExpression('idle');
-        }
-
-        setIsSuperMode(false);
-        superModeTimerRef.current = null;
-
-        // Reset all earned hearts when reverting to normal
-        setEarnedHearts([]);
-        // Clear all heart timers
-        heartTimersRef.current.forEach((timer) => clearTimeout(timer));
-        heartTimersRef.current.clear();
-
-        // Hide hearts when super mode ends (until next eat)
-        setShowHearts(false);
-        if (heartsHideTimerRef.current) {
-          clearTimeout(heartsHideTimerRef.current);
-          heartsHideTimerRef.current = null;
+          cleanupSuperMode();
         }
       }, 15000);
     }
@@ -1430,9 +1450,13 @@ export default function Anty() {
           setHearts(1);
         }
 
-        // Earn a heart and trigger pulse at happy eyes moment
+        // At the "happy eyes" moment (2.3s into animation):
+        // - Change expression to smize
+        // - Earn the heart (this triggers super mode on 3rd heart)
+        // - Spawn love heart particles
         animationTimerRef.current = setTimeout(() => {
           setExpression('smize');
+
           // Find first grey (not earned) heart and earn it
           const firstGreyHeart = [0, 1, 2].find(
             (index) => !earnedHearts.find((h) => h.index === index)
