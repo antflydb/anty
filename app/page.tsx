@@ -3,13 +3,12 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import gsap from 'gsap';
 // Import Anty from the package (source of truth)
-import { AntyCharacter, type AntyCharacterHandle, type EmotionType, DEFAULT_SEARCH_BAR_CONFIG, ENABLE_ANIMATION_DEBUG_LOGS, AntySearchBar, useSearchMorph } from '@antfly/anty-embed';
+import { AntyCharacter, type AntyCharacterHandle, type EmotionType, DEFAULT_SEARCH_BAR_CONFIG, ENABLE_ANIMATION_DEBUG_LOGS, AntyChatPanel } from '@antfly/anty-embed';
 // Playground-specific components (not part of the package)
 import { ActionButtons, HeartMeter, ExpressionMenu, PowerButton, FlappyGame, FPSMeter, type ButtonName, type EarnedHeart } from '@/components/anty';
 import { AnimationDebugOverlay } from '@/components/anty/animation-debug-overlay';
 import { EyeDebugBoxes } from '@/components/anty/eye-debug-boxes';
 import { SearchBarDemoMenu, getStoredSearchBarConfig } from '@/components/anty/search-bar-demo-menu';
-import { ChatPanel } from '@/components/anty-chat';
 import type { AntyStats } from '@/lib/anty/stat-system';
 
 // Chat panel layout constants
@@ -92,31 +91,7 @@ export default function Anty() {
 
   // Hold-style look state
   const lookHeldRef = useRef<'left' | 'right' | null>(null);
-  const [searchValue, setSearchValue] = useState('');
-  const searchBarRef = useRef<HTMLDivElement>(null);
-  const searchBorderRef = useRef<HTMLDivElement>(null);
-  const searchBorderGradientRef = useRef<HTMLDivElement>(null);
-  const searchPlaceholderRef = useRef<HTMLDivElement>(null);
-  const searchKbdRef = useRef<HTMLDivElement>(null);
-  const searchGlowRef = useRef<HTMLDivElement>(null);
-  const searchInputRef = useRef<HTMLInputElement>(null);
-
-  // Search morph animation hook
-  const { morphToSearchBar, morphToCharacter } = useSearchMorph({
-    characterRef: antyRef,
-    searchBarRefs: {
-      bar: searchBarRef,
-      border: searchBorderRef,
-      borderGradient: searchBorderGradientRef,
-      placeholder: searchPlaceholderRef,
-      kbd: searchKbdRef,
-      glow: searchGlowRef,
-      input: searchInputRef,
-    },
-    config: searchBarConfig,
-    onMorphStart: () => setSearchActive(true),
-    onReturnComplete: () => setSearchActive(false),
-  });
+  // Search handled by AntyCharacter internally
 
   // Debug mode - shows boundary boxes around all elements
   const [debugMode, setDebugMode] = useState(false);
@@ -365,16 +340,15 @@ export default function Anty() {
     if (!searchActive) return;
 
     const handleClickOutside = (event: MouseEvent) => {
-      const searchBarEl = searchBarRef.current;
       const target = event.target as HTMLElement;
 
-      // Ignore if clicking on search bar
-      if (searchBarEl?.contains(target)) return;
+      // Ignore if clicking inside anty container (which contains the search bar)
+      if (characterRef.current?.contains(target)) return;
 
       // Ignore if clicking on demo menu
       if (target.closest('[data-search-demo-menu]')) return;
 
-      morphToCharacter();
+      antyRef.current?.morphToCharacter?.();
     };
 
     // Delay listener to prevent immediate closure from trigger click
@@ -394,15 +368,20 @@ export default function Anty() {
       // Check for Command+K (Mac) or Ctrl+K (Windows/Linux)
       if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
         event.preventDefault();
+        console.log('[CMD+K] Triggered', {
+          searchActive,
+          hasRef: !!antyRef.current,
+          hasMorphToSearchBar: typeof antyRef.current?.morphToSearchBar,
+          hasMorphToCharacter: typeof antyRef.current?.morphToCharacter
+        });
         // Close chat if open
         if (isChatOpen) {
           setIsChatOpen(false);
         }
         if (searchActive) {
-          morphToCharacter();
-          setSearchValue(''); // Clear on exit
+          antyRef.current?.morphToCharacter?.();
         } else {
-          morphToSearchBar();
+          antyRef.current?.morphToSearchBar?.();
         }
       }
       // Command+L to toggle chat
@@ -410,8 +389,7 @@ export default function Anty() {
         event.preventDefault();
         // Close search if open
         if (searchActive) {
-          morphToCharacter();
-          setSearchValue('');
+          antyRef.current?.morphToCharacter?.();
         }
         setIsChatOpen(prev => !prev);
       }
@@ -428,8 +406,7 @@ export default function Anty() {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         event.preventDefault();
-        morphToCharacter();
-        setSearchValue(''); // Clear on exit
+        antyRef.current?.morphToCharacter?.();
       }
 
       if (event.key === 'Enter') {
@@ -440,7 +417,7 @@ export default function Anty() {
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [searchActive, searchValue]);
+  }, [searchActive]);
 
   // NOTE: Glow animation is now handled by GlowSystem in the animation controller
   // The physics-based tracking + oscillation replaces the old random ghostly movement
@@ -893,8 +870,7 @@ export default function Anty() {
       case 'chat':
         // Close search if open
         if (searchActive) {
-          morphToCharacter();
-          setSearchValue('');
+          antyRef.current?.morphToCharacter?.();
         }
         // Toggle chat panel
         setIsChatOpen(prev => {
@@ -993,13 +969,18 @@ export default function Anty() {
         break;
 
       case 'search':
+        console.log('[SEARCH BUTTON] Clicked', {
+          searchActive,
+          hasRef: !!antyRef.current,
+          hasMorphToSearchBar: typeof antyRef.current?.morphToSearchBar,
+        });
         // Close chat if open
         if (isChatOpen) {
           setIsChatOpen(false);
         }
         // Toggle search mode - if already open, close it (same as ESC)
         if (searchActive) {
-          morphToCharacter();
+          antyRef.current?.morphToCharacter?.();
         } else {
           // If in super mode, cleanly exit first before morphing to search
           if (isSuperMode) {
@@ -1025,13 +1006,13 @@ export default function Anty() {
                 y: 0,
                 duration: 0.3,
                 ease: 'power2.out',
-                onComplete: () => morphToSearchBar(),
+                onComplete: () => antyRef.current?.morphToSearchBar?.(),
               });
             } else {
-              morphToSearchBar();
+              antyRef.current?.morphToSearchBar?.();
             }
           } else {
-            morphToSearchBar();
+            antyRef.current?.morphToSearchBar?.();
           }
         }
         break;
@@ -1138,7 +1119,6 @@ export default function Anty() {
                   ref={antyRef}
                   expression={expression}
                   isSuperMode={isSuperMode}
-                  searchMode={searchActive}
                   debugMode={debugMode}
                   // Playground renders shadow/glow externally for morph animation control
                   showShadow={false}
@@ -1146,6 +1126,13 @@ export default function Anty() {
                   shadowRef={shadowRef}
                   innerGlowRef={innerGlowRef}
                   outerGlowRef={glowRef}
+                  // Search mode - now internal to AntyCharacter
+                  searchEnabled={true}
+                  searchPlaceholder="Ask about SearchAF"
+                  searchShortcut="⌘K"
+                  searchConfig={searchBarConfig}
+                  onSearchOpen={() => setSearchActive(true)}
+                  onSearchCloseComplete={() => setSearchActive(false)}
                   onAnimationSequenceChange={(sequence) => {
                     setCurrentAnimationSequence(sequence);
                   }}
@@ -1171,20 +1158,6 @@ export default function Anty() {
                     }
                     setExpression('idle');
                   }}
-                />
-                <AntySearchBar
-                  active={searchActive}
-                  value={searchValue}
-                  onChange={setSearchValue}
-                  inputRef={searchInputRef}
-                  barRef={searchBarRef}
-                  borderRef={searchBorderRef}
-                  borderGradientRef={searchBorderGradientRef}
-                  placeholderRef={searchPlaceholderRef}
-                  kbdRef={searchKbdRef}
-                  glowRef={searchGlowRef}
-                  config={searchBarConfig}
-                  placeholder="Ask about SearchAF"
                 />
               </div>
 
@@ -1292,7 +1265,7 @@ export default function Anty() {
       )}
 
       {/* Chat Panel */}
-      <ChatPanel
+      <AntyChatPanel
         isOpen={isChatOpen}
         onClose={() => setIsChatOpen(false)}
         onEmotion={(emotion) => {
