@@ -38,6 +38,32 @@ export {
   type AntySearchBarProps,
 } from './components';
 
+// Chat panel
+export { AntyChatPanel, type AntyChatPanelProps } from './components/AntyChatPanel';
+
+// Chat utilities
+export { AntyChat, createAntyChat, type ChatMessage, type ChatResponse } from './lib/chat/openai-client';
+export {
+  mapEmotionToExpression,
+  extractEmotion,
+  stripEmotionTags,
+  stripEmotionTagsStreaming,
+} from './lib/chat/emotion-mapper';
+export {
+  type ChatSession,
+  type ChatMessage as StoredChatMessage,
+  getSessions,
+  getSession,
+  saveSession,
+  deleteSession,
+  createNewSession,
+  getCurrentSessionId,
+  setCurrentSessionId,
+  clearCurrentSessionId,
+  generateTitle,
+  formatSessionDate,
+} from './lib/chat/history';
+
 // Hooks
 export { useAnimationController } from './hooks/use-animation-controller';
 export { useSearchMorph, type UseSearchMorphOptions, type UseSearchMorphReturn, type SearchBarRefs } from './hooks/use-search-morph';

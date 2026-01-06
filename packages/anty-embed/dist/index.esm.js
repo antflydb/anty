@@ -1,5 +1,6 @@
 import { jsx, jsxs, Fragment } from 'react/jsx-runtime';
-import { useRef, useLayoutEffect, useEffect, forwardRef, useState, useImperativeHandle, useCallback, useMemo } from 'react';
+import * as React from 'react';
+import { useRef, useLayoutEffect, useEffect, forwardRef, useState, useImperativeHandle, useCallback, useMemo, createContext, useId, useContext, useInsertionEffect, Children, isValidElement, Fragment as Fragment$1, createElement, Component } from 'react';
 
 function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
 
@@ -642,7 +643,7 @@ _isFromOrFromStart = function _isFromOrFromStart(_ref2) {
   return !_isString(value) || !(v = _unitExp.exec(value)) ? "" : v[1];
 },
     // note: protect against padded numbers as strings, like "100.100". That shouldn't return "00" as the unit. If it's numeric, return no unit.
-clamp = function clamp(min, max, value) {
+clamp$1 = function clamp(min, max, value) {
   return _conditionalReturn(value, function (v) {
     return _clamp(min, max, v);
   });
@@ -827,7 +828,7 @@ distribute = function distribute(v) {
     return _isArray(min) ? min[~~(Math.random() * min.length)] : (roundingIncrement = roundingIncrement || 1e-5) && (returnFunction = roundingIncrement < 1 ? Math.pow(10, (roundingIncrement + "").length - 2) : 1) && Math.floor(Math.round((min - roundingIncrement / 2 + Math.random() * (max - min + roundingIncrement * .99)) / roundingIncrement) * roundingIncrement * returnFunction) / returnFunction;
   });
 },
-    pipe = function pipe() {
+    pipe$1 = function pipe() {
   for (var _len = arguments.length, functions = new Array(_len), _key = 0; _key < _len; _key++) {
     functions[_key] = arguments[_key];
   }
@@ -881,7 +882,7 @@ distribute = function distribute(v) {
     return outMin + ((value - inMin) / inRange * outRange || 0);
   });
 },
-    interpolate = function interpolate(start, end, progress, mutate) {
+    interpolate$1 = function interpolate(start, end, progress, mutate) {
   var func = isNaN(start + end) ? 0 : function (p) {
     return (1 - p) * start + p * end;
   };
@@ -1083,7 +1084,7 @@ _hue = function _hue(h, m1, m2) {
   h += h < 0 ? 1 : h > 1 ? -1 : 0;
   return (h * 6 < 1 ? m1 + (m2 - m1) * h * 6 : h < .5 ? m2 : h * 3 < 2 ? m1 + (m2 - m1) * (2 / 3 - h) * 6 : m1) * _255 + .5 | 0;
 },
-    splitColor = function splitColor(v, toHSL, forceAlpha) {
+    splitColor$1 = function splitColor(v, toHSL, forceAlpha) {
   var a = !v ? _colorLookup.black : _isNumber(v) ? [v >> 16, v >> 8 & _255, v & _255] : 0,
       r,
       g,
@@ -1201,7 +1202,7 @@ _hue = function _hue(h, m1, m2) {
   }
 
   colors = colors.map(function (color) {
-    return (color = splitColor(color, toHSL, 1)) && type + (toHSL ? color[0] + "," + color[1] + "%," + color[2] + "%," + color[3] : color.join(",")) + ")";
+    return (color = splitColor$1(color, toHSL, 1)) && type + (toHSL ? color[0] + "," + color[1] + "%," + color[2] + "%," + color[3] : color.join(",")) + ")";
   });
 
   if (orderMatchData) {
@@ -4315,14 +4316,14 @@ var _gsap$1 = {
     snap: snap,
     normalize: normalize,
     getUnit: getUnit,
-    clamp: clamp,
-    splitColor: splitColor,
+    clamp: clamp$1,
+    splitColor: splitColor$1,
     toArray: toArray,
     selector: selector,
     mapRange: mapRange,
-    pipe: pipe,
+    pipe: pipe$1,
     unitize: unitize,
-    interpolate: interpolate,
+    interpolate: interpolate$1,
     shuffle: shuffle
   },
   install: _install,
@@ -6105,7 +6106,7 @@ gsapWithCSS.core.Tween;
 */
 /* eslint-disable */
 
-let useIsomorphicLayoutEffect = typeof document !== "undefined" ? useLayoutEffect : useEffect,
+let useIsomorphicLayoutEffect$1 = typeof document !== "undefined" ? useLayoutEffect : useEffect,
     isConfig = value => value && !Array.isArray(value) && typeof(value) === "object",
     emptyArray = [],
     defaultConfig = {},
@@ -6127,11 +6128,11 @@ const useGSAP = (callback, dependencies = emptyArray) => {
         context = useRef(_gsap.context(() => { }, scope)),
         contextSafe = useRef((func) => context.current.add(null, func)),
         deferCleanup = dependencies && dependencies.length && !revertOnUpdate;
-  deferCleanup && useIsomorphicLayoutEffect(() => {
+  deferCleanup && useIsomorphicLayoutEffect$1(() => {
     mounted.current = true;
     return () => context.current.revert();
   }, emptyArray);
-  useIsomorphicLayoutEffect(() => {
+  useIsomorphicLayoutEffect$1(() => {
     callback && context.current.add(callback, scope);
     if (!deferCleanup || !mounted.current) { // React renders bottom-up, thus there could be hooks with dependencies that run BEFORE the component mounts, thus cleanup wouldn't occur since a hook with an empty dependency Array would only run once the component mounts.
       return () => context.current.revert();
@@ -11514,6 +11515,18086 @@ searchEnabled = false, searchValue: externalSearchValue, onSearchChange, onSearc
 });
 AntyCharacter.displayName = 'AntyCharacter';
 
+const LayoutGroupContext = createContext({});
+
+/**
+ * Creates a constant value over the lifecycle of a component.
+ *
+ * Even if `useMemo` is provided an empty array as its final argument, it doesn't offer
+ * a guarantee that it won't re-run for performance reasons later on. By using `useConstant`
+ * you can ensure that initialisers don't execute twice or more.
+ */
+function useConstant(init) {
+    const ref = useRef(null);
+    if (ref.current === null) {
+        ref.current = init();
+    }
+    return ref.current;
+}
+
+/**
+ * @public
+ */
+const PresenceContext = createContext(null);
+
+/**
+ * @public
+ */
+const MotionConfigContext = createContext({
+    transformPagePoint: (p) => p,
+    isStatic: false,
+    reducedMotion: "never",
+});
+
+/**
+ * Measurement functionality has to be within a separate component
+ * to leverage snapshot lifecycle.
+ */
+class PopChildMeasure extends React.Component {
+    getSnapshotBeforeUpdate(prevProps) {
+        const element = this.props.childRef.current;
+        if (element && prevProps.isPresent && !this.props.isPresent) {
+            const size = this.props.sizeRef.current;
+            size.height = element.offsetHeight || 0;
+            size.width = element.offsetWidth || 0;
+            size.top = element.offsetTop;
+            size.left = element.offsetLeft;
+        }
+        return null;
+    }
+    /**
+     * Required with getSnapshotBeforeUpdate to stop React complaining.
+     */
+    componentDidUpdate() { }
+    render() {
+        return this.props.children;
+    }
+}
+function PopChild({ children, isPresent }) {
+    const id = useId();
+    const ref = useRef(null);
+    const size = useRef({
+        width: 0,
+        height: 0,
+        top: 0,
+        left: 0,
+    });
+    const { nonce } = useContext(MotionConfigContext);
+    /**
+     * We create and inject a style block so we can apply this explicit
+     * sizing in a non-destructive manner by just deleting the style block.
+     *
+     * We can't apply size via render as the measurement happens
+     * in getSnapshotBeforeUpdate (post-render), likewise if we apply the
+     * styles directly on the DOM node, we might be overwriting
+     * styles set via the style prop.
+     */
+    useInsertionEffect(() => {
+        const { width, height, top, left } = size.current;
+        if (isPresent || !ref.current || !width || !height)
+            return;
+        ref.current.dataset.motionPopId = id;
+        const style = document.createElement("style");
+        if (nonce)
+            style.nonce = nonce;
+        document.head.appendChild(style);
+        if (style.sheet) {
+            style.sheet.insertRule(`
+          [data-motion-pop-id="${id}"] {
+            position: absolute !important;
+            width: ${width}px !important;
+            height: ${height}px !important;
+            top: ${top}px !important;
+            left: ${left}px !important;
+          }
+        `);
+        }
+        return () => {
+            document.head.removeChild(style);
+        };
+    }, [isPresent]);
+    return (jsx(PopChildMeasure, { isPresent: isPresent, childRef: ref, sizeRef: size, children: React.cloneElement(children, { ref }) }));
+}
+
+const PresenceChild = ({ children, initial, isPresent, onExitComplete, custom, presenceAffectsLayout, mode, }) => {
+    const presenceChildren = useConstant(newChildrenMap);
+    const id = useId();
+    const memoizedOnExitComplete = useCallback((childId) => {
+        presenceChildren.set(childId, true);
+        for (const isComplete of presenceChildren.values()) {
+            if (!isComplete)
+                return; // can stop searching when any is incomplete
+        }
+        onExitComplete && onExitComplete();
+    }, [presenceChildren, onExitComplete]);
+    const context = useMemo(() => ({
+        id,
+        initial,
+        isPresent,
+        custom,
+        onExitComplete: memoizedOnExitComplete,
+        register: (childId) => {
+            presenceChildren.set(childId, false);
+            return () => presenceChildren.delete(childId);
+        },
+    }), 
+    /**
+     * If the presence of a child affects the layout of the components around it,
+     * we want to make a new context value to ensure they get re-rendered
+     * so they can detect that layout change.
+     */
+    presenceAffectsLayout
+        ? [Math.random(), memoizedOnExitComplete]
+        : [isPresent, memoizedOnExitComplete]);
+    useMemo(() => {
+        presenceChildren.forEach((_, key) => presenceChildren.set(key, false));
+    }, [isPresent]);
+    /**
+     * If there's no `motion` components to fire exit animations, we want to remove this
+     * component immediately.
+     */
+    React.useEffect(() => {
+        !isPresent &&
+            !presenceChildren.size &&
+            onExitComplete &&
+            onExitComplete();
+    }, [isPresent]);
+    if (mode === "popLayout") {
+        children = jsx(PopChild, { isPresent: isPresent, children: children });
+    }
+    return (jsx(PresenceContext.Provider, { value: context, children: children }));
+};
+function newChildrenMap() {
+    return new Map();
+}
+
+/**
+ * When a component is the child of `AnimatePresence`, it can use `usePresence`
+ * to access information about whether it's still present in the React tree.
+ *
+ * ```jsx
+ * import { usePresence } from "framer-motion"
+ *
+ * export const Component = () => {
+ *   const [isPresent, safeToRemove] = usePresence()
+ *
+ *   useEffect(() => {
+ *     !isPresent && setTimeout(safeToRemove, 1000)
+ *   }, [isPresent])
+ *
+ *   return <div />
+ * }
+ * ```
+ *
+ * If `isPresent` is `false`, it means that a component has been removed the tree, but
+ * `AnimatePresence` won't really remove it until `safeToRemove` has been called.
+ *
+ * @public
+ */
+function usePresence(subscribe = true) {
+    const context = useContext(PresenceContext);
+    if (context === null)
+        return [true, null];
+    const { isPresent, onExitComplete, register } = context;
+    // It's safe to call the following hooks conditionally (after an early return) because the context will always
+    // either be null or non-null for the lifespan of the component.
+    const id = useId();
+    useEffect(() => {
+        if (subscribe)
+            register(id);
+    }, [subscribe]);
+    const safeToRemove = useCallback(() => subscribe && onExitComplete && onExitComplete(id), [id, onExitComplete, subscribe]);
+    return !isPresent && onExitComplete ? [false, safeToRemove] : [true];
+}
+
+const getChildKey = (child) => child.key || "";
+function onlyElements(children) {
+    const filtered = [];
+    // We use forEach here instead of map as map mutates the component key by preprending `.$`
+    Children.forEach(children, (child) => {
+        if (isValidElement(child))
+            filtered.push(child);
+    });
+    return filtered;
+}
+
+const isBrowser = typeof window !== "undefined";
+
+const useIsomorphicLayoutEffect = isBrowser ? useLayoutEffect : useEffect;
+
+/**
+ * `AnimatePresence` enables the animation of components that have been removed from the tree.
+ *
+ * When adding/removing more than a single child, every child **must** be given a unique `key` prop.
+ *
+ * Any `motion` components that have an `exit` property defined will animate out when removed from
+ * the tree.
+ *
+ * ```jsx
+ * import { motion, AnimatePresence } from 'framer-motion'
+ *
+ * export const Items = ({ items }) => (
+ *   <AnimatePresence>
+ *     {items.map(item => (
+ *       <motion.div
+ *         key={item.id}
+ *         initial={{ opacity: 0 }}
+ *         animate={{ opacity: 1 }}
+ *         exit={{ opacity: 0 }}
+ *       />
+ *     ))}
+ *   </AnimatePresence>
+ * )
+ * ```
+ *
+ * You can sequence exit animations throughout a tree using variants.
+ *
+ * If a child contains multiple `motion` components with `exit` props, it will only unmount the child
+ * once all `motion` components have finished animating out. Likewise, any components using
+ * `usePresence` all need to call `safeToRemove`.
+ *
+ * @public
+ */
+const AnimatePresence = ({ children, custom, initial = true, onExitComplete, presenceAffectsLayout = true, mode = "sync", propagate = false, }) => {
+    const [isParentPresent, safeToRemove] = usePresence(propagate);
+    /**
+     * Filter any children that aren't ReactElements. We can only track components
+     * between renders with a props.key.
+     */
+    const presentChildren = useMemo(() => onlyElements(children), [children]);
+    /**
+     * Track the keys of the currently rendered children. This is used to
+     * determine which children are exiting.
+     */
+    const presentKeys = propagate && !isParentPresent ? [] : presentChildren.map(getChildKey);
+    /**
+     * If `initial={false}` we only want to pass this to components in the first render.
+     */
+    const isInitialRender = useRef(true);
+    /**
+     * A ref containing the currently present children. When all exit animations
+     * are complete, we use this to re-render the component with the latest children
+     * *committed* rather than the latest children *rendered*.
+     */
+    const pendingPresentChildren = useRef(presentChildren);
+    /**
+     * Track which exiting children have finished animating out.
+     */
+    const exitComplete = useConstant(() => new Map());
+    /**
+     * Save children to render as React state. To ensure this component is concurrent-safe,
+     * we check for exiting children via an effect.
+     */
+    const [diffedChildren, setDiffedChildren] = useState(presentChildren);
+    const [renderedChildren, setRenderedChildren] = useState(presentChildren);
+    useIsomorphicLayoutEffect(() => {
+        isInitialRender.current = false;
+        pendingPresentChildren.current = presentChildren;
+        /**
+         * Update complete status of exiting children.
+         */
+        for (let i = 0; i < renderedChildren.length; i++) {
+            const key = getChildKey(renderedChildren[i]);
+            if (!presentKeys.includes(key)) {
+                if (exitComplete.get(key) !== true) {
+                    exitComplete.set(key, false);
+                }
+            }
+            else {
+                exitComplete.delete(key);
+            }
+        }
+    }, [renderedChildren, presentKeys.length, presentKeys.join("-")]);
+    const exitingChildren = [];
+    if (presentChildren !== diffedChildren) {
+        let nextChildren = [...presentChildren];
+        /**
+         * Loop through all the currently rendered components and decide which
+         * are exiting.
+         */
+        for (let i = 0; i < renderedChildren.length; i++) {
+            const child = renderedChildren[i];
+            const key = getChildKey(child);
+            if (!presentKeys.includes(key)) {
+                nextChildren.splice(i, 0, child);
+                exitingChildren.push(child);
+            }
+        }
+        /**
+         * If we're in "wait" mode, and we have exiting children, we want to
+         * only render these until they've all exited.
+         */
+        if (mode === "wait" && exitingChildren.length) {
+            nextChildren = exitingChildren;
+        }
+        setRenderedChildren(onlyElements(nextChildren));
+        setDiffedChildren(presentChildren);
+        /**
+         * Early return to ensure once we've set state with the latest diffed
+         * children, we can immediately re-render.
+         */
+        return;
+    }
+    if (process.env.NODE_ENV !== "production" &&
+        mode === "wait" &&
+        renderedChildren.length > 1) {
+        console.warn(`You're attempting to animate multiple children within AnimatePresence, but its mode is set to "wait". This will lead to odd visual behaviour.`);
+    }
+    /**
+     * If we've been provided a forceRender function by the LayoutGroupContext,
+     * we can use it to force a re-render amongst all surrounding components once
+     * all components have finished animating out.
+     */
+    const { forceRender } = useContext(LayoutGroupContext);
+    return (jsx(Fragment, { children: renderedChildren.map((child) => {
+            const key = getChildKey(child);
+            const isPresent = propagate && !isParentPresent
+                ? false
+                : presentChildren === renderedChildren ||
+                    presentKeys.includes(key);
+            const onExit = () => {
+                if (exitComplete.has(key)) {
+                    exitComplete.set(key, true);
+                }
+                else {
+                    return;
+                }
+                let isEveryExitComplete = true;
+                exitComplete.forEach((isExitComplete) => {
+                    if (!isExitComplete)
+                        isEveryExitComplete = false;
+                });
+                if (isEveryExitComplete) {
+                    forceRender === null || forceRender === void 0 ? void 0 : forceRender();
+                    setRenderedChildren(pendingPresentChildren.current);
+                    propagate && (safeToRemove === null || safeToRemove === void 0 ? void 0 : safeToRemove());
+                    onExitComplete && onExitComplete();
+                }
+            };
+            return (jsx(PresenceChild, { isPresent: isPresent, initial: !isInitialRender.current || initial
+                    ? undefined
+                    : false, custom: isPresent ? undefined : custom, presenceAffectsLayout: presenceAffectsLayout, mode: mode, onExitComplete: isPresent ? undefined : onExit, children: child }, key));
+        }) }));
+};
+
+/*#__NO_SIDE_EFFECTS__*/
+const noop = (any) => any;
+
+let warning = noop;
+let invariant = noop;
+if (process.env.NODE_ENV !== "production") {
+    warning = (check, message) => {
+        if (!check && typeof console !== "undefined") {
+            console.warn(message);
+        }
+    };
+    invariant = (check, message) => {
+        if (!check) {
+            throw new Error(message);
+        }
+    };
+}
+
+/*#__NO_SIDE_EFFECTS__*/
+function memo(callback) {
+    let result;
+    return () => {
+        if (result === undefined)
+            result = callback();
+        return result;
+    };
+}
+
+/*
+  Progress within given range
+
+  Given a lower limit and an upper limit, we return the progress
+  (expressed as a number 0-1) represented by the given value, and
+  limit that progress to within 0-1.
+
+  @param [number]: Lower limit
+  @param [number]: Upper limit
+  @param [number]: Value to find progress within given range
+  @return [number]: Progress of value within range as expressed 0-1
+*/
+/*#__NO_SIDE_EFFECTS__*/
+const progress = (from, to, value) => {
+    const toFromDifference = to - from;
+    return toFromDifference === 0 ? 1 : (value - from) / toFromDifference;
+};
+
+/**
+ * Converts seconds to milliseconds
+ *
+ * @param seconds - Time in seconds.
+ * @return milliseconds - Converted time in milliseconds.
+ */
+/*#__NO_SIDE_EFFECTS__*/
+const secondsToMilliseconds = (seconds) => seconds * 1000;
+/*#__NO_SIDE_EFFECTS__*/
+const millisecondsToSeconds = (milliseconds) => milliseconds / 1000;
+
+const MotionGlobalConfig = {
+    useManualTiming: false,
+};
+
+function createRenderStep(runNextFrame) {
+    /**
+     * We create and reuse two queues, one to queue jobs for the current frame
+     * and one for the next. We reuse to avoid triggering GC after x frames.
+     */
+    let thisFrame = new Set();
+    let nextFrame = new Set();
+    /**
+     * Track whether we're currently processing jobs in this step. This way
+     * we can decide whether to schedule new jobs for this frame or next.
+     */
+    let isProcessing = false;
+    let flushNextFrame = false;
+    /**
+     * A set of processes which were marked keepAlive when scheduled.
+     */
+    const toKeepAlive = new WeakSet();
+    let latestFrameData = {
+        delta: 0.0,
+        timestamp: 0.0,
+        isProcessing: false,
+    };
+    function triggerCallback(callback) {
+        if (toKeepAlive.has(callback)) {
+            step.schedule(callback);
+            runNextFrame();
+        }
+        callback(latestFrameData);
+    }
+    const step = {
+        /**
+         * Schedule a process to run on the next frame.
+         */
+        schedule: (callback, keepAlive = false, immediate = false) => {
+            const addToCurrentFrame = immediate && isProcessing;
+            const queue = addToCurrentFrame ? thisFrame : nextFrame;
+            if (keepAlive)
+                toKeepAlive.add(callback);
+            if (!queue.has(callback))
+                queue.add(callback);
+            return callback;
+        },
+        /**
+         * Cancel the provided callback from running on the next frame.
+         */
+        cancel: (callback) => {
+            nextFrame.delete(callback);
+            toKeepAlive.delete(callback);
+        },
+        /**
+         * Execute all schedule callbacks.
+         */
+        process: (frameData) => {
+            latestFrameData = frameData;
+            /**
+             * If we're already processing we've probably been triggered by a flushSync
+             * inside an existing process. Instead of executing, mark flushNextFrame
+             * as true and ensure we flush the following frame at the end of this one.
+             */
+            if (isProcessing) {
+                flushNextFrame = true;
+                return;
+            }
+            isProcessing = true;
+            [thisFrame, nextFrame] = [nextFrame, thisFrame];
+            // Execute this frame
+            thisFrame.forEach(triggerCallback);
+            // Clear the frame so no callbacks remain. This is to avoid
+            // memory leaks should this render step not run for a while.
+            thisFrame.clear();
+            isProcessing = false;
+            if (flushNextFrame) {
+                flushNextFrame = false;
+                step.process(frameData);
+            }
+        },
+    };
+    return step;
+}
+
+const stepsOrder = [
+    "read", // Read
+    "resolveKeyframes", // Write/Read/Write/Read
+    "update", // Compute
+    "preRender", // Compute
+    "render", // Write
+    "postRender", // Compute
+];
+const maxElapsed = 40;
+function createRenderBatcher(scheduleNextBatch, allowKeepAlive) {
+    let runNextFrame = false;
+    let useDefaultElapsed = true;
+    const state = {
+        delta: 0.0,
+        timestamp: 0.0,
+        isProcessing: false,
+    };
+    const flagRunNextFrame = () => (runNextFrame = true);
+    const steps = stepsOrder.reduce((acc, key) => {
+        acc[key] = createRenderStep(flagRunNextFrame);
+        return acc;
+    }, {});
+    const { read, resolveKeyframes, update, preRender, render, postRender } = steps;
+    const processBatch = () => {
+        const timestamp = performance.now();
+        runNextFrame = false;
+        state.delta = useDefaultElapsed
+            ? 1000 / 60
+            : Math.max(Math.min(timestamp - state.timestamp, maxElapsed), 1);
+        state.timestamp = timestamp;
+        state.isProcessing = true;
+        // Unrolled render loop for better per-frame performance
+        read.process(state);
+        resolveKeyframes.process(state);
+        update.process(state);
+        preRender.process(state);
+        render.process(state);
+        postRender.process(state);
+        state.isProcessing = false;
+        if (runNextFrame && allowKeepAlive) {
+            useDefaultElapsed = false;
+            scheduleNextBatch(processBatch);
+        }
+    };
+    const wake = () => {
+        runNextFrame = true;
+        useDefaultElapsed = true;
+        if (!state.isProcessing) {
+            scheduleNextBatch(processBatch);
+        }
+    };
+    const schedule = stepsOrder.reduce((acc, key) => {
+        const step = steps[key];
+        acc[key] = (process, keepAlive = false, immediate = false) => {
+            if (!runNextFrame)
+                wake();
+            return step.schedule(process, keepAlive, immediate);
+        };
+        return acc;
+    }, {});
+    const cancel = (process) => {
+        for (let i = 0; i < stepsOrder.length; i++) {
+            steps[stepsOrder[i]].cancel(process);
+        }
+    };
+    return { schedule, cancel, state, steps };
+}
+
+const { schedule: frame, cancel: cancelFrame, state: frameData, steps: frameSteps, } = createRenderBatcher(typeof requestAnimationFrame !== "undefined" ? requestAnimationFrame : noop, true);
+
+const LazyContext = createContext({ strict: false });
+
+const featureProps = {
+    animation: [
+        "animate",
+        "variants",
+        "whileHover",
+        "whileTap",
+        "exit",
+        "whileInView",
+        "whileFocus",
+        "whileDrag",
+    ],
+    exit: ["exit"],
+    drag: ["drag", "dragControls"],
+    focus: ["whileFocus"],
+    hover: ["whileHover", "onHoverStart", "onHoverEnd"],
+    tap: ["whileTap", "onTap", "onTapStart", "onTapCancel"],
+    pan: ["onPan", "onPanStart", "onPanSessionStart", "onPanEnd"],
+    inView: ["whileInView", "onViewportEnter", "onViewportLeave"],
+    layout: ["layout", "layoutId"],
+};
+const featureDefinitions = {};
+for (const key in featureProps) {
+    featureDefinitions[key] = {
+        isEnabled: (props) => featureProps[key].some((name) => !!props[name]),
+    };
+}
+
+function loadFeatures(features) {
+    for (const key in features) {
+        featureDefinitions[key] = {
+            ...featureDefinitions[key],
+            ...features[key],
+        };
+    }
+}
+
+/**
+ * A list of all valid MotionProps.
+ *
+ * @privateRemarks
+ * This doesn't throw if a `MotionProp` name is missing - it should.
+ */
+const validMotionProps = new Set([
+    "animate",
+    "exit",
+    "variants",
+    "initial",
+    "style",
+    "values",
+    "variants",
+    "transition",
+    "transformTemplate",
+    "custom",
+    "inherit",
+    "onBeforeLayoutMeasure",
+    "onAnimationStart",
+    "onAnimationComplete",
+    "onUpdate",
+    "onDragStart",
+    "onDrag",
+    "onDragEnd",
+    "onMeasureDragConstraints",
+    "onDirectionLock",
+    "onDragTransitionEnd",
+    "_dragX",
+    "_dragY",
+    "onHoverStart",
+    "onHoverEnd",
+    "onViewportEnter",
+    "onViewportLeave",
+    "globalTapTarget",
+    "ignoreStrict",
+    "viewport",
+]);
+/**
+ * Check whether a prop name is a valid `MotionProp` key.
+ *
+ * @param key - Name of the property to check
+ * @returns `true` is key is a valid `MotionProp`.
+ *
+ * @public
+ */
+function isValidMotionProp(key) {
+    return (key.startsWith("while") ||
+        (key.startsWith("drag") && key !== "draggable") ||
+        key.startsWith("layout") ||
+        key.startsWith("onTap") ||
+        key.startsWith("onPan") ||
+        key.startsWith("onLayout") ||
+        validMotionProps.has(key));
+}
+
+let shouldForward = (key) => !isValidMotionProp(key);
+function loadExternalIsValidProp(isValidProp) {
+    if (!isValidProp)
+        return;
+    // Explicitly filter our events
+    shouldForward = (key) => key.startsWith("on") ? !isValidMotionProp(key) : isValidProp(key);
+}
+/**
+ * Emotion and Styled Components both allow users to pass through arbitrary props to their components
+ * to dynamically generate CSS. They both use the `@emotion/is-prop-valid` package to determine which
+ * of these should be passed to the underlying DOM node.
+ *
+ * However, when styling a Motion component `styled(motion.div)`, both packages pass through *all* props
+ * as it's seen as an arbitrary component rather than a DOM node. Motion only allows arbitrary props
+ * passed through the `custom` prop so it doesn't *need* the payload or computational overhead of
+ * `@emotion/is-prop-valid`, however to fix this problem we need to use it.
+ *
+ * By making it an optionalDependency we can offer this functionality only in the situations where it's
+ * actually required.
+ */
+try {
+    /**
+     * We attempt to import this package but require won't be defined in esm environments, in that case
+     * isPropValid will have to be provided via `MotionContext`. In a 6.0.0 this should probably be removed
+     * in favour of explicit injection.
+     */
+    loadExternalIsValidProp(require("@emotion/is-prop-valid").default);
+}
+catch (_a) {
+    // We don't need to actually do anything here - the fallback is the existing `isPropValid`.
+}
+function filterProps(props, isDom, forwardMotionProps) {
+    const filteredProps = {};
+    for (const key in props) {
+        /**
+         * values is considered a valid prop by Emotion, so if it's present
+         * this will be rendered out to the DOM unless explicitly filtered.
+         *
+         * We check the type as it could be used with the `feColorMatrix`
+         * element, which we support.
+         */
+        if (key === "values" && typeof props.values === "object")
+            continue;
+        if (shouldForward(key) ||
+            (forwardMotionProps === true && isValidMotionProp(key)) ||
+            (!isDom && !isValidMotionProp(key)) ||
+            // If trying to use native HTML drag events, forward drag listeners
+            (props["draggable"] &&
+                key.startsWith("onDrag"))) {
+            filteredProps[key] =
+                props[key];
+        }
+    }
+    return filteredProps;
+}
+
+const warned = new Set();
+function warnOnce(condition, message, element) {
+    if (condition || warned.has(message))
+        return;
+    console.warn(message);
+    warned.add(message);
+}
+
+function createDOMMotionComponentProxy(componentFactory) {
+    if (typeof Proxy === "undefined") {
+        return componentFactory;
+    }
+    /**
+     * A cache of generated `motion` components, e.g `motion.div`, `motion.input` etc.
+     * Rather than generating them anew every render.
+     */
+    const componentCache = new Map();
+    const deprecatedFactoryFunction = (...args) => {
+        if (process.env.NODE_ENV !== "production") {
+            warnOnce(false, "motion() is deprecated. Use motion.create() instead.");
+        }
+        return componentFactory(...args);
+    };
+    return new Proxy(deprecatedFactoryFunction, {
+        /**
+         * Called when `motion` is referenced with a prop: `motion.div`, `motion.input` etc.
+         * The prop name is passed through as `key` and we can use that to generate a `motion`
+         * DOM component with that name.
+         */
+        get: (_target, key) => {
+            if (key === "create")
+                return componentFactory;
+            /**
+             * If this element doesn't exist in the component cache, create it and cache.
+             */
+            if (!componentCache.has(key)) {
+                componentCache.set(key, componentFactory(key));
+            }
+            return componentCache.get(key);
+        },
+    });
+}
+
+const MotionContext = createContext({});
+
+/**
+ * Decides if the supplied variable is variant label
+ */
+function isVariantLabel(v) {
+    return typeof v === "string" || Array.isArray(v);
+}
+
+function isAnimationControls(v) {
+    return (v !== null &&
+        typeof v === "object" &&
+        typeof v.start === "function");
+}
+
+const variantPriorityOrder = [
+    "animate",
+    "whileInView",
+    "whileFocus",
+    "whileHover",
+    "whileTap",
+    "whileDrag",
+    "exit",
+];
+const variantProps = ["initial", ...variantPriorityOrder];
+
+function isControllingVariants(props) {
+    return (isAnimationControls(props.animate) ||
+        variantProps.some((name) => isVariantLabel(props[name])));
+}
+function isVariantNode(props) {
+    return Boolean(isControllingVariants(props) || props.variants);
+}
+
+function getCurrentTreeVariants(props, context) {
+    if (isControllingVariants(props)) {
+        const { initial, animate } = props;
+        return {
+            initial: initial === false || isVariantLabel(initial)
+                ? initial
+                : undefined,
+            animate: isVariantLabel(animate) ? animate : undefined,
+        };
+    }
+    return props.inherit !== false ? context : {};
+}
+
+function useCreateMotionContext(props) {
+    const { initial, animate } = getCurrentTreeVariants(props, useContext(MotionContext));
+    return useMemo(() => ({ initial, animate }), [variantLabelsAsDependency(initial), variantLabelsAsDependency(animate)]);
+}
+function variantLabelsAsDependency(prop) {
+    return Array.isArray(prop) ? prop.join(" ") : prop;
+}
+
+const motionComponentSymbol = Symbol.for("motionComponentSymbol");
+
+function isRefObject(ref) {
+    return (ref &&
+        typeof ref === "object" &&
+        Object.prototype.hasOwnProperty.call(ref, "current"));
+}
+
+/**
+ * Creates a ref function that, when called, hydrates the provided
+ * external ref and VisualElement.
+ */
+function useMotionRef(visualState, visualElement, externalRef) {
+    return useCallback((instance) => {
+        if (instance) {
+            visualState.onMount && visualState.onMount(instance);
+        }
+        if (visualElement) {
+            if (instance) {
+                visualElement.mount(instance);
+            }
+            else {
+                visualElement.unmount();
+            }
+        }
+        if (externalRef) {
+            if (typeof externalRef === "function") {
+                externalRef(instance);
+            }
+            else if (isRefObject(externalRef)) {
+                externalRef.current = instance;
+            }
+        }
+    }, 
+    /**
+     * Only pass a new ref callback to React if we've received a visual element
+     * factory. Otherwise we'll be mounting/remounting every time externalRef
+     * or other dependencies change.
+     */
+    [visualElement]);
+}
+
+/**
+ * Convert camelCase to dash-case properties.
+ */
+const camelToDash = (str) => str.replace(/([a-z])([A-Z])/gu, "$1-$2").toLowerCase();
+
+const optimizedAppearDataId = "framerAppearId";
+const optimizedAppearDataAttribute = "data-" + camelToDash(optimizedAppearDataId);
+
+const { schedule: microtask} = createRenderBatcher(queueMicrotask, false);
+
+/**
+ * Internal, exported only for usage in Framer
+ */
+const SwitchLayoutGroupContext = createContext({});
+
+function useVisualElement(Component, visualState, props, createVisualElement, ProjectionNodeConstructor) {
+    var _a, _b;
+    const { visualElement: parent } = useContext(MotionContext);
+    const lazyContext = useContext(LazyContext);
+    const presenceContext = useContext(PresenceContext);
+    const reducedMotionConfig = useContext(MotionConfigContext).reducedMotion;
+    const visualElementRef = useRef(null);
+    /**
+     * If we haven't preloaded a renderer, check to see if we have one lazy-loaded
+     */
+    createVisualElement = createVisualElement || lazyContext.renderer;
+    if (!visualElementRef.current && createVisualElement) {
+        visualElementRef.current = createVisualElement(Component, {
+            visualState,
+            parent,
+            props,
+            presenceContext,
+            blockInitialAnimation: presenceContext
+                ? presenceContext.initial === false
+                : false,
+            reducedMotionConfig,
+        });
+    }
+    const visualElement = visualElementRef.current;
+    /**
+     * Load Motion gesture and animation features. These are rendered as renderless
+     * components so each feature can optionally make use of React lifecycle methods.
+     */
+    const initialLayoutGroupConfig = useContext(SwitchLayoutGroupContext);
+    if (visualElement &&
+        !visualElement.projection &&
+        ProjectionNodeConstructor &&
+        (visualElement.type === "html" || visualElement.type === "svg")) {
+        createProjectionNode$1(visualElementRef.current, props, ProjectionNodeConstructor, initialLayoutGroupConfig);
+    }
+    const isMounted = useRef(false);
+    useInsertionEffect(() => {
+        /**
+         * Check the component has already mounted before calling
+         * `update` unnecessarily. This ensures we skip the initial update.
+         */
+        if (visualElement && isMounted.current) {
+            visualElement.update(props, presenceContext);
+        }
+    });
+    /**
+     * Cache this value as we want to know whether HandoffAppearAnimations
+     * was present on initial render - it will be deleted after this.
+     */
+    const optimisedAppearId = props[optimizedAppearDataAttribute];
+    const wantsHandoff = useRef(Boolean(optimisedAppearId) &&
+        !((_a = window.MotionHandoffIsComplete) === null || _a === void 0 ? void 0 : _a.call(window, optimisedAppearId)) &&
+        ((_b = window.MotionHasOptimisedAnimation) === null || _b === void 0 ? void 0 : _b.call(window, optimisedAppearId)));
+    useIsomorphicLayoutEffect(() => {
+        if (!visualElement)
+            return;
+        isMounted.current = true;
+        window.MotionIsMounted = true;
+        visualElement.updateFeatures();
+        microtask.render(visualElement.render);
+        /**
+         * Ideally this function would always run in a useEffect.
+         *
+         * However, if we have optimised appear animations to handoff from,
+         * it needs to happen synchronously to ensure there's no flash of
+         * incorrect styles in the event of a hydration error.
+         *
+         * So if we detect a situtation where optimised appear animations
+         * are running, we use useLayoutEffect to trigger animations.
+         */
+        if (wantsHandoff.current && visualElement.animationState) {
+            visualElement.animationState.animateChanges();
+        }
+    });
+    useEffect(() => {
+        if (!visualElement)
+            return;
+        if (!wantsHandoff.current && visualElement.animationState) {
+            visualElement.animationState.animateChanges();
+        }
+        if (wantsHandoff.current) {
+            // This ensures all future calls to animateChanges() in this component will run in useEffect
+            queueMicrotask(() => {
+                var _a;
+                (_a = window.MotionHandoffMarkAsComplete) === null || _a === void 0 ? void 0 : _a.call(window, optimisedAppearId);
+            });
+            wantsHandoff.current = false;
+        }
+    });
+    return visualElement;
+}
+function createProjectionNode$1(visualElement, props, ProjectionNodeConstructor, initialPromotionConfig) {
+    const { layoutId, layout, drag, dragConstraints, layoutScroll, layoutRoot, } = props;
+    visualElement.projection = new ProjectionNodeConstructor(visualElement.latestValues, props["data-framer-portal-id"]
+        ? undefined
+        : getClosestProjectingNode(visualElement.parent));
+    visualElement.projection.setOptions({
+        layoutId,
+        layout,
+        alwaysMeasureLayout: Boolean(drag) || (dragConstraints && isRefObject(dragConstraints)),
+        visualElement,
+        /**
+         * TODO: Update options in an effect. This could be tricky as it'll be too late
+         * to update by the time layout animations run.
+         * We also need to fix this safeToRemove by linking it up to the one returned by usePresence,
+         * ensuring it gets called if there's no potential layout animations.
+         *
+         */
+        animationType: typeof layout === "string" ? layout : "both",
+        initialPromotionConfig,
+        layoutScroll,
+        layoutRoot,
+    });
+}
+function getClosestProjectingNode(visualElement) {
+    if (!visualElement)
+        return undefined;
+    return visualElement.options.allowProjection !== false
+        ? visualElement.projection
+        : getClosestProjectingNode(visualElement.parent);
+}
+
+/**
+ * Create a `motion` component.
+ *
+ * This function accepts a Component argument, which can be either a string (ie "div"
+ * for `motion.div`), or an actual React component.
+ *
+ * Alongside this is a config option which provides a way of rendering the provided
+ * component "offline", or outside the React render cycle.
+ */
+function createRendererMotionComponent({ preloadedFeatures, createVisualElement, useRender, useVisualState, Component, }) {
+    var _a, _b;
+    preloadedFeatures && loadFeatures(preloadedFeatures);
+    function MotionComponent(props, externalRef) {
+        /**
+         * If we need to measure the element we load this functionality in a
+         * separate class component in order to gain access to getSnapshotBeforeUpdate.
+         */
+        let MeasureLayout;
+        const configAndProps = {
+            ...useContext(MotionConfigContext),
+            ...props,
+            layoutId: useLayoutId(props),
+        };
+        const { isStatic } = configAndProps;
+        const context = useCreateMotionContext(props);
+        const visualState = useVisualState(props, isStatic);
+        if (!isStatic && isBrowser) {
+            useStrictMode(configAndProps, preloadedFeatures);
+            const layoutProjection = getProjectionFunctionality(configAndProps);
+            MeasureLayout = layoutProjection.MeasureLayout;
+            /**
+             * Create a VisualElement for this component. A VisualElement provides a common
+             * interface to renderer-specific APIs (ie DOM/Three.js etc) as well as
+             * providing a way of rendering to these APIs outside of the React render loop
+             * for more performant animations and interactions
+             */
+            context.visualElement = useVisualElement(Component, visualState, configAndProps, createVisualElement, layoutProjection.ProjectionNode);
+        }
+        /**
+         * The mount order and hierarchy is specific to ensure our element ref
+         * is hydrated by the time features fire their effects.
+         */
+        return (jsxs(MotionContext.Provider, { value: context, children: [MeasureLayout && context.visualElement ? (jsx(MeasureLayout, { visualElement: context.visualElement, ...configAndProps })) : null, useRender(Component, props, useMotionRef(visualState, context.visualElement, externalRef), visualState, isStatic, context.visualElement)] }));
+    }
+    MotionComponent.displayName = `motion.${typeof Component === "string"
+        ? Component
+        : `create(${(_b = (_a = Component.displayName) !== null && _a !== void 0 ? _a : Component.name) !== null && _b !== void 0 ? _b : ""})`}`;
+    const ForwardRefMotionComponent = forwardRef(MotionComponent);
+    ForwardRefMotionComponent[motionComponentSymbol] = Component;
+    return ForwardRefMotionComponent;
+}
+function useLayoutId({ layoutId }) {
+    const layoutGroupId = useContext(LayoutGroupContext).id;
+    return layoutGroupId && layoutId !== undefined
+        ? layoutGroupId + "-" + layoutId
+        : layoutId;
+}
+function useStrictMode(configAndProps, preloadedFeatures) {
+    const isStrict = useContext(LazyContext).strict;
+    /**
+     * If we're in development mode, check to make sure we're not rendering a motion component
+     * as a child of LazyMotion, as this will break the file-size benefits of using it.
+     */
+    if (process.env.NODE_ENV !== "production" &&
+        preloadedFeatures &&
+        isStrict) {
+        const strictMessage = "You have rendered a `motion` component within a `LazyMotion` component. This will break tree shaking. Import and render a `m` component instead.";
+        configAndProps.ignoreStrict
+            ? warning(false, strictMessage)
+            : invariant(false, strictMessage);
+    }
+}
+function getProjectionFunctionality(props) {
+    const { drag, layout } = featureDefinitions;
+    if (!drag && !layout)
+        return {};
+    const combined = { ...drag, ...layout };
+    return {
+        MeasureLayout: (drag === null || drag === void 0 ? void 0 : drag.isEnabled(props)) || (layout === null || layout === void 0 ? void 0 : layout.isEnabled(props))
+            ? combined.MeasureLayout
+            : undefined,
+        ProjectionNode: combined.ProjectionNode,
+    };
+}
+
+/**
+ * We keep these listed separately as we use the lowercase tag names as part
+ * of the runtime bundle to detect SVG components
+ */
+const lowercaseSVGElements = [
+    "animate",
+    "circle",
+    "defs",
+    "desc",
+    "ellipse",
+    "g",
+    "image",
+    "line",
+    "filter",
+    "marker",
+    "mask",
+    "metadata",
+    "path",
+    "pattern",
+    "polygon",
+    "polyline",
+    "rect",
+    "stop",
+    "switch",
+    "symbol",
+    "svg",
+    "text",
+    "tspan",
+    "use",
+    "view",
+];
+
+function isSVGComponent(Component) {
+    if (
+    /**
+     * If it's not a string, it's a custom React component. Currently we only support
+     * HTML custom React components.
+     */
+    typeof Component !== "string" ||
+        /**
+         * If it contains a dash, the element is a custom HTML webcomponent.
+         */
+        Component.includes("-")) {
+        return false;
+    }
+    else if (
+    /**
+     * If it's in our list of lowercase SVG tags, it's an SVG component
+     */
+    lowercaseSVGElements.indexOf(Component) > -1 ||
+        /**
+         * If it contains a capital letter, it's an SVG component
+         */
+        /[A-Z]/u.test(Component)) {
+        return true;
+    }
+    return false;
+}
+
+function getValueState(visualElement) {
+    const state = [{}, {}];
+    visualElement === null || visualElement === void 0 ? void 0 : visualElement.values.forEach((value, key) => {
+        state[0][key] = value.get();
+        state[1][key] = value.getVelocity();
+    });
+    return state;
+}
+function resolveVariantFromProps(props, definition, custom, visualElement) {
+    /**
+     * If the variant definition is a function, resolve.
+     */
+    if (typeof definition === "function") {
+        const [current, velocity] = getValueState(visualElement);
+        definition = definition(custom !== undefined ? custom : props.custom, current, velocity);
+    }
+    /**
+     * If the variant definition is a variant label, or
+     * the function returned a variant label, resolve.
+     */
+    if (typeof definition === "string") {
+        definition = props.variants && props.variants[definition];
+    }
+    /**
+     * At this point we've resolved both functions and variant labels,
+     * but the resolved variant label might itself have been a function.
+     * If so, resolve. This can only have returned a valid target object.
+     */
+    if (typeof definition === "function") {
+        const [current, velocity] = getValueState(visualElement);
+        definition = definition(custom !== undefined ? custom : props.custom, current, velocity);
+    }
+    return definition;
+}
+
+const isKeyframesTarget = (v) => {
+    return Array.isArray(v);
+};
+
+const isCustomValue = (v) => {
+    return Boolean(v && typeof v === "object" && v.mix && v.toValue);
+};
+const resolveFinalValueInKeyframes = (v) => {
+    // TODO maybe throw if v.length - 1 is placeholder token?
+    return isKeyframesTarget(v) ? v[v.length - 1] || 0 : v;
+};
+
+const isMotionValue = (value) => Boolean(value && value.getVelocity);
+
+/**
+ * If the provided value is a MotionValue, this returns the actual value, otherwise just the value itself
+ *
+ * TODO: Remove and move to library
+ */
+function resolveMotionValue(value) {
+    const unwrappedValue = isMotionValue(value) ? value.get() : value;
+    return isCustomValue(unwrappedValue)
+        ? unwrappedValue.toValue()
+        : unwrappedValue;
+}
+
+function makeState({ scrapeMotionValuesFromProps, createRenderState, onUpdate, }, props, context, presenceContext) {
+    const state = {
+        latestValues: makeLatestValues(props, context, presenceContext, scrapeMotionValuesFromProps),
+        renderState: createRenderState(),
+    };
+    if (onUpdate) {
+        /**
+         * onMount works without the VisualElement because it could be
+         * called before the VisualElement payload has been hydrated.
+         * (e.g. if someone is using m components <m.circle />)
+         */
+        state.onMount = (instance) => onUpdate({ props, current: instance, ...state });
+        state.onUpdate = (visualElement) => onUpdate(visualElement);
+    }
+    return state;
+}
+const makeUseVisualState = (config) => (props, isStatic) => {
+    const context = useContext(MotionContext);
+    const presenceContext = useContext(PresenceContext);
+    const make = () => makeState(config, props, context, presenceContext);
+    return isStatic ? make() : useConstant(make);
+};
+function makeLatestValues(props, context, presenceContext, scrapeMotionValues) {
+    const values = {};
+    const motionValues = scrapeMotionValues(props, {});
+    for (const key in motionValues) {
+        values[key] = resolveMotionValue(motionValues[key]);
+    }
+    let { initial, animate } = props;
+    const isControllingVariants$1 = isControllingVariants(props);
+    const isVariantNode$1 = isVariantNode(props);
+    if (context &&
+        isVariantNode$1 &&
+        !isControllingVariants$1 &&
+        props.inherit !== false) {
+        if (initial === undefined)
+            initial = context.initial;
+        if (animate === undefined)
+            animate = context.animate;
+    }
+    let isInitialAnimationBlocked = presenceContext
+        ? presenceContext.initial === false
+        : false;
+    isInitialAnimationBlocked = isInitialAnimationBlocked || initial === false;
+    const variantToSet = isInitialAnimationBlocked ? animate : initial;
+    if (variantToSet &&
+        typeof variantToSet !== "boolean" &&
+        !isAnimationControls(variantToSet)) {
+        const list = Array.isArray(variantToSet) ? variantToSet : [variantToSet];
+        for (let i = 0; i < list.length; i++) {
+            const resolved = resolveVariantFromProps(props, list[i]);
+            if (resolved) {
+                const { transitionEnd, transition, ...target } = resolved;
+                for (const key in target) {
+                    let valueTarget = target[key];
+                    if (Array.isArray(valueTarget)) {
+                        /**
+                         * Take final keyframe if the initial animation is blocked because
+                         * we want to initialise at the end of that blocked animation.
+                         */
+                        const index = isInitialAnimationBlocked
+                            ? valueTarget.length - 1
+                            : 0;
+                        valueTarget = valueTarget[index];
+                    }
+                    if (valueTarget !== null) {
+                        values[key] = valueTarget;
+                    }
+                }
+                for (const key in transitionEnd) {
+                    values[key] = transitionEnd[key];
+                }
+            }
+        }
+    }
+    return values;
+}
+
+/**
+ * Generate a list of every possible transform key.
+ */
+const transformPropOrder = [
+    "transformPerspective",
+    "x",
+    "y",
+    "z",
+    "translateX",
+    "translateY",
+    "translateZ",
+    "scale",
+    "scaleX",
+    "scaleY",
+    "rotate",
+    "rotateX",
+    "rotateY",
+    "rotateZ",
+    "skew",
+    "skewX",
+    "skewY",
+];
+/**
+ * A quick lookup for transform props.
+ */
+const transformProps = new Set(transformPropOrder);
+
+const checkStringStartsWith = (token) => (key) => typeof key === "string" && key.startsWith(token);
+const isCSSVariableName = 
+/*@__PURE__*/ checkStringStartsWith("--");
+const startsAsVariableToken = 
+/*@__PURE__*/ checkStringStartsWith("var(--");
+const isCSSVariableToken = (value) => {
+    const startsWithToken = startsAsVariableToken(value);
+    if (!startsWithToken)
+        return false;
+    // Ensure any comments are stripped from the value as this can harm performance of the regex.
+    return singleCssVariableRegex.test(value.split("/*")[0].trim());
+};
+const singleCssVariableRegex = /var\(--(?:[\w-]+\s*|[\w-]+\s*,(?:\s*[^)(\s]|\s*\((?:[^)(]|\([^)(]*\))*\))+\s*)\)$/iu;
+
+/**
+ * Provided a value and a ValueType, returns the value as that value type.
+ */
+const getValueAsType = (value, type) => {
+    return type && typeof value === "number"
+        ? type.transform(value)
+        : value;
+};
+
+const clamp = (min, max, v) => {
+    if (v > max)
+        return max;
+    if (v < min)
+        return min;
+    return v;
+};
+
+const number = {
+    test: (v) => typeof v === "number",
+    parse: parseFloat,
+    transform: (v) => v,
+};
+const alpha = {
+    ...number,
+    transform: (v) => clamp(0, 1, v),
+};
+const scale = {
+    ...number,
+    default: 1,
+};
+
+const createUnitType = (unit) => ({
+    test: (v) => typeof v === "string" && v.endsWith(unit) && v.split(" ").length === 1,
+    parse: parseFloat,
+    transform: (v) => `${v}${unit}`,
+});
+const degrees = /*@__PURE__*/ createUnitType("deg");
+const percent = /*@__PURE__*/ createUnitType("%");
+const px = /*@__PURE__*/ createUnitType("px");
+const vh = /*@__PURE__*/ createUnitType("vh");
+const vw = /*@__PURE__*/ createUnitType("vw");
+const progressPercentage = {
+    ...percent,
+    parse: (v) => percent.parse(v) / 100,
+    transform: (v) => percent.transform(v * 100),
+};
+
+const browserNumberValueTypes = {
+    // Border props
+    borderWidth: px,
+    borderTopWidth: px,
+    borderRightWidth: px,
+    borderBottomWidth: px,
+    borderLeftWidth: px,
+    borderRadius: px,
+    radius: px,
+    borderTopLeftRadius: px,
+    borderTopRightRadius: px,
+    borderBottomRightRadius: px,
+    borderBottomLeftRadius: px,
+    // Positioning props
+    width: px,
+    maxWidth: px,
+    height: px,
+    maxHeight: px,
+    top: px,
+    right: px,
+    bottom: px,
+    left: px,
+    // Spacing props
+    padding: px,
+    paddingTop: px,
+    paddingRight: px,
+    paddingBottom: px,
+    paddingLeft: px,
+    margin: px,
+    marginTop: px,
+    marginRight: px,
+    marginBottom: px,
+    marginLeft: px,
+    // Misc
+    backgroundPositionX: px,
+    backgroundPositionY: px,
+};
+
+const transformValueTypes = {
+    rotate: degrees,
+    rotateX: degrees,
+    rotateY: degrees,
+    rotateZ: degrees,
+    scale,
+    scaleX: scale,
+    scaleY: scale,
+    scaleZ: scale,
+    skew: degrees,
+    skewX: degrees,
+    skewY: degrees,
+    distance: px,
+    translateX: px,
+    translateY: px,
+    translateZ: px,
+    x: px,
+    y: px,
+    z: px,
+    perspective: px,
+    transformPerspective: px,
+    opacity: alpha,
+    originX: progressPercentage,
+    originY: progressPercentage,
+    originZ: px,
+};
+
+const int = {
+    ...number,
+    transform: Math.round,
+};
+
+const numberValueTypes = {
+    ...browserNumberValueTypes,
+    ...transformValueTypes,
+    zIndex: int,
+    size: px,
+    // SVG
+    fillOpacity: alpha,
+    strokeOpacity: alpha,
+    numOctaves: int,
+};
+
+const translateAlias = {
+    x: "translateX",
+    y: "translateY",
+    z: "translateZ",
+    transformPerspective: "perspective",
+};
+const numTransforms = transformPropOrder.length;
+/**
+ * Build a CSS transform style from individual x/y/scale etc properties.
+ *
+ * This outputs with a default order of transforms/scales/rotations, this can be customised by
+ * providing a transformTemplate function.
+ */
+function buildTransform(latestValues, transform, transformTemplate) {
+    // The transform string we're going to build into.
+    let transformString = "";
+    let transformIsDefault = true;
+    /**
+     * Loop over all possible transforms in order, adding the ones that
+     * are present to the transform string.
+     */
+    for (let i = 0; i < numTransforms; i++) {
+        const key = transformPropOrder[i];
+        const value = latestValues[key];
+        if (value === undefined)
+            continue;
+        let valueIsDefault = true;
+        if (typeof value === "number") {
+            valueIsDefault = value === (key.startsWith("scale") ? 1 : 0);
+        }
+        else {
+            valueIsDefault = parseFloat(value) === 0;
+        }
+        if (!valueIsDefault || transformTemplate) {
+            const valueAsType = getValueAsType(value, numberValueTypes[key]);
+            if (!valueIsDefault) {
+                transformIsDefault = false;
+                const transformName = translateAlias[key] || key;
+                transformString += `${transformName}(${valueAsType}) `;
+            }
+            if (transformTemplate) {
+                transform[key] = valueAsType;
+            }
+        }
+    }
+    transformString = transformString.trim();
+    // If we have a custom `transform` template, pass our transform values and
+    // generated transformString to that before returning
+    if (transformTemplate) {
+        transformString = transformTemplate(transform, transformIsDefault ? "" : transformString);
+    }
+    else if (transformIsDefault) {
+        transformString = "none";
+    }
+    return transformString;
+}
+
+function buildHTMLStyles(state, latestValues, transformTemplate) {
+    const { style, vars, transformOrigin } = state;
+    // Track whether we encounter any transform or transformOrigin values.
+    let hasTransform = false;
+    let hasTransformOrigin = false;
+    /**
+     * Loop over all our latest animated values and decide whether to handle them
+     * as a style or CSS variable.
+     *
+     * Transforms and transform origins are kept separately for further processing.
+     */
+    for (const key in latestValues) {
+        const value = latestValues[key];
+        if (transformProps.has(key)) {
+            // If this is a transform, flag to enable further transform processing
+            hasTransform = true;
+            continue;
+        }
+        else if (isCSSVariableName(key)) {
+            vars[key] = value;
+            continue;
+        }
+        else {
+            // Convert the value to its default value type, ie 0 -> "0px"
+            const valueAsType = getValueAsType(value, numberValueTypes[key]);
+            if (key.startsWith("origin")) {
+                // If this is a transform origin, flag and enable further transform-origin processing
+                hasTransformOrigin = true;
+                transformOrigin[key] =
+                    valueAsType;
+            }
+            else {
+                style[key] = valueAsType;
+            }
+        }
+    }
+    if (!latestValues.transform) {
+        if (hasTransform || transformTemplate) {
+            style.transform = buildTransform(latestValues, state.transform, transformTemplate);
+        }
+        else if (style.transform) {
+            /**
+             * If we have previously created a transform but currently don't have any,
+             * reset transform style to none.
+             */
+            style.transform = "none";
+        }
+    }
+    /**
+     * Build a transformOrigin style. Uses the same defaults as the browser for
+     * undefined origins.
+     */
+    if (hasTransformOrigin) {
+        const { originX = "50%", originY = "50%", originZ = 0, } = transformOrigin;
+        style.transformOrigin = `${originX} ${originY} ${originZ}`;
+    }
+}
+
+const dashKeys = {
+    offset: "stroke-dashoffset",
+    array: "stroke-dasharray",
+};
+const camelKeys = {
+    offset: "strokeDashoffset",
+    array: "strokeDasharray",
+};
+/**
+ * Build SVG path properties. Uses the path's measured length to convert
+ * our custom pathLength, pathSpacing and pathOffset into stroke-dashoffset
+ * and stroke-dasharray attributes.
+ *
+ * This function is mutative to reduce per-frame GC.
+ */
+function buildSVGPath(attrs, length, spacing = 1, offset = 0, useDashCase = true) {
+    // Normalise path length by setting SVG attribute pathLength to 1
+    attrs.pathLength = 1;
+    // We use dash case when setting attributes directly to the DOM node and camel case
+    // when defining props on a React component.
+    const keys = useDashCase ? dashKeys : camelKeys;
+    // Build the dash offset
+    attrs[keys.offset] = px.transform(-offset);
+    // Build the dash array
+    const pathLength = px.transform(length);
+    const pathSpacing = px.transform(spacing);
+    attrs[keys.array] = `${pathLength} ${pathSpacing}`;
+}
+
+function calcOrigin$1(origin, offset, size) {
+    return typeof origin === "string"
+        ? origin
+        : px.transform(offset + size * origin);
+}
+/**
+ * The SVG transform origin defaults are different to CSS and is less intuitive,
+ * so we use the measured dimensions of the SVG to reconcile these.
+ */
+function calcSVGTransformOrigin(dimensions, originX, originY) {
+    const pxOriginX = calcOrigin$1(originX, dimensions.x, dimensions.width);
+    const pxOriginY = calcOrigin$1(originY, dimensions.y, dimensions.height);
+    return `${pxOriginX} ${pxOriginY}`;
+}
+
+/**
+ * Build SVG visual attrbutes, like cx and style.transform
+ */
+function buildSVGAttrs(state, { attrX, attrY, attrScale, originX, originY, pathLength, pathSpacing = 1, pathOffset = 0, 
+// This is object creation, which we try to avoid per-frame.
+...latest }, isSVGTag, transformTemplate) {
+    buildHTMLStyles(state, latest, transformTemplate);
+    /**
+     * For svg tags we just want to make sure viewBox is animatable and treat all the styles
+     * as normal HTML tags.
+     */
+    if (isSVGTag) {
+        if (state.style.viewBox) {
+            state.attrs.viewBox = state.style.viewBox;
+        }
+        return;
+    }
+    state.attrs = state.style;
+    state.style = {};
+    const { attrs, style, dimensions } = state;
+    /**
+     * However, we apply transforms as CSS transforms. So if we detect a transform we take it from attrs
+     * and copy it into style.
+     */
+    if (attrs.transform) {
+        if (dimensions)
+            style.transform = attrs.transform;
+        delete attrs.transform;
+    }
+    // Parse transformOrigin
+    if (dimensions &&
+        (originX !== undefined || originY !== undefined || style.transform)) {
+        style.transformOrigin = calcSVGTransformOrigin(dimensions, originX !== undefined ? originX : 0.5, originY !== undefined ? originY : 0.5);
+    }
+    // Render attrX/attrY/attrScale as attributes
+    if (attrX !== undefined)
+        attrs.x = attrX;
+    if (attrY !== undefined)
+        attrs.y = attrY;
+    if (attrScale !== undefined)
+        attrs.scale = attrScale;
+    // Build SVG path if one has been defined
+    if (pathLength !== undefined) {
+        buildSVGPath(attrs, pathLength, pathSpacing, pathOffset, false);
+    }
+}
+
+const createHtmlRenderState = () => ({
+    style: {},
+    transform: {},
+    transformOrigin: {},
+    vars: {},
+});
+
+const createSvgRenderState = () => ({
+    ...createHtmlRenderState(),
+    attrs: {},
+});
+
+const isSVGTag = (tag) => typeof tag === "string" && tag.toLowerCase() === "svg";
+
+function renderHTML(element, { style, vars }, styleProp, projection) {
+    Object.assign(element.style, style, projection && projection.getProjectionStyles(styleProp));
+    // Loop over any CSS variables and assign those.
+    for (const key in vars) {
+        element.style.setProperty(key, vars[key]);
+    }
+}
+
+/**
+ * A set of attribute names that are always read/written as camel case.
+ */
+const camelCaseAttributes = new Set([
+    "baseFrequency",
+    "diffuseConstant",
+    "kernelMatrix",
+    "kernelUnitLength",
+    "keySplines",
+    "keyTimes",
+    "limitingConeAngle",
+    "markerHeight",
+    "markerWidth",
+    "numOctaves",
+    "targetX",
+    "targetY",
+    "surfaceScale",
+    "specularConstant",
+    "specularExponent",
+    "stdDeviation",
+    "tableValues",
+    "viewBox",
+    "gradientTransform",
+    "pathLength",
+    "startOffset",
+    "textLength",
+    "lengthAdjust",
+]);
+
+function renderSVG(element, renderState, _styleProp, projection) {
+    renderHTML(element, renderState, undefined, projection);
+    for (const key in renderState.attrs) {
+        element.setAttribute(!camelCaseAttributes.has(key) ? camelToDash(key) : key, renderState.attrs[key]);
+    }
+}
+
+const scaleCorrectors = {};
+function addScaleCorrector(correctors) {
+    Object.assign(scaleCorrectors, correctors);
+}
+
+function isForcedMotionValue(key, { layout, layoutId }) {
+    return (transformProps.has(key) ||
+        key.startsWith("origin") ||
+        ((layout || layoutId !== undefined) &&
+            (!!scaleCorrectors[key] || key === "opacity")));
+}
+
+function scrapeMotionValuesFromProps$1(props, prevProps, visualElement) {
+    var _a;
+    const { style } = props;
+    const newValues = {};
+    for (const key in style) {
+        if (isMotionValue(style[key]) ||
+            (prevProps.style &&
+                isMotionValue(prevProps.style[key])) ||
+            isForcedMotionValue(key, props) ||
+            ((_a = visualElement === null || visualElement === void 0 ? void 0 : visualElement.getValue(key)) === null || _a === void 0 ? void 0 : _a.liveStyle) !== undefined) {
+            newValues[key] = style[key];
+        }
+    }
+    return newValues;
+}
+
+function scrapeMotionValuesFromProps(props, prevProps, visualElement) {
+    const newValues = scrapeMotionValuesFromProps$1(props, prevProps, visualElement);
+    for (const key in props) {
+        if (isMotionValue(props[key]) ||
+            isMotionValue(prevProps[key])) {
+            const targetKey = transformPropOrder.indexOf(key) !== -1
+                ? "attr" + key.charAt(0).toUpperCase() + key.substring(1)
+                : key;
+            newValues[targetKey] = props[key];
+        }
+    }
+    return newValues;
+}
+
+function updateSVGDimensions(instance, renderState) {
+    try {
+        renderState.dimensions =
+            typeof instance.getBBox === "function"
+                ? instance.getBBox()
+                : instance.getBoundingClientRect();
+    }
+    catch (e) {
+        // Most likely trying to measure an unrendered element under Firefox
+        renderState.dimensions = {
+            x: 0,
+            y: 0,
+            width: 0,
+            height: 0,
+        };
+    }
+}
+const layoutProps = ["x", "y", "width", "height", "cx", "cy", "r"];
+const svgMotionConfig = {
+    useVisualState: makeUseVisualState({
+        scrapeMotionValuesFromProps: scrapeMotionValuesFromProps,
+        createRenderState: createSvgRenderState,
+        onUpdate: ({ props, prevProps, current, renderState, latestValues, }) => {
+            if (!current)
+                return;
+            let hasTransform = !!props.drag;
+            if (!hasTransform) {
+                for (const key in latestValues) {
+                    if (transformProps.has(key)) {
+                        hasTransform = true;
+                        break;
+                    }
+                }
+            }
+            if (!hasTransform)
+                return;
+            let needsMeasure = !prevProps;
+            if (prevProps) {
+                /**
+                 * Check the layout props for changes, if any are found we need to
+                 * measure the element again.
+                 */
+                for (let i = 0; i < layoutProps.length; i++) {
+                    const key = layoutProps[i];
+                    if (props[key] !==
+                        prevProps[key]) {
+                        needsMeasure = true;
+                    }
+                }
+            }
+            if (!needsMeasure)
+                return;
+            frame.read(() => {
+                updateSVGDimensions(current, renderState);
+                frame.render(() => {
+                    buildSVGAttrs(renderState, latestValues, isSVGTag(current.tagName), props.transformTemplate);
+                    renderSVG(current, renderState);
+                });
+            });
+        },
+    }),
+};
+
+const htmlMotionConfig = {
+    useVisualState: makeUseVisualState({
+        scrapeMotionValuesFromProps: scrapeMotionValuesFromProps$1,
+        createRenderState: createHtmlRenderState,
+    }),
+};
+
+function copyRawValuesOnly(target, source, props) {
+    for (const key in source) {
+        if (!isMotionValue(source[key]) && !isForcedMotionValue(key, props)) {
+            target[key] = source[key];
+        }
+    }
+}
+function useInitialMotionValues({ transformTemplate }, visualState) {
+    return useMemo(() => {
+        const state = createHtmlRenderState();
+        buildHTMLStyles(state, visualState, transformTemplate);
+        return Object.assign({}, state.vars, state.style);
+    }, [visualState]);
+}
+function useStyle(props, visualState) {
+    const styleProp = props.style || {};
+    const style = {};
+    /**
+     * Copy non-Motion Values straight into style
+     */
+    copyRawValuesOnly(style, styleProp, props);
+    Object.assign(style, useInitialMotionValues(props, visualState));
+    return style;
+}
+function useHTMLProps(props, visualState) {
+    // The `any` isn't ideal but it is the type of createElement props argument
+    const htmlProps = {};
+    const style = useStyle(props, visualState);
+    if (props.drag && props.dragListener !== false) {
+        // Disable the ghost element when a user drags
+        htmlProps.draggable = false;
+        // Disable text selection
+        style.userSelect =
+            style.WebkitUserSelect =
+                style.WebkitTouchCallout =
+                    "none";
+        // Disable scrolling on the draggable direction
+        style.touchAction =
+            props.drag === true
+                ? "none"
+                : `pan-${props.drag === "x" ? "y" : "x"}`;
+    }
+    if (props.tabIndex === undefined &&
+        (props.onTap || props.onTapStart || props.whileTap)) {
+        htmlProps.tabIndex = 0;
+    }
+    htmlProps.style = style;
+    return htmlProps;
+}
+
+function useSVGProps(props, visualState, _isStatic, Component) {
+    const visualProps = useMemo(() => {
+        const state = createSvgRenderState();
+        buildSVGAttrs(state, visualState, isSVGTag(Component), props.transformTemplate);
+        return {
+            ...state.attrs,
+            style: { ...state.style },
+        };
+    }, [visualState]);
+    if (props.style) {
+        const rawStyles = {};
+        copyRawValuesOnly(rawStyles, props.style, props);
+        visualProps.style = { ...rawStyles, ...visualProps.style };
+    }
+    return visualProps;
+}
+
+function createUseRender(forwardMotionProps = false) {
+    const useRender = (Component, props, ref, { latestValues }, isStatic) => {
+        const useVisualProps = isSVGComponent(Component)
+            ? useSVGProps
+            : useHTMLProps;
+        const visualProps = useVisualProps(props, latestValues, isStatic, Component);
+        const filteredProps = filterProps(props, typeof Component === "string", forwardMotionProps);
+        const elementProps = Component !== Fragment$1
+            ? { ...filteredProps, ...visualProps, ref }
+            : {};
+        /**
+         * If component has been handed a motion value as its child,
+         * memoise its initial value and render that. Subsequent updates
+         * will be handled by the onChange handler
+         */
+        const { children } = props;
+        const renderedChildren = useMemo(() => (isMotionValue(children) ? children.get() : children), [children]);
+        return createElement(Component, {
+            ...elementProps,
+            children: renderedChildren,
+        });
+    };
+    return useRender;
+}
+
+function createMotionComponentFactory(preloadedFeatures, createVisualElement) {
+    return function createMotionComponent(Component, { forwardMotionProps } = { forwardMotionProps: false }) {
+        const baseConfig = isSVGComponent(Component)
+            ? svgMotionConfig
+            : htmlMotionConfig;
+        const config = {
+            ...baseConfig,
+            preloadedFeatures,
+            useRender: createUseRender(forwardMotionProps),
+            createVisualElement,
+            Component,
+        };
+        return createRendererMotionComponent(config);
+    };
+}
+
+function shallowCompare(next, prev) {
+    if (!Array.isArray(prev))
+        return false;
+    const prevLength = prev.length;
+    if (prevLength !== next.length)
+        return false;
+    for (let i = 0; i < prevLength; i++) {
+        if (prev[i] !== next[i])
+            return false;
+    }
+    return true;
+}
+
+function resolveVariant(visualElement, definition, custom) {
+    const props = visualElement.getProps();
+    return resolveVariantFromProps(props, definition, custom !== undefined ? custom : props.custom, visualElement);
+}
+
+const supportsScrollTimeline = memo(() => window.ScrollTimeline !== undefined);
+
+class BaseGroupPlaybackControls {
+    constructor(animations) {
+        // Bound to accomodate common `return animation.stop` pattern
+        this.stop = () => this.runAll("stop");
+        this.animations = animations.filter(Boolean);
+    }
+    get finished() {
+        // Support for new finished Promise and legacy thennable API
+        return Promise.all(this.animations.map((animation) => "finished" in animation ? animation.finished : animation));
+    }
+    /**
+     * TODO: Filter out cancelled or stopped animations before returning
+     */
+    getAll(propName) {
+        return this.animations[0][propName];
+    }
+    setAll(propName, newValue) {
+        for (let i = 0; i < this.animations.length; i++) {
+            this.animations[i][propName] = newValue;
+        }
+    }
+    attachTimeline(timeline, fallback) {
+        const subscriptions = this.animations.map((animation) => {
+            if (supportsScrollTimeline() && animation.attachTimeline) {
+                return animation.attachTimeline(timeline);
+            }
+            else if (typeof fallback === "function") {
+                return fallback(animation);
+            }
+        });
+        return () => {
+            subscriptions.forEach((cancel, i) => {
+                cancel && cancel();
+                this.animations[i].stop();
+            });
+        };
+    }
+    get time() {
+        return this.getAll("time");
+    }
+    set time(time) {
+        this.setAll("time", time);
+    }
+    get speed() {
+        return this.getAll("speed");
+    }
+    set speed(speed) {
+        this.setAll("speed", speed);
+    }
+    get startTime() {
+        return this.getAll("startTime");
+    }
+    get duration() {
+        let max = 0;
+        for (let i = 0; i < this.animations.length; i++) {
+            max = Math.max(max, this.animations[i].duration);
+        }
+        return max;
+    }
+    runAll(methodName) {
+        this.animations.forEach((controls) => controls[methodName]());
+    }
+    flatten() {
+        this.runAll("flatten");
+    }
+    play() {
+        this.runAll("play");
+    }
+    pause() {
+        this.runAll("pause");
+    }
+    cancel() {
+        this.runAll("cancel");
+    }
+    complete() {
+        this.runAll("complete");
+    }
+}
+
+/**
+ * TODO: This is a temporary class to support the legacy
+ * thennable API
+ */
+class GroupPlaybackControls extends BaseGroupPlaybackControls {
+    then(onResolve, onReject) {
+        return Promise.all(this.animations).then(onResolve).catch(onReject);
+    }
+}
+
+function getValueTransition(transition, key) {
+    return transition
+        ? transition[key] ||
+            transition["default"] ||
+            transition
+        : undefined;
+}
+
+/**
+ * Implement a practical max duration for keyframe generation
+ * to prevent infinite loops
+ */
+const maxGeneratorDuration = 20000;
+function calcGeneratorDuration(generator) {
+    let duration = 0;
+    const timeStep = 50;
+    let state = generator.next(duration);
+    while (!state.done && duration < maxGeneratorDuration) {
+        duration += timeStep;
+        state = generator.next(duration);
+    }
+    return duration >= maxGeneratorDuration ? Infinity : duration;
+}
+
+function isGenerator(type) {
+    return typeof type === "function";
+}
+
+function attachTimeline(animation, timeline) {
+    animation.timeline = timeline;
+    animation.onfinish = null;
+}
+
+const isBezierDefinition = (easing) => Array.isArray(easing) && typeof easing[0] === "number";
+
+/**
+ * Add the ability for test suites to manually set support flags
+ * to better test more environments.
+ */
+const supportsFlags = {
+    linearEasing: undefined,
+};
+
+function memoSupports(callback, supportsFlag) {
+    const memoized = memo(callback);
+    return () => { var _a; return (_a = supportsFlags[supportsFlag]) !== null && _a !== void 0 ? _a : memoized(); };
+}
+
+const supportsLinearEasing = /*@__PURE__*/ memoSupports(() => {
+    try {
+        document
+            .createElement("div")
+            .animate({ opacity: 0 }, { easing: "linear(0, 1)" });
+    }
+    catch (e) {
+        return false;
+    }
+    return true;
+}, "linearEasing");
+
+const generateLinearEasing = (easing, duration, // as milliseconds
+resolution = 10 // as milliseconds
+) => {
+    let points = "";
+    const numPoints = Math.max(Math.round(duration / resolution), 2);
+    for (let i = 0; i < numPoints; i++) {
+        points += easing(progress(0, numPoints - 1, i)) + ", ";
+    }
+    return `linear(${points.substring(0, points.length - 2)})`;
+};
+
+function isWaapiSupportedEasing(easing) {
+    return Boolean((typeof easing === "function" && supportsLinearEasing()) ||
+        !easing ||
+        (typeof easing === "string" &&
+            (easing in supportedWaapiEasing || supportsLinearEasing())) ||
+        isBezierDefinition(easing) ||
+        (Array.isArray(easing) && easing.every(isWaapiSupportedEasing)));
+}
+const cubicBezierAsString = ([a, b, c, d]) => `cubic-bezier(${a}, ${b}, ${c}, ${d})`;
+const supportedWaapiEasing = {
+    linear: "linear",
+    ease: "ease",
+    easeIn: "ease-in",
+    easeOut: "ease-out",
+    easeInOut: "ease-in-out",
+    circIn: /*@__PURE__*/ cubicBezierAsString([0, 0.65, 0.55, 1]),
+    circOut: /*@__PURE__*/ cubicBezierAsString([0.55, 0, 1, 0.45]),
+    backIn: /*@__PURE__*/ cubicBezierAsString([0.31, 0.01, 0.66, -0.59]),
+    backOut: /*@__PURE__*/ cubicBezierAsString([0.33, 1.53, 0.69, 0.99]),
+};
+function mapEasingToNativeEasing(easing, duration) {
+    if (!easing) {
+        return undefined;
+    }
+    else if (typeof easing === "function" && supportsLinearEasing()) {
+        return generateLinearEasing(easing, duration);
+    }
+    else if (isBezierDefinition(easing)) {
+        return cubicBezierAsString(easing);
+    }
+    else if (Array.isArray(easing)) {
+        return easing.map((segmentEasing) => mapEasingToNativeEasing(segmentEasing, duration) ||
+            supportedWaapiEasing.easeOut);
+    }
+    else {
+        return supportedWaapiEasing[easing];
+    }
+}
+
+const isDragging = {
+    x: false,
+    y: false,
+};
+function isDragActive() {
+    return isDragging.x || isDragging.y;
+}
+
+function resolveElements(elementOrSelector, scope, selectorCache) {
+    var _a;
+    if (elementOrSelector instanceof Element) {
+        return [elementOrSelector];
+    }
+    else if (typeof elementOrSelector === "string") {
+        let root = document;
+        const elements = (_a = void 0 ) !== null && _a !== void 0 ? _a : root.querySelectorAll(elementOrSelector);
+        return elements ? Array.from(elements) : [];
+    }
+    return Array.from(elementOrSelector);
+}
+
+function setupGesture(elementOrSelector, options) {
+    const elements = resolveElements(elementOrSelector);
+    const gestureAbortController = new AbortController();
+    const eventOptions = {
+        passive: true,
+        ...options,
+        signal: gestureAbortController.signal,
+    };
+    const cancel = () => gestureAbortController.abort();
+    return [elements, eventOptions, cancel];
+}
+
+/**
+ * Filter out events that are not pointer events, or are triggering
+ * while a Motion gesture is active.
+ */
+function filterEvents$1(callback) {
+    return (event) => {
+        if (event.pointerType === "touch" || isDragActive())
+            return;
+        callback(event);
+    };
+}
+/**
+ * Create a hover gesture. hover() is different to .addEventListener("pointerenter")
+ * in that it has an easier syntax, filters out polyfilled touch events, interoperates
+ * with drag gestures, and automatically removes the "pointerennd" event listener when the hover ends.
+ *
+ * @public
+ */
+function hover(elementOrSelector, onHoverStart, options = {}) {
+    const [elements, eventOptions, cancel] = setupGesture(elementOrSelector, options);
+    const onPointerEnter = filterEvents$1((enterEvent) => {
+        const { target } = enterEvent;
+        const onHoverEnd = onHoverStart(enterEvent);
+        if (typeof onHoverEnd !== "function" || !target)
+            return;
+        const onPointerLeave = filterEvents$1((leaveEvent) => {
+            onHoverEnd(leaveEvent);
+            target.removeEventListener("pointerleave", onPointerLeave);
+        });
+        target.addEventListener("pointerleave", onPointerLeave, eventOptions);
+    });
+    elements.forEach((element) => {
+        element.addEventListener("pointerenter", onPointerEnter, eventOptions);
+    });
+    return cancel;
+}
+
+/**
+ * Recursively traverse up the tree to check whether the provided child node
+ * is the parent or a descendant of it.
+ *
+ * @param parent - Element to find
+ * @param child - Element to test against parent
+ */
+const isNodeOrChild = (parent, child) => {
+    if (!child) {
+        return false;
+    }
+    else if (parent === child) {
+        return true;
+    }
+    else {
+        return isNodeOrChild(parent, child.parentElement);
+    }
+};
+
+const isPrimaryPointer = (event) => {
+    if (event.pointerType === "mouse") {
+        return typeof event.button !== "number" || event.button <= 0;
+    }
+    else {
+        /**
+         * isPrimary is true for all mice buttons, whereas every touch point
+         * is regarded as its own input. So subsequent concurrent touch points
+         * will be false.
+         *
+         * Specifically match against false here as incomplete versions of
+         * PointerEvents in very old browser might have it set as undefined.
+         */
+        return event.isPrimary !== false;
+    }
+};
+
+const focusableElements = new Set([
+    "BUTTON",
+    "INPUT",
+    "SELECT",
+    "TEXTAREA",
+    "A",
+]);
+function isElementKeyboardAccessible(element) {
+    return (focusableElements.has(element.tagName) ||
+        element.tabIndex !== -1);
+}
+
+const isPressing = new WeakSet();
+
+/**
+ * Filter out events that are not "Enter" keys.
+ */
+function filterEvents(callback) {
+    return (event) => {
+        if (event.key !== "Enter")
+            return;
+        callback(event);
+    };
+}
+function firePointerEvent(target, type) {
+    target.dispatchEvent(new PointerEvent("pointer" + type, { isPrimary: true, bubbles: true }));
+}
+const enableKeyboardPress = (focusEvent, eventOptions) => {
+    const element = focusEvent.currentTarget;
+    if (!element)
+        return;
+    const handleKeydown = filterEvents(() => {
+        if (isPressing.has(element))
+            return;
+        firePointerEvent(element, "down");
+        const handleKeyup = filterEvents(() => {
+            firePointerEvent(element, "up");
+        });
+        const handleBlur = () => firePointerEvent(element, "cancel");
+        element.addEventListener("keyup", handleKeyup, eventOptions);
+        element.addEventListener("blur", handleBlur, eventOptions);
+    });
+    element.addEventListener("keydown", handleKeydown, eventOptions);
+    /**
+     * Add an event listener that fires on blur to remove the keydown events.
+     */
+    element.addEventListener("blur", () => element.removeEventListener("keydown", handleKeydown), eventOptions);
+};
+
+/**
+ * Filter out events that are not primary pointer events, or are triggering
+ * while a Motion gesture is active.
+ */
+function isValidPressEvent(event) {
+    return isPrimaryPointer(event) && !isDragActive();
+}
+/**
+ * Create a press gesture.
+ *
+ * Press is different to `"pointerdown"`, `"pointerup"` in that it
+ * automatically filters out secondary pointer events like right
+ * click and multitouch.
+ *
+ * It also adds accessibility support for keyboards, where
+ * an element with a press gesture will receive focus and
+ *  trigger on Enter `"keydown"` and `"keyup"` events.
+ *
+ * This is different to a browser's `"click"` event, which does
+ * respond to keyboards but only for the `"click"` itself, rather
+ * than the press start and end/cancel. The element also needs
+ * to be focusable for this to work, whereas a press gesture will
+ * make an element focusable by default.
+ *
+ * @public
+ */
+function press(elementOrSelector, onPressStart, options = {}) {
+    const [elements, eventOptions, cancelEvents] = setupGesture(elementOrSelector, options);
+    const startPress = (startEvent) => {
+        const element = startEvent.currentTarget;
+        if (!isValidPressEvent(startEvent) || isPressing.has(element))
+            return;
+        isPressing.add(element);
+        const onPressEnd = onPressStart(startEvent);
+        const onPointerEnd = (endEvent, success) => {
+            window.removeEventListener("pointerup", onPointerUp);
+            window.removeEventListener("pointercancel", onPointerCancel);
+            if (!isValidPressEvent(endEvent) || !isPressing.has(element)) {
+                return;
+            }
+            isPressing.delete(element);
+            if (typeof onPressEnd === "function") {
+                onPressEnd(endEvent, { success });
+            }
+        };
+        const onPointerUp = (upEvent) => {
+            onPointerEnd(upEvent, options.useGlobalTarget ||
+                isNodeOrChild(element, upEvent.target));
+        };
+        const onPointerCancel = (cancelEvent) => {
+            onPointerEnd(cancelEvent, false);
+        };
+        window.addEventListener("pointerup", onPointerUp, eventOptions);
+        window.addEventListener("pointercancel", onPointerCancel, eventOptions);
+    };
+    elements.forEach((element) => {
+        if (!isElementKeyboardAccessible(element) &&
+            element.getAttribute("tabindex") === null) {
+            element.tabIndex = 0;
+        }
+        const target = options.useGlobalTarget ? window : element;
+        target.addEventListener("pointerdown", startPress, eventOptions);
+        element.addEventListener("focus", (event) => enableKeyboardPress(event, eventOptions), eventOptions);
+    });
+    return cancelEvents;
+}
+
+function setDragLock(axis) {
+    if (axis === "x" || axis === "y") {
+        if (isDragging[axis]) {
+            return null;
+        }
+        else {
+            isDragging[axis] = true;
+            return () => {
+                isDragging[axis] = false;
+            };
+        }
+    }
+    else {
+        if (isDragging.x || isDragging.y) {
+            return null;
+        }
+        else {
+            isDragging.x = isDragging.y = true;
+            return () => {
+                isDragging.x = isDragging.y = false;
+            };
+        }
+    }
+}
+
+const positionalKeys = new Set([
+    "width",
+    "height",
+    "top",
+    "left",
+    "right",
+    "bottom",
+    ...transformPropOrder,
+]);
+
+let now;
+function clearTime() {
+    now = undefined;
+}
+/**
+ * An eventloop-synchronous alternative to performance.now().
+ *
+ * Ensures that time measurements remain consistent within a synchronous context.
+ * Usually calling performance.now() twice within the same synchronous context
+ * will return different values which isn't useful for animations when we're usually
+ * trying to sync animations to the same frame.
+ */
+const time = {
+    now: () => {
+        if (now === undefined) {
+            time.set(frameData.isProcessing || MotionGlobalConfig.useManualTiming
+                ? frameData.timestamp
+                : performance.now());
+        }
+        return now;
+    },
+    set: (newTime) => {
+        now = newTime;
+        queueMicrotask(clearTime);
+    },
+};
+
+function addUniqueItem(arr, item) {
+    if (arr.indexOf(item) === -1)
+        arr.push(item);
+}
+function removeItem(arr, item) {
+    const index = arr.indexOf(item);
+    if (index > -1)
+        arr.splice(index, 1);
+}
+
+class SubscriptionManager {
+    constructor() {
+        this.subscriptions = [];
+    }
+    add(handler) {
+        addUniqueItem(this.subscriptions, handler);
+        return () => removeItem(this.subscriptions, handler);
+    }
+    notify(a, b, c) {
+        const numSubscriptions = this.subscriptions.length;
+        if (!numSubscriptions)
+            return;
+        if (numSubscriptions === 1) {
+            /**
+             * If there's only a single handler we can just call it without invoking a loop.
+             */
+            this.subscriptions[0](a, b, c);
+        }
+        else {
+            for (let i = 0; i < numSubscriptions; i++) {
+                /**
+                 * Check whether the handler exists before firing as it's possible
+                 * the subscriptions were modified during this loop running.
+                 */
+                const handler = this.subscriptions[i];
+                handler && handler(a, b, c);
+            }
+        }
+    }
+    getSize() {
+        return this.subscriptions.length;
+    }
+    clear() {
+        this.subscriptions.length = 0;
+    }
+}
+
+/*
+  Convert velocity into velocity per second
+
+  @param [number]: Unit per frame
+  @param [number]: Frame duration in ms
+*/
+function velocityPerSecond(velocity, frameDuration) {
+    return frameDuration ? velocity * (1000 / frameDuration) : 0;
+}
+
+/**
+ * Maximum time between the value of two frames, beyond which we
+ * assume the velocity has since been 0.
+ */
+const MAX_VELOCITY_DELTA = 30;
+const isFloat = (value) => {
+    return !isNaN(parseFloat(value));
+};
+/**
+ * `MotionValue` is used to track the state and velocity of motion values.
+ *
+ * @public
+ */
+class MotionValue {
+    /**
+     * @param init - The initiating value
+     * @param config - Optional configuration options
+     *
+     * -  `transformer`: A function to transform incoming values with.
+     *
+     * @internal
+     */
+    constructor(init, options = {}) {
+        /**
+         * This will be replaced by the build step with the latest version number.
+         * When MotionValues are provided to motion components, warn if versions are mixed.
+         */
+        this.version = "11.18.2";
+        /**
+         * Tracks whether this value can output a velocity. Currently this is only true
+         * if the value is numerical, but we might be able to widen the scope here and support
+         * other value types.
+         *
+         * @internal
+         */
+        this.canTrackVelocity = null;
+        /**
+         * An object containing a SubscriptionManager for each active event.
+         */
+        this.events = {};
+        this.updateAndNotify = (v, render = true) => {
+            const currentTime = time.now();
+            /**
+             * If we're updating the value during another frame or eventloop
+             * than the previous frame, then the we set the previous frame value
+             * to current.
+             */
+            if (this.updatedAt !== currentTime) {
+                this.setPrevFrameValue();
+            }
+            this.prev = this.current;
+            this.setCurrent(v);
+            // Update update subscribers
+            if (this.current !== this.prev && this.events.change) {
+                this.events.change.notify(this.current);
+            }
+            // Update render subscribers
+            if (render && this.events.renderRequest) {
+                this.events.renderRequest.notify(this.current);
+            }
+        };
+        this.hasAnimated = false;
+        this.setCurrent(init);
+        this.owner = options.owner;
+    }
+    setCurrent(current) {
+        this.current = current;
+        this.updatedAt = time.now();
+        if (this.canTrackVelocity === null && current !== undefined) {
+            this.canTrackVelocity = isFloat(this.current);
+        }
+    }
+    setPrevFrameValue(prevFrameValue = this.current) {
+        this.prevFrameValue = prevFrameValue;
+        this.prevUpdatedAt = this.updatedAt;
+    }
+    /**
+     * Adds a function that will be notified when the `MotionValue` is updated.
+     *
+     * It returns a function that, when called, will cancel the subscription.
+     *
+     * When calling `onChange` inside a React component, it should be wrapped with the
+     * `useEffect` hook. As it returns an unsubscribe function, this should be returned
+     * from the `useEffect` function to ensure you don't add duplicate subscribers..
+     *
+     * ```jsx
+     * export const MyComponent = () => {
+     *   const x = useMotionValue(0)
+     *   const y = useMotionValue(0)
+     *   const opacity = useMotionValue(1)
+     *
+     *   useEffect(() => {
+     *     function updateOpacity() {
+     *       const maxXY = Math.max(x.get(), y.get())
+     *       const newOpacity = transform(maxXY, [0, 100], [1, 0])
+     *       opacity.set(newOpacity)
+     *     }
+     *
+     *     const unsubscribeX = x.on("change", updateOpacity)
+     *     const unsubscribeY = y.on("change", updateOpacity)
+     *
+     *     return () => {
+     *       unsubscribeX()
+     *       unsubscribeY()
+     *     }
+     *   }, [])
+     *
+     *   return <motion.div style={{ x }} />
+     * }
+     * ```
+     *
+     * @param subscriber - A function that receives the latest value.
+     * @returns A function that, when called, will cancel this subscription.
+     *
+     * @deprecated
+     */
+    onChange(subscription) {
+        if (process.env.NODE_ENV !== "production") {
+            warnOnce(false, `value.onChange(callback) is deprecated. Switch to value.on("change", callback).`);
+        }
+        return this.on("change", subscription);
+    }
+    on(eventName, callback) {
+        if (!this.events[eventName]) {
+            this.events[eventName] = new SubscriptionManager();
+        }
+        const unsubscribe = this.events[eventName].add(callback);
+        if (eventName === "change") {
+            return () => {
+                unsubscribe();
+                /**
+                 * If we have no more change listeners by the start
+                 * of the next frame, stop active animations.
+                 */
+                frame.read(() => {
+                    if (!this.events.change.getSize()) {
+                        this.stop();
+                    }
+                });
+            };
+        }
+        return unsubscribe;
+    }
+    clearListeners() {
+        for (const eventManagers in this.events) {
+            this.events[eventManagers].clear();
+        }
+    }
+    /**
+     * Attaches a passive effect to the `MotionValue`.
+     *
+     * @internal
+     */
+    attach(passiveEffect, stopPassiveEffect) {
+        this.passiveEffect = passiveEffect;
+        this.stopPassiveEffect = stopPassiveEffect;
+    }
+    /**
+     * Sets the state of the `MotionValue`.
+     *
+     * @remarks
+     *
+     * ```jsx
+     * const x = useMotionValue(0)
+     * x.set(10)
+     * ```
+     *
+     * @param latest - Latest value to set.
+     * @param render - Whether to notify render subscribers. Defaults to `true`
+     *
+     * @public
+     */
+    set(v, render = true) {
+        if (!render || !this.passiveEffect) {
+            this.updateAndNotify(v, render);
+        }
+        else {
+            this.passiveEffect(v, this.updateAndNotify);
+        }
+    }
+    setWithVelocity(prev, current, delta) {
+        this.set(current);
+        this.prev = undefined;
+        this.prevFrameValue = prev;
+        this.prevUpdatedAt = this.updatedAt - delta;
+    }
+    /**
+     * Set the state of the `MotionValue`, stopping any active animations,
+     * effects, and resets velocity to `0`.
+     */
+    jump(v, endAnimation = true) {
+        this.updateAndNotify(v);
+        this.prev = v;
+        this.prevUpdatedAt = this.prevFrameValue = undefined;
+        endAnimation && this.stop();
+        if (this.stopPassiveEffect)
+            this.stopPassiveEffect();
+    }
+    /**
+     * Returns the latest state of `MotionValue`
+     *
+     * @returns - The latest state of `MotionValue`
+     *
+     * @public
+     */
+    get() {
+        return this.current;
+    }
+    /**
+     * @public
+     */
+    getPrevious() {
+        return this.prev;
+    }
+    /**
+     * Returns the latest velocity of `MotionValue`
+     *
+     * @returns - The latest velocity of `MotionValue`. Returns `0` if the state is non-numerical.
+     *
+     * @public
+     */
+    getVelocity() {
+        const currentTime = time.now();
+        if (!this.canTrackVelocity ||
+            this.prevFrameValue === undefined ||
+            currentTime - this.updatedAt > MAX_VELOCITY_DELTA) {
+            return 0;
+        }
+        const delta = Math.min(this.updatedAt - this.prevUpdatedAt, MAX_VELOCITY_DELTA);
+        // Casts because of parseFloat's poor typing
+        return velocityPerSecond(parseFloat(this.current) -
+            parseFloat(this.prevFrameValue), delta);
+    }
+    /**
+     * Registers a new animation to control this `MotionValue`. Only one
+     * animation can drive a `MotionValue` at one time.
+     *
+     * ```jsx
+     * value.start()
+     * ```
+     *
+     * @param animation - A function that starts the provided animation
+     *
+     * @internal
+     */
+    start(startAnimation) {
+        this.stop();
+        return new Promise((resolve) => {
+            this.hasAnimated = true;
+            this.animation = startAnimation(resolve);
+            if (this.events.animationStart) {
+                this.events.animationStart.notify();
+            }
+        }).then(() => {
+            if (this.events.animationComplete) {
+                this.events.animationComplete.notify();
+            }
+            this.clearAnimation();
+        });
+    }
+    /**
+     * Stop the currently active animation.
+     *
+     * @public
+     */
+    stop() {
+        if (this.animation) {
+            this.animation.stop();
+            if (this.events.animationCancel) {
+                this.events.animationCancel.notify();
+            }
+        }
+        this.clearAnimation();
+    }
+    /**
+     * Returns `true` if this value is currently animating.
+     *
+     * @public
+     */
+    isAnimating() {
+        return !!this.animation;
+    }
+    clearAnimation() {
+        delete this.animation;
+    }
+    /**
+     * Destroy and clean up subscribers to this `MotionValue`.
+     *
+     * The `MotionValue` hooks like `useMotionValue` and `useTransform` automatically
+     * handle the lifecycle of the returned `MotionValue`, so this method is only necessary if you've manually
+     * created a `MotionValue` via the `motionValue` function.
+     *
+     * @public
+     */
+    destroy() {
+        this.clearListeners();
+        this.stop();
+        if (this.stopPassiveEffect) {
+            this.stopPassiveEffect();
+        }
+    }
+}
+function motionValue(init, options) {
+    return new MotionValue(init, options);
+}
+
+/**
+ * Set VisualElement's MotionValue, creating a new MotionValue for it if
+ * it doesn't exist.
+ */
+function setMotionValue(visualElement, key, value) {
+    if (visualElement.hasValue(key)) {
+        visualElement.getValue(key).set(value);
+    }
+    else {
+        visualElement.addValue(key, motionValue(value));
+    }
+}
+function setTarget(visualElement, definition) {
+    const resolved = resolveVariant(visualElement, definition);
+    let { transitionEnd = {}, transition = {}, ...target } = resolved || {};
+    target = { ...target, ...transitionEnd };
+    for (const key in target) {
+        const value = resolveFinalValueInKeyframes(target[key]);
+        setMotionValue(visualElement, key, value);
+    }
+}
+
+function isWillChangeMotionValue(value) {
+    return Boolean(isMotionValue(value) && value.add);
+}
+
+function addValueToWillChange(visualElement, key) {
+    const willChange = visualElement.getValue("willChange");
+    /**
+     * It could be that a user has set willChange to a regular MotionValue,
+     * in which case we can't add the value to it.
+     */
+    if (isWillChangeMotionValue(willChange)) {
+        return willChange.add(key);
+    }
+}
+
+function getOptimisedAppearId(visualElement) {
+    return visualElement.props[optimizedAppearDataAttribute];
+}
+
+/*
+  Bezier function generator
+  This has been modified from Gaëtan Renaudeau's BezierEasing
+  https://github.com/gre/bezier-easing/blob/master/src/index.js
+  https://github.com/gre/bezier-easing/blob/master/LICENSE
+  
+  I've removed the newtonRaphsonIterate algo because in benchmarking it
+  wasn't noticiably faster than binarySubdivision, indeed removing it
+  usually improved times, depending on the curve.
+  I also removed the lookup table, as for the added bundle size and loop we're
+  only cutting ~4 or so subdivision iterations. I bumped the max iterations up
+  to 12 to compensate and this still tended to be faster for no perceivable
+  loss in accuracy.
+  Usage
+    const easeOut = cubicBezier(.17,.67,.83,.67);
+    const x = easeOut(0.5); // returns 0.627...
+*/
+// Returns x(t) given t, x1, and x2, or y(t) given t, y1, and y2.
+const calcBezier = (t, a1, a2) => (((1.0 - 3.0 * a2 + 3.0 * a1) * t + (3.0 * a2 - 6.0 * a1)) * t + 3.0 * a1) *
+    t;
+const subdivisionPrecision = 0.0000001;
+const subdivisionMaxIterations = 12;
+function binarySubdivide(x, lowerBound, upperBound, mX1, mX2) {
+    let currentX;
+    let currentT;
+    let i = 0;
+    do {
+        currentT = lowerBound + (upperBound - lowerBound) / 2.0;
+        currentX = calcBezier(currentT, mX1, mX2) - x;
+        if (currentX > 0.0) {
+            upperBound = currentT;
+        }
+        else {
+            lowerBound = currentT;
+        }
+    } while (Math.abs(currentX) > subdivisionPrecision &&
+        ++i < subdivisionMaxIterations);
+    return currentT;
+}
+function cubicBezier(mX1, mY1, mX2, mY2) {
+    // If this is a linear gradient, return linear easing
+    if (mX1 === mY1 && mX2 === mY2)
+        return noop;
+    const getTForX = (aX) => binarySubdivide(aX, 0, 1, mX1, mX2);
+    // If animation is at start/end, return t without easing
+    return (t) => t === 0 || t === 1 ? t : calcBezier(getTForX(t), mY1, mY2);
+}
+
+// Accepts an easing function and returns a new one that outputs mirrored values for
+// the second half of the animation. Turns easeIn into easeInOut.
+const mirrorEasing = (easing) => (p) => p <= 0.5 ? easing(2 * p) / 2 : (2 - easing(2 * (1 - p))) / 2;
+
+// Accepts an easing function and returns a new one that outputs reversed values.
+// Turns easeIn into easeOut.
+const reverseEasing = (easing) => (p) => 1 - easing(1 - p);
+
+const backOut = /*@__PURE__*/ cubicBezier(0.33, 1.53, 0.69, 0.99);
+const backIn = /*@__PURE__*/ reverseEasing(backOut);
+const backInOut = /*@__PURE__*/ mirrorEasing(backIn);
+
+const anticipate = (p) => (p *= 2) < 1 ? 0.5 * backIn(p) : 0.5 * (2 - Math.pow(2, -10 * (p - 1)));
+
+const circIn = (p) => 1 - Math.sin(Math.acos(p));
+const circOut = reverseEasing(circIn);
+const circInOut = mirrorEasing(circIn);
+
+/**
+ * Check if the value is a zero value string like "0px" or "0%"
+ */
+const isZeroValueString = (v) => /^0[^.\s]+$/u.test(v);
+
+function isNone(value) {
+    if (typeof value === "number") {
+        return value === 0;
+    }
+    else if (value !== null) {
+        return value === "none" || value === "0" || isZeroValueString(value);
+    }
+    else {
+        return true;
+    }
+}
+
+// If this number is a decimal, make it just five decimal places
+// to avoid exponents
+const sanitize = (v) => Math.round(v * 100000) / 100000;
+
+const floatRegex = /-?(?:\d+(?:\.\d+)?|\.\d+)/gu;
+
+function isNullish(v) {
+    return v == null;
+}
+
+const singleColorRegex = /^(?:#[\da-f]{3,8}|(?:rgb|hsl)a?\((?:-?[\d.]+%?[,\s]+){2}-?[\d.]+%?\s*(?:[,/]\s*)?(?:\b\d+(?:\.\d+)?|\.\d+)?%?\))$/iu;
+
+/**
+ * Returns true if the provided string is a color, ie rgba(0,0,0,0) or #000,
+ * but false if a number or multiple colors
+ */
+const isColorString = (type, testProp) => (v) => {
+    return Boolean((typeof v === "string" &&
+        singleColorRegex.test(v) &&
+        v.startsWith(type)) ||
+        (testProp &&
+            !isNullish(v) &&
+            Object.prototype.hasOwnProperty.call(v, testProp)));
+};
+const splitColor = (aName, bName, cName) => (v) => {
+    if (typeof v !== "string")
+        return v;
+    const [a, b, c, alpha] = v.match(floatRegex);
+    return {
+        [aName]: parseFloat(a),
+        [bName]: parseFloat(b),
+        [cName]: parseFloat(c),
+        alpha: alpha !== undefined ? parseFloat(alpha) : 1,
+    };
+};
+
+const clampRgbUnit = (v) => clamp(0, 255, v);
+const rgbUnit = {
+    ...number,
+    transform: (v) => Math.round(clampRgbUnit(v)),
+};
+const rgba = {
+    test: /*@__PURE__*/ isColorString("rgb", "red"),
+    parse: /*@__PURE__*/ splitColor("red", "green", "blue"),
+    transform: ({ red, green, blue, alpha: alpha$1 = 1 }) => "rgba(" +
+        rgbUnit.transform(red) +
+        ", " +
+        rgbUnit.transform(green) +
+        ", " +
+        rgbUnit.transform(blue) +
+        ", " +
+        sanitize(alpha.transform(alpha$1)) +
+        ")",
+};
+
+function parseHex(v) {
+    let r = "";
+    let g = "";
+    let b = "";
+    let a = "";
+    // If we have 6 characters, ie #FF0000
+    if (v.length > 5) {
+        r = v.substring(1, 3);
+        g = v.substring(3, 5);
+        b = v.substring(5, 7);
+        a = v.substring(7, 9);
+        // Or we have 3 characters, ie #F00
+    }
+    else {
+        r = v.substring(1, 2);
+        g = v.substring(2, 3);
+        b = v.substring(3, 4);
+        a = v.substring(4, 5);
+        r += r;
+        g += g;
+        b += b;
+        a += a;
+    }
+    return {
+        red: parseInt(r, 16),
+        green: parseInt(g, 16),
+        blue: parseInt(b, 16),
+        alpha: a ? parseInt(a, 16) / 255 : 1,
+    };
+}
+const hex = {
+    test: /*@__PURE__*/ isColorString("#"),
+    parse: parseHex,
+    transform: rgba.transform,
+};
+
+const hsla = {
+    test: /*@__PURE__*/ isColorString("hsl", "hue"),
+    parse: /*@__PURE__*/ splitColor("hue", "saturation", "lightness"),
+    transform: ({ hue, saturation, lightness, alpha: alpha$1 = 1 }) => {
+        return ("hsla(" +
+            Math.round(hue) +
+            ", " +
+            percent.transform(sanitize(saturation)) +
+            ", " +
+            percent.transform(sanitize(lightness)) +
+            ", " +
+            sanitize(alpha.transform(alpha$1)) +
+            ")");
+    },
+};
+
+const color = {
+    test: (v) => rgba.test(v) || hex.test(v) || hsla.test(v),
+    parse: (v) => {
+        if (rgba.test(v)) {
+            return rgba.parse(v);
+        }
+        else if (hsla.test(v)) {
+            return hsla.parse(v);
+        }
+        else {
+            return hex.parse(v);
+        }
+    },
+    transform: (v) => {
+        return typeof v === "string"
+            ? v
+            : v.hasOwnProperty("red")
+                ? rgba.transform(v)
+                : hsla.transform(v);
+    },
+};
+
+const colorRegex = /(?:#[\da-f]{3,8}|(?:rgb|hsl)a?\((?:-?[\d.]+%?[,\s]+){2}-?[\d.]+%?\s*(?:[,/]\s*)?(?:\b\d+(?:\.\d+)?|\.\d+)?%?\))/giu;
+
+function test(v) {
+    var _a, _b;
+    return (isNaN(v) &&
+        typeof v === "string" &&
+        (((_a = v.match(floatRegex)) === null || _a === void 0 ? void 0 : _a.length) || 0) +
+            (((_b = v.match(colorRegex)) === null || _b === void 0 ? void 0 : _b.length) || 0) >
+            0);
+}
+const NUMBER_TOKEN = "number";
+const COLOR_TOKEN = "color";
+const VAR_TOKEN = "var";
+const VAR_FUNCTION_TOKEN = "var(";
+const SPLIT_TOKEN = "${}";
+// this regex consists of the `singleCssVariableRegex|rgbHSLValueRegex|digitRegex`
+const complexRegex = /var\s*\(\s*--(?:[\w-]+\s*|[\w-]+\s*,(?:\s*[^)(\s]|\s*\((?:[^)(]|\([^)(]*\))*\))+\s*)\)|#[\da-f]{3,8}|(?:rgb|hsl)a?\((?:-?[\d.]+%?[,\s]+){2}-?[\d.]+%?\s*(?:[,/]\s*)?(?:\b\d+(?:\.\d+)?|\.\d+)?%?\)|-?(?:\d+(?:\.\d+)?|\.\d+)/giu;
+function analyseComplexValue(value) {
+    const originalValue = value.toString();
+    const values = [];
+    const indexes = {
+        color: [],
+        number: [],
+        var: [],
+    };
+    const types = [];
+    let i = 0;
+    const tokenised = originalValue.replace(complexRegex, (parsedValue) => {
+        if (color.test(parsedValue)) {
+            indexes.color.push(i);
+            types.push(COLOR_TOKEN);
+            values.push(color.parse(parsedValue));
+        }
+        else if (parsedValue.startsWith(VAR_FUNCTION_TOKEN)) {
+            indexes.var.push(i);
+            types.push(VAR_TOKEN);
+            values.push(parsedValue);
+        }
+        else {
+            indexes.number.push(i);
+            types.push(NUMBER_TOKEN);
+            values.push(parseFloat(parsedValue));
+        }
+        ++i;
+        return SPLIT_TOKEN;
+    });
+    const split = tokenised.split(SPLIT_TOKEN);
+    return { values, split, indexes, types };
+}
+function parseComplexValue(v) {
+    return analyseComplexValue(v).values;
+}
+function createTransformer(source) {
+    const { split, types } = analyseComplexValue(source);
+    const numSections = split.length;
+    return (v) => {
+        let output = "";
+        for (let i = 0; i < numSections; i++) {
+            output += split[i];
+            if (v[i] !== undefined) {
+                const type = types[i];
+                if (type === NUMBER_TOKEN) {
+                    output += sanitize(v[i]);
+                }
+                else if (type === COLOR_TOKEN) {
+                    output += color.transform(v[i]);
+                }
+                else {
+                    output += v[i];
+                }
+            }
+        }
+        return output;
+    };
+}
+const convertNumbersToZero = (v) => typeof v === "number" ? 0 : v;
+function getAnimatableNone$1(v) {
+    const parsed = parseComplexValue(v);
+    const transformer = createTransformer(v);
+    return transformer(parsed.map(convertNumbersToZero));
+}
+const complex = {
+    test,
+    parse: parseComplexValue,
+    createTransformer,
+    getAnimatableNone: getAnimatableNone$1,
+};
+
+/**
+ * Properties that should default to 1 or 100%
+ */
+const maxDefaults = new Set(["brightness", "contrast", "saturate", "opacity"]);
+function applyDefaultFilter(v) {
+    const [name, value] = v.slice(0, -1).split("(");
+    if (name === "drop-shadow")
+        return v;
+    const [number] = value.match(floatRegex) || [];
+    if (!number)
+        return v;
+    const unit = value.replace(number, "");
+    let defaultValue = maxDefaults.has(name) ? 1 : 0;
+    if (number !== value)
+        defaultValue *= 100;
+    return name + "(" + defaultValue + unit + ")";
+}
+const functionRegex = /\b([a-z-]*)\(.*?\)/gu;
+const filter = {
+    ...complex,
+    getAnimatableNone: (v) => {
+        const functions = v.match(functionRegex);
+        return functions ? functions.map(applyDefaultFilter).join(" ") : v;
+    },
+};
+
+/**
+ * A map of default value types for common values
+ */
+const defaultValueTypes = {
+    ...numberValueTypes,
+    // Color props
+    color,
+    backgroundColor: color,
+    outlineColor: color,
+    fill: color,
+    stroke: color,
+    // Border props
+    borderColor: color,
+    borderTopColor: color,
+    borderRightColor: color,
+    borderBottomColor: color,
+    borderLeftColor: color,
+    filter,
+    WebkitFilter: filter,
+};
+/**
+ * Gets the default ValueType for the provided value key
+ */
+const getDefaultValueType = (key) => defaultValueTypes[key];
+
+function getAnimatableNone(key, value) {
+    let defaultValueType = getDefaultValueType(key);
+    if (defaultValueType !== filter)
+        defaultValueType = complex;
+    // If value is not recognised as animatable, ie "none", create an animatable version origin based on the target
+    return defaultValueType.getAnimatableNone
+        ? defaultValueType.getAnimatableNone(value)
+        : undefined;
+}
+
+/**
+ * If we encounter keyframes like "none" or "0" and we also have keyframes like
+ * "#fff" or "200px 200px" we want to find a keyframe to serve as a template for
+ * the "none" keyframes. In this case "#fff" or "200px 200px" - then these get turned into
+ * zero equivalents, i.e. "#fff0" or "0px 0px".
+ */
+const invalidTemplates = new Set(["auto", "none", "0"]);
+function makeNoneKeyframesAnimatable(unresolvedKeyframes, noneKeyframeIndexes, name) {
+    let i = 0;
+    let animatableTemplate = undefined;
+    while (i < unresolvedKeyframes.length && !animatableTemplate) {
+        const keyframe = unresolvedKeyframes[i];
+        if (typeof keyframe === "string" &&
+            !invalidTemplates.has(keyframe) &&
+            analyseComplexValue(keyframe).values.length) {
+            animatableTemplate = unresolvedKeyframes[i];
+        }
+        i++;
+    }
+    if (animatableTemplate && name) {
+        for (const noneIndex of noneKeyframeIndexes) {
+            unresolvedKeyframes[noneIndex] = getAnimatableNone(name, animatableTemplate);
+        }
+    }
+}
+
+const isNumOrPxType = (v) => v === number || v === px;
+const getPosFromMatrix = (matrix, pos) => parseFloat(matrix.split(", ")[pos]);
+const getTranslateFromMatrix = (pos2, pos3) => (_bbox, { transform }) => {
+    if (transform === "none" || !transform)
+        return 0;
+    const matrix3d = transform.match(/^matrix3d\((.+)\)$/u);
+    if (matrix3d) {
+        return getPosFromMatrix(matrix3d[1], pos3);
+    }
+    else {
+        const matrix = transform.match(/^matrix\((.+)\)$/u);
+        if (matrix) {
+            return getPosFromMatrix(matrix[1], pos2);
+        }
+        else {
+            return 0;
+        }
+    }
+};
+const transformKeys = new Set(["x", "y", "z"]);
+const nonTranslationalTransformKeys = transformPropOrder.filter((key) => !transformKeys.has(key));
+function removeNonTranslationalTransform(visualElement) {
+    const removedTransforms = [];
+    nonTranslationalTransformKeys.forEach((key) => {
+        const value = visualElement.getValue(key);
+        if (value !== undefined) {
+            removedTransforms.push([key, value.get()]);
+            value.set(key.startsWith("scale") ? 1 : 0);
+        }
+    });
+    return removedTransforms;
+}
+const positionalValues = {
+    // Dimensions
+    width: ({ x }, { paddingLeft = "0", paddingRight = "0" }) => x.max - x.min - parseFloat(paddingLeft) - parseFloat(paddingRight),
+    height: ({ y }, { paddingTop = "0", paddingBottom = "0" }) => y.max - y.min - parseFloat(paddingTop) - parseFloat(paddingBottom),
+    top: (_bbox, { top }) => parseFloat(top),
+    left: (_bbox, { left }) => parseFloat(left),
+    bottom: ({ y }, { top }) => parseFloat(top) + (y.max - y.min),
+    right: ({ x }, { left }) => parseFloat(left) + (x.max - x.min),
+    // Transform
+    x: getTranslateFromMatrix(4, 13),
+    y: getTranslateFromMatrix(5, 14),
+};
+// Alias translate longform names
+positionalValues.translateX = positionalValues.x;
+positionalValues.translateY = positionalValues.y;
+
+const toResolve = new Set();
+let isScheduled = false;
+let anyNeedsMeasurement = false;
+function measureAllKeyframes() {
+    if (anyNeedsMeasurement) {
+        const resolversToMeasure = Array.from(toResolve).filter((resolver) => resolver.needsMeasurement);
+        const elementsToMeasure = new Set(resolversToMeasure.map((resolver) => resolver.element));
+        const transformsToRestore = new Map();
+        /**
+         * Write pass
+         * If we're measuring elements we want to remove bounding box-changing transforms.
+         */
+        elementsToMeasure.forEach((element) => {
+            const removedTransforms = removeNonTranslationalTransform(element);
+            if (!removedTransforms.length)
+                return;
+            transformsToRestore.set(element, removedTransforms);
+            element.render();
+        });
+        // Read
+        resolversToMeasure.forEach((resolver) => resolver.measureInitialState());
+        // Write
+        elementsToMeasure.forEach((element) => {
+            element.render();
+            const restore = transformsToRestore.get(element);
+            if (restore) {
+                restore.forEach(([key, value]) => {
+                    var _a;
+                    (_a = element.getValue(key)) === null || _a === void 0 ? void 0 : _a.set(value);
+                });
+            }
+        });
+        // Read
+        resolversToMeasure.forEach((resolver) => resolver.measureEndState());
+        // Write
+        resolversToMeasure.forEach((resolver) => {
+            if (resolver.suspendedScrollY !== undefined) {
+                window.scrollTo(0, resolver.suspendedScrollY);
+            }
+        });
+    }
+    anyNeedsMeasurement = false;
+    isScheduled = false;
+    toResolve.forEach((resolver) => resolver.complete());
+    toResolve.clear();
+}
+function readAllKeyframes() {
+    toResolve.forEach((resolver) => {
+        resolver.readKeyframes();
+        if (resolver.needsMeasurement) {
+            anyNeedsMeasurement = true;
+        }
+    });
+}
+function flushKeyframeResolvers() {
+    readAllKeyframes();
+    measureAllKeyframes();
+}
+class KeyframeResolver {
+    constructor(unresolvedKeyframes, onComplete, name, motionValue, element, isAsync = false) {
+        /**
+         * Track whether this resolver has completed. Once complete, it never
+         * needs to attempt keyframe resolution again.
+         */
+        this.isComplete = false;
+        /**
+         * Track whether this resolver is async. If it is, it'll be added to the
+         * resolver queue and flushed in the next frame. Resolvers that aren't going
+         * to trigger read/write thrashing don't need to be async.
+         */
+        this.isAsync = false;
+        /**
+         * Track whether this resolver needs to perform a measurement
+         * to resolve its keyframes.
+         */
+        this.needsMeasurement = false;
+        /**
+         * Track whether this resolver is currently scheduled to resolve
+         * to allow it to be cancelled and resumed externally.
+         */
+        this.isScheduled = false;
+        this.unresolvedKeyframes = [...unresolvedKeyframes];
+        this.onComplete = onComplete;
+        this.name = name;
+        this.motionValue = motionValue;
+        this.element = element;
+        this.isAsync = isAsync;
+    }
+    scheduleResolve() {
+        this.isScheduled = true;
+        if (this.isAsync) {
+            toResolve.add(this);
+            if (!isScheduled) {
+                isScheduled = true;
+                frame.read(readAllKeyframes);
+                frame.resolveKeyframes(measureAllKeyframes);
+            }
+        }
+        else {
+            this.readKeyframes();
+            this.complete();
+        }
+    }
+    readKeyframes() {
+        const { unresolvedKeyframes, name, element, motionValue } = this;
+        /**
+         * If a keyframe is null, we hydrate it either by reading it from
+         * the instance, or propagating from previous keyframes.
+         */
+        for (let i = 0; i < unresolvedKeyframes.length; i++) {
+            if (unresolvedKeyframes[i] === null) {
+                /**
+                 * If the first keyframe is null, we need to find its value by sampling the element
+                 */
+                if (i === 0) {
+                    const currentValue = motionValue === null || motionValue === void 0 ? void 0 : motionValue.get();
+                    const finalKeyframe = unresolvedKeyframes[unresolvedKeyframes.length - 1];
+                    if (currentValue !== undefined) {
+                        unresolvedKeyframes[0] = currentValue;
+                    }
+                    else if (element && name) {
+                        const valueAsRead = element.readValue(name, finalKeyframe);
+                        if (valueAsRead !== undefined && valueAsRead !== null) {
+                            unresolvedKeyframes[0] = valueAsRead;
+                        }
+                    }
+                    if (unresolvedKeyframes[0] === undefined) {
+                        unresolvedKeyframes[0] = finalKeyframe;
+                    }
+                    if (motionValue && currentValue === undefined) {
+                        motionValue.set(unresolvedKeyframes[0]);
+                    }
+                }
+                else {
+                    unresolvedKeyframes[i] = unresolvedKeyframes[i - 1];
+                }
+            }
+        }
+    }
+    setFinalKeyframe() { }
+    measureInitialState() { }
+    renderEndStyles() { }
+    measureEndState() { }
+    complete() {
+        this.isComplete = true;
+        this.onComplete(this.unresolvedKeyframes, this.finalKeyframe);
+        toResolve.delete(this);
+    }
+    cancel() {
+        if (!this.isComplete) {
+            this.isScheduled = false;
+            toResolve.delete(this);
+        }
+    }
+    resume() {
+        if (!this.isComplete)
+            this.scheduleResolve();
+    }
+}
+
+/**
+ * Check if value is a numerical string, ie a string that is purely a number eg "100" or "-100.1"
+ */
+const isNumericalString = (v) => /^-?(?:\d+(?:\.\d+)?|\.\d+)$/u.test(v);
+
+/**
+ * Parse Framer's special CSS variable format into a CSS token and a fallback.
+ *
+ * ```
+ * `var(--foo, #fff)` => [`--foo`, '#fff']
+ * ```
+ *
+ * @param current
+ */
+const splitCSSVariableRegex = 
+// eslint-disable-next-line redos-detector/no-unsafe-regex -- false positive, as it can match a lot of words
+/^var\(--(?:([\w-]+)|([\w-]+), ?([a-zA-Z\d ()%#.,-]+))\)/u;
+function parseCSSVariable(current) {
+    const match = splitCSSVariableRegex.exec(current);
+    if (!match)
+        return [,];
+    const [, token1, token2, fallback] = match;
+    return [`--${token1 !== null && token1 !== void 0 ? token1 : token2}`, fallback];
+}
+const maxDepth = 4;
+function getVariableValue(current, element, depth = 1) {
+    invariant(depth <= maxDepth, `Max CSS variable fallback depth detected in property "${current}". This may indicate a circular fallback dependency.`);
+    const [token, fallback] = parseCSSVariable(current);
+    // No CSS variable detected
+    if (!token)
+        return;
+    // Attempt to read this CSS variable off the element
+    const resolved = window.getComputedStyle(element).getPropertyValue(token);
+    if (resolved) {
+        const trimmed = resolved.trim();
+        return isNumericalString(trimmed) ? parseFloat(trimmed) : trimmed;
+    }
+    return isCSSVariableToken(fallback)
+        ? getVariableValue(fallback, element, depth + 1)
+        : fallback;
+}
+
+/**
+ * Tests a provided value against a ValueType
+ */
+const testValueType = (v) => (type) => type.test(v);
+
+/**
+ * ValueType for "auto"
+ */
+const auto$1 = {
+    test: (v) => v === "auto",
+    parse: (v) => v,
+};
+
+/**
+ * A list of value types commonly used for dimensions
+ */
+const dimensionValueTypes = [number, px, percent, degrees, vw, vh, auto$1];
+/**
+ * Tests a dimensional value against the list of dimension ValueTypes
+ */
+const findDimensionValueType = (v) => dimensionValueTypes.find(testValueType(v));
+
+class DOMKeyframesResolver extends KeyframeResolver {
+    constructor(unresolvedKeyframes, onComplete, name, motionValue, element) {
+        super(unresolvedKeyframes, onComplete, name, motionValue, element, true);
+    }
+    readKeyframes() {
+        const { unresolvedKeyframes, element, name } = this;
+        if (!element || !element.current)
+            return;
+        super.readKeyframes();
+        /**
+         * If any keyframe is a CSS variable, we need to find its value by sampling the element
+         */
+        for (let i = 0; i < unresolvedKeyframes.length; i++) {
+            let keyframe = unresolvedKeyframes[i];
+            if (typeof keyframe === "string") {
+                keyframe = keyframe.trim();
+                if (isCSSVariableToken(keyframe)) {
+                    const resolved = getVariableValue(keyframe, element.current);
+                    if (resolved !== undefined) {
+                        unresolvedKeyframes[i] = resolved;
+                    }
+                    if (i === unresolvedKeyframes.length - 1) {
+                        this.finalKeyframe = keyframe;
+                    }
+                }
+            }
+        }
+        /**
+         * Resolve "none" values. We do this potentially twice - once before and once after measuring keyframes.
+         * This could be seen as inefficient but it's a trade-off to avoid measurements in more situations, which
+         * have a far bigger performance impact.
+         */
+        this.resolveNoneKeyframes();
+        /**
+         * Check to see if unit type has changed. If so schedule jobs that will
+         * temporarily set styles to the destination keyframes.
+         * Skip if we have more than two keyframes or this isn't a positional value.
+         * TODO: We can throw if there are multiple keyframes and the value type changes.
+         */
+        if (!positionalKeys.has(name) || unresolvedKeyframes.length !== 2) {
+            return;
+        }
+        const [origin, target] = unresolvedKeyframes;
+        const originType = findDimensionValueType(origin);
+        const targetType = findDimensionValueType(target);
+        /**
+         * Either we don't recognise these value types or we can animate between them.
+         */
+        if (originType === targetType)
+            return;
+        /**
+         * If both values are numbers or pixels, we can animate between them by
+         * converting them to numbers.
+         */
+        if (isNumOrPxType(originType) && isNumOrPxType(targetType)) {
+            for (let i = 0; i < unresolvedKeyframes.length; i++) {
+                const value = unresolvedKeyframes[i];
+                if (typeof value === "string") {
+                    unresolvedKeyframes[i] = parseFloat(value);
+                }
+            }
+        }
+        else {
+            /**
+             * Else, the only way to resolve this is by measuring the element.
+             */
+            this.needsMeasurement = true;
+        }
+    }
+    resolveNoneKeyframes() {
+        const { unresolvedKeyframes, name } = this;
+        const noneKeyframeIndexes = [];
+        for (let i = 0; i < unresolvedKeyframes.length; i++) {
+            if (isNone(unresolvedKeyframes[i])) {
+                noneKeyframeIndexes.push(i);
+            }
+        }
+        if (noneKeyframeIndexes.length) {
+            makeNoneKeyframesAnimatable(unresolvedKeyframes, noneKeyframeIndexes, name);
+        }
+    }
+    measureInitialState() {
+        const { element, unresolvedKeyframes, name } = this;
+        if (!element || !element.current)
+            return;
+        if (name === "height") {
+            this.suspendedScrollY = window.pageYOffset;
+        }
+        this.measuredOrigin = positionalValues[name](element.measureViewportBox(), window.getComputedStyle(element.current));
+        unresolvedKeyframes[0] = this.measuredOrigin;
+        // Set final key frame to measure after next render
+        const measureKeyframe = unresolvedKeyframes[unresolvedKeyframes.length - 1];
+        if (measureKeyframe !== undefined) {
+            element.getValue(name, measureKeyframe).jump(measureKeyframe, false);
+        }
+    }
+    measureEndState() {
+        var _a;
+        const { element, name, unresolvedKeyframes } = this;
+        if (!element || !element.current)
+            return;
+        const value = element.getValue(name);
+        value && value.jump(this.measuredOrigin, false);
+        const finalKeyframeIndex = unresolvedKeyframes.length - 1;
+        const finalKeyframe = unresolvedKeyframes[finalKeyframeIndex];
+        unresolvedKeyframes[finalKeyframeIndex] = positionalValues[name](element.measureViewportBox(), window.getComputedStyle(element.current));
+        if (finalKeyframe !== null && this.finalKeyframe === undefined) {
+            this.finalKeyframe = finalKeyframe;
+        }
+        // If we removed transform values, reapply them before the next render
+        if ((_a = this.removedTransforms) === null || _a === void 0 ? void 0 : _a.length) {
+            this.removedTransforms.forEach(([unsetTransformName, unsetTransformValue]) => {
+                element
+                    .getValue(unsetTransformName)
+                    .set(unsetTransformValue);
+            });
+        }
+        this.resolveNoneKeyframes();
+    }
+}
+
+/**
+ * Check if a value is animatable. Examples:
+ *
+ * ✅: 100, "100px", "#fff"
+ * ❌: "block", "url(2.jpg)"
+ * @param value
+ *
+ * @internal
+ */
+const isAnimatable = (value, name) => {
+    // If the list of keys tat might be non-animatable grows, replace with Set
+    if (name === "zIndex")
+        return false;
+    // If it's a number or a keyframes array, we can animate it. We might at some point
+    // need to do a deep isAnimatable check of keyframes, or let Popmotion handle this,
+    // but for now lets leave it like this for performance reasons
+    if (typeof value === "number" || Array.isArray(value))
+        return true;
+    if (typeof value === "string" && // It's animatable if we have a string
+        (complex.test(value) || value === "0") && // And it contains numbers and/or colors
+        !value.startsWith("url(") // Unless it starts with "url("
+    ) {
+        return true;
+    }
+    return false;
+};
+
+function hasKeyframesChanged(keyframes) {
+    const current = keyframes[0];
+    if (keyframes.length === 1)
+        return true;
+    for (let i = 0; i < keyframes.length; i++) {
+        if (keyframes[i] !== current)
+            return true;
+    }
+}
+function canAnimate(keyframes, name, type, velocity) {
+    /**
+     * Check if we're able to animate between the start and end keyframes,
+     * and throw a warning if we're attempting to animate between one that's
+     * animatable and another that isn't.
+     */
+    const originKeyframe = keyframes[0];
+    if (originKeyframe === null)
+        return false;
+    /**
+     * These aren't traditionally animatable but we do support them.
+     * In future we could look into making this more generic or replacing
+     * this function with mix() === mixImmediate
+     */
+    if (name === "display" || name === "visibility")
+        return true;
+    const targetKeyframe = keyframes[keyframes.length - 1];
+    const isOriginAnimatable = isAnimatable(originKeyframe, name);
+    const isTargetAnimatable = isAnimatable(targetKeyframe, name);
+    warning(isOriginAnimatable === isTargetAnimatable, `You are trying to animate ${name} from "${originKeyframe}" to "${targetKeyframe}". ${originKeyframe} is not an animatable value - to enable this animation set ${originKeyframe} to a value animatable to ${targetKeyframe} via the \`style\` property.`);
+    // Always skip if any of these are true
+    if (!isOriginAnimatable || !isTargetAnimatable) {
+        return false;
+    }
+    return (hasKeyframesChanged(keyframes) ||
+        ((type === "spring" || isGenerator(type)) && velocity));
+}
+
+const isNotNull = (value) => value !== null;
+function getFinalKeyframe(keyframes, { repeat, repeatType = "loop" }, finalKeyframe) {
+    const resolvedKeyframes = keyframes.filter(isNotNull);
+    const index = repeat && repeatType !== "loop" && repeat % 2 === 1
+        ? 0
+        : resolvedKeyframes.length - 1;
+    return !index || finalKeyframe === undefined
+        ? resolvedKeyframes[index]
+        : finalKeyframe;
+}
+
+/**
+ * Maximum time allowed between an animation being created and it being
+ * resolved for us to use the latter as the start time.
+ *
+ * This is to ensure that while we prefer to "start" an animation as soon
+ * as it's triggered, we also want to avoid a visual jump if there's a big delay
+ * between these two moments.
+ */
+const MAX_RESOLVE_DELAY = 40;
+class BaseAnimation {
+    constructor({ autoplay = true, delay = 0, type = "keyframes", repeat = 0, repeatDelay = 0, repeatType = "loop", ...options }) {
+        // Track whether the animation has been stopped. Stopped animations won't restart.
+        this.isStopped = false;
+        this.hasAttemptedResolve = false;
+        this.createdAt = time.now();
+        this.options = {
+            autoplay,
+            delay,
+            type,
+            repeat,
+            repeatDelay,
+            repeatType,
+            ...options,
+        };
+        this.updateFinishedPromise();
+    }
+    /**
+     * This method uses the createdAt and resolvedAt to calculate the
+     * animation startTime. *Ideally*, we would use the createdAt time as t=0
+     * as the following frame would then be the first frame of the animation in
+     * progress, which would feel snappier.
+     *
+     * However, if there's a delay (main thread work) between the creation of
+     * the animation and the first commited frame, we prefer to use resolvedAt
+     * to avoid a sudden jump into the animation.
+     */
+    calcStartTime() {
+        if (!this.resolvedAt)
+            return this.createdAt;
+        return this.resolvedAt - this.createdAt > MAX_RESOLVE_DELAY
+            ? this.resolvedAt
+            : this.createdAt;
+    }
+    /**
+     * A getter for resolved data. If keyframes are not yet resolved, accessing
+     * this.resolved will synchronously flush all pending keyframe resolvers.
+     * This is a deoptimisation, but at its worst still batches read/writes.
+     */
+    get resolved() {
+        if (!this._resolved && !this.hasAttemptedResolve) {
+            flushKeyframeResolvers();
+        }
+        return this._resolved;
+    }
+    /**
+     * A method to be called when the keyframes resolver completes. This method
+     * will check if its possible to run the animation and, if not, skip it.
+     * Otherwise, it will call initPlayback on the implementing class.
+     */
+    onKeyframesResolved(keyframes, finalKeyframe) {
+        this.resolvedAt = time.now();
+        this.hasAttemptedResolve = true;
+        const { name, type, velocity, delay, onComplete, onUpdate, isGenerator, } = this.options;
+        /**
+         * If we can't animate this value with the resolved keyframes
+         * then we should complete it immediately.
+         */
+        if (!isGenerator && !canAnimate(keyframes, name, type, velocity)) {
+            // Finish immediately
+            if (!delay) {
+                onUpdate &&
+                    onUpdate(getFinalKeyframe(keyframes, this.options, finalKeyframe));
+                onComplete && onComplete();
+                this.resolveFinishedPromise();
+                return;
+            }
+            // Finish after a delay
+            else {
+                this.options.duration = 0;
+            }
+        }
+        const resolvedAnimation = this.initPlayback(keyframes, finalKeyframe);
+        if (resolvedAnimation === false)
+            return;
+        this._resolved = {
+            keyframes,
+            finalKeyframe,
+            ...resolvedAnimation,
+        };
+        this.onPostResolved();
+    }
+    onPostResolved() { }
+    /**
+     * Allows the returned animation to be awaited or promise-chained. Currently
+     * resolves when the animation finishes at all but in a future update could/should
+     * reject if its cancels.
+     */
+    then(resolve, reject) {
+        return this.currentFinishedPromise.then(resolve, reject);
+    }
+    flatten() {
+        this.options.type = "keyframes";
+        this.options.ease = "linear";
+    }
+    updateFinishedPromise() {
+        this.currentFinishedPromise = new Promise((resolve) => {
+            this.resolveFinishedPromise = resolve;
+        });
+    }
+}
+
+/*
+  Value in range from progress
+
+  Given a lower limit and an upper limit, we return the value within
+  that range as expressed by progress (usually a number from 0 to 1)
+
+  So progress = 0.5 would change
+
+  from -------- to
+
+  to
+
+  from ---- to
+
+  E.g. from = 10, to = 20, progress = 0.5 => 15
+
+  @param [number]: Lower limit of range
+  @param [number]: Upper limit of range
+  @param [number]: The progress between lower and upper limits expressed 0-1
+  @return [number]: Value as calculated from progress within range (not limited within range)
+*/
+const mixNumber$1 = (from, to, progress) => {
+    return from + (to - from) * progress;
+};
+
+// Adapted from https://gist.github.com/mjackson/5311256
+function hueToRgb(p, q, t) {
+    if (t < 0)
+        t += 1;
+    if (t > 1)
+        t -= 1;
+    if (t < 1 / 6)
+        return p + (q - p) * 6 * t;
+    if (t < 1 / 2)
+        return q;
+    if (t < 2 / 3)
+        return p + (q - p) * (2 / 3 - t) * 6;
+    return p;
+}
+function hslaToRgba({ hue, saturation, lightness, alpha }) {
+    hue /= 360;
+    saturation /= 100;
+    lightness /= 100;
+    let red = 0;
+    let green = 0;
+    let blue = 0;
+    if (!saturation) {
+        red = green = blue = lightness;
+    }
+    else {
+        const q = lightness < 0.5
+            ? lightness * (1 + saturation)
+            : lightness + saturation - lightness * saturation;
+        const p = 2 * lightness - q;
+        red = hueToRgb(p, q, hue + 1 / 3);
+        green = hueToRgb(p, q, hue);
+        blue = hueToRgb(p, q, hue - 1 / 3);
+    }
+    return {
+        red: Math.round(red * 255),
+        green: Math.round(green * 255),
+        blue: Math.round(blue * 255),
+        alpha,
+    };
+}
+
+function mixImmediate(a, b) {
+    return (p) => (p > 0 ? b : a);
+}
+
+// Linear color space blending
+// Explained https://www.youtube.com/watch?v=LKnqECcg6Gw
+// Demonstrated http://codepen.io/osublake/pen/xGVVaN
+const mixLinearColor = (from, to, v) => {
+    const fromExpo = from * from;
+    const expo = v * (to * to - fromExpo) + fromExpo;
+    return expo < 0 ? 0 : Math.sqrt(expo);
+};
+const colorTypes = [hex, rgba, hsla];
+const getColorType = (v) => colorTypes.find((type) => type.test(v));
+function asRGBA(color) {
+    const type = getColorType(color);
+    warning(Boolean(type), `'${color}' is not an animatable color. Use the equivalent color code instead.`);
+    if (!Boolean(type))
+        return false;
+    let model = type.parse(color);
+    if (type === hsla) {
+        // TODO Remove this cast - needed since Motion's stricter typing
+        model = hslaToRgba(model);
+    }
+    return model;
+}
+const mixColor = (from, to) => {
+    const fromRGBA = asRGBA(from);
+    const toRGBA = asRGBA(to);
+    if (!fromRGBA || !toRGBA) {
+        return mixImmediate(from, to);
+    }
+    const blended = { ...fromRGBA };
+    return (v) => {
+        blended.red = mixLinearColor(fromRGBA.red, toRGBA.red, v);
+        blended.green = mixLinearColor(fromRGBA.green, toRGBA.green, v);
+        blended.blue = mixLinearColor(fromRGBA.blue, toRGBA.blue, v);
+        blended.alpha = mixNumber$1(fromRGBA.alpha, toRGBA.alpha, v);
+        return rgba.transform(blended);
+    };
+};
+
+/**
+ * Pipe
+ * Compose other transformers to run linearily
+ * pipe(min(20), max(40))
+ * @param  {...functions} transformers
+ * @return {function}
+ */
+const combineFunctions = (a, b) => (v) => b(a(v));
+const pipe = (...transformers) => transformers.reduce(combineFunctions);
+
+const invisibleValues = new Set(["none", "hidden"]);
+/**
+ * Returns a function that, when provided a progress value between 0 and 1,
+ * will return the "none" or "hidden" string only when the progress is that of
+ * the origin or target.
+ */
+function mixVisibility(origin, target) {
+    if (invisibleValues.has(origin)) {
+        return (p) => (p <= 0 ? origin : target);
+    }
+    else {
+        return (p) => (p >= 1 ? target : origin);
+    }
+}
+
+function mixNumber(a, b) {
+    return (p) => mixNumber$1(a, b, p);
+}
+function getMixer(a) {
+    if (typeof a === "number") {
+        return mixNumber;
+    }
+    else if (typeof a === "string") {
+        return isCSSVariableToken(a)
+            ? mixImmediate
+            : color.test(a)
+                ? mixColor
+                : mixComplex;
+    }
+    else if (Array.isArray(a)) {
+        return mixArray;
+    }
+    else if (typeof a === "object") {
+        return color.test(a) ? mixColor : mixObject;
+    }
+    return mixImmediate;
+}
+function mixArray(a, b) {
+    const output = [...a];
+    const numValues = output.length;
+    const blendValue = a.map((v, i) => getMixer(v)(v, b[i]));
+    return (p) => {
+        for (let i = 0; i < numValues; i++) {
+            output[i] = blendValue[i](p);
+        }
+        return output;
+    };
+}
+function mixObject(a, b) {
+    const output = { ...a, ...b };
+    const blendValue = {};
+    for (const key in output) {
+        if (a[key] !== undefined && b[key] !== undefined) {
+            blendValue[key] = getMixer(a[key])(a[key], b[key]);
+        }
+    }
+    return (v) => {
+        for (const key in blendValue) {
+            output[key] = blendValue[key](v);
+        }
+        return output;
+    };
+}
+function matchOrder(origin, target) {
+    var _a;
+    const orderedOrigin = [];
+    const pointers = { color: 0, var: 0, number: 0 };
+    for (let i = 0; i < target.values.length; i++) {
+        const type = target.types[i];
+        const originIndex = origin.indexes[type][pointers[type]];
+        const originValue = (_a = origin.values[originIndex]) !== null && _a !== void 0 ? _a : 0;
+        orderedOrigin[i] = originValue;
+        pointers[type]++;
+    }
+    return orderedOrigin;
+}
+const mixComplex = (origin, target) => {
+    const template = complex.createTransformer(target);
+    const originStats = analyseComplexValue(origin);
+    const targetStats = analyseComplexValue(target);
+    const canInterpolate = originStats.indexes.var.length === targetStats.indexes.var.length &&
+        originStats.indexes.color.length === targetStats.indexes.color.length &&
+        originStats.indexes.number.length >= targetStats.indexes.number.length;
+    if (canInterpolate) {
+        if ((invisibleValues.has(origin) &&
+            !targetStats.values.length) ||
+            (invisibleValues.has(target) &&
+                !originStats.values.length)) {
+            return mixVisibility(origin, target);
+        }
+        return pipe(mixArray(matchOrder(originStats, targetStats), targetStats.values), template);
+    }
+    else {
+        warning(true, `Complex values '${origin}' and '${target}' too different to mix. Ensure all colors are of the same type, and that each contains the same quantity of number and color values. Falling back to instant transition.`);
+        return mixImmediate(origin, target);
+    }
+};
+
+function mix(from, to, p) {
+    if (typeof from === "number" &&
+        typeof to === "number" &&
+        typeof p === "number") {
+        return mixNumber$1(from, to, p);
+    }
+    const mixer = getMixer(from);
+    return mixer(from, to);
+}
+
+const velocitySampleDuration = 5; // ms
+function calcGeneratorVelocity(resolveValue, t, current) {
+    const prevT = Math.max(t - velocitySampleDuration, 0);
+    return velocityPerSecond(current - resolveValue(prevT), t - prevT);
+}
+
+const springDefaults = {
+    // Default spring physics
+    stiffness: 100,
+    damping: 10,
+    mass: 1.0,
+    velocity: 0.0,
+    // Default duration/bounce-based options
+    duration: 800, // in ms
+    bounce: 0.3,
+    visualDuration: 0.3, // in seconds
+    // Rest thresholds
+    restSpeed: {
+        granular: 0.01,
+        default: 2,
+    },
+    restDelta: {
+        granular: 0.005,
+        default: 0.5,
+    },
+    // Limits
+    minDuration: 0.01, // in seconds
+    maxDuration: 10.0, // in seconds
+    minDamping: 0.05,
+    maxDamping: 1,
+};
+
+const safeMin = 0.001;
+function findSpring({ duration = springDefaults.duration, bounce = springDefaults.bounce, velocity = springDefaults.velocity, mass = springDefaults.mass, }) {
+    let envelope;
+    let derivative;
+    warning(duration <= secondsToMilliseconds(springDefaults.maxDuration), "Spring duration must be 10 seconds or less");
+    let dampingRatio = 1 - bounce;
+    /**
+     * Restrict dampingRatio and duration to within acceptable ranges.
+     */
+    dampingRatio = clamp(springDefaults.minDamping, springDefaults.maxDamping, dampingRatio);
+    duration = clamp(springDefaults.minDuration, springDefaults.maxDuration, millisecondsToSeconds(duration));
+    if (dampingRatio < 1) {
+        /**
+         * Underdamped spring
+         */
+        envelope = (undampedFreq) => {
+            const exponentialDecay = undampedFreq * dampingRatio;
+            const delta = exponentialDecay * duration;
+            const a = exponentialDecay - velocity;
+            const b = calcAngularFreq(undampedFreq, dampingRatio);
+            const c = Math.exp(-delta);
+            return safeMin - (a / b) * c;
+        };
+        derivative = (undampedFreq) => {
+            const exponentialDecay = undampedFreq * dampingRatio;
+            const delta = exponentialDecay * duration;
+            const d = delta * velocity + velocity;
+            const e = Math.pow(dampingRatio, 2) * Math.pow(undampedFreq, 2) * duration;
+            const f = Math.exp(-delta);
+            const g = calcAngularFreq(Math.pow(undampedFreq, 2), dampingRatio);
+            const factor = -envelope(undampedFreq) + safeMin > 0 ? -1 : 1;
+            return (factor * ((d - e) * f)) / g;
+        };
+    }
+    else {
+        /**
+         * Critically-damped spring
+         */
+        envelope = (undampedFreq) => {
+            const a = Math.exp(-undampedFreq * duration);
+            const b = (undampedFreq - velocity) * duration + 1;
+            return -safeMin + a * b;
+        };
+        derivative = (undampedFreq) => {
+            const a = Math.exp(-undampedFreq * duration);
+            const b = (velocity - undampedFreq) * (duration * duration);
+            return a * b;
+        };
+    }
+    const initialGuess = 5 / duration;
+    const undampedFreq = approximateRoot(envelope, derivative, initialGuess);
+    duration = secondsToMilliseconds(duration);
+    if (isNaN(undampedFreq)) {
+        return {
+            stiffness: springDefaults.stiffness,
+            damping: springDefaults.damping,
+            duration,
+        };
+    }
+    else {
+        const stiffness = Math.pow(undampedFreq, 2) * mass;
+        return {
+            stiffness,
+            damping: dampingRatio * 2 * Math.sqrt(mass * stiffness),
+            duration,
+        };
+    }
+}
+const rootIterations = 12;
+function approximateRoot(envelope, derivative, initialGuess) {
+    let result = initialGuess;
+    for (let i = 1; i < rootIterations; i++) {
+        result = result - envelope(result) / derivative(result);
+    }
+    return result;
+}
+function calcAngularFreq(undampedFreq, dampingRatio) {
+    return undampedFreq * Math.sqrt(1 - dampingRatio * dampingRatio);
+}
+
+const durationKeys = ["duration", "bounce"];
+const physicsKeys = ["stiffness", "damping", "mass"];
+function isSpringType(options, keys) {
+    return keys.some((key) => options[key] !== undefined);
+}
+function getSpringOptions(options) {
+    let springOptions = {
+        velocity: springDefaults.velocity,
+        stiffness: springDefaults.stiffness,
+        damping: springDefaults.damping,
+        mass: springDefaults.mass,
+        isResolvedFromDuration: false,
+        ...options,
+    };
+    // stiffness/damping/mass overrides duration/bounce
+    if (!isSpringType(options, physicsKeys) &&
+        isSpringType(options, durationKeys)) {
+        if (options.visualDuration) {
+            const visualDuration = options.visualDuration;
+            const root = (2 * Math.PI) / (visualDuration * 1.2);
+            const stiffness = root * root;
+            const damping = 2 *
+                clamp(0.05, 1, 1 - (options.bounce || 0)) *
+                Math.sqrt(stiffness);
+            springOptions = {
+                ...springOptions,
+                mass: springDefaults.mass,
+                stiffness,
+                damping,
+            };
+        }
+        else {
+            const derived = findSpring(options);
+            springOptions = {
+                ...springOptions,
+                ...derived,
+                mass: springDefaults.mass,
+            };
+            springOptions.isResolvedFromDuration = true;
+        }
+    }
+    return springOptions;
+}
+function spring(optionsOrVisualDuration = springDefaults.visualDuration, bounce = springDefaults.bounce) {
+    const options = typeof optionsOrVisualDuration !== "object"
+        ? {
+            visualDuration: optionsOrVisualDuration,
+            keyframes: [0, 1],
+            bounce,
+        }
+        : optionsOrVisualDuration;
+    let { restSpeed, restDelta } = options;
+    const origin = options.keyframes[0];
+    const target = options.keyframes[options.keyframes.length - 1];
+    /**
+     * This is the Iterator-spec return value. We ensure it's mutable rather than using a generator
+     * to reduce GC during animation.
+     */
+    const state = { done: false, value: origin };
+    const { stiffness, damping, mass, duration, velocity, isResolvedFromDuration, } = getSpringOptions({
+        ...options,
+        velocity: -millisecondsToSeconds(options.velocity || 0),
+    });
+    const initialVelocity = velocity || 0.0;
+    const dampingRatio = damping / (2 * Math.sqrt(stiffness * mass));
+    const initialDelta = target - origin;
+    const undampedAngularFreq = millisecondsToSeconds(Math.sqrt(stiffness / mass));
+    /**
+     * If we're working on a granular scale, use smaller defaults for determining
+     * when the spring is finished.
+     *
+     * These defaults have been selected emprically based on what strikes a good
+     * ratio between feeling good and finishing as soon as changes are imperceptible.
+     */
+    const isGranularScale = Math.abs(initialDelta) < 5;
+    restSpeed || (restSpeed = isGranularScale
+        ? springDefaults.restSpeed.granular
+        : springDefaults.restSpeed.default);
+    restDelta || (restDelta = isGranularScale
+        ? springDefaults.restDelta.granular
+        : springDefaults.restDelta.default);
+    let resolveSpring;
+    if (dampingRatio < 1) {
+        const angularFreq = calcAngularFreq(undampedAngularFreq, dampingRatio);
+        // Underdamped spring
+        resolveSpring = (t) => {
+            const envelope = Math.exp(-dampingRatio * undampedAngularFreq * t);
+            return (target -
+                envelope *
+                    (((initialVelocity +
+                        dampingRatio * undampedAngularFreq * initialDelta) /
+                        angularFreq) *
+                        Math.sin(angularFreq * t) +
+                        initialDelta * Math.cos(angularFreq * t)));
+        };
+    }
+    else if (dampingRatio === 1) {
+        // Critically damped spring
+        resolveSpring = (t) => target -
+            Math.exp(-undampedAngularFreq * t) *
+                (initialDelta +
+                    (initialVelocity + undampedAngularFreq * initialDelta) * t);
+    }
+    else {
+        // Overdamped spring
+        const dampedAngularFreq = undampedAngularFreq * Math.sqrt(dampingRatio * dampingRatio - 1);
+        resolveSpring = (t) => {
+            const envelope = Math.exp(-dampingRatio * undampedAngularFreq * t);
+            // When performing sinh or cosh values can hit Infinity so we cap them here
+            const freqForT = Math.min(dampedAngularFreq * t, 300);
+            return (target -
+                (envelope *
+                    ((initialVelocity +
+                        dampingRatio * undampedAngularFreq * initialDelta) *
+                        Math.sinh(freqForT) +
+                        dampedAngularFreq *
+                            initialDelta *
+                            Math.cosh(freqForT))) /
+                    dampedAngularFreq);
+        };
+    }
+    const generator = {
+        calculatedDuration: isResolvedFromDuration ? duration || null : null,
+        next: (t) => {
+            const current = resolveSpring(t);
+            if (!isResolvedFromDuration) {
+                let currentVelocity = 0.0;
+                /**
+                 * We only need to calculate velocity for under-damped springs
+                 * as over- and critically-damped springs can't overshoot, so
+                 * checking only for displacement is enough.
+                 */
+                if (dampingRatio < 1) {
+                    currentVelocity =
+                        t === 0
+                            ? secondsToMilliseconds(initialVelocity)
+                            : calcGeneratorVelocity(resolveSpring, t, current);
+                }
+                const isBelowVelocityThreshold = Math.abs(currentVelocity) <= restSpeed;
+                const isBelowDisplacementThreshold = Math.abs(target - current) <= restDelta;
+                state.done =
+                    isBelowVelocityThreshold && isBelowDisplacementThreshold;
+            }
+            else {
+                state.done = t >= duration;
+            }
+            state.value = state.done ? target : current;
+            return state;
+        },
+        toString: () => {
+            const calculatedDuration = Math.min(calcGeneratorDuration(generator), maxGeneratorDuration);
+            const easing = generateLinearEasing((progress) => generator.next(calculatedDuration * progress).value, calculatedDuration, 30);
+            return calculatedDuration + "ms " + easing;
+        },
+    };
+    return generator;
+}
+
+function inertia({ keyframes, velocity = 0.0, power = 0.8, timeConstant = 325, bounceDamping = 10, bounceStiffness = 500, modifyTarget, min, max, restDelta = 0.5, restSpeed, }) {
+    const origin = keyframes[0];
+    const state = {
+        done: false,
+        value: origin,
+    };
+    const isOutOfBounds = (v) => (min !== undefined && v < min) || (max !== undefined && v > max);
+    const nearestBoundary = (v) => {
+        if (min === undefined)
+            return max;
+        if (max === undefined)
+            return min;
+        return Math.abs(min - v) < Math.abs(max - v) ? min : max;
+    };
+    let amplitude = power * velocity;
+    const ideal = origin + amplitude;
+    const target = modifyTarget === undefined ? ideal : modifyTarget(ideal);
+    /**
+     * If the target has changed we need to re-calculate the amplitude, otherwise
+     * the animation will start from the wrong position.
+     */
+    if (target !== ideal)
+        amplitude = target - origin;
+    const calcDelta = (t) => -amplitude * Math.exp(-t / timeConstant);
+    const calcLatest = (t) => target + calcDelta(t);
+    const applyFriction = (t) => {
+        const delta = calcDelta(t);
+        const latest = calcLatest(t);
+        state.done = Math.abs(delta) <= restDelta;
+        state.value = state.done ? target : latest;
+    };
+    /**
+     * Ideally this would resolve for t in a stateless way, we could
+     * do that by always precalculating the animation but as we know
+     * this will be done anyway we can assume that spring will
+     * be discovered during that.
+     */
+    let timeReachedBoundary;
+    let spring$1;
+    const checkCatchBoundary = (t) => {
+        if (!isOutOfBounds(state.value))
+            return;
+        timeReachedBoundary = t;
+        spring$1 = spring({
+            keyframes: [state.value, nearestBoundary(state.value)],
+            velocity: calcGeneratorVelocity(calcLatest, t, state.value), // TODO: This should be passing * 1000
+            damping: bounceDamping,
+            stiffness: bounceStiffness,
+            restDelta,
+            restSpeed,
+        });
+    };
+    checkCatchBoundary(0);
+    return {
+        calculatedDuration: null,
+        next: (t) => {
+            /**
+             * We need to resolve the friction to figure out if we need a
+             * spring but we don't want to do this twice per frame. So here
+             * we flag if we updated for this frame and later if we did
+             * we can skip doing it again.
+             */
+            let hasUpdatedFrame = false;
+            if (!spring$1 && timeReachedBoundary === undefined) {
+                hasUpdatedFrame = true;
+                applyFriction(t);
+                checkCatchBoundary(t);
+            }
+            /**
+             * If we have a spring and the provided t is beyond the moment the friction
+             * animation crossed the min/max boundary, use the spring.
+             */
+            if (timeReachedBoundary !== undefined && t >= timeReachedBoundary) {
+                return spring$1.next(t - timeReachedBoundary);
+            }
+            else {
+                !hasUpdatedFrame && applyFriction(t);
+                return state;
+            }
+        },
+    };
+}
+
+const easeIn = /*@__PURE__*/ cubicBezier(0.42, 0, 1, 1);
+const easeOut = /*@__PURE__*/ cubicBezier(0, 0, 0.58, 1);
+const easeInOut = /*@__PURE__*/ cubicBezier(0.42, 0, 0.58, 1);
+
+const isEasingArray = (ease) => {
+    return Array.isArray(ease) && typeof ease[0] !== "number";
+};
+
+const easingLookup = {
+    linear: noop,
+    easeIn,
+    easeInOut,
+    easeOut,
+    circIn,
+    circInOut,
+    circOut,
+    backIn,
+    backInOut,
+    backOut,
+    anticipate,
+};
+const easingDefinitionToFunction = (definition) => {
+    if (isBezierDefinition(definition)) {
+        // If cubic bezier definition, create bezier curve
+        invariant(definition.length === 4, `Cubic bezier arrays must contain four numerical values.`);
+        const [x1, y1, x2, y2] = definition;
+        return cubicBezier(x1, y1, x2, y2);
+    }
+    else if (typeof definition === "string") {
+        // Else lookup from table
+        invariant(easingLookup[definition] !== undefined, `Invalid easing type '${definition}'`);
+        return easingLookup[definition];
+    }
+    return definition;
+};
+
+function createMixers(output, ease, customMixer) {
+    const mixers = [];
+    const mixerFactory = customMixer || mix;
+    const numMixers = output.length - 1;
+    for (let i = 0; i < numMixers; i++) {
+        let mixer = mixerFactory(output[i], output[i + 1]);
+        if (ease) {
+            const easingFunction = Array.isArray(ease) ? ease[i] || noop : ease;
+            mixer = pipe(easingFunction, mixer);
+        }
+        mixers.push(mixer);
+    }
+    return mixers;
+}
+/**
+ * Create a function that maps from a numerical input array to a generic output array.
+ *
+ * Accepts:
+ *   - Numbers
+ *   - Colors (hex, hsl, hsla, rgb, rgba)
+ *   - Complex (combinations of one or more numbers or strings)
+ *
+ * ```jsx
+ * const mixColor = interpolate([0, 1], ['#fff', '#000'])
+ *
+ * mixColor(0.5) // 'rgba(128, 128, 128, 1)'
+ * ```
+ *
+ * TODO Revist this approach once we've moved to data models for values,
+ * probably not needed to pregenerate mixer functions.
+ *
+ * @public
+ */
+function interpolate(input, output, { clamp: isClamp = true, ease, mixer } = {}) {
+    const inputLength = input.length;
+    invariant(inputLength === output.length, "Both input and output ranges must be the same length");
+    /**
+     * If we're only provided a single input, we can just make a function
+     * that returns the output.
+     */
+    if (inputLength === 1)
+        return () => output[0];
+    if (inputLength === 2 && output[0] === output[1])
+        return () => output[1];
+    const isZeroDeltaRange = input[0] === input[1];
+    // If input runs highest -> lowest, reverse both arrays
+    if (input[0] > input[inputLength - 1]) {
+        input = [...input].reverse();
+        output = [...output].reverse();
+    }
+    const mixers = createMixers(output, ease, mixer);
+    const numMixers = mixers.length;
+    const interpolator = (v) => {
+        if (isZeroDeltaRange && v < input[0])
+            return output[0];
+        let i = 0;
+        if (numMixers > 1) {
+            for (; i < input.length - 2; i++) {
+                if (v < input[i + 1])
+                    break;
+            }
+        }
+        const progressInRange = progress(input[i], input[i + 1], v);
+        return mixers[i](progressInRange);
+    };
+    return isClamp
+        ? (v) => interpolator(clamp(input[0], input[inputLength - 1], v))
+        : interpolator;
+}
+
+function fillOffset(offset, remaining) {
+    const min = offset[offset.length - 1];
+    for (let i = 1; i <= remaining; i++) {
+        const offsetProgress = progress(0, remaining, i);
+        offset.push(mixNumber$1(min, 1, offsetProgress));
+    }
+}
+
+function defaultOffset(arr) {
+    const offset = [0];
+    fillOffset(offset, arr.length - 1);
+    return offset;
+}
+
+function convertOffsetToTimes(offset, duration) {
+    return offset.map((o) => o * duration);
+}
+
+function defaultEasing(values, easing) {
+    return values.map(() => easing || easeInOut).splice(0, values.length - 1);
+}
+function keyframes({ duration = 300, keyframes: keyframeValues, times, ease = "easeInOut", }) {
+    /**
+     * Easing functions can be externally defined as strings. Here we convert them
+     * into actual functions.
+     */
+    const easingFunctions = isEasingArray(ease)
+        ? ease.map(easingDefinitionToFunction)
+        : easingDefinitionToFunction(ease);
+    /**
+     * This is the Iterator-spec return value. We ensure it's mutable rather than using a generator
+     * to reduce GC during animation.
+     */
+    const state = {
+        done: false,
+        value: keyframeValues[0],
+    };
+    /**
+     * Create a times array based on the provided 0-1 offsets
+     */
+    const absoluteTimes = convertOffsetToTimes(
+    // Only use the provided offsets if they're the correct length
+    // TODO Maybe we should warn here if there's a length mismatch
+    times && times.length === keyframeValues.length
+        ? times
+        : defaultOffset(keyframeValues), duration);
+    const mapTimeToKeyframe = interpolate(absoluteTimes, keyframeValues, {
+        ease: Array.isArray(easingFunctions)
+            ? easingFunctions
+            : defaultEasing(keyframeValues, easingFunctions),
+    });
+    return {
+        calculatedDuration: duration,
+        next: (t) => {
+            state.value = mapTimeToKeyframe(t);
+            state.done = t >= duration;
+            return state;
+        },
+    };
+}
+
+const frameloopDriver = (update) => {
+    const passTimestamp = ({ timestamp }) => update(timestamp);
+    return {
+        start: () => frame.update(passTimestamp, true),
+        stop: () => cancelFrame(passTimestamp),
+        /**
+         * If we're processing this frame we can use the
+         * framelocked timestamp to keep things in sync.
+         */
+        now: () => (frameData.isProcessing ? frameData.timestamp : time.now()),
+    };
+};
+
+const generators = {
+    decay: inertia,
+    inertia,
+    tween: keyframes,
+    keyframes: keyframes,
+    spring,
+};
+const percentToProgress = (percent) => percent / 100;
+/**
+ * Animation that runs on the main thread. Designed to be WAAPI-spec in the subset of
+ * features we expose publically. Mostly the compatibility is to ensure visual identity
+ * between both WAAPI and main thread animations.
+ */
+class MainThreadAnimation extends BaseAnimation {
+    constructor(options) {
+        super(options);
+        /**
+         * The time at which the animation was paused.
+         */
+        this.holdTime = null;
+        /**
+         * The time at which the animation was cancelled.
+         */
+        this.cancelTime = null;
+        /**
+         * The current time of the animation.
+         */
+        this.currentTime = 0;
+        /**
+         * Playback speed as a factor. 0 would be stopped, -1 reverse and 2 double speed.
+         */
+        this.playbackSpeed = 1;
+        /**
+         * The state of the animation to apply when the animation is resolved. This
+         * allows calls to the public API to control the animation before it is resolved,
+         * without us having to resolve it first.
+         */
+        this.pendingPlayState = "running";
+        /**
+         * The time at which the animation was started.
+         */
+        this.startTime = null;
+        this.state = "idle";
+        /**
+         * This method is bound to the instance to fix a pattern where
+         * animation.stop is returned as a reference from a useEffect.
+         */
+        this.stop = () => {
+            this.resolver.cancel();
+            this.isStopped = true;
+            if (this.state === "idle")
+                return;
+            this.teardown();
+            const { onStop } = this.options;
+            onStop && onStop();
+        };
+        const { name, motionValue, element, keyframes } = this.options;
+        const KeyframeResolver$1 = (element === null || element === void 0 ? void 0 : element.KeyframeResolver) || KeyframeResolver;
+        const onResolved = (resolvedKeyframes, finalKeyframe) => this.onKeyframesResolved(resolvedKeyframes, finalKeyframe);
+        this.resolver = new KeyframeResolver$1(keyframes, onResolved, name, motionValue, element);
+        this.resolver.scheduleResolve();
+    }
+    flatten() {
+        super.flatten();
+        // If we've already resolved the animation, re-initialise it
+        if (this._resolved) {
+            Object.assign(this._resolved, this.initPlayback(this._resolved.keyframes));
+        }
+    }
+    initPlayback(keyframes$1) {
+        const { type = "keyframes", repeat = 0, repeatDelay = 0, repeatType, velocity = 0, } = this.options;
+        const generatorFactory = isGenerator(type)
+            ? type
+            : generators[type] || keyframes;
+        /**
+         * If our generator doesn't support mixing numbers, we need to replace keyframes with
+         * [0, 100] and then make a function that maps that to the actual keyframes.
+         *
+         * 100 is chosen instead of 1 as it works nicer with spring animations.
+         */
+        let mapPercentToKeyframes;
+        let mirroredGenerator;
+        if (generatorFactory !== keyframes &&
+            typeof keyframes$1[0] !== "number") {
+            if (process.env.NODE_ENV !== "production") {
+                invariant(keyframes$1.length === 2, `Only two keyframes currently supported with spring and inertia animations. Trying to animate ${keyframes$1}`);
+            }
+            mapPercentToKeyframes = pipe(percentToProgress, mix(keyframes$1[0], keyframes$1[1]));
+            keyframes$1 = [0, 100];
+        }
+        const generator = generatorFactory({ ...this.options, keyframes: keyframes$1 });
+        /**
+         * If we have a mirror repeat type we need to create a second generator that outputs the
+         * mirrored (not reversed) animation and later ping pong between the two generators.
+         */
+        if (repeatType === "mirror") {
+            mirroredGenerator = generatorFactory({
+                ...this.options,
+                keyframes: [...keyframes$1].reverse(),
+                velocity: -velocity,
+            });
+        }
+        /**
+         * If duration is undefined and we have repeat options,
+         * we need to calculate a duration from the generator.
+         *
+         * We set it to the generator itself to cache the duration.
+         * Any timeline resolver will need to have already precalculated
+         * the duration by this step.
+         */
+        if (generator.calculatedDuration === null) {
+            generator.calculatedDuration = calcGeneratorDuration(generator);
+        }
+        const { calculatedDuration } = generator;
+        const resolvedDuration = calculatedDuration + repeatDelay;
+        const totalDuration = resolvedDuration * (repeat + 1) - repeatDelay;
+        return {
+            generator,
+            mirroredGenerator,
+            mapPercentToKeyframes,
+            calculatedDuration,
+            resolvedDuration,
+            totalDuration,
+        };
+    }
+    onPostResolved() {
+        const { autoplay = true } = this.options;
+        this.play();
+        if (this.pendingPlayState === "paused" || !autoplay) {
+            this.pause();
+        }
+        else {
+            this.state = this.pendingPlayState;
+        }
+    }
+    tick(timestamp, sample = false) {
+        const { resolved } = this;
+        // If the animations has failed to resolve, return the final keyframe.
+        if (!resolved) {
+            const { keyframes } = this.options;
+            return { done: true, value: keyframes[keyframes.length - 1] };
+        }
+        const { finalKeyframe, generator, mirroredGenerator, mapPercentToKeyframes, keyframes, calculatedDuration, totalDuration, resolvedDuration, } = resolved;
+        if (this.startTime === null)
+            return generator.next(0);
+        const { delay, repeat, repeatType, repeatDelay, onUpdate } = this.options;
+        /**
+         * requestAnimationFrame timestamps can come through as lower than
+         * the startTime as set by performance.now(). Here we prevent this,
+         * though in the future it could be possible to make setting startTime
+         * a pending operation that gets resolved here.
+         */
+        if (this.speed > 0) {
+            this.startTime = Math.min(this.startTime, timestamp);
+        }
+        else if (this.speed < 0) {
+            this.startTime = Math.min(timestamp - totalDuration / this.speed, this.startTime);
+        }
+        // Update currentTime
+        if (sample) {
+            this.currentTime = timestamp;
+        }
+        else if (this.holdTime !== null) {
+            this.currentTime = this.holdTime;
+        }
+        else {
+            // Rounding the time because floating point arithmetic is not always accurate, e.g. 3000.367 - 1000.367 =
+            // 2000.0000000000002. This is a problem when we are comparing the currentTime with the duration, for
+            // example.
+            this.currentTime =
+                Math.round(timestamp - this.startTime) * this.speed;
+        }
+        // Rebase on delay
+        const timeWithoutDelay = this.currentTime - delay * (this.speed >= 0 ? 1 : -1);
+        const isInDelayPhase = this.speed >= 0
+            ? timeWithoutDelay < 0
+            : timeWithoutDelay > totalDuration;
+        this.currentTime = Math.max(timeWithoutDelay, 0);
+        // If this animation has finished, set the current time  to the total duration.
+        if (this.state === "finished" && this.holdTime === null) {
+            this.currentTime = totalDuration;
+        }
+        let elapsed = this.currentTime;
+        let frameGenerator = generator;
+        if (repeat) {
+            /**
+             * Get the current progress (0-1) of the animation. If t is >
+             * than duration we'll get values like 2.5 (midway through the
+             * third iteration)
+             */
+            const progress = Math.min(this.currentTime, totalDuration) / resolvedDuration;
+            /**
+             * Get the current iteration (0 indexed). For instance the floor of
+             * 2.5 is 2.
+             */
+            let currentIteration = Math.floor(progress);
+            /**
+             * Get the current progress of the iteration by taking the remainder
+             * so 2.5 is 0.5 through iteration 2
+             */
+            let iterationProgress = progress % 1.0;
+            /**
+             * If iteration progress is 1 we count that as the end
+             * of the previous iteration.
+             */
+            if (!iterationProgress && progress >= 1) {
+                iterationProgress = 1;
+            }
+            iterationProgress === 1 && currentIteration--;
+            currentIteration = Math.min(currentIteration, repeat + 1);
+            /**
+             * Reverse progress if we're not running in "normal" direction
+             */
+            const isOddIteration = Boolean(currentIteration % 2);
+            if (isOddIteration) {
+                if (repeatType === "reverse") {
+                    iterationProgress = 1 - iterationProgress;
+                    if (repeatDelay) {
+                        iterationProgress -= repeatDelay / resolvedDuration;
+                    }
+                }
+                else if (repeatType === "mirror") {
+                    frameGenerator = mirroredGenerator;
+                }
+            }
+            elapsed = clamp(0, 1, iterationProgress) * resolvedDuration;
+        }
+        /**
+         * If we're in negative time, set state as the initial keyframe.
+         * This prevents delay: x, duration: 0 animations from finishing
+         * instantly.
+         */
+        const state = isInDelayPhase
+            ? { done: false, value: keyframes[0] }
+            : frameGenerator.next(elapsed);
+        if (mapPercentToKeyframes) {
+            state.value = mapPercentToKeyframes(state.value);
+        }
+        let { done } = state;
+        if (!isInDelayPhase && calculatedDuration !== null) {
+            done =
+                this.speed >= 0
+                    ? this.currentTime >= totalDuration
+                    : this.currentTime <= 0;
+        }
+        const isAnimationFinished = this.holdTime === null &&
+            (this.state === "finished" || (this.state === "running" && done));
+        if (isAnimationFinished && finalKeyframe !== undefined) {
+            state.value = getFinalKeyframe(keyframes, this.options, finalKeyframe);
+        }
+        if (onUpdate) {
+            onUpdate(state.value);
+        }
+        if (isAnimationFinished) {
+            this.finish();
+        }
+        return state;
+    }
+    get duration() {
+        const { resolved } = this;
+        return resolved ? millisecondsToSeconds(resolved.calculatedDuration) : 0;
+    }
+    get time() {
+        return millisecondsToSeconds(this.currentTime);
+    }
+    set time(newTime) {
+        newTime = secondsToMilliseconds(newTime);
+        this.currentTime = newTime;
+        if (this.holdTime !== null || this.speed === 0) {
+            this.holdTime = newTime;
+        }
+        else if (this.driver) {
+            this.startTime = this.driver.now() - newTime / this.speed;
+        }
+    }
+    get speed() {
+        return this.playbackSpeed;
+    }
+    set speed(newSpeed) {
+        const hasChanged = this.playbackSpeed !== newSpeed;
+        this.playbackSpeed = newSpeed;
+        if (hasChanged) {
+            this.time = millisecondsToSeconds(this.currentTime);
+        }
+    }
+    play() {
+        if (!this.resolver.isScheduled) {
+            this.resolver.resume();
+        }
+        if (!this._resolved) {
+            this.pendingPlayState = "running";
+            return;
+        }
+        if (this.isStopped)
+            return;
+        const { driver = frameloopDriver, onPlay, startTime } = this.options;
+        if (!this.driver) {
+            this.driver = driver((timestamp) => this.tick(timestamp));
+        }
+        onPlay && onPlay();
+        const now = this.driver.now();
+        if (this.holdTime !== null) {
+            this.startTime = now - this.holdTime;
+        }
+        else if (!this.startTime) {
+            this.startTime = startTime !== null && startTime !== void 0 ? startTime : this.calcStartTime();
+        }
+        else if (this.state === "finished") {
+            this.startTime = now;
+        }
+        if (this.state === "finished") {
+            this.updateFinishedPromise();
+        }
+        this.cancelTime = this.startTime;
+        this.holdTime = null;
+        /**
+         * Set playState to running only after we've used it in
+         * the previous logic.
+         */
+        this.state = "running";
+        this.driver.start();
+    }
+    pause() {
+        var _a;
+        if (!this._resolved) {
+            this.pendingPlayState = "paused";
+            return;
+        }
+        this.state = "paused";
+        this.holdTime = (_a = this.currentTime) !== null && _a !== void 0 ? _a : 0;
+    }
+    complete() {
+        if (this.state !== "running") {
+            this.play();
+        }
+        this.pendingPlayState = this.state = "finished";
+        this.holdTime = null;
+    }
+    finish() {
+        this.teardown();
+        this.state = "finished";
+        const { onComplete } = this.options;
+        onComplete && onComplete();
+    }
+    cancel() {
+        if (this.cancelTime !== null) {
+            this.tick(this.cancelTime);
+        }
+        this.teardown();
+        this.updateFinishedPromise();
+    }
+    teardown() {
+        this.state = "idle";
+        this.stopDriver();
+        this.resolveFinishedPromise();
+        this.updateFinishedPromise();
+        this.startTime = this.cancelTime = null;
+        this.resolver.cancel();
+    }
+    stopDriver() {
+        if (!this.driver)
+            return;
+        this.driver.stop();
+        this.driver = undefined;
+    }
+    sample(time) {
+        this.startTime = 0;
+        return this.tick(time, true);
+    }
+}
+
+/**
+ * A list of values that can be hardware-accelerated.
+ */
+const acceleratedValues = new Set([
+    "opacity",
+    "clipPath",
+    "filter",
+    "transform",
+    // TODO: Can be accelerated but currently disabled until https://issues.chromium.org/issues/41491098 is resolved
+    // or until we implement support for linear() easing.
+    // "background-color"
+]);
+
+function startWaapiAnimation(element, valueName, keyframes, { delay = 0, duration = 300, repeat = 0, repeatType = "loop", ease = "easeInOut", times, } = {}) {
+    const keyframeOptions = { [valueName]: keyframes };
+    if (times)
+        keyframeOptions.offset = times;
+    const easing = mapEasingToNativeEasing(ease, duration);
+    /**
+     * If this is an easing array, apply to keyframes, not animation as a whole
+     */
+    if (Array.isArray(easing))
+        keyframeOptions.easing = easing;
+    return element.animate(keyframeOptions, {
+        delay,
+        duration,
+        easing: !Array.isArray(easing) ? easing : "linear",
+        fill: "both",
+        iterations: repeat + 1,
+        direction: repeatType === "reverse" ? "alternate" : "normal",
+    });
+}
+
+const supportsWaapi = /*@__PURE__*/ memo(() => Object.hasOwnProperty.call(Element.prototype, "animate"));
+
+/**
+ * 10ms is chosen here as it strikes a balance between smooth
+ * results (more than one keyframe per frame at 60fps) and
+ * keyframe quantity.
+ */
+const sampleDelta = 10; //ms
+/**
+ * Implement a practical max duration for keyframe generation
+ * to prevent infinite loops
+ */
+const maxDuration = 20000;
+/**
+ * Check if an animation can run natively via WAAPI or requires pregenerated keyframes.
+ * WAAPI doesn't support spring or function easings so we run these as JS animation before
+ * handing off.
+ */
+function requiresPregeneratedKeyframes(options) {
+    return (isGenerator(options.type) ||
+        options.type === "spring" ||
+        !isWaapiSupportedEasing(options.ease));
+}
+function pregenerateKeyframes(keyframes, options) {
+    /**
+     * Create a main-thread animation to pregenerate keyframes.
+     * We sample this at regular intervals to generate keyframes that we then
+     * linearly interpolate between.
+     */
+    const sampleAnimation = new MainThreadAnimation({
+        ...options,
+        keyframes,
+        repeat: 0,
+        delay: 0,
+        isGenerator: true,
+    });
+    let state = { done: false, value: keyframes[0] };
+    const pregeneratedKeyframes = [];
+    /**
+     * Bail after 20 seconds of pre-generated keyframes as it's likely
+     * we're heading for an infinite loop.
+     */
+    let t = 0;
+    while (!state.done && t < maxDuration) {
+        state = sampleAnimation.sample(t);
+        pregeneratedKeyframes.push(state.value);
+        t += sampleDelta;
+    }
+    return {
+        times: undefined,
+        keyframes: pregeneratedKeyframes,
+        duration: t - sampleDelta,
+        ease: "linear",
+    };
+}
+const unsupportedEasingFunctions = {
+    anticipate,
+    backInOut,
+    circInOut,
+};
+function isUnsupportedEase(key) {
+    return key in unsupportedEasingFunctions;
+}
+class AcceleratedAnimation extends BaseAnimation {
+    constructor(options) {
+        super(options);
+        const { name, motionValue, element, keyframes } = this.options;
+        this.resolver = new DOMKeyframesResolver(keyframes, (resolvedKeyframes, finalKeyframe) => this.onKeyframesResolved(resolvedKeyframes, finalKeyframe), name, motionValue, element);
+        this.resolver.scheduleResolve();
+    }
+    initPlayback(keyframes, finalKeyframe) {
+        let { duration = 300, times, ease, type, motionValue, name, startTime, } = this.options;
+        /**
+         * If element has since been unmounted, return false to indicate
+         * the animation failed to initialised.
+         */
+        if (!motionValue.owner || !motionValue.owner.current) {
+            return false;
+        }
+        /**
+         * If the user has provided an easing function name that isn't supported
+         * by WAAPI (like "anticipate"), we need to provide the corressponding
+         * function. This will later get converted to a linear() easing function.
+         */
+        if (typeof ease === "string" &&
+            supportsLinearEasing() &&
+            isUnsupportedEase(ease)) {
+            ease = unsupportedEasingFunctions[ease];
+        }
+        /**
+         * If this animation needs pre-generated keyframes then generate.
+         */
+        if (requiresPregeneratedKeyframes(this.options)) {
+            const { onComplete, onUpdate, motionValue, element, ...options } = this.options;
+            const pregeneratedAnimation = pregenerateKeyframes(keyframes, options);
+            keyframes = pregeneratedAnimation.keyframes;
+            // If this is a very short animation, ensure we have
+            // at least two keyframes to animate between as older browsers
+            // can't animate between a single keyframe.
+            if (keyframes.length === 1) {
+                keyframes[1] = keyframes[0];
+            }
+            duration = pregeneratedAnimation.duration;
+            times = pregeneratedAnimation.times;
+            ease = pregeneratedAnimation.ease;
+            type = "keyframes";
+        }
+        const animation = startWaapiAnimation(motionValue.owner.current, name, keyframes, { ...this.options, duration, times, ease });
+        // Override the browser calculated startTime with one synchronised to other JS
+        // and WAAPI animations starting this event loop.
+        animation.startTime = startTime !== null && startTime !== void 0 ? startTime : this.calcStartTime();
+        if (this.pendingTimeline) {
+            attachTimeline(animation, this.pendingTimeline);
+            this.pendingTimeline = undefined;
+        }
+        else {
+            /**
+             * Prefer the `onfinish` prop as it's more widely supported than
+             * the `finished` promise.
+             *
+             * Here, we synchronously set the provided MotionValue to the end
+             * keyframe. If we didn't, when the WAAPI animation is finished it would
+             * be removed from the element which would then revert to its old styles.
+             */
+            animation.onfinish = () => {
+                const { onComplete } = this.options;
+                motionValue.set(getFinalKeyframe(keyframes, this.options, finalKeyframe));
+                onComplete && onComplete();
+                this.cancel();
+                this.resolveFinishedPromise();
+            };
+        }
+        return {
+            animation,
+            duration,
+            times,
+            type,
+            ease,
+            keyframes: keyframes,
+        };
+    }
+    get duration() {
+        const { resolved } = this;
+        if (!resolved)
+            return 0;
+        const { duration } = resolved;
+        return millisecondsToSeconds(duration);
+    }
+    get time() {
+        const { resolved } = this;
+        if (!resolved)
+            return 0;
+        const { animation } = resolved;
+        return millisecondsToSeconds(animation.currentTime || 0);
+    }
+    set time(newTime) {
+        const { resolved } = this;
+        if (!resolved)
+            return;
+        const { animation } = resolved;
+        animation.currentTime = secondsToMilliseconds(newTime);
+    }
+    get speed() {
+        const { resolved } = this;
+        if (!resolved)
+            return 1;
+        const { animation } = resolved;
+        return animation.playbackRate;
+    }
+    set speed(newSpeed) {
+        const { resolved } = this;
+        if (!resolved)
+            return;
+        const { animation } = resolved;
+        animation.playbackRate = newSpeed;
+    }
+    get state() {
+        const { resolved } = this;
+        if (!resolved)
+            return "idle";
+        const { animation } = resolved;
+        return animation.playState;
+    }
+    get startTime() {
+        const { resolved } = this;
+        if (!resolved)
+            return null;
+        const { animation } = resolved;
+        // Coerce to number as TypeScript incorrectly types this
+        // as CSSNumberish
+        return animation.startTime;
+    }
+    /**
+     * Replace the default DocumentTimeline with another AnimationTimeline.
+     * Currently used for scroll animations.
+     */
+    attachTimeline(timeline) {
+        if (!this._resolved) {
+            this.pendingTimeline = timeline;
+        }
+        else {
+            const { resolved } = this;
+            if (!resolved)
+                return noop;
+            const { animation } = resolved;
+            attachTimeline(animation, timeline);
+        }
+        return noop;
+    }
+    play() {
+        if (this.isStopped)
+            return;
+        const { resolved } = this;
+        if (!resolved)
+            return;
+        const { animation } = resolved;
+        if (animation.playState === "finished") {
+            this.updateFinishedPromise();
+        }
+        animation.play();
+    }
+    pause() {
+        const { resolved } = this;
+        if (!resolved)
+            return;
+        const { animation } = resolved;
+        animation.pause();
+    }
+    stop() {
+        this.resolver.cancel();
+        this.isStopped = true;
+        if (this.state === "idle")
+            return;
+        this.resolveFinishedPromise();
+        this.updateFinishedPromise();
+        const { resolved } = this;
+        if (!resolved)
+            return;
+        const { animation, keyframes, duration, type, ease, times } = resolved;
+        if (animation.playState === "idle" ||
+            animation.playState === "finished") {
+            return;
+        }
+        /**
+         * WAAPI doesn't natively have any interruption capabilities.
+         *
+         * Rather than read commited styles back out of the DOM, we can
+         * create a renderless JS animation and sample it twice to calculate
+         * its current value, "previous" value, and therefore allow
+         * Motion to calculate velocity for any subsequent animation.
+         */
+        if (this.time) {
+            const { motionValue, onUpdate, onComplete, element, ...options } = this.options;
+            const sampleAnimation = new MainThreadAnimation({
+                ...options,
+                keyframes,
+                duration,
+                type,
+                ease,
+                times,
+                isGenerator: true,
+            });
+            const sampleTime = secondsToMilliseconds(this.time);
+            motionValue.setWithVelocity(sampleAnimation.sample(sampleTime - sampleDelta).value, sampleAnimation.sample(sampleTime).value, sampleDelta);
+        }
+        const { onStop } = this.options;
+        onStop && onStop();
+        this.cancel();
+    }
+    complete() {
+        const { resolved } = this;
+        if (!resolved)
+            return;
+        resolved.animation.finish();
+    }
+    cancel() {
+        const { resolved } = this;
+        if (!resolved)
+            return;
+        resolved.animation.cancel();
+    }
+    static supports(options) {
+        const { motionValue, name, repeatDelay, repeatType, damping, type } = options;
+        if (!motionValue ||
+            !motionValue.owner ||
+            !(motionValue.owner.current instanceof HTMLElement)) {
+            return false;
+        }
+        const { onUpdate, transformTemplate } = motionValue.owner.getProps();
+        return (supportsWaapi() &&
+            name &&
+            acceleratedValues.has(name) &&
+            /**
+             * If we're outputting values to onUpdate then we can't use WAAPI as there's
+             * no way to read the value from WAAPI every frame.
+             */
+            !onUpdate &&
+            !transformTemplate &&
+            !repeatDelay &&
+            repeatType !== "mirror" &&
+            damping !== 0 &&
+            type !== "inertia");
+    }
+}
+
+const underDampedSpring = {
+    type: "spring",
+    stiffness: 500,
+    damping: 25,
+    restSpeed: 10,
+};
+const criticallyDampedSpring = (target) => ({
+    type: "spring",
+    stiffness: 550,
+    damping: target === 0 ? 2 * Math.sqrt(550) : 30,
+    restSpeed: 10,
+});
+const keyframesTransition = {
+    type: "keyframes",
+    duration: 0.8,
+};
+/**
+ * Default easing curve is a slightly shallower version of
+ * the default browser easing curve.
+ */
+const ease = {
+    type: "keyframes",
+    ease: [0.25, 0.1, 0.35, 1],
+    duration: 0.3,
+};
+const getDefaultTransition = (valueKey, { keyframes }) => {
+    if (keyframes.length > 2) {
+        return keyframesTransition;
+    }
+    else if (transformProps.has(valueKey)) {
+        return valueKey.startsWith("scale")
+            ? criticallyDampedSpring(keyframes[1])
+            : underDampedSpring;
+    }
+    return ease;
+};
+
+/**
+ * Decide whether a transition is defined on a given Transition.
+ * This filters out orchestration options and returns true
+ * if any options are left.
+ */
+function isTransitionDefined({ when, delay: _delay, delayChildren, staggerChildren, staggerDirection, repeat, repeatType, repeatDelay, from, elapsed, ...transition }) {
+    return !!Object.keys(transition).length;
+}
+
+const animateMotionValue = (name, value, target, transition = {}, element, isHandoff) => (onComplete) => {
+    const valueTransition = getValueTransition(transition, name) || {};
+    /**
+     * Most transition values are currently completely overwritten by value-specific
+     * transitions. In the future it'd be nicer to blend these transitions. But for now
+     * delay actually does inherit from the root transition if not value-specific.
+     */
+    const delay = valueTransition.delay || transition.delay || 0;
+    /**
+     * Elapsed isn't a public transition option but can be passed through from
+     * optimized appear effects in milliseconds.
+     */
+    let { elapsed = 0 } = transition;
+    elapsed = elapsed - secondsToMilliseconds(delay);
+    let options = {
+        keyframes: Array.isArray(target) ? target : [null, target],
+        ease: "easeOut",
+        velocity: value.getVelocity(),
+        ...valueTransition,
+        delay: -elapsed,
+        onUpdate: (v) => {
+            value.set(v);
+            valueTransition.onUpdate && valueTransition.onUpdate(v);
+        },
+        onComplete: () => {
+            onComplete();
+            valueTransition.onComplete && valueTransition.onComplete();
+        },
+        name,
+        motionValue: value,
+        element: isHandoff ? undefined : element,
+    };
+    /**
+     * If there's no transition defined for this value, we can generate
+     * unqiue transition settings for this value.
+     */
+    if (!isTransitionDefined(valueTransition)) {
+        options = {
+            ...options,
+            ...getDefaultTransition(name, options),
+        };
+    }
+    /**
+     * Both WAAPI and our internal animation functions use durations
+     * as defined by milliseconds, while our external API defines them
+     * as seconds.
+     */
+    if (options.duration) {
+        options.duration = secondsToMilliseconds(options.duration);
+    }
+    if (options.repeatDelay) {
+        options.repeatDelay = secondsToMilliseconds(options.repeatDelay);
+    }
+    if (options.from !== undefined) {
+        options.keyframes[0] = options.from;
+    }
+    let shouldSkip = false;
+    if (options.type === false ||
+        (options.duration === 0 && !options.repeatDelay)) {
+        options.duration = 0;
+        if (options.delay === 0) {
+            shouldSkip = true;
+        }
+    }
+    /**
+     * If we can or must skip creating the animation, and apply only
+     * the final keyframe, do so. We also check once keyframes are resolved but
+     * this early check prevents the need to create an animation at all.
+     */
+    if (shouldSkip && !isHandoff && value.get() !== undefined) {
+        const finalKeyframe = getFinalKeyframe(options.keyframes, valueTransition);
+        if (finalKeyframe !== undefined) {
+            frame.update(() => {
+                options.onUpdate(finalKeyframe);
+                options.onComplete();
+            });
+            // We still want to return some animation controls here rather
+            // than returning undefined
+            return new GroupPlaybackControls([]);
+        }
+    }
+    /**
+     * Animate via WAAPI if possible. If this is a handoff animation, the optimised animation will be running via
+     * WAAPI. Therefore, this animation must be JS to ensure it runs "under" the
+     * optimised animation.
+     */
+    if (!isHandoff && AcceleratedAnimation.supports(options)) {
+        return new AcceleratedAnimation(options);
+    }
+    else {
+        return new MainThreadAnimation(options);
+    }
+};
+
+/**
+ * Decide whether we should block this animation. Previously, we achieved this
+ * just by checking whether the key was listed in protectedKeys, but this
+ * posed problems if an animation was triggered by afterChildren and protectedKeys
+ * had been set to true in the meantime.
+ */
+function shouldBlockAnimation({ protectedKeys, needsAnimating }, key) {
+    const shouldBlock = protectedKeys.hasOwnProperty(key) && needsAnimating[key] !== true;
+    needsAnimating[key] = false;
+    return shouldBlock;
+}
+function animateTarget(visualElement, targetAndTransition, { delay = 0, transitionOverride, type } = {}) {
+    var _a;
+    let { transition = visualElement.getDefaultTransition(), transitionEnd, ...target } = targetAndTransition;
+    if (transitionOverride)
+        transition = transitionOverride;
+    const animations = [];
+    const animationTypeState = type &&
+        visualElement.animationState &&
+        visualElement.animationState.getState()[type];
+    for (const key in target) {
+        const value = visualElement.getValue(key, (_a = visualElement.latestValues[key]) !== null && _a !== void 0 ? _a : null);
+        const valueTarget = target[key];
+        if (valueTarget === undefined ||
+            (animationTypeState &&
+                shouldBlockAnimation(animationTypeState, key))) {
+            continue;
+        }
+        const valueTransition = {
+            delay,
+            ...getValueTransition(transition || {}, key),
+        };
+        /**
+         * If this is the first time a value is being animated, check
+         * to see if we're handling off from an existing animation.
+         */
+        let isHandoff = false;
+        if (window.MotionHandoffAnimation) {
+            const appearId = getOptimisedAppearId(visualElement);
+            if (appearId) {
+                const startTime = window.MotionHandoffAnimation(appearId, key, frame);
+                if (startTime !== null) {
+                    valueTransition.startTime = startTime;
+                    isHandoff = true;
+                }
+            }
+        }
+        addValueToWillChange(visualElement, key);
+        value.start(animateMotionValue(key, value, valueTarget, visualElement.shouldReduceMotion && positionalKeys.has(key)
+            ? { type: false }
+            : valueTransition, visualElement, isHandoff));
+        const animation = value.animation;
+        if (animation) {
+            animations.push(animation);
+        }
+    }
+    if (transitionEnd) {
+        Promise.all(animations).then(() => {
+            frame.update(() => {
+                transitionEnd && setTarget(visualElement, transitionEnd);
+            });
+        });
+    }
+    return animations;
+}
+
+function animateVariant(visualElement, variant, options = {}) {
+    var _a;
+    const resolved = resolveVariant(visualElement, variant, options.type === "exit"
+        ? (_a = visualElement.presenceContext) === null || _a === void 0 ? void 0 : _a.custom
+        : undefined);
+    let { transition = visualElement.getDefaultTransition() || {} } = resolved || {};
+    if (options.transitionOverride) {
+        transition = options.transitionOverride;
+    }
+    /**
+     * If we have a variant, create a callback that runs it as an animation.
+     * Otherwise, we resolve a Promise immediately for a composable no-op.
+     */
+    const getAnimation = resolved
+        ? () => Promise.all(animateTarget(visualElement, resolved, options))
+        : () => Promise.resolve();
+    /**
+     * If we have children, create a callback that runs all their animations.
+     * Otherwise, we resolve a Promise immediately for a composable no-op.
+     */
+    const getChildAnimations = visualElement.variantChildren && visualElement.variantChildren.size
+        ? (forwardDelay = 0) => {
+            const { delayChildren = 0, staggerChildren, staggerDirection, } = transition;
+            return animateChildren(visualElement, variant, delayChildren + forwardDelay, staggerChildren, staggerDirection, options);
+        }
+        : () => Promise.resolve();
+    /**
+     * If the transition explicitly defines a "when" option, we need to resolve either
+     * this animation or all children animations before playing the other.
+     */
+    const { when } = transition;
+    if (when) {
+        const [first, last] = when === "beforeChildren"
+            ? [getAnimation, getChildAnimations]
+            : [getChildAnimations, getAnimation];
+        return first().then(() => last());
+    }
+    else {
+        return Promise.all([getAnimation(), getChildAnimations(options.delay)]);
+    }
+}
+function animateChildren(visualElement, variant, delayChildren = 0, staggerChildren = 0, staggerDirection = 1, options) {
+    const animations = [];
+    const maxStaggerDuration = (visualElement.variantChildren.size - 1) * staggerChildren;
+    const generateStaggerDuration = staggerDirection === 1
+        ? (i = 0) => i * staggerChildren
+        : (i = 0) => maxStaggerDuration - i * staggerChildren;
+    Array.from(visualElement.variantChildren)
+        .sort(sortByTreeOrder)
+        .forEach((child, i) => {
+        child.notify("AnimationStart", variant);
+        animations.push(animateVariant(child, variant, {
+            ...options,
+            delay: delayChildren + generateStaggerDuration(i),
+        }).then(() => child.notify("AnimationComplete", variant)));
+    });
+    return Promise.all(animations);
+}
+function sortByTreeOrder(a, b) {
+    return a.sortNodePosition(b);
+}
+
+function animateVisualElement(visualElement, definition, options = {}) {
+    visualElement.notify("AnimationStart", definition);
+    let animation;
+    if (Array.isArray(definition)) {
+        const animations = definition.map((variant) => animateVariant(visualElement, variant, options));
+        animation = Promise.all(animations);
+    }
+    else if (typeof definition === "string") {
+        animation = animateVariant(visualElement, definition, options);
+    }
+    else {
+        const resolvedDefinition = typeof definition === "function"
+            ? resolveVariant(visualElement, definition, options.custom)
+            : definition;
+        animation = Promise.all(animateTarget(visualElement, resolvedDefinition, options));
+    }
+    return animation.then(() => {
+        visualElement.notify("AnimationComplete", definition);
+    });
+}
+
+const numVariantProps = variantProps.length;
+function getVariantContext(visualElement) {
+    if (!visualElement)
+        return undefined;
+    if (!visualElement.isControllingVariants) {
+        const context = visualElement.parent
+            ? getVariantContext(visualElement.parent) || {}
+            : {};
+        if (visualElement.props.initial !== undefined) {
+            context.initial = visualElement.props.initial;
+        }
+        return context;
+    }
+    const context = {};
+    for (let i = 0; i < numVariantProps; i++) {
+        const name = variantProps[i];
+        const prop = visualElement.props[name];
+        if (isVariantLabel(prop) || prop === false) {
+            context[name] = prop;
+        }
+    }
+    return context;
+}
+
+const reversePriorityOrder = [...variantPriorityOrder].reverse();
+const numAnimationTypes = variantPriorityOrder.length;
+function animateList(visualElement) {
+    return (animations) => Promise.all(animations.map(({ animation, options }) => animateVisualElement(visualElement, animation, options)));
+}
+function createAnimationState(visualElement) {
+    let animate = animateList(visualElement);
+    let state = createState();
+    let isInitialRender = true;
+    /**
+     * This function will be used to reduce the animation definitions for
+     * each active animation type into an object of resolved values for it.
+     */
+    const buildResolvedTypeValues = (type) => (acc, definition) => {
+        var _a;
+        const resolved = resolveVariant(visualElement, definition, type === "exit"
+            ? (_a = visualElement.presenceContext) === null || _a === void 0 ? void 0 : _a.custom
+            : undefined);
+        if (resolved) {
+            const { transition, transitionEnd, ...target } = resolved;
+            acc = { ...acc, ...target, ...transitionEnd };
+        }
+        return acc;
+    };
+    /**
+     * This just allows us to inject mocked animation functions
+     * @internal
+     */
+    function setAnimateFunction(makeAnimator) {
+        animate = makeAnimator(visualElement);
+    }
+    /**
+     * When we receive new props, we need to:
+     * 1. Create a list of protected keys for each type. This is a directory of
+     *    value keys that are currently being "handled" by types of a higher priority
+     *    so that whenever an animation is played of a given type, these values are
+     *    protected from being animated.
+     * 2. Determine if an animation type needs animating.
+     * 3. Determine if any values have been removed from a type and figure out
+     *    what to animate those to.
+     */
+    function animateChanges(changedActiveType) {
+        const { props } = visualElement;
+        const context = getVariantContext(visualElement.parent) || {};
+        /**
+         * A list of animations that we'll build into as we iterate through the animation
+         * types. This will get executed at the end of the function.
+         */
+        const animations = [];
+        /**
+         * Keep track of which values have been removed. Then, as we hit lower priority
+         * animation types, we can check if they contain removed values and animate to that.
+         */
+        const removedKeys = new Set();
+        /**
+         * A dictionary of all encountered keys. This is an object to let us build into and
+         * copy it without iteration. Each time we hit an animation type we set its protected
+         * keys - the keys its not allowed to animate - to the latest version of this object.
+         */
+        let encounteredKeys = {};
+        /**
+         * If a variant has been removed at a given index, and this component is controlling
+         * variant animations, we want to ensure lower-priority variants are forced to animate.
+         */
+        let removedVariantIndex = Infinity;
+        /**
+         * Iterate through all animation types in reverse priority order. For each, we want to
+         * detect which values it's handling and whether or not they've changed (and therefore
+         * need to be animated). If any values have been removed, we want to detect those in
+         * lower priority props and flag for animation.
+         */
+        for (let i = 0; i < numAnimationTypes; i++) {
+            const type = reversePriorityOrder[i];
+            const typeState = state[type];
+            const prop = props[type] !== undefined
+                ? props[type]
+                : context[type];
+            const propIsVariant = isVariantLabel(prop);
+            /**
+             * If this type has *just* changed isActive status, set activeDelta
+             * to that status. Otherwise set to null.
+             */
+            const activeDelta = type === changedActiveType ? typeState.isActive : null;
+            if (activeDelta === false)
+                removedVariantIndex = i;
+            /**
+             * If this prop is an inherited variant, rather than been set directly on the
+             * component itself, we want to make sure we allow the parent to trigger animations.
+             *
+             * TODO: Can probably change this to a !isControllingVariants check
+             */
+            let isInherited = prop === context[type] &&
+                prop !== props[type] &&
+                propIsVariant;
+            /**
+             *
+             */
+            if (isInherited &&
+                isInitialRender &&
+                visualElement.manuallyAnimateOnMount) {
+                isInherited = false;
+            }
+            /**
+             * Set all encountered keys so far as the protected keys for this type. This will
+             * be any key that has been animated or otherwise handled by active, higher-priortiy types.
+             */
+            typeState.protectedKeys = { ...encounteredKeys };
+            // Check if we can skip analysing this prop early
+            if (
+            // If it isn't active and hasn't *just* been set as inactive
+            (!typeState.isActive && activeDelta === null) ||
+                // If we didn't and don't have any defined prop for this animation type
+                (!prop && !typeState.prevProp) ||
+                // Or if the prop doesn't define an animation
+                isAnimationControls(prop) ||
+                typeof prop === "boolean") {
+                continue;
+            }
+            /**
+             * As we go look through the values defined on this type, if we detect
+             * a changed value or a value that was removed in a higher priority, we set
+             * this to true and add this prop to the animation list.
+             */
+            const variantDidChange = checkVariantsDidChange(typeState.prevProp, prop);
+            let shouldAnimateType = variantDidChange ||
+                // If we're making this variant active, we want to always make it active
+                (type === changedActiveType &&
+                    typeState.isActive &&
+                    !isInherited &&
+                    propIsVariant) ||
+                // If we removed a higher-priority variant (i is in reverse order)
+                (i > removedVariantIndex && propIsVariant);
+            let handledRemovedValues = false;
+            /**
+             * As animations can be set as variant lists, variants or target objects, we
+             * coerce everything to an array if it isn't one already
+             */
+            const definitionList = Array.isArray(prop) ? prop : [prop];
+            /**
+             * Build an object of all the resolved values. We'll use this in the subsequent
+             * animateChanges calls to determine whether a value has changed.
+             */
+            let resolvedValues = definitionList.reduce(buildResolvedTypeValues(type), {});
+            if (activeDelta === false)
+                resolvedValues = {};
+            /**
+             * Now we need to loop through all the keys in the prev prop and this prop,
+             * and decide:
+             * 1. If the value has changed, and needs animating
+             * 2. If it has been removed, and needs adding to the removedKeys set
+             * 3. If it has been removed in a higher priority type and needs animating
+             * 4. If it hasn't been removed in a higher priority but hasn't changed, and
+             *    needs adding to the type's protectedKeys list.
+             */
+            const { prevResolvedValues = {} } = typeState;
+            const allKeys = {
+                ...prevResolvedValues,
+                ...resolvedValues,
+            };
+            const markToAnimate = (key) => {
+                shouldAnimateType = true;
+                if (removedKeys.has(key)) {
+                    handledRemovedValues = true;
+                    removedKeys.delete(key);
+                }
+                typeState.needsAnimating[key] = true;
+                const motionValue = visualElement.getValue(key);
+                if (motionValue)
+                    motionValue.liveStyle = false;
+            };
+            for (const key in allKeys) {
+                const next = resolvedValues[key];
+                const prev = prevResolvedValues[key];
+                // If we've already handled this we can just skip ahead
+                if (encounteredKeys.hasOwnProperty(key))
+                    continue;
+                /**
+                 * If the value has changed, we probably want to animate it.
+                 */
+                let valueHasChanged = false;
+                if (isKeyframesTarget(next) && isKeyframesTarget(prev)) {
+                    valueHasChanged = !shallowCompare(next, prev);
+                }
+                else {
+                    valueHasChanged = next !== prev;
+                }
+                if (valueHasChanged) {
+                    if (next !== undefined && next !== null) {
+                        // If next is defined and doesn't equal prev, it needs animating
+                        markToAnimate(key);
+                    }
+                    else {
+                        // If it's undefined, it's been removed.
+                        removedKeys.add(key);
+                    }
+                }
+                else if (next !== undefined && removedKeys.has(key)) {
+                    /**
+                     * If next hasn't changed and it isn't undefined, we want to check if it's
+                     * been removed by a higher priority
+                     */
+                    markToAnimate(key);
+                }
+                else {
+                    /**
+                     * If it hasn't changed, we add it to the list of protected values
+                     * to ensure it doesn't get animated.
+                     */
+                    typeState.protectedKeys[key] = true;
+                }
+            }
+            /**
+             * Update the typeState so next time animateChanges is called we can compare the
+             * latest prop and resolvedValues to these.
+             */
+            typeState.prevProp = prop;
+            typeState.prevResolvedValues = resolvedValues;
+            /**
+             *
+             */
+            if (typeState.isActive) {
+                encounteredKeys = { ...encounteredKeys, ...resolvedValues };
+            }
+            if (isInitialRender && visualElement.blockInitialAnimation) {
+                shouldAnimateType = false;
+            }
+            /**
+             * If this is an inherited prop we want to skip this animation
+             * unless the inherited variants haven't changed on this render.
+             */
+            const willAnimateViaParent = isInherited && variantDidChange;
+            const needsAnimating = !willAnimateViaParent || handledRemovedValues;
+            if (shouldAnimateType && needsAnimating) {
+                animations.push(...definitionList.map((animation) => ({
+                    animation: animation,
+                    options: { type },
+                })));
+            }
+        }
+        /**
+         * If there are some removed value that haven't been dealt with,
+         * we need to create a new animation that falls back either to the value
+         * defined in the style prop, or the last read value.
+         */
+        if (removedKeys.size) {
+            const fallbackAnimation = {};
+            removedKeys.forEach((key) => {
+                const fallbackTarget = visualElement.getBaseTarget(key);
+                const motionValue = visualElement.getValue(key);
+                if (motionValue)
+                    motionValue.liveStyle = true;
+                // @ts-expect-error - @mattgperry to figure if we should do something here
+                fallbackAnimation[key] = fallbackTarget !== null && fallbackTarget !== void 0 ? fallbackTarget : null;
+            });
+            animations.push({ animation: fallbackAnimation });
+        }
+        let shouldAnimate = Boolean(animations.length);
+        if (isInitialRender &&
+            (props.initial === false || props.initial === props.animate) &&
+            !visualElement.manuallyAnimateOnMount) {
+            shouldAnimate = false;
+        }
+        isInitialRender = false;
+        return shouldAnimate ? animate(animations) : Promise.resolve();
+    }
+    /**
+     * Change whether a certain animation type is active.
+     */
+    function setActive(type, isActive) {
+        var _a;
+        // If the active state hasn't changed, we can safely do nothing here
+        if (state[type].isActive === isActive)
+            return Promise.resolve();
+        // Propagate active change to children
+        (_a = visualElement.variantChildren) === null || _a === void 0 ? void 0 : _a.forEach((child) => { var _a; return (_a = child.animationState) === null || _a === void 0 ? void 0 : _a.setActive(type, isActive); });
+        state[type].isActive = isActive;
+        const animations = animateChanges(type);
+        for (const key in state) {
+            state[key].protectedKeys = {};
+        }
+        return animations;
+    }
+    return {
+        animateChanges,
+        setActive,
+        setAnimateFunction,
+        getState: () => state,
+        reset: () => {
+            state = createState();
+            isInitialRender = true;
+        },
+    };
+}
+function checkVariantsDidChange(prev, next) {
+    if (typeof next === "string") {
+        return next !== prev;
+    }
+    else if (Array.isArray(next)) {
+        return !shallowCompare(next, prev);
+    }
+    return false;
+}
+function createTypeState(isActive = false) {
+    return {
+        isActive,
+        protectedKeys: {},
+        needsAnimating: {},
+        prevResolvedValues: {},
+    };
+}
+function createState() {
+    return {
+        animate: createTypeState(true),
+        whileInView: createTypeState(),
+        whileHover: createTypeState(),
+        whileTap: createTypeState(),
+        whileDrag: createTypeState(),
+        whileFocus: createTypeState(),
+        exit: createTypeState(),
+    };
+}
+
+class Feature {
+    constructor(node) {
+        this.isMounted = false;
+        this.node = node;
+    }
+    update() { }
+}
+
+class AnimationFeature extends Feature {
+    /**
+     * We dynamically generate the AnimationState manager as it contains a reference
+     * to the underlying animation library. We only want to load that if we load this,
+     * so people can optionally code split it out using the `m` component.
+     */
+    constructor(node) {
+        super(node);
+        node.animationState || (node.animationState = createAnimationState(node));
+    }
+    updateAnimationControlsSubscription() {
+        const { animate } = this.node.getProps();
+        if (isAnimationControls(animate)) {
+            this.unmountControls = animate.subscribe(this.node);
+        }
+    }
+    /**
+     * Subscribe any provided AnimationControls to the component's VisualElement
+     */
+    mount() {
+        this.updateAnimationControlsSubscription();
+    }
+    update() {
+        const { animate } = this.node.getProps();
+        const { animate: prevAnimate } = this.node.prevProps || {};
+        if (animate !== prevAnimate) {
+            this.updateAnimationControlsSubscription();
+        }
+    }
+    unmount() {
+        var _a;
+        this.node.animationState.reset();
+        (_a = this.unmountControls) === null || _a === void 0 ? void 0 : _a.call(this);
+    }
+}
+
+let id$1 = 0;
+class ExitAnimationFeature extends Feature {
+    constructor() {
+        super(...arguments);
+        this.id = id$1++;
+    }
+    update() {
+        if (!this.node.presenceContext)
+            return;
+        const { isPresent, onExitComplete } = this.node.presenceContext;
+        const { isPresent: prevIsPresent } = this.node.prevPresenceContext || {};
+        if (!this.node.animationState || isPresent === prevIsPresent) {
+            return;
+        }
+        const exitAnimation = this.node.animationState.setActive("exit", !isPresent);
+        if (onExitComplete && !isPresent) {
+            exitAnimation.then(() => onExitComplete(this.id));
+        }
+    }
+    mount() {
+        const { register } = this.node.presenceContext || {};
+        if (register) {
+            this.unmount = register(this.id);
+        }
+    }
+    unmount() { }
+}
+
+const animations = {
+    animation: {
+        Feature: AnimationFeature,
+    },
+    exit: {
+        Feature: ExitAnimationFeature,
+    },
+};
+
+function addDomEvent(target, eventName, handler, options = { passive: true }) {
+    target.addEventListener(eventName, handler, options);
+    return () => target.removeEventListener(eventName, handler);
+}
+
+function extractEventInfo(event) {
+    return {
+        point: {
+            x: event.pageX,
+            y: event.pageY,
+        },
+    };
+}
+const addPointerInfo = (handler) => {
+    return (event) => isPrimaryPointer(event) && handler(event, extractEventInfo(event));
+};
+
+function addPointerEvent(target, eventName, handler, options) {
+    return addDomEvent(target, eventName, addPointerInfo(handler), options);
+}
+
+const distance = (a, b) => Math.abs(a - b);
+function distance2D(a, b) {
+    // Multi-dimensional
+    const xDelta = distance(a.x, b.x);
+    const yDelta = distance(a.y, b.y);
+    return Math.sqrt(xDelta ** 2 + yDelta ** 2);
+}
+
+/**
+ * @internal
+ */
+class PanSession {
+    constructor(event, handlers, { transformPagePoint, contextWindow, dragSnapToOrigin = false, } = {}) {
+        /**
+         * @internal
+         */
+        this.startEvent = null;
+        /**
+         * @internal
+         */
+        this.lastMoveEvent = null;
+        /**
+         * @internal
+         */
+        this.lastMoveEventInfo = null;
+        /**
+         * @internal
+         */
+        this.handlers = {};
+        /**
+         * @internal
+         */
+        this.contextWindow = window;
+        this.updatePoint = () => {
+            if (!(this.lastMoveEvent && this.lastMoveEventInfo))
+                return;
+            const info = getPanInfo(this.lastMoveEventInfo, this.history);
+            const isPanStarted = this.startEvent !== null;
+            // Only start panning if the offset is larger than 3 pixels. If we make it
+            // any larger than this we'll want to reset the pointer history
+            // on the first update to avoid visual snapping to the cursoe.
+            const isDistancePastThreshold = distance2D(info.offset, { x: 0, y: 0 }) >= 3;
+            if (!isPanStarted && !isDistancePastThreshold)
+                return;
+            const { point } = info;
+            const { timestamp } = frameData;
+            this.history.push({ ...point, timestamp });
+            const { onStart, onMove } = this.handlers;
+            if (!isPanStarted) {
+                onStart && onStart(this.lastMoveEvent, info);
+                this.startEvent = this.lastMoveEvent;
+            }
+            onMove && onMove(this.lastMoveEvent, info);
+        };
+        this.handlePointerMove = (event, info) => {
+            this.lastMoveEvent = event;
+            this.lastMoveEventInfo = transformPoint(info, this.transformPagePoint);
+            // Throttle mouse move event to once per frame
+            frame.update(this.updatePoint, true);
+        };
+        this.handlePointerUp = (event, info) => {
+            this.end();
+            const { onEnd, onSessionEnd, resumeAnimation } = this.handlers;
+            if (this.dragSnapToOrigin)
+                resumeAnimation && resumeAnimation();
+            if (!(this.lastMoveEvent && this.lastMoveEventInfo))
+                return;
+            const panInfo = getPanInfo(event.type === "pointercancel"
+                ? this.lastMoveEventInfo
+                : transformPoint(info, this.transformPagePoint), this.history);
+            if (this.startEvent && onEnd) {
+                onEnd(event, panInfo);
+            }
+            onSessionEnd && onSessionEnd(event, panInfo);
+        };
+        // If we have more than one touch, don't start detecting this gesture
+        if (!isPrimaryPointer(event))
+            return;
+        this.dragSnapToOrigin = dragSnapToOrigin;
+        this.handlers = handlers;
+        this.transformPagePoint = transformPagePoint;
+        this.contextWindow = contextWindow || window;
+        const info = extractEventInfo(event);
+        const initialInfo = transformPoint(info, this.transformPagePoint);
+        const { point } = initialInfo;
+        const { timestamp } = frameData;
+        this.history = [{ ...point, timestamp }];
+        const { onSessionStart } = handlers;
+        onSessionStart &&
+            onSessionStart(event, getPanInfo(initialInfo, this.history));
+        this.removeListeners = pipe(addPointerEvent(this.contextWindow, "pointermove", this.handlePointerMove), addPointerEvent(this.contextWindow, "pointerup", this.handlePointerUp), addPointerEvent(this.contextWindow, "pointercancel", this.handlePointerUp));
+    }
+    updateHandlers(handlers) {
+        this.handlers = handlers;
+    }
+    end() {
+        this.removeListeners && this.removeListeners();
+        cancelFrame(this.updatePoint);
+    }
+}
+function transformPoint(info, transformPagePoint) {
+    return transformPagePoint ? { point: transformPagePoint(info.point) } : info;
+}
+function subtractPoint(a, b) {
+    return { x: a.x - b.x, y: a.y - b.y };
+}
+function getPanInfo({ point }, history) {
+    return {
+        point,
+        delta: subtractPoint(point, lastDevicePoint(history)),
+        offset: subtractPoint(point, startDevicePoint(history)),
+        velocity: getVelocity(history, 0.1),
+    };
+}
+function startDevicePoint(history) {
+    return history[0];
+}
+function lastDevicePoint(history) {
+    return history[history.length - 1];
+}
+function getVelocity(history, timeDelta) {
+    if (history.length < 2) {
+        return { x: 0, y: 0 };
+    }
+    let i = history.length - 1;
+    let timestampedPoint = null;
+    const lastPoint = lastDevicePoint(history);
+    while (i >= 0) {
+        timestampedPoint = history[i];
+        if (lastPoint.timestamp - timestampedPoint.timestamp >
+            secondsToMilliseconds(timeDelta)) {
+            break;
+        }
+        i--;
+    }
+    if (!timestampedPoint) {
+        return { x: 0, y: 0 };
+    }
+    const time = millisecondsToSeconds(lastPoint.timestamp - timestampedPoint.timestamp);
+    if (time === 0) {
+        return { x: 0, y: 0 };
+    }
+    const currentVelocity = {
+        x: (lastPoint.x - timestampedPoint.x) / time,
+        y: (lastPoint.y - timestampedPoint.y) / time,
+    };
+    if (currentVelocity.x === Infinity) {
+        currentVelocity.x = 0;
+    }
+    if (currentVelocity.y === Infinity) {
+        currentVelocity.y = 0;
+    }
+    return currentVelocity;
+}
+
+const SCALE_PRECISION = 0.0001;
+const SCALE_MIN = 1 - SCALE_PRECISION;
+const SCALE_MAX = 1 + SCALE_PRECISION;
+const TRANSLATE_PRECISION = 0.01;
+const TRANSLATE_MIN = 0 - TRANSLATE_PRECISION;
+const TRANSLATE_MAX = 0 + TRANSLATE_PRECISION;
+function calcLength(axis) {
+    return axis.max - axis.min;
+}
+function isNear(value, target, maxDistance) {
+    return Math.abs(value - target) <= maxDistance;
+}
+function calcAxisDelta(delta, source, target, origin = 0.5) {
+    delta.origin = origin;
+    delta.originPoint = mixNumber$1(source.min, source.max, delta.origin);
+    delta.scale = calcLength(target) / calcLength(source);
+    delta.translate =
+        mixNumber$1(target.min, target.max, delta.origin) - delta.originPoint;
+    if ((delta.scale >= SCALE_MIN && delta.scale <= SCALE_MAX) ||
+        isNaN(delta.scale)) {
+        delta.scale = 1.0;
+    }
+    if ((delta.translate >= TRANSLATE_MIN &&
+        delta.translate <= TRANSLATE_MAX) ||
+        isNaN(delta.translate)) {
+        delta.translate = 0.0;
+    }
+}
+function calcBoxDelta(delta, source, target, origin) {
+    calcAxisDelta(delta.x, source.x, target.x, origin ? origin.originX : undefined);
+    calcAxisDelta(delta.y, source.y, target.y, origin ? origin.originY : undefined);
+}
+function calcRelativeAxis(target, relative, parent) {
+    target.min = parent.min + relative.min;
+    target.max = target.min + calcLength(relative);
+}
+function calcRelativeBox(target, relative, parent) {
+    calcRelativeAxis(target.x, relative.x, parent.x);
+    calcRelativeAxis(target.y, relative.y, parent.y);
+}
+function calcRelativeAxisPosition(target, layout, parent) {
+    target.min = layout.min - parent.min;
+    target.max = target.min + calcLength(layout);
+}
+function calcRelativePosition(target, layout, parent) {
+    calcRelativeAxisPosition(target.x, layout.x, parent.x);
+    calcRelativeAxisPosition(target.y, layout.y, parent.y);
+}
+
+/**
+ * Apply constraints to a point. These constraints are both physical along an
+ * axis, and an elastic factor that determines how much to constrain the point
+ * by if it does lie outside the defined parameters.
+ */
+function applyConstraints(point, { min, max }, elastic) {
+    if (min !== undefined && point < min) {
+        // If we have a min point defined, and this is outside of that, constrain
+        point = elastic
+            ? mixNumber$1(min, point, elastic.min)
+            : Math.max(point, min);
+    }
+    else if (max !== undefined && point > max) {
+        // If we have a max point defined, and this is outside of that, constrain
+        point = elastic
+            ? mixNumber$1(max, point, elastic.max)
+            : Math.min(point, max);
+    }
+    return point;
+}
+/**
+ * Calculate constraints in terms of the viewport when defined relatively to the
+ * measured axis. This is measured from the nearest edge, so a max constraint of 200
+ * on an axis with a max value of 300 would return a constraint of 500 - axis length
+ */
+function calcRelativeAxisConstraints(axis, min, max) {
+    return {
+        min: min !== undefined ? axis.min + min : undefined,
+        max: max !== undefined
+            ? axis.max + max - (axis.max - axis.min)
+            : undefined,
+    };
+}
+/**
+ * Calculate constraints in terms of the viewport when
+ * defined relatively to the measured bounding box.
+ */
+function calcRelativeConstraints(layoutBox, { top, left, bottom, right }) {
+    return {
+        x: calcRelativeAxisConstraints(layoutBox.x, left, right),
+        y: calcRelativeAxisConstraints(layoutBox.y, top, bottom),
+    };
+}
+/**
+ * Calculate viewport constraints when defined as another viewport-relative axis
+ */
+function calcViewportAxisConstraints(layoutAxis, constraintsAxis) {
+    let min = constraintsAxis.min - layoutAxis.min;
+    let max = constraintsAxis.max - layoutAxis.max;
+    // If the constraints axis is actually smaller than the layout axis then we can
+    // flip the constraints
+    if (constraintsAxis.max - constraintsAxis.min <
+        layoutAxis.max - layoutAxis.min) {
+        [min, max] = [max, min];
+    }
+    return { min, max };
+}
+/**
+ * Calculate viewport constraints when defined as another viewport-relative box
+ */
+function calcViewportConstraints(layoutBox, constraintsBox) {
+    return {
+        x: calcViewportAxisConstraints(layoutBox.x, constraintsBox.x),
+        y: calcViewportAxisConstraints(layoutBox.y, constraintsBox.y),
+    };
+}
+/**
+ * Calculate a transform origin relative to the source axis, between 0-1, that results
+ * in an asthetically pleasing scale/transform needed to project from source to target.
+ */
+function calcOrigin(source, target) {
+    let origin = 0.5;
+    const sourceLength = calcLength(source);
+    const targetLength = calcLength(target);
+    if (targetLength > sourceLength) {
+        origin = progress(target.min, target.max - sourceLength, source.min);
+    }
+    else if (sourceLength > targetLength) {
+        origin = progress(source.min, source.max - targetLength, target.min);
+    }
+    return clamp(0, 1, origin);
+}
+/**
+ * Rebase the calculated viewport constraints relative to the layout.min point.
+ */
+function rebaseAxisConstraints(layout, constraints) {
+    const relativeConstraints = {};
+    if (constraints.min !== undefined) {
+        relativeConstraints.min = constraints.min - layout.min;
+    }
+    if (constraints.max !== undefined) {
+        relativeConstraints.max = constraints.max - layout.min;
+    }
+    return relativeConstraints;
+}
+const defaultElastic = 0.35;
+/**
+ * Accepts a dragElastic prop and returns resolved elastic values for each axis.
+ */
+function resolveDragElastic(dragElastic = defaultElastic) {
+    if (dragElastic === false) {
+        dragElastic = 0;
+    }
+    else if (dragElastic === true) {
+        dragElastic = defaultElastic;
+    }
+    return {
+        x: resolveAxisElastic(dragElastic, "left", "right"),
+        y: resolveAxisElastic(dragElastic, "top", "bottom"),
+    };
+}
+function resolveAxisElastic(dragElastic, minLabel, maxLabel) {
+    return {
+        min: resolvePointElastic(dragElastic, minLabel),
+        max: resolvePointElastic(dragElastic, maxLabel),
+    };
+}
+function resolvePointElastic(dragElastic, label) {
+    return typeof dragElastic === "number"
+        ? dragElastic
+        : dragElastic[label] || 0;
+}
+
+const createAxisDelta = () => ({
+    translate: 0,
+    scale: 1,
+    origin: 0,
+    originPoint: 0,
+});
+const createDelta = () => ({
+    x: createAxisDelta(),
+    y: createAxisDelta(),
+});
+const createAxis = () => ({ min: 0, max: 0 });
+const createBox = () => ({
+    x: createAxis(),
+    y: createAxis(),
+});
+
+function eachAxis(callback) {
+    return [callback("x"), callback("y")];
+}
+
+/**
+ * Bounding boxes tend to be defined as top, left, right, bottom. For various operations
+ * it's easier to consider each axis individually. This function returns a bounding box
+ * as a map of single-axis min/max values.
+ */
+function convertBoundingBoxToBox({ top, left, right, bottom, }) {
+    return {
+        x: { min: left, max: right },
+        y: { min: top, max: bottom },
+    };
+}
+function convertBoxToBoundingBox({ x, y }) {
+    return { top: y.min, right: x.max, bottom: y.max, left: x.min };
+}
+/**
+ * Applies a TransformPoint function to a bounding box. TransformPoint is usually a function
+ * provided by Framer to allow measured points to be corrected for device scaling. This is used
+ * when measuring DOM elements and DOM event points.
+ */
+function transformBoxPoints(point, transformPoint) {
+    if (!transformPoint)
+        return point;
+    const topLeft = transformPoint({ x: point.left, y: point.top });
+    const bottomRight = transformPoint({ x: point.right, y: point.bottom });
+    return {
+        top: topLeft.y,
+        left: topLeft.x,
+        bottom: bottomRight.y,
+        right: bottomRight.x,
+    };
+}
+
+function isIdentityScale(scale) {
+    return scale === undefined || scale === 1;
+}
+function hasScale({ scale, scaleX, scaleY }) {
+    return (!isIdentityScale(scale) ||
+        !isIdentityScale(scaleX) ||
+        !isIdentityScale(scaleY));
+}
+function hasTransform(values) {
+    return (hasScale(values) ||
+        has2DTranslate(values) ||
+        values.z ||
+        values.rotate ||
+        values.rotateX ||
+        values.rotateY ||
+        values.skewX ||
+        values.skewY);
+}
+function has2DTranslate(values) {
+    return is2DTranslate(values.x) || is2DTranslate(values.y);
+}
+function is2DTranslate(value) {
+    return value && value !== "0%";
+}
+
+/**
+ * Scales a point based on a factor and an originPoint
+ */
+function scalePoint(point, scale, originPoint) {
+    const distanceFromOrigin = point - originPoint;
+    const scaled = scale * distanceFromOrigin;
+    return originPoint + scaled;
+}
+/**
+ * Applies a translate/scale delta to a point
+ */
+function applyPointDelta(point, translate, scale, originPoint, boxScale) {
+    if (boxScale !== undefined) {
+        point = scalePoint(point, boxScale, originPoint);
+    }
+    return scalePoint(point, scale, originPoint) + translate;
+}
+/**
+ * Applies a translate/scale delta to an axis
+ */
+function applyAxisDelta(axis, translate = 0, scale = 1, originPoint, boxScale) {
+    axis.min = applyPointDelta(axis.min, translate, scale, originPoint, boxScale);
+    axis.max = applyPointDelta(axis.max, translate, scale, originPoint, boxScale);
+}
+/**
+ * Applies a translate/scale delta to a box
+ */
+function applyBoxDelta(box, { x, y }) {
+    applyAxisDelta(box.x, x.translate, x.scale, x.originPoint);
+    applyAxisDelta(box.y, y.translate, y.scale, y.originPoint);
+}
+const TREE_SCALE_SNAP_MIN = 0.999999999999;
+const TREE_SCALE_SNAP_MAX = 1.0000000000001;
+/**
+ * Apply a tree of deltas to a box. We do this to calculate the effect of all the transforms
+ * in a tree upon our box before then calculating how to project it into our desired viewport-relative box
+ *
+ * This is the final nested loop within updateLayoutDelta for future refactoring
+ */
+function applyTreeDeltas(box, treeScale, treePath, isSharedTransition = false) {
+    const treeLength = treePath.length;
+    if (!treeLength)
+        return;
+    // Reset the treeScale
+    treeScale.x = treeScale.y = 1;
+    let node;
+    let delta;
+    for (let i = 0; i < treeLength; i++) {
+        node = treePath[i];
+        delta = node.projectionDelta;
+        /**
+         * TODO: Prefer to remove this, but currently we have motion components with
+         * display: contents in Framer.
+         */
+        const { visualElement } = node.options;
+        if (visualElement &&
+            visualElement.props.style &&
+            visualElement.props.style.display === "contents") {
+            continue;
+        }
+        if (isSharedTransition &&
+            node.options.layoutScroll &&
+            node.scroll &&
+            node !== node.root) {
+            transformBox(box, {
+                x: -node.scroll.offset.x,
+                y: -node.scroll.offset.y,
+            });
+        }
+        if (delta) {
+            // Incoporate each ancestor's scale into a culmulative treeScale for this component
+            treeScale.x *= delta.x.scale;
+            treeScale.y *= delta.y.scale;
+            // Apply each ancestor's calculated delta into this component's recorded layout box
+            applyBoxDelta(box, delta);
+        }
+        if (isSharedTransition && hasTransform(node.latestValues)) {
+            transformBox(box, node.latestValues);
+        }
+    }
+    /**
+     * Snap tree scale back to 1 if it's within a non-perceivable threshold.
+     * This will help reduce useless scales getting rendered.
+     */
+    if (treeScale.x < TREE_SCALE_SNAP_MAX &&
+        treeScale.x > TREE_SCALE_SNAP_MIN) {
+        treeScale.x = 1.0;
+    }
+    if (treeScale.y < TREE_SCALE_SNAP_MAX &&
+        treeScale.y > TREE_SCALE_SNAP_MIN) {
+        treeScale.y = 1.0;
+    }
+}
+function translateAxis(axis, distance) {
+    axis.min = axis.min + distance;
+    axis.max = axis.max + distance;
+}
+/**
+ * Apply a transform to an axis from the latest resolved motion values.
+ * This function basically acts as a bridge between a flat motion value map
+ * and applyAxisDelta
+ */
+function transformAxis(axis, axisTranslate, axisScale, boxScale, axisOrigin = 0.5) {
+    const originPoint = mixNumber$1(axis.min, axis.max, axisOrigin);
+    // Apply the axis delta to the final axis
+    applyAxisDelta(axis, axisTranslate, axisScale, originPoint, boxScale);
+}
+/**
+ * Apply a transform to a box from the latest resolved motion values.
+ */
+function transformBox(box, transform) {
+    transformAxis(box.x, transform.x, transform.scaleX, transform.scale, transform.originX);
+    transformAxis(box.y, transform.y, transform.scaleY, transform.scale, transform.originY);
+}
+
+function measureViewportBox(instance, transformPoint) {
+    return convertBoundingBoxToBox(transformBoxPoints(instance.getBoundingClientRect(), transformPoint));
+}
+function measurePageBox(element, rootProjectionNode, transformPagePoint) {
+    const viewportBox = measureViewportBox(element, transformPagePoint);
+    const { scroll } = rootProjectionNode;
+    if (scroll) {
+        translateAxis(viewportBox.x, scroll.offset.x);
+        translateAxis(viewportBox.y, scroll.offset.y);
+    }
+    return viewportBox;
+}
+
+// Fixes https://github.com/motiondivision/motion/issues/2270
+const getContextWindow = ({ current }) => {
+    return current ? current.ownerDocument.defaultView : null;
+};
+
+const elementDragControls = new WeakMap();
+/**
+ *
+ */
+// let latestPointerEvent: PointerEvent
+class VisualElementDragControls {
+    constructor(visualElement) {
+        this.openDragLock = null;
+        this.isDragging = false;
+        this.currentDirection = null;
+        this.originPoint = { x: 0, y: 0 };
+        /**
+         * The permitted boundaries of travel, in pixels.
+         */
+        this.constraints = false;
+        this.hasMutatedConstraints = false;
+        /**
+         * The per-axis resolved elastic values.
+         */
+        this.elastic = createBox();
+        this.visualElement = visualElement;
+    }
+    start(originEvent, { snapToCursor = false } = {}) {
+        /**
+         * Don't start dragging if this component is exiting
+         */
+        const { presenceContext } = this.visualElement;
+        if (presenceContext && presenceContext.isPresent === false)
+            return;
+        const onSessionStart = (event) => {
+            const { dragSnapToOrigin } = this.getProps();
+            // Stop or pause any animations on both axis values immediately. This allows the user to throw and catch
+            // the component.
+            dragSnapToOrigin ? this.pauseAnimation() : this.stopAnimation();
+            if (snapToCursor) {
+                this.snapToCursor(extractEventInfo(event).point);
+            }
+        };
+        const onStart = (event, info) => {
+            // Attempt to grab the global drag gesture lock - maybe make this part of PanSession
+            const { drag, dragPropagation, onDragStart } = this.getProps();
+            if (drag && !dragPropagation) {
+                if (this.openDragLock)
+                    this.openDragLock();
+                this.openDragLock = setDragLock(drag);
+                // If we don 't have the lock, don't start dragging
+                if (!this.openDragLock)
+                    return;
+            }
+            this.isDragging = true;
+            this.currentDirection = null;
+            this.resolveConstraints();
+            if (this.visualElement.projection) {
+                this.visualElement.projection.isAnimationBlocked = true;
+                this.visualElement.projection.target = undefined;
+            }
+            /**
+             * Record gesture origin
+             */
+            eachAxis((axis) => {
+                let current = this.getAxisMotionValue(axis).get() || 0;
+                /**
+                 * If the MotionValue is a percentage value convert to px
+                 */
+                if (percent.test(current)) {
+                    const { projection } = this.visualElement;
+                    if (projection && projection.layout) {
+                        const measuredAxis = projection.layout.layoutBox[axis];
+                        if (measuredAxis) {
+                            const length = calcLength(measuredAxis);
+                            current = length * (parseFloat(current) / 100);
+                        }
+                    }
+                }
+                this.originPoint[axis] = current;
+            });
+            // Fire onDragStart event
+            if (onDragStart) {
+                frame.postRender(() => onDragStart(event, info));
+            }
+            addValueToWillChange(this.visualElement, "transform");
+            const { animationState } = this.visualElement;
+            animationState && animationState.setActive("whileDrag", true);
+        };
+        const onMove = (event, info) => {
+            // latestPointerEvent = event
+            const { dragPropagation, dragDirectionLock, onDirectionLock, onDrag, } = this.getProps();
+            // If we didn't successfully receive the gesture lock, early return.
+            if (!dragPropagation && !this.openDragLock)
+                return;
+            const { offset } = info;
+            // Attempt to detect drag direction if directionLock is true
+            if (dragDirectionLock && this.currentDirection === null) {
+                this.currentDirection = getCurrentDirection(offset);
+                // If we've successfully set a direction, notify listener
+                if (this.currentDirection !== null) {
+                    onDirectionLock && onDirectionLock(this.currentDirection);
+                }
+                return;
+            }
+            // Update each point with the latest position
+            this.updateAxis("x", info.point, offset);
+            this.updateAxis("y", info.point, offset);
+            /**
+             * Ideally we would leave the renderer to fire naturally at the end of
+             * this frame but if the element is about to change layout as the result
+             * of a re-render we want to ensure the browser can read the latest
+             * bounding box to ensure the pointer and element don't fall out of sync.
+             */
+            this.visualElement.render();
+            /**
+             * This must fire after the render call as it might trigger a state
+             * change which itself might trigger a layout update.
+             */
+            onDrag && onDrag(event, info);
+        };
+        const onSessionEnd = (event, info) => this.stop(event, info);
+        const resumeAnimation = () => eachAxis((axis) => {
+            var _a;
+            return this.getAnimationState(axis) === "paused" &&
+                ((_a = this.getAxisMotionValue(axis).animation) === null || _a === void 0 ? void 0 : _a.play());
+        });
+        const { dragSnapToOrigin } = this.getProps();
+        this.panSession = new PanSession(originEvent, {
+            onSessionStart,
+            onStart,
+            onMove,
+            onSessionEnd,
+            resumeAnimation,
+        }, {
+            transformPagePoint: this.visualElement.getTransformPagePoint(),
+            dragSnapToOrigin,
+            contextWindow: getContextWindow(this.visualElement),
+        });
+    }
+    stop(event, info) {
+        const isDragging = this.isDragging;
+        this.cancel();
+        if (!isDragging)
+            return;
+        const { velocity } = info;
+        this.startAnimation(velocity);
+        const { onDragEnd } = this.getProps();
+        if (onDragEnd) {
+            frame.postRender(() => onDragEnd(event, info));
+        }
+    }
+    cancel() {
+        this.isDragging = false;
+        const { projection, animationState } = this.visualElement;
+        if (projection) {
+            projection.isAnimationBlocked = false;
+        }
+        this.panSession && this.panSession.end();
+        this.panSession = undefined;
+        const { dragPropagation } = this.getProps();
+        if (!dragPropagation && this.openDragLock) {
+            this.openDragLock();
+            this.openDragLock = null;
+        }
+        animationState && animationState.setActive("whileDrag", false);
+    }
+    updateAxis(axis, _point, offset) {
+        const { drag } = this.getProps();
+        // If we're not dragging this axis, do an early return.
+        if (!offset || !shouldDrag(axis, drag, this.currentDirection))
+            return;
+        const axisValue = this.getAxisMotionValue(axis);
+        let next = this.originPoint[axis] + offset[axis];
+        // Apply constraints
+        if (this.constraints && this.constraints[axis]) {
+            next = applyConstraints(next, this.constraints[axis], this.elastic[axis]);
+        }
+        axisValue.set(next);
+    }
+    resolveConstraints() {
+        var _a;
+        const { dragConstraints, dragElastic } = this.getProps();
+        const layout = this.visualElement.projection &&
+            !this.visualElement.projection.layout
+            ? this.visualElement.projection.measure(false)
+            : (_a = this.visualElement.projection) === null || _a === void 0 ? void 0 : _a.layout;
+        const prevConstraints = this.constraints;
+        if (dragConstraints && isRefObject(dragConstraints)) {
+            if (!this.constraints) {
+                this.constraints = this.resolveRefConstraints();
+            }
+        }
+        else {
+            if (dragConstraints && layout) {
+                this.constraints = calcRelativeConstraints(layout.layoutBox, dragConstraints);
+            }
+            else {
+                this.constraints = false;
+            }
+        }
+        this.elastic = resolveDragElastic(dragElastic);
+        /**
+         * If we're outputting to external MotionValues, we want to rebase the measured constraints
+         * from viewport-relative to component-relative.
+         */
+        if (prevConstraints !== this.constraints &&
+            layout &&
+            this.constraints &&
+            !this.hasMutatedConstraints) {
+            eachAxis((axis) => {
+                if (this.constraints !== false &&
+                    this.getAxisMotionValue(axis)) {
+                    this.constraints[axis] = rebaseAxisConstraints(layout.layoutBox[axis], this.constraints[axis]);
+                }
+            });
+        }
+    }
+    resolveRefConstraints() {
+        const { dragConstraints: constraints, onMeasureDragConstraints } = this.getProps();
+        if (!constraints || !isRefObject(constraints))
+            return false;
+        const constraintsElement = constraints.current;
+        invariant(constraintsElement !== null, "If `dragConstraints` is set as a React ref, that ref must be passed to another component's `ref` prop.");
+        const { projection } = this.visualElement;
+        // TODO
+        if (!projection || !projection.layout)
+            return false;
+        const constraintsBox = measurePageBox(constraintsElement, projection.root, this.visualElement.getTransformPagePoint());
+        let measuredConstraints = calcViewportConstraints(projection.layout.layoutBox, constraintsBox);
+        /**
+         * If there's an onMeasureDragConstraints listener we call it and
+         * if different constraints are returned, set constraints to that
+         */
+        if (onMeasureDragConstraints) {
+            const userConstraints = onMeasureDragConstraints(convertBoxToBoundingBox(measuredConstraints));
+            this.hasMutatedConstraints = !!userConstraints;
+            if (userConstraints) {
+                measuredConstraints = convertBoundingBoxToBox(userConstraints);
+            }
+        }
+        return measuredConstraints;
+    }
+    startAnimation(velocity) {
+        const { drag, dragMomentum, dragElastic, dragTransition, dragSnapToOrigin, onDragTransitionEnd, } = this.getProps();
+        const constraints = this.constraints || {};
+        const momentumAnimations = eachAxis((axis) => {
+            if (!shouldDrag(axis, drag, this.currentDirection)) {
+                return;
+            }
+            let transition = (constraints && constraints[axis]) || {};
+            if (dragSnapToOrigin)
+                transition = { min: 0, max: 0 };
+            /**
+             * Overdamp the boundary spring if `dragElastic` is disabled. There's still a frame
+             * of spring animations so we should look into adding a disable spring option to `inertia`.
+             * We could do something here where we affect the `bounceStiffness` and `bounceDamping`
+             * using the value of `dragElastic`.
+             */
+            const bounceStiffness = dragElastic ? 200 : 1000000;
+            const bounceDamping = dragElastic ? 40 : 10000000;
+            const inertia = {
+                type: "inertia",
+                velocity: dragMomentum ? velocity[axis] : 0,
+                bounceStiffness,
+                bounceDamping,
+                timeConstant: 750,
+                restDelta: 1,
+                restSpeed: 10,
+                ...dragTransition,
+                ...transition,
+            };
+            // If we're not animating on an externally-provided `MotionValue` we can use the
+            // component's animation controls which will handle interactions with whileHover (etc),
+            // otherwise we just have to animate the `MotionValue` itself.
+            return this.startAxisValueAnimation(axis, inertia);
+        });
+        // Run all animations and then resolve the new drag constraints.
+        return Promise.all(momentumAnimations).then(onDragTransitionEnd);
+    }
+    startAxisValueAnimation(axis, transition) {
+        const axisValue = this.getAxisMotionValue(axis);
+        addValueToWillChange(this.visualElement, axis);
+        return axisValue.start(animateMotionValue(axis, axisValue, 0, transition, this.visualElement, false));
+    }
+    stopAnimation() {
+        eachAxis((axis) => this.getAxisMotionValue(axis).stop());
+    }
+    pauseAnimation() {
+        eachAxis((axis) => { var _a; return (_a = this.getAxisMotionValue(axis).animation) === null || _a === void 0 ? void 0 : _a.pause(); });
+    }
+    getAnimationState(axis) {
+        var _a;
+        return (_a = this.getAxisMotionValue(axis).animation) === null || _a === void 0 ? void 0 : _a.state;
+    }
+    /**
+     * Drag works differently depending on which props are provided.
+     *
+     * - If _dragX and _dragY are provided, we output the gesture delta directly to those motion values.
+     * - Otherwise, we apply the delta to the x/y motion values.
+     */
+    getAxisMotionValue(axis) {
+        const dragKey = `_drag${axis.toUpperCase()}`;
+        const props = this.visualElement.getProps();
+        const externalMotionValue = props[dragKey];
+        return externalMotionValue
+            ? externalMotionValue
+            : this.visualElement.getValue(axis, (props.initial
+                ? props.initial[axis]
+                : undefined) || 0);
+    }
+    snapToCursor(point) {
+        eachAxis((axis) => {
+            const { drag } = this.getProps();
+            // If we're not dragging this axis, do an early return.
+            if (!shouldDrag(axis, drag, this.currentDirection))
+                return;
+            const { projection } = this.visualElement;
+            const axisValue = this.getAxisMotionValue(axis);
+            if (projection && projection.layout) {
+                const { min, max } = projection.layout.layoutBox[axis];
+                axisValue.set(point[axis] - mixNumber$1(min, max, 0.5));
+            }
+        });
+    }
+    /**
+     * When the viewport resizes we want to check if the measured constraints
+     * have changed and, if so, reposition the element within those new constraints
+     * relative to where it was before the resize.
+     */
+    scalePositionWithinConstraints() {
+        if (!this.visualElement.current)
+            return;
+        const { drag, dragConstraints } = this.getProps();
+        const { projection } = this.visualElement;
+        if (!isRefObject(dragConstraints) || !projection || !this.constraints)
+            return;
+        /**
+         * Stop current animations as there can be visual glitching if we try to do
+         * this mid-animation
+         */
+        this.stopAnimation();
+        /**
+         * Record the relative position of the dragged element relative to the
+         * constraints box and save as a progress value.
+         */
+        const boxProgress = { x: 0, y: 0 };
+        eachAxis((axis) => {
+            const axisValue = this.getAxisMotionValue(axis);
+            if (axisValue && this.constraints !== false) {
+                const latest = axisValue.get();
+                boxProgress[axis] = calcOrigin({ min: latest, max: latest }, this.constraints[axis]);
+            }
+        });
+        /**
+         * Update the layout of this element and resolve the latest drag constraints
+         */
+        const { transformTemplate } = this.visualElement.getProps();
+        this.visualElement.current.style.transform = transformTemplate
+            ? transformTemplate({}, "")
+            : "none";
+        projection.root && projection.root.updateScroll();
+        projection.updateLayout();
+        this.resolveConstraints();
+        /**
+         * For each axis, calculate the current progress of the layout axis
+         * within the new constraints.
+         */
+        eachAxis((axis) => {
+            if (!shouldDrag(axis, drag, null))
+                return;
+            /**
+             * Calculate a new transform based on the previous box progress
+             */
+            const axisValue = this.getAxisMotionValue(axis);
+            const { min, max } = this.constraints[axis];
+            axisValue.set(mixNumber$1(min, max, boxProgress[axis]));
+        });
+    }
+    addListeners() {
+        if (!this.visualElement.current)
+            return;
+        elementDragControls.set(this.visualElement, this);
+        const element = this.visualElement.current;
+        /**
+         * Attach a pointerdown event listener on this DOM element to initiate drag tracking.
+         */
+        const stopPointerListener = addPointerEvent(element, "pointerdown", (event) => {
+            const { drag, dragListener = true } = this.getProps();
+            drag && dragListener && this.start(event);
+        });
+        const measureDragConstraints = () => {
+            const { dragConstraints } = this.getProps();
+            if (isRefObject(dragConstraints) && dragConstraints.current) {
+                this.constraints = this.resolveRefConstraints();
+            }
+        };
+        const { projection } = this.visualElement;
+        const stopMeasureLayoutListener = projection.addEventListener("measure", measureDragConstraints);
+        if (projection && !projection.layout) {
+            projection.root && projection.root.updateScroll();
+            projection.updateLayout();
+        }
+        frame.read(measureDragConstraints);
+        /**
+         * Attach a window resize listener to scale the draggable target within its defined
+         * constraints as the window resizes.
+         */
+        const stopResizeListener = addDomEvent(window, "resize", () => this.scalePositionWithinConstraints());
+        /**
+         * If the element's layout changes, calculate the delta and apply that to
+         * the drag gesture's origin point.
+         */
+        const stopLayoutUpdateListener = projection.addEventListener("didUpdate", (({ delta, hasLayoutChanged }) => {
+            if (this.isDragging && hasLayoutChanged) {
+                eachAxis((axis) => {
+                    const motionValue = this.getAxisMotionValue(axis);
+                    if (!motionValue)
+                        return;
+                    this.originPoint[axis] += delta[axis].translate;
+                    motionValue.set(motionValue.get() + delta[axis].translate);
+                });
+                this.visualElement.render();
+            }
+        }));
+        return () => {
+            stopResizeListener();
+            stopPointerListener();
+            stopMeasureLayoutListener();
+            stopLayoutUpdateListener && stopLayoutUpdateListener();
+        };
+    }
+    getProps() {
+        const props = this.visualElement.getProps();
+        const { drag = false, dragDirectionLock = false, dragPropagation = false, dragConstraints = false, dragElastic = defaultElastic, dragMomentum = true, } = props;
+        return {
+            ...props,
+            drag,
+            dragDirectionLock,
+            dragPropagation,
+            dragConstraints,
+            dragElastic,
+            dragMomentum,
+        };
+    }
+}
+function shouldDrag(direction, drag, currentDirection) {
+    return ((drag === true || drag === direction) &&
+        (currentDirection === null || currentDirection === direction));
+}
+/**
+ * Based on an x/y offset determine the current drag direction. If both axis' offsets are lower
+ * than the provided threshold, return `null`.
+ *
+ * @param offset - The x/y offset from origin.
+ * @param lockThreshold - (Optional) - the minimum absolute offset before we can determine a drag direction.
+ */
+function getCurrentDirection(offset, lockThreshold = 10) {
+    let direction = null;
+    if (Math.abs(offset.y) > lockThreshold) {
+        direction = "y";
+    }
+    else if (Math.abs(offset.x) > lockThreshold) {
+        direction = "x";
+    }
+    return direction;
+}
+
+class DragGesture extends Feature {
+    constructor(node) {
+        super(node);
+        this.removeGroupControls = noop;
+        this.removeListeners = noop;
+        this.controls = new VisualElementDragControls(node);
+    }
+    mount() {
+        // If we've been provided a DragControls for manual control over the drag gesture,
+        // subscribe this component to it on mount.
+        const { dragControls } = this.node.getProps();
+        if (dragControls) {
+            this.removeGroupControls = dragControls.subscribe(this.controls);
+        }
+        this.removeListeners = this.controls.addListeners() || noop;
+    }
+    unmount() {
+        this.removeGroupControls();
+        this.removeListeners();
+    }
+}
+
+const asyncHandler = (handler) => (event, info) => {
+    if (handler) {
+        frame.postRender(() => handler(event, info));
+    }
+};
+class PanGesture extends Feature {
+    constructor() {
+        super(...arguments);
+        this.removePointerDownListener = noop;
+    }
+    onPointerDown(pointerDownEvent) {
+        this.session = new PanSession(pointerDownEvent, this.createPanHandlers(), {
+            transformPagePoint: this.node.getTransformPagePoint(),
+            contextWindow: getContextWindow(this.node),
+        });
+    }
+    createPanHandlers() {
+        const { onPanSessionStart, onPanStart, onPan, onPanEnd } = this.node.getProps();
+        return {
+            onSessionStart: asyncHandler(onPanSessionStart),
+            onStart: asyncHandler(onPanStart),
+            onMove: onPan,
+            onEnd: (event, info) => {
+                delete this.session;
+                if (onPanEnd) {
+                    frame.postRender(() => onPanEnd(event, info));
+                }
+            },
+        };
+    }
+    mount() {
+        this.removePointerDownListener = addPointerEvent(this.node.current, "pointerdown", (event) => this.onPointerDown(event));
+    }
+    update() {
+        this.session && this.session.updateHandlers(this.createPanHandlers());
+    }
+    unmount() {
+        this.removePointerDownListener();
+        this.session && this.session.end();
+    }
+}
+
+/**
+ * This should only ever be modified on the client otherwise it'll
+ * persist through server requests. If we need instanced states we
+ * could lazy-init via root.
+ */
+const globalProjectionState = {
+    /**
+     * Global flag as to whether the tree has animated since the last time
+     * we resized the window
+     */
+    hasAnimatedSinceResize: true,
+    /**
+     * We set this to true once, on the first update. Any nodes added to the tree beyond that
+     * update will be given a `data-projection-id` attribute.
+     */
+    hasEverUpdated: false,
+};
+
+function pixelsToPercent(pixels, axis) {
+    if (axis.max === axis.min)
+        return 0;
+    return (pixels / (axis.max - axis.min)) * 100;
+}
+/**
+ * We always correct borderRadius as a percentage rather than pixels to reduce paints.
+ * For example, if you are projecting a box that is 100px wide with a 10px borderRadius
+ * into a box that is 200px wide with a 20px borderRadius, that is actually a 10%
+ * borderRadius in both states. If we animate between the two in pixels that will trigger
+ * a paint each time. If we animate between the two in percentage we'll avoid a paint.
+ */
+const correctBorderRadius = {
+    correct: (latest, node) => {
+        if (!node.target)
+            return latest;
+        /**
+         * If latest is a string, if it's a percentage we can return immediately as it's
+         * going to be stretched appropriately. Otherwise, if it's a pixel, convert it to a number.
+         */
+        if (typeof latest === "string") {
+            if (px.test(latest)) {
+                latest = parseFloat(latest);
+            }
+            else {
+                return latest;
+            }
+        }
+        /**
+         * If latest is a number, it's a pixel value. We use the current viewportBox to calculate that
+         * pixel value as a percentage of each axis
+         */
+        const x = pixelsToPercent(latest, node.target.x);
+        const y = pixelsToPercent(latest, node.target.y);
+        return `${x}% ${y}%`;
+    },
+};
+
+const correctBoxShadow = {
+    correct: (latest, { treeScale, projectionDelta }) => {
+        const original = latest;
+        const shadow = complex.parse(latest);
+        // TODO: Doesn't support multiple shadows
+        if (shadow.length > 5)
+            return original;
+        const template = complex.createTransformer(latest);
+        const offset = typeof shadow[0] !== "number" ? 1 : 0;
+        // Calculate the overall context scale
+        const xScale = projectionDelta.x.scale * treeScale.x;
+        const yScale = projectionDelta.y.scale * treeScale.y;
+        shadow[0 + offset] /= xScale;
+        shadow[1 + offset] /= yScale;
+        /**
+         * Ideally we'd correct x and y scales individually, but because blur and
+         * spread apply to both we have to take a scale average and apply that instead.
+         * We could potentially improve the outcome of this by incorporating the ratio between
+         * the two scales.
+         */
+        const averageScale = mixNumber$1(xScale, yScale, 0.5);
+        // Blur
+        if (typeof shadow[2 + offset] === "number")
+            shadow[2 + offset] /= averageScale;
+        // Spread
+        if (typeof shadow[3 + offset] === "number")
+            shadow[3 + offset] /= averageScale;
+        return template(shadow);
+    },
+};
+
+class MeasureLayoutWithContext extends Component {
+    /**
+     * This only mounts projection nodes for components that
+     * need measuring, we might want to do it for all components
+     * in order to incorporate transforms
+     */
+    componentDidMount() {
+        const { visualElement, layoutGroup, switchLayoutGroup, layoutId } = this.props;
+        const { projection } = visualElement;
+        addScaleCorrector(defaultScaleCorrectors);
+        if (projection) {
+            if (layoutGroup.group)
+                layoutGroup.group.add(projection);
+            if (switchLayoutGroup && switchLayoutGroup.register && layoutId) {
+                switchLayoutGroup.register(projection);
+            }
+            projection.root.didUpdate();
+            projection.addEventListener("animationComplete", () => {
+                this.safeToRemove();
+            });
+            projection.setOptions({
+                ...projection.options,
+                onExitComplete: () => this.safeToRemove(),
+            });
+        }
+        globalProjectionState.hasEverUpdated = true;
+    }
+    getSnapshotBeforeUpdate(prevProps) {
+        const { layoutDependency, visualElement, drag, isPresent } = this.props;
+        const projection = visualElement.projection;
+        if (!projection)
+            return null;
+        /**
+         * TODO: We use this data in relegate to determine whether to
+         * promote a previous element. There's no guarantee its presence data
+         * will have updated by this point - if a bug like this arises it will
+         * have to be that we markForRelegation and then find a new lead some other way,
+         * perhaps in didUpdate
+         */
+        projection.isPresent = isPresent;
+        if (drag ||
+            prevProps.layoutDependency !== layoutDependency ||
+            layoutDependency === undefined) {
+            projection.willUpdate();
+        }
+        else {
+            this.safeToRemove();
+        }
+        if (prevProps.isPresent !== isPresent) {
+            if (isPresent) {
+                projection.promote();
+            }
+            else if (!projection.relegate()) {
+                /**
+                 * If there's another stack member taking over from this one,
+                 * it's in charge of the exit animation and therefore should
+                 * be in charge of the safe to remove. Otherwise we call it here.
+                 */
+                frame.postRender(() => {
+                    const stack = projection.getStack();
+                    if (!stack || !stack.members.length) {
+                        this.safeToRemove();
+                    }
+                });
+            }
+        }
+        return null;
+    }
+    componentDidUpdate() {
+        const { projection } = this.props.visualElement;
+        if (projection) {
+            projection.root.didUpdate();
+            microtask.postRender(() => {
+                if (!projection.currentAnimation && projection.isLead()) {
+                    this.safeToRemove();
+                }
+            });
+        }
+    }
+    componentWillUnmount() {
+        const { visualElement, layoutGroup, switchLayoutGroup: promoteContext, } = this.props;
+        const { projection } = visualElement;
+        if (projection) {
+            projection.scheduleCheckAfterUnmount();
+            if (layoutGroup && layoutGroup.group)
+                layoutGroup.group.remove(projection);
+            if (promoteContext && promoteContext.deregister)
+                promoteContext.deregister(projection);
+        }
+    }
+    safeToRemove() {
+        const { safeToRemove } = this.props;
+        safeToRemove && safeToRemove();
+    }
+    render() {
+        return null;
+    }
+}
+function MeasureLayout(props) {
+    const [isPresent, safeToRemove] = usePresence();
+    const layoutGroup = useContext(LayoutGroupContext);
+    return (jsx(MeasureLayoutWithContext, { ...props, layoutGroup: layoutGroup, switchLayoutGroup: useContext(SwitchLayoutGroupContext), isPresent: isPresent, safeToRemove: safeToRemove }));
+}
+const defaultScaleCorrectors = {
+    borderRadius: {
+        ...correctBorderRadius,
+        applyTo: [
+            "borderTopLeftRadius",
+            "borderTopRightRadius",
+            "borderBottomLeftRadius",
+            "borderBottomRightRadius",
+        ],
+    },
+    borderTopLeftRadius: correctBorderRadius,
+    borderTopRightRadius: correctBorderRadius,
+    borderBottomLeftRadius: correctBorderRadius,
+    borderBottomRightRadius: correctBorderRadius,
+    boxShadow: correctBoxShadow,
+};
+
+function animateSingleValue(value, keyframes, options) {
+    const motionValue$1 = isMotionValue(value) ? value : motionValue(value);
+    motionValue$1.start(animateMotionValue("", motionValue$1, keyframes, options));
+    return motionValue$1.animation;
+}
+
+function isSVGElement(element) {
+    return element instanceof SVGElement && element.tagName !== "svg";
+}
+
+const compareByDepth = (a, b) => a.depth - b.depth;
+
+class FlatTree {
+    constructor() {
+        this.children = [];
+        this.isDirty = false;
+    }
+    add(child) {
+        addUniqueItem(this.children, child);
+        this.isDirty = true;
+    }
+    remove(child) {
+        removeItem(this.children, child);
+        this.isDirty = true;
+    }
+    forEach(callback) {
+        this.isDirty && this.children.sort(compareByDepth);
+        this.isDirty = false;
+        this.children.forEach(callback);
+    }
+}
+
+/**
+ * Timeout defined in ms
+ */
+function delay(callback, timeout) {
+    const start = time.now();
+    const checkElapsed = ({ timestamp }) => {
+        const elapsed = timestamp - start;
+        if (elapsed >= timeout) {
+            cancelFrame(checkElapsed);
+            callback(elapsed - timeout);
+        }
+    };
+    frame.read(checkElapsed, true);
+    return () => cancelFrame(checkElapsed);
+}
+
+const borders = ["TopLeft", "TopRight", "BottomLeft", "BottomRight"];
+const numBorders = borders.length;
+const asNumber = (value) => typeof value === "string" ? parseFloat(value) : value;
+const isPx = (value) => typeof value === "number" || px.test(value);
+function mixValues(target, follow, lead, progress, shouldCrossfadeOpacity, isOnlyMember) {
+    if (shouldCrossfadeOpacity) {
+        target.opacity = mixNumber$1(0, 
+        // TODO Reinstate this if only child
+        lead.opacity !== undefined ? lead.opacity : 1, easeCrossfadeIn(progress));
+        target.opacityExit = mixNumber$1(follow.opacity !== undefined ? follow.opacity : 1, 0, easeCrossfadeOut(progress));
+    }
+    else if (isOnlyMember) {
+        target.opacity = mixNumber$1(follow.opacity !== undefined ? follow.opacity : 1, lead.opacity !== undefined ? lead.opacity : 1, progress);
+    }
+    /**
+     * Mix border radius
+     */
+    for (let i = 0; i < numBorders; i++) {
+        const borderLabel = `border${borders[i]}Radius`;
+        let followRadius = getRadius(follow, borderLabel);
+        let leadRadius = getRadius(lead, borderLabel);
+        if (followRadius === undefined && leadRadius === undefined)
+            continue;
+        followRadius || (followRadius = 0);
+        leadRadius || (leadRadius = 0);
+        const canMix = followRadius === 0 ||
+            leadRadius === 0 ||
+            isPx(followRadius) === isPx(leadRadius);
+        if (canMix) {
+            target[borderLabel] = Math.max(mixNumber$1(asNumber(followRadius), asNumber(leadRadius), progress), 0);
+            if (percent.test(leadRadius) || percent.test(followRadius)) {
+                target[borderLabel] += "%";
+            }
+        }
+        else {
+            target[borderLabel] = leadRadius;
+        }
+    }
+    /**
+     * Mix rotation
+     */
+    if (follow.rotate || lead.rotate) {
+        target.rotate = mixNumber$1(follow.rotate || 0, lead.rotate || 0, progress);
+    }
+}
+function getRadius(values, radiusName) {
+    return values[radiusName] !== undefined
+        ? values[radiusName]
+        : values.borderRadius;
+}
+// /**
+//  * We only want to mix the background color if there's a follow element
+//  * that we're not crossfading opacity between. For instance with switch
+//  * AnimateSharedLayout animations, this helps the illusion of a continuous
+//  * element being animated but also cuts down on the number of paints triggered
+//  * for elements where opacity is doing that work for us.
+//  */
+// if (
+//     !hasFollowElement &&
+//     latestLeadValues.backgroundColor &&
+//     latestFollowValues.backgroundColor
+// ) {
+//     /**
+//      * This isn't ideal performance-wise as mixColor is creating a new function every frame.
+//      * We could probably create a mixer that runs at the start of the animation but
+//      * the idea behind the crossfader is that it runs dynamically between two potentially
+//      * changing targets (ie opacity or borderRadius may be animating independently via variants)
+//      */
+//     leadState.backgroundColor = followState.backgroundColor = mixColor(
+//         latestFollowValues.backgroundColor as string,
+//         latestLeadValues.backgroundColor as string
+//     )(p)
+// }
+const easeCrossfadeIn = /*@__PURE__*/ compress(0, 0.5, circOut);
+const easeCrossfadeOut = /*@__PURE__*/ compress(0.5, 0.95, noop);
+function compress(min, max, easing) {
+    return (p) => {
+        // Could replace ifs with clamp
+        if (p < min)
+            return 0;
+        if (p > max)
+            return 1;
+        return easing(progress(min, max, p));
+    };
+}
+
+/**
+ * Reset an axis to the provided origin box.
+ *
+ * This is a mutative operation.
+ */
+function copyAxisInto(axis, originAxis) {
+    axis.min = originAxis.min;
+    axis.max = originAxis.max;
+}
+/**
+ * Reset a box to the provided origin box.
+ *
+ * This is a mutative operation.
+ */
+function copyBoxInto(box, originBox) {
+    copyAxisInto(box.x, originBox.x);
+    copyAxisInto(box.y, originBox.y);
+}
+/**
+ * Reset a delta to the provided origin box.
+ *
+ * This is a mutative operation.
+ */
+function copyAxisDeltaInto(delta, originDelta) {
+    delta.translate = originDelta.translate;
+    delta.scale = originDelta.scale;
+    delta.originPoint = originDelta.originPoint;
+    delta.origin = originDelta.origin;
+}
+
+/**
+ * Remove a delta from a point. This is essentially the steps of applyPointDelta in reverse
+ */
+function removePointDelta(point, translate, scale, originPoint, boxScale) {
+    point -= translate;
+    point = scalePoint(point, 1 / scale, originPoint);
+    if (boxScale !== undefined) {
+        point = scalePoint(point, 1 / boxScale, originPoint);
+    }
+    return point;
+}
+/**
+ * Remove a delta from an axis. This is essentially the steps of applyAxisDelta in reverse
+ */
+function removeAxisDelta(axis, translate = 0, scale = 1, origin = 0.5, boxScale, originAxis = axis, sourceAxis = axis) {
+    if (percent.test(translate)) {
+        translate = parseFloat(translate);
+        const relativeProgress = mixNumber$1(sourceAxis.min, sourceAxis.max, translate / 100);
+        translate = relativeProgress - sourceAxis.min;
+    }
+    if (typeof translate !== "number")
+        return;
+    let originPoint = mixNumber$1(originAxis.min, originAxis.max, origin);
+    if (axis === originAxis)
+        originPoint -= translate;
+    axis.min = removePointDelta(axis.min, translate, scale, originPoint, boxScale);
+    axis.max = removePointDelta(axis.max, translate, scale, originPoint, boxScale);
+}
+/**
+ * Remove a transforms from an axis. This is essentially the steps of applyAxisTransforms in reverse
+ * and acts as a bridge between motion values and removeAxisDelta
+ */
+function removeAxisTransforms(axis, transforms, [key, scaleKey, originKey], origin, sourceAxis) {
+    removeAxisDelta(axis, transforms[key], transforms[scaleKey], transforms[originKey], transforms.scale, origin, sourceAxis);
+}
+/**
+ * The names of the motion values we want to apply as translation, scale and origin.
+ */
+const xKeys = ["x", "scaleX", "originX"];
+const yKeys = ["y", "scaleY", "originY"];
+/**
+ * Remove a transforms from an box. This is essentially the steps of applyAxisBox in reverse
+ * and acts as a bridge between motion values and removeAxisDelta
+ */
+function removeBoxTransforms(box, transforms, originBox, sourceBox) {
+    removeAxisTransforms(box.x, transforms, xKeys, originBox ? originBox.x : undefined, sourceBox ? sourceBox.x : undefined);
+    removeAxisTransforms(box.y, transforms, yKeys, originBox ? originBox.y : undefined, sourceBox ? sourceBox.y : undefined);
+}
+
+function isAxisDeltaZero(delta) {
+    return delta.translate === 0 && delta.scale === 1;
+}
+function isDeltaZero(delta) {
+    return isAxisDeltaZero(delta.x) && isAxisDeltaZero(delta.y);
+}
+function axisEquals(a, b) {
+    return a.min === b.min && a.max === b.max;
+}
+function boxEquals(a, b) {
+    return axisEquals(a.x, b.x) && axisEquals(a.y, b.y);
+}
+function axisEqualsRounded(a, b) {
+    return (Math.round(a.min) === Math.round(b.min) &&
+        Math.round(a.max) === Math.round(b.max));
+}
+function boxEqualsRounded(a, b) {
+    return axisEqualsRounded(a.x, b.x) && axisEqualsRounded(a.y, b.y);
+}
+function aspectRatio(box) {
+    return calcLength(box.x) / calcLength(box.y);
+}
+function axisDeltaEquals(a, b) {
+    return (a.translate === b.translate &&
+        a.scale === b.scale &&
+        a.originPoint === b.originPoint);
+}
+
+class NodeStack {
+    constructor() {
+        this.members = [];
+    }
+    add(node) {
+        addUniqueItem(this.members, node);
+        node.scheduleRender();
+    }
+    remove(node) {
+        removeItem(this.members, node);
+        if (node === this.prevLead) {
+            this.prevLead = undefined;
+        }
+        if (node === this.lead) {
+            const prevLead = this.members[this.members.length - 1];
+            if (prevLead) {
+                this.promote(prevLead);
+            }
+        }
+    }
+    relegate(node) {
+        const indexOfNode = this.members.findIndex((member) => node === member);
+        if (indexOfNode === 0)
+            return false;
+        /**
+         * Find the next projection node that is present
+         */
+        let prevLead;
+        for (let i = indexOfNode; i >= 0; i--) {
+            const member = this.members[i];
+            if (member.isPresent !== false) {
+                prevLead = member;
+                break;
+            }
+        }
+        if (prevLead) {
+            this.promote(prevLead);
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+    promote(node, preserveFollowOpacity) {
+        const prevLead = this.lead;
+        if (node === prevLead)
+            return;
+        this.prevLead = prevLead;
+        this.lead = node;
+        node.show();
+        if (prevLead) {
+            prevLead.instance && prevLead.scheduleRender();
+            node.scheduleRender();
+            node.resumeFrom = prevLead;
+            if (preserveFollowOpacity) {
+                node.resumeFrom.preserveOpacity = true;
+            }
+            if (prevLead.snapshot) {
+                node.snapshot = prevLead.snapshot;
+                node.snapshot.latestValues =
+                    prevLead.animationValues || prevLead.latestValues;
+            }
+            if (node.root && node.root.isUpdating) {
+                node.isLayoutDirty = true;
+            }
+            const { crossfade } = node.options;
+            if (crossfade === false) {
+                prevLead.hide();
+            }
+            /**
+             * TODO:
+             *   - Test border radius when previous node was deleted
+             *   - boxShadow mixing
+             *   - Shared between element A in scrolled container and element B (scroll stays the same or changes)
+             *   - Shared between element A in transformed container and element B (transform stays the same or changes)
+             *   - Shared between element A in scrolled page and element B (scroll stays the same or changes)
+             * ---
+             *   - Crossfade opacity of root nodes
+             *   - layoutId changes after animation
+             *   - layoutId changes mid animation
+             */
+        }
+    }
+    exitAnimationComplete() {
+        this.members.forEach((node) => {
+            const { options, resumingFrom } = node;
+            options.onExitComplete && options.onExitComplete();
+            if (resumingFrom) {
+                resumingFrom.options.onExitComplete &&
+                    resumingFrom.options.onExitComplete();
+            }
+        });
+    }
+    scheduleRender() {
+        this.members.forEach((node) => {
+            node.instance && node.scheduleRender(false);
+        });
+    }
+    /**
+     * Clear any leads that have been removed this render to prevent them from being
+     * used in future animations and to prevent memory leaks
+     */
+    removeLeadSnapshot() {
+        if (this.lead && this.lead.snapshot) {
+            this.lead.snapshot = undefined;
+        }
+    }
+}
+
+function buildProjectionTransform(delta, treeScale, latestTransform) {
+    let transform = "";
+    /**
+     * The translations we use to calculate are always relative to the viewport coordinate space.
+     * But when we apply scales, we also scale the coordinate space of an element and its children.
+     * For instance if we have a treeScale (the culmination of all parent scales) of 0.5 and we need
+     * to move an element 100 pixels, we actually need to move it 200 in within that scaled space.
+     */
+    const xTranslate = delta.x.translate / treeScale.x;
+    const yTranslate = delta.y.translate / treeScale.y;
+    const zTranslate = (latestTransform === null || latestTransform === void 0 ? void 0 : latestTransform.z) || 0;
+    if (xTranslate || yTranslate || zTranslate) {
+        transform = `translate3d(${xTranslate}px, ${yTranslate}px, ${zTranslate}px) `;
+    }
+    /**
+     * Apply scale correction for the tree transform.
+     * This will apply scale to the screen-orientated axes.
+     */
+    if (treeScale.x !== 1 || treeScale.y !== 1) {
+        transform += `scale(${1 / treeScale.x}, ${1 / treeScale.y}) `;
+    }
+    if (latestTransform) {
+        const { transformPerspective, rotate, rotateX, rotateY, skewX, skewY } = latestTransform;
+        if (transformPerspective)
+            transform = `perspective(${transformPerspective}px) ${transform}`;
+        if (rotate)
+            transform += `rotate(${rotate}deg) `;
+        if (rotateX)
+            transform += `rotateX(${rotateX}deg) `;
+        if (rotateY)
+            transform += `rotateY(${rotateY}deg) `;
+        if (skewX)
+            transform += `skewX(${skewX}deg) `;
+        if (skewY)
+            transform += `skewY(${skewY}deg) `;
+    }
+    /**
+     * Apply scale to match the size of the element to the size we want it.
+     * This will apply scale to the element-orientated axes.
+     */
+    const elementScaleX = delta.x.scale * treeScale.x;
+    const elementScaleY = delta.y.scale * treeScale.y;
+    if (elementScaleX !== 1 || elementScaleY !== 1) {
+        transform += `scale(${elementScaleX}, ${elementScaleY})`;
+    }
+    return transform || "none";
+}
+
+const metrics = {
+    type: "projectionFrame",
+    totalNodes: 0,
+    resolvedTargetDeltas: 0,
+    recalculatedProjection: 0,
+};
+const isDebug = typeof window !== "undefined" && window.MotionDebug !== undefined;
+const transformAxes = ["", "X", "Y", "Z"];
+const hiddenVisibility = { visibility: "hidden" };
+/**
+ * We use 1000 as the animation target as 0-1000 maps better to pixels than 0-1
+ * which has a noticeable difference in spring animations
+ */
+const animationTarget = 1000;
+let id = 0;
+function resetDistortingTransform(key, visualElement, values, sharedAnimationValues) {
+    const { latestValues } = visualElement;
+    // Record the distorting transform and then temporarily set it to 0
+    if (latestValues[key]) {
+        values[key] = latestValues[key];
+        visualElement.setStaticValue(key, 0);
+        if (sharedAnimationValues) {
+            sharedAnimationValues[key] = 0;
+        }
+    }
+}
+function cancelTreeOptimisedTransformAnimations(projectionNode) {
+    projectionNode.hasCheckedOptimisedAppear = true;
+    if (projectionNode.root === projectionNode)
+        return;
+    const { visualElement } = projectionNode.options;
+    if (!visualElement)
+        return;
+    const appearId = getOptimisedAppearId(visualElement);
+    if (window.MotionHasOptimisedAnimation(appearId, "transform")) {
+        const { layout, layoutId } = projectionNode.options;
+        window.MotionCancelOptimisedAnimation(appearId, "transform", frame, !(layout || layoutId));
+    }
+    const { parent } = projectionNode;
+    if (parent && !parent.hasCheckedOptimisedAppear) {
+        cancelTreeOptimisedTransformAnimations(parent);
+    }
+}
+function createProjectionNode({ attachResizeListener, defaultParent, measureScroll, checkIsScrollRoot, resetTransform, }) {
+    return class ProjectionNode {
+        constructor(latestValues = {}, parent = defaultParent === null || defaultParent === void 0 ? void 0 : defaultParent()) {
+            /**
+             * A unique ID generated for every projection node.
+             */
+            this.id = id++;
+            /**
+             * An id that represents a unique session instigated by startUpdate.
+             */
+            this.animationId = 0;
+            /**
+             * A Set containing all this component's children. This is used to iterate
+             * through the children.
+             *
+             * TODO: This could be faster to iterate as a flat array stored on the root node.
+             */
+            this.children = new Set();
+            /**
+             * Options for the node. We use this to configure what kind of layout animations
+             * we should perform (if any).
+             */
+            this.options = {};
+            /**
+             * We use this to detect when its safe to shut down part of a projection tree.
+             * We have to keep projecting children for scale correction and relative projection
+             * until all their parents stop performing layout animations.
+             */
+            this.isTreeAnimating = false;
+            this.isAnimationBlocked = false;
+            /**
+             * Flag to true if we think this layout has been changed. We can't always know this,
+             * currently we set it to true every time a component renders, or if it has a layoutDependency
+             * if that has changed between renders. Additionally, components can be grouped by LayoutGroup
+             * and if one node is dirtied, they all are.
+             */
+            this.isLayoutDirty = false;
+            /**
+             * Flag to true if we think the projection calculations for this node needs
+             * recalculating as a result of an updated transform or layout animation.
+             */
+            this.isProjectionDirty = false;
+            /**
+             * Flag to true if the layout *or* transform has changed. This then gets propagated
+             * throughout the projection tree, forcing any element below to recalculate on the next frame.
+             */
+            this.isSharedProjectionDirty = false;
+            /**
+             * Flag transform dirty. This gets propagated throughout the whole tree but is only
+             * respected by shared nodes.
+             */
+            this.isTransformDirty = false;
+            /**
+             * Block layout updates for instant layout transitions throughout the tree.
+             */
+            this.updateManuallyBlocked = false;
+            this.updateBlockedByResize = false;
+            /**
+             * Set to true between the start of the first `willUpdate` call and the end of the `didUpdate`
+             * call.
+             */
+            this.isUpdating = false;
+            /**
+             * If this is an SVG element we currently disable projection transforms
+             */
+            this.isSVG = false;
+            /**
+             * Flag to true (during promotion) if a node doing an instant layout transition needs to reset
+             * its projection styles.
+             */
+            this.needsReset = false;
+            /**
+             * Flags whether this node should have its transform reset prior to measuring.
+             */
+            this.shouldResetTransform = false;
+            /**
+             * Store whether this node has been checked for optimised appear animations. As
+             * effects fire bottom-up, and we want to look up the tree for appear animations,
+             * this makes sure we only check each path once, stopping at nodes that
+             * have already been checked.
+             */
+            this.hasCheckedOptimisedAppear = false;
+            /**
+             * An object representing the calculated contextual/accumulated/tree scale.
+             * This will be used to scale calculcated projection transforms, as these are
+             * calculated in screen-space but need to be scaled for elements to layoutly
+             * make it to their calculated destinations.
+             *
+             * TODO: Lazy-init
+             */
+            this.treeScale = { x: 1, y: 1 };
+            /**
+             *
+             */
+            this.eventHandlers = new Map();
+            this.hasTreeAnimated = false;
+            // Note: Currently only running on root node
+            this.updateScheduled = false;
+            this.scheduleUpdate = () => this.update();
+            this.projectionUpdateScheduled = false;
+            this.checkUpdateFailed = () => {
+                if (this.isUpdating) {
+                    this.isUpdating = false;
+                    this.clearAllSnapshots();
+                }
+            };
+            /**
+             * This is a multi-step process as shared nodes might be of different depths. Nodes
+             * are sorted by depth order, so we need to resolve the entire tree before moving to
+             * the next step.
+             */
+            this.updateProjection = () => {
+                this.projectionUpdateScheduled = false;
+                /**
+                 * Reset debug counts. Manually resetting rather than creating a new
+                 * object each frame.
+                 */
+                if (isDebug) {
+                    metrics.totalNodes =
+                        metrics.resolvedTargetDeltas =
+                            metrics.recalculatedProjection =
+                                0;
+                }
+                this.nodes.forEach(propagateDirtyNodes);
+                this.nodes.forEach(resolveTargetDelta);
+                this.nodes.forEach(calcProjection);
+                this.nodes.forEach(cleanDirtyNodes);
+                if (isDebug) {
+                    window.MotionDebug.record(metrics);
+                }
+            };
+            /**
+             * Frame calculations
+             */
+            this.resolvedRelativeTargetAt = 0.0;
+            this.hasProjected = false;
+            this.isVisible = true;
+            this.animationProgress = 0;
+            /**
+             * Shared layout
+             */
+            // TODO Only running on root node
+            this.sharedNodes = new Map();
+            this.latestValues = latestValues;
+            this.root = parent ? parent.root || parent : this;
+            this.path = parent ? [...parent.path, parent] : [];
+            this.parent = parent;
+            this.depth = parent ? parent.depth + 1 : 0;
+            for (let i = 0; i < this.path.length; i++) {
+                this.path[i].shouldResetTransform = true;
+            }
+            if (this.root === this)
+                this.nodes = new FlatTree();
+        }
+        addEventListener(name, handler) {
+            if (!this.eventHandlers.has(name)) {
+                this.eventHandlers.set(name, new SubscriptionManager());
+            }
+            return this.eventHandlers.get(name).add(handler);
+        }
+        notifyListeners(name, ...args) {
+            const subscriptionManager = this.eventHandlers.get(name);
+            subscriptionManager && subscriptionManager.notify(...args);
+        }
+        hasListeners(name) {
+            return this.eventHandlers.has(name);
+        }
+        /**
+         * Lifecycles
+         */
+        mount(instance, isLayoutDirty = this.root.hasTreeAnimated) {
+            if (this.instance)
+                return;
+            this.isSVG = isSVGElement(instance);
+            this.instance = instance;
+            const { layoutId, layout, visualElement } = this.options;
+            if (visualElement && !visualElement.current) {
+                visualElement.mount(instance);
+            }
+            this.root.nodes.add(this);
+            this.parent && this.parent.children.add(this);
+            if (isLayoutDirty && (layout || layoutId)) {
+                this.isLayoutDirty = true;
+            }
+            if (attachResizeListener) {
+                let cancelDelay;
+                const resizeUnblockUpdate = () => (this.root.updateBlockedByResize = false);
+                attachResizeListener(instance, () => {
+                    this.root.updateBlockedByResize = true;
+                    cancelDelay && cancelDelay();
+                    cancelDelay = delay(resizeUnblockUpdate, 250);
+                    if (globalProjectionState.hasAnimatedSinceResize) {
+                        globalProjectionState.hasAnimatedSinceResize = false;
+                        this.nodes.forEach(finishAnimation);
+                    }
+                });
+            }
+            if (layoutId) {
+                this.root.registerSharedNode(layoutId, this);
+            }
+            // Only register the handler if it requires layout animation
+            if (this.options.animate !== false &&
+                visualElement &&
+                (layoutId || layout)) {
+                this.addEventListener("didUpdate", ({ delta, hasLayoutChanged, hasRelativeTargetChanged, layout: newLayout, }) => {
+                    if (this.isTreeAnimationBlocked()) {
+                        this.target = undefined;
+                        this.relativeTarget = undefined;
+                        return;
+                    }
+                    // TODO: Check here if an animation exists
+                    const layoutTransition = this.options.transition ||
+                        visualElement.getDefaultTransition() ||
+                        defaultLayoutTransition;
+                    const { onLayoutAnimationStart, onLayoutAnimationComplete, } = visualElement.getProps();
+                    /**
+                     * The target layout of the element might stay the same,
+                     * but its position relative to its parent has changed.
+                     */
+                    const targetChanged = !this.targetLayout ||
+                        !boxEqualsRounded(this.targetLayout, newLayout) ||
+                        hasRelativeTargetChanged;
+                    /**
+                     * If the layout hasn't seemed to have changed, it might be that the
+                     * element is visually in the same place in the document but its position
+                     * relative to its parent has indeed changed. So here we check for that.
+                     */
+                    const hasOnlyRelativeTargetChanged = !hasLayoutChanged && hasRelativeTargetChanged;
+                    if (this.options.layoutRoot ||
+                        (this.resumeFrom && this.resumeFrom.instance) ||
+                        hasOnlyRelativeTargetChanged ||
+                        (hasLayoutChanged &&
+                            (targetChanged || !this.currentAnimation))) {
+                        if (this.resumeFrom) {
+                            this.resumingFrom = this.resumeFrom;
+                            this.resumingFrom.resumingFrom = undefined;
+                        }
+                        this.setAnimationOrigin(delta, hasOnlyRelativeTargetChanged);
+                        const animationOptions = {
+                            ...getValueTransition(layoutTransition, "layout"),
+                            onPlay: onLayoutAnimationStart,
+                            onComplete: onLayoutAnimationComplete,
+                        };
+                        if (visualElement.shouldReduceMotion ||
+                            this.options.layoutRoot) {
+                            animationOptions.delay = 0;
+                            animationOptions.type = false;
+                        }
+                        this.startAnimation(animationOptions);
+                    }
+                    else {
+                        /**
+                         * If the layout hasn't changed and we have an animation that hasn't started yet,
+                         * finish it immediately. Otherwise it will be animating from a location
+                         * that was probably never commited to screen and look like a jumpy box.
+                         */
+                        if (!hasLayoutChanged) {
+                            finishAnimation(this);
+                        }
+                        if (this.isLead() && this.options.onExitComplete) {
+                            this.options.onExitComplete();
+                        }
+                    }
+                    this.targetLayout = newLayout;
+                });
+            }
+        }
+        unmount() {
+            this.options.layoutId && this.willUpdate();
+            this.root.nodes.remove(this);
+            const stack = this.getStack();
+            stack && stack.remove(this);
+            this.parent && this.parent.children.delete(this);
+            this.instance = undefined;
+            cancelFrame(this.updateProjection);
+        }
+        // only on the root
+        blockUpdate() {
+            this.updateManuallyBlocked = true;
+        }
+        unblockUpdate() {
+            this.updateManuallyBlocked = false;
+        }
+        isUpdateBlocked() {
+            return this.updateManuallyBlocked || this.updateBlockedByResize;
+        }
+        isTreeAnimationBlocked() {
+            return (this.isAnimationBlocked ||
+                (this.parent && this.parent.isTreeAnimationBlocked()) ||
+                false);
+        }
+        // Note: currently only running on root node
+        startUpdate() {
+            if (this.isUpdateBlocked())
+                return;
+            this.isUpdating = true;
+            this.nodes && this.nodes.forEach(resetSkewAndRotation);
+            this.animationId++;
+        }
+        getTransformTemplate() {
+            const { visualElement } = this.options;
+            return visualElement && visualElement.getProps().transformTemplate;
+        }
+        willUpdate(shouldNotifyListeners = true) {
+            this.root.hasTreeAnimated = true;
+            if (this.root.isUpdateBlocked()) {
+                this.options.onExitComplete && this.options.onExitComplete();
+                return;
+            }
+            /**
+             * If we're running optimised appear animations then these must be
+             * cancelled before measuring the DOM. This is so we can measure
+             * the true layout of the element rather than the WAAPI animation
+             * which will be unaffected by the resetSkewAndRotate step.
+             *
+             * Note: This is a DOM write. Worst case scenario is this is sandwiched
+             * between other snapshot reads which will cause unnecessary style recalculations.
+             * This has to happen here though, as we don't yet know which nodes will need
+             * snapshots in startUpdate(), but we only want to cancel optimised animations
+             * if a layout animation measurement is actually going to be affected by them.
+             */
+            if (window.MotionCancelOptimisedAnimation &&
+                !this.hasCheckedOptimisedAppear) {
+                cancelTreeOptimisedTransformAnimations(this);
+            }
+            !this.root.isUpdating && this.root.startUpdate();
+            if (this.isLayoutDirty)
+                return;
+            this.isLayoutDirty = true;
+            for (let i = 0; i < this.path.length; i++) {
+                const node = this.path[i];
+                node.shouldResetTransform = true;
+                node.updateScroll("snapshot");
+                if (node.options.layoutRoot) {
+                    node.willUpdate(false);
+                }
+            }
+            const { layoutId, layout } = this.options;
+            if (layoutId === undefined && !layout)
+                return;
+            const transformTemplate = this.getTransformTemplate();
+            this.prevTransformTemplateValue = transformTemplate
+                ? transformTemplate(this.latestValues, "")
+                : undefined;
+            this.updateSnapshot();
+            shouldNotifyListeners && this.notifyListeners("willUpdate");
+        }
+        update() {
+            this.updateScheduled = false;
+            const updateWasBlocked = this.isUpdateBlocked();
+            // When doing an instant transition, we skip the layout update,
+            // but should still clean up the measurements so that the next
+            // snapshot could be taken correctly.
+            if (updateWasBlocked) {
+                this.unblockUpdate();
+                this.clearAllSnapshots();
+                this.nodes.forEach(clearMeasurements);
+                return;
+            }
+            if (!this.isUpdating) {
+                this.nodes.forEach(clearIsLayoutDirty);
+            }
+            this.isUpdating = false;
+            /**
+             * Write
+             */
+            this.nodes.forEach(resetTransformStyle);
+            /**
+             * Read ==================
+             */
+            // Update layout measurements of updated children
+            this.nodes.forEach(updateLayout);
+            /**
+             * Write
+             */
+            // Notify listeners that the layout is updated
+            this.nodes.forEach(notifyLayoutUpdate);
+            this.clearAllSnapshots();
+            /**
+             * Manually flush any pending updates. Ideally
+             * we could leave this to the following requestAnimationFrame but this seems
+             * to leave a flash of incorrectly styled content.
+             */
+            const now = time.now();
+            frameData.delta = clamp(0, 1000 / 60, now - frameData.timestamp);
+            frameData.timestamp = now;
+            frameData.isProcessing = true;
+            frameSteps.update.process(frameData);
+            frameSteps.preRender.process(frameData);
+            frameSteps.render.process(frameData);
+            frameData.isProcessing = false;
+        }
+        didUpdate() {
+            if (!this.updateScheduled) {
+                this.updateScheduled = true;
+                microtask.read(this.scheduleUpdate);
+            }
+        }
+        clearAllSnapshots() {
+            this.nodes.forEach(clearSnapshot);
+            this.sharedNodes.forEach(removeLeadSnapshots);
+        }
+        scheduleUpdateProjection() {
+            if (!this.projectionUpdateScheduled) {
+                this.projectionUpdateScheduled = true;
+                frame.preRender(this.updateProjection, false, true);
+            }
+        }
+        scheduleCheckAfterUnmount() {
+            /**
+             * If the unmounting node is in a layoutGroup and did trigger a willUpdate,
+             * we manually call didUpdate to give a chance to the siblings to animate.
+             * Otherwise, cleanup all snapshots to prevents future nodes from reusing them.
+             */
+            frame.postRender(() => {
+                if (this.isLayoutDirty) {
+                    this.root.didUpdate();
+                }
+                else {
+                    this.root.checkUpdateFailed();
+                }
+            });
+        }
+        /**
+         * Update measurements
+         */
+        updateSnapshot() {
+            if (this.snapshot || !this.instance)
+                return;
+            this.snapshot = this.measure();
+        }
+        updateLayout() {
+            if (!this.instance)
+                return;
+            // TODO: Incorporate into a forwarded scroll offset
+            this.updateScroll();
+            if (!(this.options.alwaysMeasureLayout && this.isLead()) &&
+                !this.isLayoutDirty) {
+                return;
+            }
+            /**
+             * When a node is mounted, it simply resumes from the prevLead's
+             * snapshot instead of taking a new one, but the ancestors scroll
+             * might have updated while the prevLead is unmounted. We need to
+             * update the scroll again to make sure the layout we measure is
+             * up to date.
+             */
+            if (this.resumeFrom && !this.resumeFrom.instance) {
+                for (let i = 0; i < this.path.length; i++) {
+                    const node = this.path[i];
+                    node.updateScroll();
+                }
+            }
+            const prevLayout = this.layout;
+            this.layout = this.measure(false);
+            this.layoutCorrected = createBox();
+            this.isLayoutDirty = false;
+            this.projectionDelta = undefined;
+            this.notifyListeners("measure", this.layout.layoutBox);
+            const { visualElement } = this.options;
+            visualElement &&
+                visualElement.notify("LayoutMeasure", this.layout.layoutBox, prevLayout ? prevLayout.layoutBox : undefined);
+        }
+        updateScroll(phase = "measure") {
+            let needsMeasurement = Boolean(this.options.layoutScroll && this.instance);
+            if (this.scroll &&
+                this.scroll.animationId === this.root.animationId &&
+                this.scroll.phase === phase) {
+                needsMeasurement = false;
+            }
+            if (needsMeasurement) {
+                const isRoot = checkIsScrollRoot(this.instance);
+                this.scroll = {
+                    animationId: this.root.animationId,
+                    phase,
+                    isRoot,
+                    offset: measureScroll(this.instance),
+                    wasRoot: this.scroll ? this.scroll.isRoot : isRoot,
+                };
+            }
+        }
+        resetTransform() {
+            if (!resetTransform)
+                return;
+            const isResetRequested = this.isLayoutDirty ||
+                this.shouldResetTransform ||
+                this.options.alwaysMeasureLayout;
+            const hasProjection = this.projectionDelta && !isDeltaZero(this.projectionDelta);
+            const transformTemplate = this.getTransformTemplate();
+            const transformTemplateValue = transformTemplate
+                ? transformTemplate(this.latestValues, "")
+                : undefined;
+            const transformTemplateHasChanged = transformTemplateValue !== this.prevTransformTemplateValue;
+            if (isResetRequested &&
+                (hasProjection ||
+                    hasTransform(this.latestValues) ||
+                    transformTemplateHasChanged)) {
+                resetTransform(this.instance, transformTemplateValue);
+                this.shouldResetTransform = false;
+                this.scheduleRender();
+            }
+        }
+        measure(removeTransform = true) {
+            const pageBox = this.measurePageBox();
+            let layoutBox = this.removeElementScroll(pageBox);
+            /**
+             * Measurements taken during the pre-render stage
+             * still have transforms applied so we remove them
+             * via calculation.
+             */
+            if (removeTransform) {
+                layoutBox = this.removeTransform(layoutBox);
+            }
+            roundBox(layoutBox);
+            return {
+                animationId: this.root.animationId,
+                measuredBox: pageBox,
+                layoutBox,
+                latestValues: {},
+                source: this.id,
+            };
+        }
+        measurePageBox() {
+            var _a;
+            const { visualElement } = this.options;
+            if (!visualElement)
+                return createBox();
+            const box = visualElement.measureViewportBox();
+            const wasInScrollRoot = ((_a = this.scroll) === null || _a === void 0 ? void 0 : _a.wasRoot) || this.path.some(checkNodeWasScrollRoot);
+            if (!wasInScrollRoot) {
+                // Remove viewport scroll to give page-relative coordinates
+                const { scroll } = this.root;
+                if (scroll) {
+                    translateAxis(box.x, scroll.offset.x);
+                    translateAxis(box.y, scroll.offset.y);
+                }
+            }
+            return box;
+        }
+        removeElementScroll(box) {
+            var _a;
+            const boxWithoutScroll = createBox();
+            copyBoxInto(boxWithoutScroll, box);
+            if ((_a = this.scroll) === null || _a === void 0 ? void 0 : _a.wasRoot) {
+                return boxWithoutScroll;
+            }
+            /**
+             * Performance TODO: Keep a cumulative scroll offset down the tree
+             * rather than loop back up the path.
+             */
+            for (let i = 0; i < this.path.length; i++) {
+                const node = this.path[i];
+                const { scroll, options } = node;
+                if (node !== this.root && scroll && options.layoutScroll) {
+                    /**
+                     * If this is a new scroll root, we want to remove all previous scrolls
+                     * from the viewport box.
+                     */
+                    if (scroll.wasRoot) {
+                        copyBoxInto(boxWithoutScroll, box);
+                    }
+                    translateAxis(boxWithoutScroll.x, scroll.offset.x);
+                    translateAxis(boxWithoutScroll.y, scroll.offset.y);
+                }
+            }
+            return boxWithoutScroll;
+        }
+        applyTransform(box, transformOnly = false) {
+            const withTransforms = createBox();
+            copyBoxInto(withTransforms, box);
+            for (let i = 0; i < this.path.length; i++) {
+                const node = this.path[i];
+                if (!transformOnly &&
+                    node.options.layoutScroll &&
+                    node.scroll &&
+                    node !== node.root) {
+                    transformBox(withTransforms, {
+                        x: -node.scroll.offset.x,
+                        y: -node.scroll.offset.y,
+                    });
+                }
+                if (!hasTransform(node.latestValues))
+                    continue;
+                transformBox(withTransforms, node.latestValues);
+            }
+            if (hasTransform(this.latestValues)) {
+                transformBox(withTransforms, this.latestValues);
+            }
+            return withTransforms;
+        }
+        removeTransform(box) {
+            const boxWithoutTransform = createBox();
+            copyBoxInto(boxWithoutTransform, box);
+            for (let i = 0; i < this.path.length; i++) {
+                const node = this.path[i];
+                if (!node.instance)
+                    continue;
+                if (!hasTransform(node.latestValues))
+                    continue;
+                hasScale(node.latestValues) && node.updateSnapshot();
+                const sourceBox = createBox();
+                const nodeBox = node.measurePageBox();
+                copyBoxInto(sourceBox, nodeBox);
+                removeBoxTransforms(boxWithoutTransform, node.latestValues, node.snapshot ? node.snapshot.layoutBox : undefined, sourceBox);
+            }
+            if (hasTransform(this.latestValues)) {
+                removeBoxTransforms(boxWithoutTransform, this.latestValues);
+            }
+            return boxWithoutTransform;
+        }
+        setTargetDelta(delta) {
+            this.targetDelta = delta;
+            this.root.scheduleUpdateProjection();
+            this.isProjectionDirty = true;
+        }
+        setOptions(options) {
+            this.options = {
+                ...this.options,
+                ...options,
+                crossfade: options.crossfade !== undefined ? options.crossfade : true,
+            };
+        }
+        clearMeasurements() {
+            this.scroll = undefined;
+            this.layout = undefined;
+            this.snapshot = undefined;
+            this.prevTransformTemplateValue = undefined;
+            this.targetDelta = undefined;
+            this.target = undefined;
+            this.isLayoutDirty = false;
+        }
+        forceRelativeParentToResolveTarget() {
+            if (!this.relativeParent)
+                return;
+            /**
+             * If the parent target isn't up-to-date, force it to update.
+             * This is an unfortunate de-optimisation as it means any updating relative
+             * projection will cause all the relative parents to recalculate back
+             * up the tree.
+             */
+            if (this.relativeParent.resolvedRelativeTargetAt !==
+                frameData.timestamp) {
+                this.relativeParent.resolveTargetDelta(true);
+            }
+        }
+        resolveTargetDelta(forceRecalculation = false) {
+            var _a;
+            /**
+             * Once the dirty status of nodes has been spread through the tree, we also
+             * need to check if we have a shared node of a different depth that has itself
+             * been dirtied.
+             */
+            const lead = this.getLead();
+            this.isProjectionDirty || (this.isProjectionDirty = lead.isProjectionDirty);
+            this.isTransformDirty || (this.isTransformDirty = lead.isTransformDirty);
+            this.isSharedProjectionDirty || (this.isSharedProjectionDirty = lead.isSharedProjectionDirty);
+            const isShared = Boolean(this.resumingFrom) || this !== lead;
+            /**
+             * We don't use transform for this step of processing so we don't
+             * need to check whether any nodes have changed transform.
+             */
+            const canSkip = !(forceRecalculation ||
+                (isShared && this.isSharedProjectionDirty) ||
+                this.isProjectionDirty ||
+                ((_a = this.parent) === null || _a === void 0 ? void 0 : _a.isProjectionDirty) ||
+                this.attemptToResolveRelativeTarget ||
+                this.root.updateBlockedByResize);
+            if (canSkip)
+                return;
+            const { layout, layoutId } = this.options;
+            /**
+             * If we have no layout, we can't perform projection, so early return
+             */
+            if (!this.layout || !(layout || layoutId))
+                return;
+            this.resolvedRelativeTargetAt = frameData.timestamp;
+            /**
+             * If we don't have a targetDelta but do have a layout, we can attempt to resolve
+             * a relativeParent. This will allow a component to perform scale correction
+             * even if no animation has started.
+             */
+            if (!this.targetDelta && !this.relativeTarget) {
+                const relativeParent = this.getClosestProjectingParent();
+                if (relativeParent &&
+                    relativeParent.layout &&
+                    this.animationProgress !== 1) {
+                    this.relativeParent = relativeParent;
+                    this.forceRelativeParentToResolveTarget();
+                    this.relativeTarget = createBox();
+                    this.relativeTargetOrigin = createBox();
+                    calcRelativePosition(this.relativeTargetOrigin, this.layout.layoutBox, relativeParent.layout.layoutBox);
+                    copyBoxInto(this.relativeTarget, this.relativeTargetOrigin);
+                }
+                else {
+                    this.relativeParent = this.relativeTarget = undefined;
+                }
+            }
+            /**
+             * If we have no relative target or no target delta our target isn't valid
+             * for this frame.
+             */
+            if (!this.relativeTarget && !this.targetDelta)
+                return;
+            /**
+             * Lazy-init target data structure
+             */
+            if (!this.target) {
+                this.target = createBox();
+                this.targetWithTransforms = createBox();
+            }
+            /**
+             * If we've got a relative box for this component, resolve it into a target relative to the parent.
+             */
+            if (this.relativeTarget &&
+                this.relativeTargetOrigin &&
+                this.relativeParent &&
+                this.relativeParent.target) {
+                this.forceRelativeParentToResolveTarget();
+                calcRelativeBox(this.target, this.relativeTarget, this.relativeParent.target);
+                /**
+                 * If we've only got a targetDelta, resolve it into a target
+                 */
+            }
+            else if (this.targetDelta) {
+                if (Boolean(this.resumingFrom)) {
+                    // TODO: This is creating a new object every frame
+                    this.target = this.applyTransform(this.layout.layoutBox);
+                }
+                else {
+                    copyBoxInto(this.target, this.layout.layoutBox);
+                }
+                applyBoxDelta(this.target, this.targetDelta);
+            }
+            else {
+                /**
+                 * If no target, use own layout as target
+                 */
+                copyBoxInto(this.target, this.layout.layoutBox);
+            }
+            /**
+             * If we've been told to attempt to resolve a relative target, do so.
+             */
+            if (this.attemptToResolveRelativeTarget) {
+                this.attemptToResolveRelativeTarget = false;
+                const relativeParent = this.getClosestProjectingParent();
+                if (relativeParent &&
+                    Boolean(relativeParent.resumingFrom) ===
+                        Boolean(this.resumingFrom) &&
+                    !relativeParent.options.layoutScroll &&
+                    relativeParent.target &&
+                    this.animationProgress !== 1) {
+                    this.relativeParent = relativeParent;
+                    this.forceRelativeParentToResolveTarget();
+                    this.relativeTarget = createBox();
+                    this.relativeTargetOrigin = createBox();
+                    calcRelativePosition(this.relativeTargetOrigin, this.target, relativeParent.target);
+                    copyBoxInto(this.relativeTarget, this.relativeTargetOrigin);
+                }
+                else {
+                    this.relativeParent = this.relativeTarget = undefined;
+                }
+            }
+            /**
+             * Increase debug counter for resolved target deltas
+             */
+            if (isDebug) {
+                metrics.resolvedTargetDeltas++;
+            }
+        }
+        getClosestProjectingParent() {
+            if (!this.parent ||
+                hasScale(this.parent.latestValues) ||
+                has2DTranslate(this.parent.latestValues)) {
+                return undefined;
+            }
+            if (this.parent.isProjecting()) {
+                return this.parent;
+            }
+            else {
+                return this.parent.getClosestProjectingParent();
+            }
+        }
+        isProjecting() {
+            return Boolean((this.relativeTarget ||
+                this.targetDelta ||
+                this.options.layoutRoot) &&
+                this.layout);
+        }
+        calcProjection() {
+            var _a;
+            const lead = this.getLead();
+            const isShared = Boolean(this.resumingFrom) || this !== lead;
+            let canSkip = true;
+            /**
+             * If this is a normal layout animation and neither this node nor its nearest projecting
+             * is dirty then we can't skip.
+             */
+            if (this.isProjectionDirty || ((_a = this.parent) === null || _a === void 0 ? void 0 : _a.isProjectionDirty)) {
+                canSkip = false;
+            }
+            /**
+             * If this is a shared layout animation and this node's shared projection is dirty then
+             * we can't skip.
+             */
+            if (isShared &&
+                (this.isSharedProjectionDirty || this.isTransformDirty)) {
+                canSkip = false;
+            }
+            /**
+             * If we have resolved the target this frame we must recalculate the
+             * projection to ensure it visually represents the internal calculations.
+             */
+            if (this.resolvedRelativeTargetAt === frameData.timestamp) {
+                canSkip = false;
+            }
+            if (canSkip)
+                return;
+            const { layout, layoutId } = this.options;
+            /**
+             * If this section of the tree isn't animating we can
+             * delete our target sources for the following frame.
+             */
+            this.isTreeAnimating = Boolean((this.parent && this.parent.isTreeAnimating) ||
+                this.currentAnimation ||
+                this.pendingAnimation);
+            if (!this.isTreeAnimating) {
+                this.targetDelta = this.relativeTarget = undefined;
+            }
+            if (!this.layout || !(layout || layoutId))
+                return;
+            /**
+             * Reset the corrected box with the latest values from box, as we're then going
+             * to perform mutative operations on it.
+             */
+            copyBoxInto(this.layoutCorrected, this.layout.layoutBox);
+            /**
+             * Record previous tree scales before updating.
+             */
+            const prevTreeScaleX = this.treeScale.x;
+            const prevTreeScaleY = this.treeScale.y;
+            /**
+             * Apply all the parent deltas to this box to produce the corrected box. This
+             * is the layout box, as it will appear on screen as a result of the transforms of its parents.
+             */
+            applyTreeDeltas(this.layoutCorrected, this.treeScale, this.path, isShared);
+            /**
+             * If this layer needs to perform scale correction but doesn't have a target,
+             * use the layout as the target.
+             */
+            if (lead.layout &&
+                !lead.target &&
+                (this.treeScale.x !== 1 || this.treeScale.y !== 1)) {
+                lead.target = lead.layout.layoutBox;
+                lead.targetWithTransforms = createBox();
+            }
+            const { target } = lead;
+            if (!target) {
+                /**
+                 * If we don't have a target to project into, but we were previously
+                 * projecting, we want to remove the stored transform and schedule
+                 * a render to ensure the elements reflect the removed transform.
+                 */
+                if (this.prevProjectionDelta) {
+                    this.createProjectionDeltas();
+                    this.scheduleRender();
+                }
+                return;
+            }
+            if (!this.projectionDelta || !this.prevProjectionDelta) {
+                this.createProjectionDeltas();
+            }
+            else {
+                copyAxisDeltaInto(this.prevProjectionDelta.x, this.projectionDelta.x);
+                copyAxisDeltaInto(this.prevProjectionDelta.y, this.projectionDelta.y);
+            }
+            /**
+             * Update the delta between the corrected box and the target box before user-set transforms were applied.
+             * This will allow us to calculate the corrected borderRadius and boxShadow to compensate
+             * for our layout reprojection, but still allow them to be scaled correctly by the user.
+             * It might be that to simplify this we may want to accept that user-set scale is also corrected
+             * and we wouldn't have to keep and calc both deltas, OR we could support a user setting
+             * to allow people to choose whether these styles are corrected based on just the
+             * layout reprojection or the final bounding box.
+             */
+            calcBoxDelta(this.projectionDelta, this.layoutCorrected, target, this.latestValues);
+            if (this.treeScale.x !== prevTreeScaleX ||
+                this.treeScale.y !== prevTreeScaleY ||
+                !axisDeltaEquals(this.projectionDelta.x, this.prevProjectionDelta.x) ||
+                !axisDeltaEquals(this.projectionDelta.y, this.prevProjectionDelta.y)) {
+                this.hasProjected = true;
+                this.scheduleRender();
+                this.notifyListeners("projectionUpdate", target);
+            }
+            /**
+             * Increase debug counter for recalculated projections
+             */
+            if (isDebug) {
+                metrics.recalculatedProjection++;
+            }
+        }
+        hide() {
+            this.isVisible = false;
+            // TODO: Schedule render
+        }
+        show() {
+            this.isVisible = true;
+            // TODO: Schedule render
+        }
+        scheduleRender(notifyAll = true) {
+            var _a;
+            (_a = this.options.visualElement) === null || _a === void 0 ? void 0 : _a.scheduleRender();
+            if (notifyAll) {
+                const stack = this.getStack();
+                stack && stack.scheduleRender();
+            }
+            if (this.resumingFrom && !this.resumingFrom.instance) {
+                this.resumingFrom = undefined;
+            }
+        }
+        createProjectionDeltas() {
+            this.prevProjectionDelta = createDelta();
+            this.projectionDelta = createDelta();
+            this.projectionDeltaWithTransform = createDelta();
+        }
+        setAnimationOrigin(delta, hasOnlyRelativeTargetChanged = false) {
+            const snapshot = this.snapshot;
+            const snapshotLatestValues = snapshot
+                ? snapshot.latestValues
+                : {};
+            const mixedValues = { ...this.latestValues };
+            const targetDelta = createDelta();
+            if (!this.relativeParent ||
+                !this.relativeParent.options.layoutRoot) {
+                this.relativeTarget = this.relativeTargetOrigin = undefined;
+            }
+            this.attemptToResolveRelativeTarget = !hasOnlyRelativeTargetChanged;
+            const relativeLayout = createBox();
+            const snapshotSource = snapshot ? snapshot.source : undefined;
+            const layoutSource = this.layout ? this.layout.source : undefined;
+            const isSharedLayoutAnimation = snapshotSource !== layoutSource;
+            const stack = this.getStack();
+            const isOnlyMember = !stack || stack.members.length <= 1;
+            const shouldCrossfadeOpacity = Boolean(isSharedLayoutAnimation &&
+                !isOnlyMember &&
+                this.options.crossfade === true &&
+                !this.path.some(hasOpacityCrossfade));
+            this.animationProgress = 0;
+            let prevRelativeTarget;
+            this.mixTargetDelta = (latest) => {
+                const progress = latest / 1000;
+                mixAxisDelta(targetDelta.x, delta.x, progress);
+                mixAxisDelta(targetDelta.y, delta.y, progress);
+                this.setTargetDelta(targetDelta);
+                if (this.relativeTarget &&
+                    this.relativeTargetOrigin &&
+                    this.layout &&
+                    this.relativeParent &&
+                    this.relativeParent.layout) {
+                    calcRelativePosition(relativeLayout, this.layout.layoutBox, this.relativeParent.layout.layoutBox);
+                    mixBox(this.relativeTarget, this.relativeTargetOrigin, relativeLayout, progress);
+                    /**
+                     * If this is an unchanged relative target we can consider the
+                     * projection not dirty.
+                     */
+                    if (prevRelativeTarget &&
+                        boxEquals(this.relativeTarget, prevRelativeTarget)) {
+                        this.isProjectionDirty = false;
+                    }
+                    if (!prevRelativeTarget)
+                        prevRelativeTarget = createBox();
+                    copyBoxInto(prevRelativeTarget, this.relativeTarget);
+                }
+                if (isSharedLayoutAnimation) {
+                    this.animationValues = mixedValues;
+                    mixValues(mixedValues, snapshotLatestValues, this.latestValues, progress, shouldCrossfadeOpacity, isOnlyMember);
+                }
+                this.root.scheduleUpdateProjection();
+                this.scheduleRender();
+                this.animationProgress = progress;
+            };
+            this.mixTargetDelta(this.options.layoutRoot ? 1000 : 0);
+        }
+        startAnimation(options) {
+            this.notifyListeners("animationStart");
+            this.currentAnimation && this.currentAnimation.stop();
+            if (this.resumingFrom && this.resumingFrom.currentAnimation) {
+                this.resumingFrom.currentAnimation.stop();
+            }
+            if (this.pendingAnimation) {
+                cancelFrame(this.pendingAnimation);
+                this.pendingAnimation = undefined;
+            }
+            /**
+             * Start the animation in the next frame to have a frame with progress 0,
+             * where the target is the same as when the animation started, so we can
+             * calculate the relative positions correctly for instant transitions.
+             */
+            this.pendingAnimation = frame.update(() => {
+                globalProjectionState.hasAnimatedSinceResize = true;
+                this.currentAnimation = animateSingleValue(0, animationTarget, {
+                    ...options,
+                    onUpdate: (latest) => {
+                        this.mixTargetDelta(latest);
+                        options.onUpdate && options.onUpdate(latest);
+                    },
+                    onComplete: () => {
+                        options.onComplete && options.onComplete();
+                        this.completeAnimation();
+                    },
+                });
+                if (this.resumingFrom) {
+                    this.resumingFrom.currentAnimation = this.currentAnimation;
+                }
+                this.pendingAnimation = undefined;
+            });
+        }
+        completeAnimation() {
+            if (this.resumingFrom) {
+                this.resumingFrom.currentAnimation = undefined;
+                this.resumingFrom.preserveOpacity = undefined;
+            }
+            const stack = this.getStack();
+            stack && stack.exitAnimationComplete();
+            this.resumingFrom =
+                this.currentAnimation =
+                    this.animationValues =
+                        undefined;
+            this.notifyListeners("animationComplete");
+        }
+        finishAnimation() {
+            if (this.currentAnimation) {
+                this.mixTargetDelta && this.mixTargetDelta(animationTarget);
+                this.currentAnimation.stop();
+            }
+            this.completeAnimation();
+        }
+        applyTransformsToTarget() {
+            const lead = this.getLead();
+            let { targetWithTransforms, target, layout, latestValues } = lead;
+            if (!targetWithTransforms || !target || !layout)
+                return;
+            /**
+             * If we're only animating position, and this element isn't the lead element,
+             * then instead of projecting into the lead box we instead want to calculate
+             * a new target that aligns the two boxes but maintains the layout shape.
+             */
+            if (this !== lead &&
+                this.layout &&
+                layout &&
+                shouldAnimatePositionOnly(this.options.animationType, this.layout.layoutBox, layout.layoutBox)) {
+                target = this.target || createBox();
+                const xLength = calcLength(this.layout.layoutBox.x);
+                target.x.min = lead.target.x.min;
+                target.x.max = target.x.min + xLength;
+                const yLength = calcLength(this.layout.layoutBox.y);
+                target.y.min = lead.target.y.min;
+                target.y.max = target.y.min + yLength;
+            }
+            copyBoxInto(targetWithTransforms, target);
+            /**
+             * Apply the latest user-set transforms to the targetBox to produce the targetBoxFinal.
+             * This is the final box that we will then project into by calculating a transform delta and
+             * applying it to the corrected box.
+             */
+            transformBox(targetWithTransforms, latestValues);
+            /**
+             * Update the delta between the corrected box and the final target box, after
+             * user-set transforms are applied to it. This will be used by the renderer to
+             * create a transform style that will reproject the element from its layout layout
+             * into the desired bounding box.
+             */
+            calcBoxDelta(this.projectionDeltaWithTransform, this.layoutCorrected, targetWithTransforms, latestValues);
+        }
+        registerSharedNode(layoutId, node) {
+            if (!this.sharedNodes.has(layoutId)) {
+                this.sharedNodes.set(layoutId, new NodeStack());
+            }
+            const stack = this.sharedNodes.get(layoutId);
+            stack.add(node);
+            const config = node.options.initialPromotionConfig;
+            node.promote({
+                transition: config ? config.transition : undefined,
+                preserveFollowOpacity: config && config.shouldPreserveFollowOpacity
+                    ? config.shouldPreserveFollowOpacity(node)
+                    : undefined,
+            });
+        }
+        isLead() {
+            const stack = this.getStack();
+            return stack ? stack.lead === this : true;
+        }
+        getLead() {
+            var _a;
+            const { layoutId } = this.options;
+            return layoutId ? ((_a = this.getStack()) === null || _a === void 0 ? void 0 : _a.lead) || this : this;
+        }
+        getPrevLead() {
+            var _a;
+            const { layoutId } = this.options;
+            return layoutId ? (_a = this.getStack()) === null || _a === void 0 ? void 0 : _a.prevLead : undefined;
+        }
+        getStack() {
+            const { layoutId } = this.options;
+            if (layoutId)
+                return this.root.sharedNodes.get(layoutId);
+        }
+        promote({ needsReset, transition, preserveFollowOpacity, } = {}) {
+            const stack = this.getStack();
+            if (stack)
+                stack.promote(this, preserveFollowOpacity);
+            if (needsReset) {
+                this.projectionDelta = undefined;
+                this.needsReset = true;
+            }
+            if (transition)
+                this.setOptions({ transition });
+        }
+        relegate() {
+            const stack = this.getStack();
+            if (stack) {
+                return stack.relegate(this);
+            }
+            else {
+                return false;
+            }
+        }
+        resetSkewAndRotation() {
+            const { visualElement } = this.options;
+            if (!visualElement)
+                return;
+            // If there's no detected skew or rotation values, we can early return without a forced render.
+            let hasDistortingTransform = false;
+            /**
+             * An unrolled check for rotation values. Most elements don't have any rotation and
+             * skipping the nested loop and new object creation is 50% faster.
+             */
+            const { latestValues } = visualElement;
+            if (latestValues.z ||
+                latestValues.rotate ||
+                latestValues.rotateX ||
+                latestValues.rotateY ||
+                latestValues.rotateZ ||
+                latestValues.skewX ||
+                latestValues.skewY) {
+                hasDistortingTransform = true;
+            }
+            // If there's no distorting values, we don't need to do any more.
+            if (!hasDistortingTransform)
+                return;
+            const resetValues = {};
+            if (latestValues.z) {
+                resetDistortingTransform("z", visualElement, resetValues, this.animationValues);
+            }
+            // Check the skew and rotate value of all axes and reset to 0
+            for (let i = 0; i < transformAxes.length; i++) {
+                resetDistortingTransform(`rotate${transformAxes[i]}`, visualElement, resetValues, this.animationValues);
+                resetDistortingTransform(`skew${transformAxes[i]}`, visualElement, resetValues, this.animationValues);
+            }
+            // Force a render of this element to apply the transform with all skews and rotations
+            // set to 0.
+            visualElement.render();
+            // Put back all the values we reset
+            for (const key in resetValues) {
+                visualElement.setStaticValue(key, resetValues[key]);
+                if (this.animationValues) {
+                    this.animationValues[key] = resetValues[key];
+                }
+            }
+            // Schedule a render for the next frame. This ensures we won't visually
+            // see the element with the reset rotate value applied.
+            visualElement.scheduleRender();
+        }
+        getProjectionStyles(styleProp) {
+            var _a, _b;
+            if (!this.instance || this.isSVG)
+                return undefined;
+            if (!this.isVisible) {
+                return hiddenVisibility;
+            }
+            const styles = {
+                visibility: "",
+            };
+            const transformTemplate = this.getTransformTemplate();
+            if (this.needsReset) {
+                this.needsReset = false;
+                styles.opacity = "";
+                styles.pointerEvents =
+                    resolveMotionValue(styleProp === null || styleProp === void 0 ? void 0 : styleProp.pointerEvents) || "";
+                styles.transform = transformTemplate
+                    ? transformTemplate(this.latestValues, "")
+                    : "none";
+                return styles;
+            }
+            const lead = this.getLead();
+            if (!this.projectionDelta || !this.layout || !lead.target) {
+                const emptyStyles = {};
+                if (this.options.layoutId) {
+                    emptyStyles.opacity =
+                        this.latestValues.opacity !== undefined
+                            ? this.latestValues.opacity
+                            : 1;
+                    emptyStyles.pointerEvents =
+                        resolveMotionValue(styleProp === null || styleProp === void 0 ? void 0 : styleProp.pointerEvents) || "";
+                }
+                if (this.hasProjected && !hasTransform(this.latestValues)) {
+                    emptyStyles.transform = transformTemplate
+                        ? transformTemplate({}, "")
+                        : "none";
+                    this.hasProjected = false;
+                }
+                return emptyStyles;
+            }
+            const valuesToRender = lead.animationValues || lead.latestValues;
+            this.applyTransformsToTarget();
+            styles.transform = buildProjectionTransform(this.projectionDeltaWithTransform, this.treeScale, valuesToRender);
+            if (transformTemplate) {
+                styles.transform = transformTemplate(valuesToRender, styles.transform);
+            }
+            const { x, y } = this.projectionDelta;
+            styles.transformOrigin = `${x.origin * 100}% ${y.origin * 100}% 0`;
+            if (lead.animationValues) {
+                /**
+                 * If the lead component is animating, assign this either the entering/leaving
+                 * opacity
+                 */
+                styles.opacity =
+                    lead === this
+                        ? (_b = (_a = valuesToRender.opacity) !== null && _a !== void 0 ? _a : this.latestValues.opacity) !== null && _b !== void 0 ? _b : 1
+                        : this.preserveOpacity
+                            ? this.latestValues.opacity
+                            : valuesToRender.opacityExit;
+            }
+            else {
+                /**
+                 * Or we're not animating at all, set the lead component to its layout
+                 * opacity and other components to hidden.
+                 */
+                styles.opacity =
+                    lead === this
+                        ? valuesToRender.opacity !== undefined
+                            ? valuesToRender.opacity
+                            : ""
+                        : valuesToRender.opacityExit !== undefined
+                            ? valuesToRender.opacityExit
+                            : 0;
+            }
+            /**
+             * Apply scale correction
+             */
+            for (const key in scaleCorrectors) {
+                if (valuesToRender[key] === undefined)
+                    continue;
+                const { correct, applyTo } = scaleCorrectors[key];
+                /**
+                 * Only apply scale correction to the value if we have an
+                 * active projection transform. Otherwise these values become
+                 * vulnerable to distortion if the element changes size without
+                 * a corresponding layout animation.
+                 */
+                const corrected = styles.transform === "none"
+                    ? valuesToRender[key]
+                    : correct(valuesToRender[key], lead);
+                if (applyTo) {
+                    const num = applyTo.length;
+                    for (let i = 0; i < num; i++) {
+                        styles[applyTo[i]] = corrected;
+                    }
+                }
+                else {
+                    styles[key] = corrected;
+                }
+            }
+            /**
+             * Disable pointer events on follow components. This is to ensure
+             * that if a follow component covers a lead component it doesn't block
+             * pointer events on the lead.
+             */
+            if (this.options.layoutId) {
+                styles.pointerEvents =
+                    lead === this
+                        ? resolveMotionValue(styleProp === null || styleProp === void 0 ? void 0 : styleProp.pointerEvents) || ""
+                        : "none";
+            }
+            return styles;
+        }
+        clearSnapshot() {
+            this.resumeFrom = this.snapshot = undefined;
+        }
+        // Only run on root
+        resetTree() {
+            this.root.nodes.forEach((node) => { var _a; return (_a = node.currentAnimation) === null || _a === void 0 ? void 0 : _a.stop(); });
+            this.root.nodes.forEach(clearMeasurements);
+            this.root.sharedNodes.clear();
+        }
+    };
+}
+function updateLayout(node) {
+    node.updateLayout();
+}
+function notifyLayoutUpdate(node) {
+    var _a;
+    const snapshot = ((_a = node.resumeFrom) === null || _a === void 0 ? void 0 : _a.snapshot) || node.snapshot;
+    if (node.isLead() &&
+        node.layout &&
+        snapshot &&
+        node.hasListeners("didUpdate")) {
+        const { layoutBox: layout, measuredBox: measuredLayout } = node.layout;
+        const { animationType } = node.options;
+        const isShared = snapshot.source !== node.layout.source;
+        // TODO Maybe we want to also resize the layout snapshot so we don't trigger
+        // animations for instance if layout="size" and an element has only changed position
+        if (animationType === "size") {
+            eachAxis((axis) => {
+                const axisSnapshot = isShared
+                    ? snapshot.measuredBox[axis]
+                    : snapshot.layoutBox[axis];
+                const length = calcLength(axisSnapshot);
+                axisSnapshot.min = layout[axis].min;
+                axisSnapshot.max = axisSnapshot.min + length;
+            });
+        }
+        else if (shouldAnimatePositionOnly(animationType, snapshot.layoutBox, layout)) {
+            eachAxis((axis) => {
+                const axisSnapshot = isShared
+                    ? snapshot.measuredBox[axis]
+                    : snapshot.layoutBox[axis];
+                const length = calcLength(layout[axis]);
+                axisSnapshot.max = axisSnapshot.min + length;
+                /**
+                 * Ensure relative target gets resized and rerendererd
+                 */
+                if (node.relativeTarget && !node.currentAnimation) {
+                    node.isProjectionDirty = true;
+                    node.relativeTarget[axis].max =
+                        node.relativeTarget[axis].min + length;
+                }
+            });
+        }
+        const layoutDelta = createDelta();
+        calcBoxDelta(layoutDelta, layout, snapshot.layoutBox);
+        const visualDelta = createDelta();
+        if (isShared) {
+            calcBoxDelta(visualDelta, node.applyTransform(measuredLayout, true), snapshot.measuredBox);
+        }
+        else {
+            calcBoxDelta(visualDelta, layout, snapshot.layoutBox);
+        }
+        const hasLayoutChanged = !isDeltaZero(layoutDelta);
+        let hasRelativeTargetChanged = false;
+        if (!node.resumeFrom) {
+            const relativeParent = node.getClosestProjectingParent();
+            /**
+             * If the relativeParent is itself resuming from a different element then
+             * the relative snapshot is not relavent
+             */
+            if (relativeParent && !relativeParent.resumeFrom) {
+                const { snapshot: parentSnapshot, layout: parentLayout } = relativeParent;
+                if (parentSnapshot && parentLayout) {
+                    const relativeSnapshot = createBox();
+                    calcRelativePosition(relativeSnapshot, snapshot.layoutBox, parentSnapshot.layoutBox);
+                    const relativeLayout = createBox();
+                    calcRelativePosition(relativeLayout, layout, parentLayout.layoutBox);
+                    if (!boxEqualsRounded(relativeSnapshot, relativeLayout)) {
+                        hasRelativeTargetChanged = true;
+                    }
+                    if (relativeParent.options.layoutRoot) {
+                        node.relativeTarget = relativeLayout;
+                        node.relativeTargetOrigin = relativeSnapshot;
+                        node.relativeParent = relativeParent;
+                    }
+                }
+            }
+        }
+        node.notifyListeners("didUpdate", {
+            layout,
+            snapshot,
+            delta: visualDelta,
+            layoutDelta,
+            hasLayoutChanged,
+            hasRelativeTargetChanged,
+        });
+    }
+    else if (node.isLead()) {
+        const { onExitComplete } = node.options;
+        onExitComplete && onExitComplete();
+    }
+    /**
+     * Clearing transition
+     * TODO: Investigate why this transition is being passed in as {type: false } from Framer
+     * and why we need it at all
+     */
+    node.options.transition = undefined;
+}
+function propagateDirtyNodes(node) {
+    /**
+     * Increase debug counter for nodes encountered this frame
+     */
+    if (isDebug) {
+        metrics.totalNodes++;
+    }
+    if (!node.parent)
+        return;
+    /**
+     * If this node isn't projecting, propagate isProjectionDirty. It will have
+     * no performance impact but it will allow the next child that *is* projecting
+     * but *isn't* dirty to just check its parent to see if *any* ancestor needs
+     * correcting.
+     */
+    if (!node.isProjecting()) {
+        node.isProjectionDirty = node.parent.isProjectionDirty;
+    }
+    /**
+     * Propagate isSharedProjectionDirty and isTransformDirty
+     * throughout the whole tree. A future revision can take another look at
+     * this but for safety we still recalcualte shared nodes.
+     */
+    node.isSharedProjectionDirty || (node.isSharedProjectionDirty = Boolean(node.isProjectionDirty ||
+        node.parent.isProjectionDirty ||
+        node.parent.isSharedProjectionDirty));
+    node.isTransformDirty || (node.isTransformDirty = node.parent.isTransformDirty);
+}
+function cleanDirtyNodes(node) {
+    node.isProjectionDirty =
+        node.isSharedProjectionDirty =
+            node.isTransformDirty =
+                false;
+}
+function clearSnapshot(node) {
+    node.clearSnapshot();
+}
+function clearMeasurements(node) {
+    node.clearMeasurements();
+}
+function clearIsLayoutDirty(node) {
+    node.isLayoutDirty = false;
+}
+function resetTransformStyle(node) {
+    const { visualElement } = node.options;
+    if (visualElement && visualElement.getProps().onBeforeLayoutMeasure) {
+        visualElement.notify("BeforeLayoutMeasure");
+    }
+    node.resetTransform();
+}
+function finishAnimation(node) {
+    node.finishAnimation();
+    node.targetDelta = node.relativeTarget = node.target = undefined;
+    node.isProjectionDirty = true;
+}
+function resolveTargetDelta(node) {
+    node.resolveTargetDelta();
+}
+function calcProjection(node) {
+    node.calcProjection();
+}
+function resetSkewAndRotation(node) {
+    node.resetSkewAndRotation();
+}
+function removeLeadSnapshots(stack) {
+    stack.removeLeadSnapshot();
+}
+function mixAxisDelta(output, delta, p) {
+    output.translate = mixNumber$1(delta.translate, 0, p);
+    output.scale = mixNumber$1(delta.scale, 1, p);
+    output.origin = delta.origin;
+    output.originPoint = delta.originPoint;
+}
+function mixAxis(output, from, to, p) {
+    output.min = mixNumber$1(from.min, to.min, p);
+    output.max = mixNumber$1(from.max, to.max, p);
+}
+function mixBox(output, from, to, p) {
+    mixAxis(output.x, from.x, to.x, p);
+    mixAxis(output.y, from.y, to.y, p);
+}
+function hasOpacityCrossfade(node) {
+    return (node.animationValues && node.animationValues.opacityExit !== undefined);
+}
+const defaultLayoutTransition = {
+    duration: 0.45,
+    ease: [0.4, 0, 0.1, 1],
+};
+const userAgentContains = (string) => typeof navigator !== "undefined" &&
+    navigator.userAgent &&
+    navigator.userAgent.toLowerCase().includes(string);
+/**
+ * Measured bounding boxes must be rounded in Safari and
+ * left untouched in Chrome, otherwise non-integer layouts within scaled-up elements
+ * can appear to jump.
+ */
+const roundPoint = userAgentContains("applewebkit/") && !userAgentContains("chrome/")
+    ? Math.round
+    : noop;
+function roundAxis(axis) {
+    // Round to the nearest .5 pixels to support subpixel layouts
+    axis.min = roundPoint(axis.min);
+    axis.max = roundPoint(axis.max);
+}
+function roundBox(box) {
+    roundAxis(box.x);
+    roundAxis(box.y);
+}
+function shouldAnimatePositionOnly(animationType, snapshot, layout) {
+    return (animationType === "position" ||
+        (animationType === "preserve-aspect" &&
+            !isNear(aspectRatio(snapshot), aspectRatio(layout), 0.2)));
+}
+function checkNodeWasScrollRoot(node) {
+    var _a;
+    return node !== node.root && ((_a = node.scroll) === null || _a === void 0 ? void 0 : _a.wasRoot);
+}
+
+const DocumentProjectionNode = createProjectionNode({
+    attachResizeListener: (ref, notify) => addDomEvent(ref, "resize", notify),
+    measureScroll: () => ({
+        x: document.documentElement.scrollLeft || document.body.scrollLeft,
+        y: document.documentElement.scrollTop || document.body.scrollTop,
+    }),
+    checkIsScrollRoot: () => true,
+});
+
+const rootProjectionNode = {
+    current: undefined,
+};
+const HTMLProjectionNode = createProjectionNode({
+    measureScroll: (instance) => ({
+        x: instance.scrollLeft,
+        y: instance.scrollTop,
+    }),
+    defaultParent: () => {
+        if (!rootProjectionNode.current) {
+            const documentNode = new DocumentProjectionNode({});
+            documentNode.mount(window);
+            documentNode.setOptions({ layoutScroll: true });
+            rootProjectionNode.current = documentNode;
+        }
+        return rootProjectionNode.current;
+    },
+    resetTransform: (instance, value) => {
+        instance.style.transform = value !== undefined ? value : "none";
+    },
+    checkIsScrollRoot: (instance) => Boolean(window.getComputedStyle(instance).position === "fixed"),
+});
+
+const drag = {
+    pan: {
+        Feature: PanGesture,
+    },
+    drag: {
+        Feature: DragGesture,
+        ProjectionNode: HTMLProjectionNode,
+        MeasureLayout,
+    },
+};
+
+function handleHoverEvent(node, event, lifecycle) {
+    const { props } = node;
+    if (node.animationState && props.whileHover) {
+        node.animationState.setActive("whileHover", lifecycle === "Start");
+    }
+    const eventName = ("onHover" + lifecycle);
+    const callback = props[eventName];
+    if (callback) {
+        frame.postRender(() => callback(event, extractEventInfo(event)));
+    }
+}
+class HoverGesture extends Feature {
+    mount() {
+        const { current } = this.node;
+        if (!current)
+            return;
+        this.unmount = hover(current, (startEvent) => {
+            handleHoverEvent(this.node, startEvent, "Start");
+            return (endEvent) => handleHoverEvent(this.node, endEvent, "End");
+        });
+    }
+    unmount() { }
+}
+
+class FocusGesture extends Feature {
+    constructor() {
+        super(...arguments);
+        this.isActive = false;
+    }
+    onFocus() {
+        let isFocusVisible = false;
+        /**
+         * If this element doesn't match focus-visible then don't
+         * apply whileHover. But, if matches throws that focus-visible
+         * is not a valid selector then in that browser outline styles will be applied
+         * to the element by default and we want to match that behaviour with whileFocus.
+         */
+        try {
+            isFocusVisible = this.node.current.matches(":focus-visible");
+        }
+        catch (e) {
+            isFocusVisible = true;
+        }
+        if (!isFocusVisible || !this.node.animationState)
+            return;
+        this.node.animationState.setActive("whileFocus", true);
+        this.isActive = true;
+    }
+    onBlur() {
+        if (!this.isActive || !this.node.animationState)
+            return;
+        this.node.animationState.setActive("whileFocus", false);
+        this.isActive = false;
+    }
+    mount() {
+        this.unmount = pipe(addDomEvent(this.node.current, "focus", () => this.onFocus()), addDomEvent(this.node.current, "blur", () => this.onBlur()));
+    }
+    unmount() { }
+}
+
+function handlePressEvent(node, event, lifecycle) {
+    const { props } = node;
+    if (node.animationState && props.whileTap) {
+        node.animationState.setActive("whileTap", lifecycle === "Start");
+    }
+    const eventName = ("onTap" + (lifecycle === "End" ? "" : lifecycle));
+    const callback = props[eventName];
+    if (callback) {
+        frame.postRender(() => callback(event, extractEventInfo(event)));
+    }
+}
+class PressGesture extends Feature {
+    mount() {
+        const { current } = this.node;
+        if (!current)
+            return;
+        this.unmount = press(current, (startEvent) => {
+            handlePressEvent(this.node, startEvent, "Start");
+            return (endEvent, { success }) => handlePressEvent(this.node, endEvent, success ? "End" : "Cancel");
+        }, { useGlobalTarget: this.node.props.globalTapTarget });
+    }
+    unmount() { }
+}
+
+/**
+ * Map an IntersectionHandler callback to an element. We only ever make one handler for one
+ * element, so even though these handlers might all be triggered by different
+ * observers, we can keep them in the same map.
+ */
+const observerCallbacks = new WeakMap();
+/**
+ * Multiple observers can be created for multiple element/document roots. Each with
+ * different settings. So here we store dictionaries of observers to each root,
+ * using serialised settings (threshold/margin) as lookup keys.
+ */
+const observers = new WeakMap();
+const fireObserverCallback = (entry) => {
+    const callback = observerCallbacks.get(entry.target);
+    callback && callback(entry);
+};
+const fireAllObserverCallbacks = (entries) => {
+    entries.forEach(fireObserverCallback);
+};
+function initIntersectionObserver({ root, ...options }) {
+    const lookupRoot = root || document;
+    /**
+     * If we don't have an observer lookup map for this root, create one.
+     */
+    if (!observers.has(lookupRoot)) {
+        observers.set(lookupRoot, {});
+    }
+    const rootObservers = observers.get(lookupRoot);
+    const key = JSON.stringify(options);
+    /**
+     * If we don't have an observer for this combination of root and settings,
+     * create one.
+     */
+    if (!rootObservers[key]) {
+        rootObservers[key] = new IntersectionObserver(fireAllObserverCallbacks, { root, ...options });
+    }
+    return rootObservers[key];
+}
+function observeIntersection(element, options, callback) {
+    const rootInteresectionObserver = initIntersectionObserver(options);
+    observerCallbacks.set(element, callback);
+    rootInteresectionObserver.observe(element);
+    return () => {
+        observerCallbacks.delete(element);
+        rootInteresectionObserver.unobserve(element);
+    };
+}
+
+const thresholdNames = {
+    some: 0,
+    all: 1,
+};
+class InViewFeature extends Feature {
+    constructor() {
+        super(...arguments);
+        this.hasEnteredView = false;
+        this.isInView = false;
+    }
+    startObserver() {
+        this.unmount();
+        const { viewport = {} } = this.node.getProps();
+        const { root, margin: rootMargin, amount = "some", once } = viewport;
+        const options = {
+            root: root ? root.current : undefined,
+            rootMargin,
+            threshold: typeof amount === "number" ? amount : thresholdNames[amount],
+        };
+        const onIntersectionUpdate = (entry) => {
+            const { isIntersecting } = entry;
+            /**
+             * If there's been no change in the viewport state, early return.
+             */
+            if (this.isInView === isIntersecting)
+                return;
+            this.isInView = isIntersecting;
+            /**
+             * Handle hasEnteredView. If this is only meant to run once, and
+             * element isn't visible, early return. Otherwise set hasEnteredView to true.
+             */
+            if (once && !isIntersecting && this.hasEnteredView) {
+                return;
+            }
+            else if (isIntersecting) {
+                this.hasEnteredView = true;
+            }
+            if (this.node.animationState) {
+                this.node.animationState.setActive("whileInView", isIntersecting);
+            }
+            /**
+             * Use the latest committed props rather than the ones in scope
+             * when this observer is created
+             */
+            const { onViewportEnter, onViewportLeave } = this.node.getProps();
+            const callback = isIntersecting ? onViewportEnter : onViewportLeave;
+            callback && callback(entry);
+        };
+        return observeIntersection(this.node.current, options, onIntersectionUpdate);
+    }
+    mount() {
+        this.startObserver();
+    }
+    update() {
+        if (typeof IntersectionObserver === "undefined")
+            return;
+        const { props, prevProps } = this.node;
+        const hasOptionsChanged = ["amount", "margin", "root"].some(hasViewportOptionChanged(props, prevProps));
+        if (hasOptionsChanged) {
+            this.startObserver();
+        }
+    }
+    unmount() { }
+}
+function hasViewportOptionChanged({ viewport = {} }, { viewport: prevViewport = {} } = {}) {
+    return (name) => viewport[name] !== prevViewport[name];
+}
+
+const gestureAnimations = {
+    inView: {
+        Feature: InViewFeature,
+    },
+    tap: {
+        Feature: PressGesture,
+    },
+    focus: {
+        Feature: FocusGesture,
+    },
+    hover: {
+        Feature: HoverGesture,
+    },
+};
+
+const layout = {
+    layout: {
+        ProjectionNode: HTMLProjectionNode,
+        MeasureLayout,
+    },
+};
+
+// Does this device prefer reduced motion? Returns `null` server-side.
+const prefersReducedMotion = { current: null };
+const hasReducedMotionListener = { current: false };
+
+function initPrefersReducedMotion() {
+    hasReducedMotionListener.current = true;
+    if (!isBrowser)
+        return;
+    if (window.matchMedia) {
+        const motionMediaQuery = window.matchMedia("(prefers-reduced-motion)");
+        const setReducedMotionPreferences = () => (prefersReducedMotion.current = motionMediaQuery.matches);
+        motionMediaQuery.addListener(setReducedMotionPreferences);
+        setReducedMotionPreferences();
+    }
+    else {
+        prefersReducedMotion.current = false;
+    }
+}
+
+/**
+ * A list of all ValueTypes
+ */
+const valueTypes = [...dimensionValueTypes, color, complex];
+/**
+ * Tests a value against the list of ValueTypes
+ */
+const findValueType = (v) => valueTypes.find(testValueType(v));
+
+const visualElementStore = new WeakMap();
+
+function updateMotionValuesFromProps(element, next, prev) {
+    for (const key in next) {
+        const nextValue = next[key];
+        const prevValue = prev[key];
+        if (isMotionValue(nextValue)) {
+            /**
+             * If this is a motion value found in props or style, we want to add it
+             * to our visual element's motion value map.
+             */
+            element.addValue(key, nextValue);
+            /**
+             * Check the version of the incoming motion value with this version
+             * and warn against mismatches.
+             */
+            if (process.env.NODE_ENV === "development") {
+                warnOnce(nextValue.version === "11.18.2", `Attempting to mix Motion versions ${nextValue.version} with 11.18.2 may not work as expected.`);
+            }
+        }
+        else if (isMotionValue(prevValue)) {
+            /**
+             * If we're swapping from a motion value to a static value,
+             * create a new motion value from that
+             */
+            element.addValue(key, motionValue(nextValue, { owner: element }));
+        }
+        else if (prevValue !== nextValue) {
+            /**
+             * If this is a flat value that has changed, update the motion value
+             * or create one if it doesn't exist. We only want to do this if we're
+             * not handling the value with our animation state.
+             */
+            if (element.hasValue(key)) {
+                const existingValue = element.getValue(key);
+                if (existingValue.liveStyle === true) {
+                    existingValue.jump(nextValue);
+                }
+                else if (!existingValue.hasAnimated) {
+                    existingValue.set(nextValue);
+                }
+            }
+            else {
+                const latestValue = element.getStaticValue(key);
+                element.addValue(key, motionValue(latestValue !== undefined ? latestValue : nextValue, { owner: element }));
+            }
+        }
+    }
+    // Handle removed values
+    for (const key in prev) {
+        if (next[key] === undefined)
+            element.removeValue(key);
+    }
+    return next;
+}
+
+const propEventHandlers = [
+    "AnimationStart",
+    "AnimationComplete",
+    "Update",
+    "BeforeLayoutMeasure",
+    "LayoutMeasure",
+    "LayoutAnimationStart",
+    "LayoutAnimationComplete",
+];
+/**
+ * A VisualElement is an imperative abstraction around UI elements such as
+ * HTMLElement, SVGElement, Three.Object3D etc.
+ */
+class VisualElement {
+    /**
+     * This method takes React props and returns found MotionValues. For example, HTML
+     * MotionValues will be found within the style prop, whereas for Three.js within attribute arrays.
+     *
+     * This isn't an abstract method as it needs calling in the constructor, but it is
+     * intended to be one.
+     */
+    scrapeMotionValuesFromProps(_props, _prevProps, _visualElement) {
+        return {};
+    }
+    constructor({ parent, props, presenceContext, reducedMotionConfig, blockInitialAnimation, visualState, }, options = {}) {
+        /**
+         * A reference to the current underlying Instance, e.g. a HTMLElement
+         * or Three.Mesh etc.
+         */
+        this.current = null;
+        /**
+         * A set containing references to this VisualElement's children.
+         */
+        this.children = new Set();
+        /**
+         * Determine what role this visual element should take in the variant tree.
+         */
+        this.isVariantNode = false;
+        this.isControllingVariants = false;
+        /**
+         * Decides whether this VisualElement should animate in reduced motion
+         * mode.
+         *
+         * TODO: This is currently set on every individual VisualElement but feels
+         * like it could be set globally.
+         */
+        this.shouldReduceMotion = null;
+        /**
+         * A map of all motion values attached to this visual element. Motion
+         * values are source of truth for any given animated value. A motion
+         * value might be provided externally by the component via props.
+         */
+        this.values = new Map();
+        this.KeyframeResolver = KeyframeResolver;
+        /**
+         * Cleanup functions for active features (hover/tap/exit etc)
+         */
+        this.features = {};
+        /**
+         * A map of every subscription that binds the provided or generated
+         * motion values onChange listeners to this visual element.
+         */
+        this.valueSubscriptions = new Map();
+        /**
+         * A reference to the previously-provided motion values as returned
+         * from scrapeMotionValuesFromProps. We use the keys in here to determine
+         * if any motion values need to be removed after props are updated.
+         */
+        this.prevMotionValues = {};
+        /**
+         * An object containing a SubscriptionManager for each active event.
+         */
+        this.events = {};
+        /**
+         * An object containing an unsubscribe function for each prop event subscription.
+         * For example, every "Update" event can have multiple subscribers via
+         * VisualElement.on(), but only one of those can be defined via the onUpdate prop.
+         */
+        this.propEventSubscriptions = {};
+        this.notifyUpdate = () => this.notify("Update", this.latestValues);
+        this.render = () => {
+            if (!this.current)
+                return;
+            this.triggerBuild();
+            this.renderInstance(this.current, this.renderState, this.props.style, this.projection);
+        };
+        this.renderScheduledAt = 0.0;
+        this.scheduleRender = () => {
+            const now = time.now();
+            if (this.renderScheduledAt < now) {
+                this.renderScheduledAt = now;
+                frame.render(this.render, false, true);
+            }
+        };
+        const { latestValues, renderState, onUpdate } = visualState;
+        this.onUpdate = onUpdate;
+        this.latestValues = latestValues;
+        this.baseTarget = { ...latestValues };
+        this.initialValues = props.initial ? { ...latestValues } : {};
+        this.renderState = renderState;
+        this.parent = parent;
+        this.props = props;
+        this.presenceContext = presenceContext;
+        this.depth = parent ? parent.depth + 1 : 0;
+        this.reducedMotionConfig = reducedMotionConfig;
+        this.options = options;
+        this.blockInitialAnimation = Boolean(blockInitialAnimation);
+        this.isControllingVariants = isControllingVariants(props);
+        this.isVariantNode = isVariantNode(props);
+        if (this.isVariantNode) {
+            this.variantChildren = new Set();
+        }
+        this.manuallyAnimateOnMount = Boolean(parent && parent.current);
+        /**
+         * Any motion values that are provided to the element when created
+         * aren't yet bound to the element, as this would technically be impure.
+         * However, we iterate through the motion values and set them to the
+         * initial values for this component.
+         *
+         * TODO: This is impure and we should look at changing this to run on mount.
+         * Doing so will break some tests but this isn't necessarily a breaking change,
+         * more a reflection of the test.
+         */
+        const { willChange, ...initialMotionValues } = this.scrapeMotionValuesFromProps(props, {}, this);
+        for (const key in initialMotionValues) {
+            const value = initialMotionValues[key];
+            if (latestValues[key] !== undefined && isMotionValue(value)) {
+                value.set(latestValues[key], false);
+            }
+        }
+    }
+    mount(instance) {
+        this.current = instance;
+        visualElementStore.set(instance, this);
+        if (this.projection && !this.projection.instance) {
+            this.projection.mount(instance);
+        }
+        if (this.parent && this.isVariantNode && !this.isControllingVariants) {
+            this.removeFromVariantTree = this.parent.addVariantChild(this);
+        }
+        this.values.forEach((value, key) => this.bindToMotionValue(key, value));
+        if (!hasReducedMotionListener.current) {
+            initPrefersReducedMotion();
+        }
+        this.shouldReduceMotion =
+            this.reducedMotionConfig === "never"
+                ? false
+                : this.reducedMotionConfig === "always"
+                    ? true
+                    : prefersReducedMotion.current;
+        if (process.env.NODE_ENV !== "production") {
+            warnOnce(this.shouldReduceMotion !== true, "You have Reduced Motion enabled on your device. Animations may not appear as expected.");
+        }
+        if (this.parent)
+            this.parent.children.add(this);
+        this.update(this.props, this.presenceContext);
+    }
+    unmount() {
+        visualElementStore.delete(this.current);
+        this.projection && this.projection.unmount();
+        cancelFrame(this.notifyUpdate);
+        cancelFrame(this.render);
+        this.valueSubscriptions.forEach((remove) => remove());
+        this.valueSubscriptions.clear();
+        this.removeFromVariantTree && this.removeFromVariantTree();
+        this.parent && this.parent.children.delete(this);
+        for (const key in this.events) {
+            this.events[key].clear();
+        }
+        for (const key in this.features) {
+            const feature = this.features[key];
+            if (feature) {
+                feature.unmount();
+                feature.isMounted = false;
+            }
+        }
+        this.current = null;
+    }
+    bindToMotionValue(key, value) {
+        if (this.valueSubscriptions.has(key)) {
+            this.valueSubscriptions.get(key)();
+        }
+        const valueIsTransform = transformProps.has(key);
+        const removeOnChange = value.on("change", (latestValue) => {
+            this.latestValues[key] = latestValue;
+            this.props.onUpdate && frame.preRender(this.notifyUpdate);
+            if (valueIsTransform && this.projection) {
+                this.projection.isTransformDirty = true;
+            }
+        });
+        const removeOnRenderRequest = value.on("renderRequest", this.scheduleRender);
+        let removeSyncCheck;
+        if (window.MotionCheckAppearSync) {
+            removeSyncCheck = window.MotionCheckAppearSync(this, key, value);
+        }
+        this.valueSubscriptions.set(key, () => {
+            removeOnChange();
+            removeOnRenderRequest();
+            if (removeSyncCheck)
+                removeSyncCheck();
+            if (value.owner)
+                value.stop();
+        });
+    }
+    sortNodePosition(other) {
+        /**
+         * If these nodes aren't even of the same type we can't compare their depth.
+         */
+        if (!this.current ||
+            !this.sortInstanceNodePosition ||
+            this.type !== other.type) {
+            return 0;
+        }
+        return this.sortInstanceNodePosition(this.current, other.current);
+    }
+    updateFeatures() {
+        let key = "animation";
+        for (key in featureDefinitions) {
+            const featureDefinition = featureDefinitions[key];
+            if (!featureDefinition)
+                continue;
+            const { isEnabled, Feature: FeatureConstructor } = featureDefinition;
+            /**
+             * If this feature is enabled but not active, make a new instance.
+             */
+            if (!this.features[key] &&
+                FeatureConstructor &&
+                isEnabled(this.props)) {
+                this.features[key] = new FeatureConstructor(this);
+            }
+            /**
+             * If we have a feature, mount or update it.
+             */
+            if (this.features[key]) {
+                const feature = this.features[key];
+                if (feature.isMounted) {
+                    feature.update();
+                }
+                else {
+                    feature.mount();
+                    feature.isMounted = true;
+                }
+            }
+        }
+    }
+    triggerBuild() {
+        this.build(this.renderState, this.latestValues, this.props);
+    }
+    /**
+     * Measure the current viewport box with or without transforms.
+     * Only measures axis-aligned boxes, rotate and skew must be manually
+     * removed with a re-render to work.
+     */
+    measureViewportBox() {
+        return this.current
+            ? this.measureInstanceViewportBox(this.current, this.props)
+            : createBox();
+    }
+    getStaticValue(key) {
+        return this.latestValues[key];
+    }
+    setStaticValue(key, value) {
+        this.latestValues[key] = value;
+    }
+    /**
+     * Update the provided props. Ensure any newly-added motion values are
+     * added to our map, old ones removed, and listeners updated.
+     */
+    update(props, presenceContext) {
+        if (props.transformTemplate || this.props.transformTemplate) {
+            this.scheduleRender();
+        }
+        this.prevProps = this.props;
+        this.props = props;
+        this.prevPresenceContext = this.presenceContext;
+        this.presenceContext = presenceContext;
+        /**
+         * Update prop event handlers ie onAnimationStart, onAnimationComplete
+         */
+        for (let i = 0; i < propEventHandlers.length; i++) {
+            const key = propEventHandlers[i];
+            if (this.propEventSubscriptions[key]) {
+                this.propEventSubscriptions[key]();
+                delete this.propEventSubscriptions[key];
+            }
+            const listenerName = ("on" + key);
+            const listener = props[listenerName];
+            if (listener) {
+                this.propEventSubscriptions[key] = this.on(key, listener);
+            }
+        }
+        this.prevMotionValues = updateMotionValuesFromProps(this, this.scrapeMotionValuesFromProps(props, this.prevProps, this), this.prevMotionValues);
+        if (this.handleChildMotionValue) {
+            this.handleChildMotionValue();
+        }
+        this.onUpdate && this.onUpdate(this);
+    }
+    getProps() {
+        return this.props;
+    }
+    /**
+     * Returns the variant definition with a given name.
+     */
+    getVariant(name) {
+        return this.props.variants ? this.props.variants[name] : undefined;
+    }
+    /**
+     * Returns the defined default transition on this component.
+     */
+    getDefaultTransition() {
+        return this.props.transition;
+    }
+    getTransformPagePoint() {
+        return this.props.transformPagePoint;
+    }
+    getClosestVariantNode() {
+        return this.isVariantNode
+            ? this
+            : this.parent
+                ? this.parent.getClosestVariantNode()
+                : undefined;
+    }
+    /**
+     * Add a child visual element to our set of children.
+     */
+    addVariantChild(child) {
+        const closestVariantNode = this.getClosestVariantNode();
+        if (closestVariantNode) {
+            closestVariantNode.variantChildren &&
+                closestVariantNode.variantChildren.add(child);
+            return () => closestVariantNode.variantChildren.delete(child);
+        }
+    }
+    /**
+     * Add a motion value and bind it to this visual element.
+     */
+    addValue(key, value) {
+        // Remove existing value if it exists
+        const existingValue = this.values.get(key);
+        if (value !== existingValue) {
+            if (existingValue)
+                this.removeValue(key);
+            this.bindToMotionValue(key, value);
+            this.values.set(key, value);
+            this.latestValues[key] = value.get();
+        }
+    }
+    /**
+     * Remove a motion value and unbind any active subscriptions.
+     */
+    removeValue(key) {
+        this.values.delete(key);
+        const unsubscribe = this.valueSubscriptions.get(key);
+        if (unsubscribe) {
+            unsubscribe();
+            this.valueSubscriptions.delete(key);
+        }
+        delete this.latestValues[key];
+        this.removeValueFromRenderState(key, this.renderState);
+    }
+    /**
+     * Check whether we have a motion value for this key
+     */
+    hasValue(key) {
+        return this.values.has(key);
+    }
+    getValue(key, defaultValue) {
+        if (this.props.values && this.props.values[key]) {
+            return this.props.values[key];
+        }
+        let value = this.values.get(key);
+        if (value === undefined && defaultValue !== undefined) {
+            value = motionValue(defaultValue === null ? undefined : defaultValue, { owner: this });
+            this.addValue(key, value);
+        }
+        return value;
+    }
+    /**
+     * If we're trying to animate to a previously unencountered value,
+     * we need to check for it in our state and as a last resort read it
+     * directly from the instance (which might have performance implications).
+     */
+    readValue(key, target) {
+        var _a;
+        let value = this.latestValues[key] !== undefined || !this.current
+            ? this.latestValues[key]
+            : (_a = this.getBaseTargetFromProps(this.props, key)) !== null && _a !== void 0 ? _a : this.readValueFromInstance(this.current, key, this.options);
+        if (value !== undefined && value !== null) {
+            if (typeof value === "string" &&
+                (isNumericalString(value) || isZeroValueString(value))) {
+                // If this is a number read as a string, ie "0" or "200", convert it to a number
+                value = parseFloat(value);
+            }
+            else if (!findValueType(value) && complex.test(target)) {
+                value = getAnimatableNone(key, target);
+            }
+            this.setBaseTarget(key, isMotionValue(value) ? value.get() : value);
+        }
+        return isMotionValue(value) ? value.get() : value;
+    }
+    /**
+     * Set the base target to later animate back to. This is currently
+     * only hydrated on creation and when we first read a value.
+     */
+    setBaseTarget(key, value) {
+        this.baseTarget[key] = value;
+    }
+    /**
+     * Find the base target for a value thats been removed from all animation
+     * props.
+     */
+    getBaseTarget(key) {
+        var _a;
+        const { initial } = this.props;
+        let valueFromInitial;
+        if (typeof initial === "string" || typeof initial === "object") {
+            const variant = resolveVariantFromProps(this.props, initial, (_a = this.presenceContext) === null || _a === void 0 ? void 0 : _a.custom);
+            if (variant) {
+                valueFromInitial = variant[key];
+            }
+        }
+        /**
+         * If this value still exists in the current initial variant, read that.
+         */
+        if (initial && valueFromInitial !== undefined) {
+            return valueFromInitial;
+        }
+        /**
+         * Alternatively, if this VisualElement config has defined a getBaseTarget
+         * so we can read the value from an alternative source, try that.
+         */
+        const target = this.getBaseTargetFromProps(this.props, key);
+        if (target !== undefined && !isMotionValue(target))
+            return target;
+        /**
+         * If the value was initially defined on initial, but it doesn't any more,
+         * return undefined. Otherwise return the value as initially read from the DOM.
+         */
+        return this.initialValues[key] !== undefined &&
+            valueFromInitial === undefined
+            ? undefined
+            : this.baseTarget[key];
+    }
+    on(eventName, callback) {
+        if (!this.events[eventName]) {
+            this.events[eventName] = new SubscriptionManager();
+        }
+        return this.events[eventName].add(callback);
+    }
+    notify(eventName, ...args) {
+        if (this.events[eventName]) {
+            this.events[eventName].notify(...args);
+        }
+    }
+}
+
+class DOMVisualElement extends VisualElement {
+    constructor() {
+        super(...arguments);
+        this.KeyframeResolver = DOMKeyframesResolver;
+    }
+    sortInstanceNodePosition(a, b) {
+        /**
+         * compareDocumentPosition returns a bitmask, by using the bitwise &
+         * we're returning true if 2 in that bitmask is set to true. 2 is set
+         * to true if b preceeds a.
+         */
+        return a.compareDocumentPosition(b) & 2 ? 1 : -1;
+    }
+    getBaseTargetFromProps(props, key) {
+        return props.style
+            ? props.style[key]
+            : undefined;
+    }
+    removeValueFromRenderState(key, { vars, style }) {
+        delete vars[key];
+        delete style[key];
+    }
+    handleChildMotionValue() {
+        if (this.childSubscription) {
+            this.childSubscription();
+            delete this.childSubscription;
+        }
+        const { children } = this.props;
+        if (isMotionValue(children)) {
+            this.childSubscription = children.on("change", (latest) => {
+                if (this.current) {
+                    this.current.textContent = `${latest}`;
+                }
+            });
+        }
+    }
+}
+
+function getComputedStyle$1(element) {
+    return window.getComputedStyle(element);
+}
+class HTMLVisualElement extends DOMVisualElement {
+    constructor() {
+        super(...arguments);
+        this.type = "html";
+        this.renderInstance = renderHTML;
+    }
+    readValueFromInstance(instance, key) {
+        if (transformProps.has(key)) {
+            const defaultType = getDefaultValueType(key);
+            return defaultType ? defaultType.default || 0 : 0;
+        }
+        else {
+            const computedStyle = getComputedStyle$1(instance);
+            const value = (isCSSVariableName(key)
+                ? computedStyle.getPropertyValue(key)
+                : computedStyle[key]) || 0;
+            return typeof value === "string" ? value.trim() : value;
+        }
+    }
+    measureInstanceViewportBox(instance, { transformPagePoint }) {
+        return measureViewportBox(instance, transformPagePoint);
+    }
+    build(renderState, latestValues, props) {
+        buildHTMLStyles(renderState, latestValues, props.transformTemplate);
+    }
+    scrapeMotionValuesFromProps(props, prevProps, visualElement) {
+        return scrapeMotionValuesFromProps$1(props, prevProps, visualElement);
+    }
+}
+
+class SVGVisualElement extends DOMVisualElement {
+    constructor() {
+        super(...arguments);
+        this.type = "svg";
+        this.isSVGTag = false;
+        this.measureInstanceViewportBox = createBox;
+    }
+    getBaseTargetFromProps(props, key) {
+        return props[key];
+    }
+    readValueFromInstance(instance, key) {
+        if (transformProps.has(key)) {
+            const defaultType = getDefaultValueType(key);
+            return defaultType ? defaultType.default || 0 : 0;
+        }
+        key = !camelCaseAttributes.has(key) ? camelToDash(key) : key;
+        return instance.getAttribute(key);
+    }
+    scrapeMotionValuesFromProps(props, prevProps, visualElement) {
+        return scrapeMotionValuesFromProps(props, prevProps, visualElement);
+    }
+    build(renderState, latestValues, props) {
+        buildSVGAttrs(renderState, latestValues, this.isSVGTag, props.transformTemplate);
+    }
+    renderInstance(instance, renderState, styleProp, projection) {
+        renderSVG(instance, renderState, styleProp, projection);
+    }
+    mount(instance) {
+        this.isSVGTag = isSVGTag(instance.tagName);
+        super.mount(instance);
+    }
+}
+
+const createDomVisualElement = (Component, options) => {
+    return isSVGComponent(Component)
+        ? new SVGVisualElement(options)
+        : new HTMLVisualElement(options, {
+            allowProjection: Component !== Fragment$1,
+        });
+};
+
+const createMotionComponent = /*@__PURE__*/ createMotionComponentFactory({
+    ...animations,
+    ...gestureAnimations,
+    ...drag,
+    ...layout,
+}, createDomVisualElement);
+
+const motion = /*@__PURE__*/ createDOMMotionComponentProxy(createMotionComponent);
+
+/**
+ * @license lucide-react v0.400.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+
+const toKebabCase = (string) => string.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase();
+const mergeClasses = (...classes) => classes.filter((className, index, array) => {
+  return Boolean(className) && array.indexOf(className) === index;
+}).join(" ");
+
+/**
+ * @license lucide-react v0.400.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+
+var defaultAttributes = {
+  xmlns: "http://www.w3.org/2000/svg",
+  width: 24,
+  height: 24,
+  viewBox: "0 0 24 24",
+  fill: "none",
+  stroke: "currentColor",
+  strokeWidth: 2,
+  strokeLinecap: "round",
+  strokeLinejoin: "round"
+};
+
+/**
+ * @license lucide-react v0.400.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+
+
+const Icon = forwardRef(
+  ({
+    color = "currentColor",
+    size = 24,
+    strokeWidth = 2,
+    absoluteStrokeWidth,
+    className = "",
+    children,
+    iconNode,
+    ...rest
+  }, ref) => {
+    return createElement(
+      "svg",
+      {
+        ref,
+        ...defaultAttributes,
+        width: size,
+        height: size,
+        stroke: color,
+        strokeWidth: absoluteStrokeWidth ? Number(strokeWidth) * 24 / Number(size) : strokeWidth,
+        className: mergeClasses("lucide", className),
+        ...rest
+      },
+      [
+        ...iconNode.map(([tag, attrs]) => createElement(tag, attrs)),
+        ...Array.isArray(children) ? children : [children]
+      ]
+    );
+  }
+);
+
+/**
+ * @license lucide-react v0.400.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+
+
+const createLucideIcon = (iconName, iconNode) => {
+  const Component = forwardRef(
+    ({ className, ...props }, ref) => createElement(Icon, {
+      ref,
+      iconNode,
+      className: mergeClasses(`lucide-${toKebabCase(iconName)}`, className),
+      ...props
+    })
+  );
+  Component.displayName = `${iconName}`;
+  return Component;
+};
+
+/**
+ * @license lucide-react v0.400.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+
+
+const ChevronLeft = createLucideIcon("ChevronLeft", [
+  ["path", { d: "m15 18-6-6 6-6", key: "1wnfg3" }]
+]);
+
+/**
+ * @license lucide-react v0.400.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+
+
+const EllipsisVertical = createLucideIcon("EllipsisVertical", [
+  ["circle", { cx: "12", cy: "12", r: "1", key: "41hilf" }],
+  ["circle", { cx: "12", cy: "5", r: "1", key: "gxeob9" }],
+  ["circle", { cx: "12", cy: "19", r: "1", key: "lyex9k" }]
+]);
+
+/**
+ * @license lucide-react v0.400.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+
+
+const History = createLucideIcon("History", [
+  ["path", { d: "M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8", key: "1357e3" }],
+  ["path", { d: "M3 3v5h5", key: "1xhq8a" }],
+  ["path", { d: "M12 7v5l4 2", key: "1fdv2h" }]
+]);
+
+/**
+ * @license lucide-react v0.400.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+
+
+const Key = createLucideIcon("Key", [
+  ["path", { d: "m15.5 7.5 2.3 2.3a1 1 0 0 0 1.4 0l2.1-2.1a1 1 0 0 0 0-1.4L19 4", key: "g0fldk" }],
+  ["path", { d: "m21 2-9.6 9.6", key: "1j0ho8" }],
+  ["circle", { cx: "7.5", cy: "15.5", r: "5.5", key: "yqb3hr" }]
+]);
+
+/**
+ * @license lucide-react v0.400.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+
+
+const LoaderCircle = createLucideIcon("LoaderCircle", [
+  ["path", { d: "M21 12a9 9 0 1 1-6.219-8.56", key: "13zald" }]
+]);
+
+/**
+ * @license lucide-react v0.400.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+
+
+const MessageSquarePlus = createLucideIcon("MessageSquarePlus", [
+  ["path", { d: "M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z", key: "1lielz" }],
+  ["path", { d: "M12 7v6", key: "lw1j43" }],
+  ["path", { d: "M9 10h6", key: "9gxzsh" }]
+]);
+
+/**
+ * @license lucide-react v0.400.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+
+
+const Send = createLucideIcon("Send", [
+  ["path", { d: "m22 2-7 20-4-9-9-4Z", key: "1q3vgg" }],
+  ["path", { d: "M22 2 11 13", key: "nzbqef" }]
+]);
+
+/**
+ * @license lucide-react v0.400.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+
+
+const Trash2 = createLucideIcon("Trash2", [
+  ["path", { d: "M3 6h18", key: "d0wm0j" }],
+  ["path", { d: "M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6", key: "4alrt4" }],
+  ["path", { d: "M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2", key: "v07s0e" }],
+  ["line", { x1: "10", x2: "10", y1: "11", y2: "17", key: "1uufr5" }],
+  ["line", { x1: "14", x2: "14", y1: "11", y2: "17", key: "xtxkd" }]
+]);
+
+/**
+ * @license lucide-react v0.400.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+
+
+const X = createLucideIcon("X", [
+  ["path", { d: "M18 6 6 18", key: "1bl5f8" }],
+  ["path", { d: "m6 6 12 12", key: "d8bk6v" }]
+]);
+
+const default_format = 'RFC3986';
+const formatters = {
+    RFC1738: (v) => String(v).replace(/%20/g, '+'),
+    RFC3986: (v) => String(v),
+};
+const RFC1738 = 'RFC1738';
+
+const is_array$1 = Array.isArray;
+const hex_table = (() => {
+    const array = [];
+    for (let i = 0; i < 256; ++i) {
+        array.push('%' + ((i < 16 ? '0' : '') + i.toString(16)).toUpperCase());
+    }
+    return array;
+})();
+const limit = 1024;
+const encode = (str, _defaultEncoder, charset, _kind, format) => {
+    // This code was originally written by Brian White for the io.js core querystring library.
+    // It has been adapted here for stricter adherence to RFC 3986
+    if (str.length === 0) {
+        return str;
+    }
+    let string = str;
+    if (typeof str === 'symbol') {
+        string = Symbol.prototype.toString.call(str);
+    }
+    else if (typeof str !== 'string') {
+        string = String(str);
+    }
+    if (charset === 'iso-8859-1') {
+        return escape(string).replace(/%u[0-9a-f]{4}/gi, function ($0) {
+            return '%26%23' + parseInt($0.slice(2), 16) + '%3B';
+        });
+    }
+    let out = '';
+    for (let j = 0; j < string.length; j += limit) {
+        const segment = string.length >= limit ? string.slice(j, j + limit) : string;
+        const arr = [];
+        for (let i = 0; i < segment.length; ++i) {
+            let c = segment.charCodeAt(i);
+            if (c === 0x2d || // -
+                c === 0x2e || // .
+                c === 0x5f || // _
+                c === 0x7e || // ~
+                (c >= 0x30 && c <= 0x39) || // 0-9
+                (c >= 0x41 && c <= 0x5a) || // a-z
+                (c >= 0x61 && c <= 0x7a) || // A-Z
+                (format === RFC1738 && (c === 0x28 || c === 0x29)) // ( )
+            ) {
+                arr[arr.length] = segment.charAt(i);
+                continue;
+            }
+            if (c < 0x80) {
+                arr[arr.length] = hex_table[c];
+                continue;
+            }
+            if (c < 0x800) {
+                arr[arr.length] = hex_table[0xc0 | (c >> 6)] + hex_table[0x80 | (c & 0x3f)];
+                continue;
+            }
+            if (c < 0xd800 || c >= 0xe000) {
+                arr[arr.length] =
+                    hex_table[0xe0 | (c >> 12)] + hex_table[0x80 | ((c >> 6) & 0x3f)] + hex_table[0x80 | (c & 0x3f)];
+                continue;
+            }
+            i += 1;
+            c = 0x10000 + (((c & 0x3ff) << 10) | (segment.charCodeAt(i) & 0x3ff));
+            arr[arr.length] =
+                hex_table[0xf0 | (c >> 18)] +
+                    hex_table[0x80 | ((c >> 12) & 0x3f)] +
+                    hex_table[0x80 | ((c >> 6) & 0x3f)] +
+                    hex_table[0x80 | (c & 0x3f)];
+        }
+        out += arr.join('');
+    }
+    return out;
+};
+function is_buffer(obj) {
+    if (!obj || typeof obj !== 'object') {
+        return false;
+    }
+    return !!(obj.constructor && obj.constructor.isBuffer && obj.constructor.isBuffer(obj));
+}
+function maybe_map(val, fn) {
+    if (is_array$1(val)) {
+        const mapped = [];
+        for (let i = 0; i < val.length; i += 1) {
+            mapped.push(fn(val[i]));
+        }
+        return mapped;
+    }
+    return fn(val);
+}
+
+const has = Object.prototype.hasOwnProperty;
+const array_prefix_generators = {
+    brackets(prefix) {
+        return String(prefix) + '[]';
+    },
+    comma: 'comma',
+    indices(prefix, key) {
+        return String(prefix) + '[' + key + ']';
+    },
+    repeat(prefix) {
+        return String(prefix);
+    },
+};
+const is_array = Array.isArray;
+const push = Array.prototype.push;
+const push_to_array = function (arr, value_or_array) {
+    push.apply(arr, is_array(value_or_array) ? value_or_array : [value_or_array]);
+};
+const to_ISO = Date.prototype.toISOString;
+const defaults = {
+    addQueryPrefix: false,
+    allowDots: false,
+    allowEmptyArrays: false,
+    arrayFormat: 'indices',
+    charset: 'utf-8',
+    charsetSentinel: false,
+    delimiter: '&',
+    encode: true,
+    encodeDotInKeys: false,
+    encoder: encode,
+    encodeValuesOnly: false,
+    format: default_format,
+    formatter: formatters[default_format],
+    /** @deprecated */
+    indices: false,
+    serializeDate(date) {
+        return to_ISO.call(date);
+    },
+    skipNulls: false,
+    strictNullHandling: false,
+};
+function is_non_nullish_primitive(v) {
+    return (typeof v === 'string' ||
+        typeof v === 'number' ||
+        typeof v === 'boolean' ||
+        typeof v === 'symbol' ||
+        typeof v === 'bigint');
+}
+const sentinel = {};
+function inner_stringify(object, prefix, generateArrayPrefix, commaRoundTrip, allowEmptyArrays, strictNullHandling, skipNulls, encodeDotInKeys, encoder, filter, sort, allowDots, serializeDate, format, formatter, encodeValuesOnly, charset, sideChannel) {
+    let obj = object;
+    let tmp_sc = sideChannel;
+    let step = 0;
+    let find_flag = false;
+    while ((tmp_sc = tmp_sc.get(sentinel)) !== void undefined && !find_flag) {
+        // Where object last appeared in the ref tree
+        const pos = tmp_sc.get(object);
+        step += 1;
+        if (typeof pos !== 'undefined') {
+            if (pos === step) {
+                throw new RangeError('Cyclic object value');
+            }
+            else {
+                find_flag = true; // Break while
+            }
+        }
+        if (typeof tmp_sc.get(sentinel) === 'undefined') {
+            step = 0;
+        }
+    }
+    if (typeof filter === 'function') {
+        obj = filter(prefix, obj);
+    }
+    else if (obj instanceof Date) {
+        obj = serializeDate?.(obj);
+    }
+    else if (generateArrayPrefix === 'comma' && is_array(obj)) {
+        obj = maybe_map(obj, function (value) {
+            if (value instanceof Date) {
+                return serializeDate?.(value);
+            }
+            return value;
+        });
+    }
+    if (obj === null) {
+        if (strictNullHandling) {
+            return encoder && !encodeValuesOnly ?
+                // @ts-expect-error
+                encoder(prefix, defaults.encoder, charset, 'key', format)
+                : prefix;
+        }
+        obj = '';
+    }
+    if (is_non_nullish_primitive(obj) || is_buffer(obj)) {
+        if (encoder) {
+            const key_value = encodeValuesOnly ? prefix
+                // @ts-expect-error
+                : encoder(prefix, defaults.encoder, charset, 'key', format);
+            return [
+                formatter?.(key_value) +
+                    '=' +
+                    // @ts-expect-error
+                    formatter?.(encoder(obj, defaults.encoder, charset, 'value', format)),
+            ];
+        }
+        return [formatter?.(prefix) + '=' + formatter?.(String(obj))];
+    }
+    const values = [];
+    if (typeof obj === 'undefined') {
+        return values;
+    }
+    let obj_keys;
+    if (generateArrayPrefix === 'comma' && is_array(obj)) {
+        // we need to join elements in
+        if (encodeValuesOnly && encoder) {
+            // @ts-expect-error values only
+            obj = maybe_map(obj, encoder);
+        }
+        obj_keys = [{ value: obj.length > 0 ? obj.join(',') || null : void undefined }];
+    }
+    else if (is_array(filter)) {
+        obj_keys = filter;
+    }
+    else {
+        const keys = Object.keys(obj);
+        obj_keys = sort ? keys.sort(sort) : keys;
+    }
+    const encoded_prefix = encodeDotInKeys ? String(prefix).replace(/\./g, '%2E') : String(prefix);
+    const adjusted_prefix = commaRoundTrip && is_array(obj) && obj.length === 1 ? encoded_prefix + '[]' : encoded_prefix;
+    if (allowEmptyArrays && is_array(obj) && obj.length === 0) {
+        return adjusted_prefix + '[]';
+    }
+    for (let j = 0; j < obj_keys.length; ++j) {
+        const key = obj_keys[j];
+        const value = 
+        // @ts-ignore
+        typeof key === 'object' && typeof key.value !== 'undefined' ? key.value : obj[key];
+        if (skipNulls && value === null) {
+            continue;
+        }
+        // @ts-ignore
+        const encoded_key = allowDots && encodeDotInKeys ? key.replace(/\./g, '%2E') : key;
+        const key_prefix = is_array(obj) ?
+            typeof generateArrayPrefix === 'function' ?
+                generateArrayPrefix(adjusted_prefix, encoded_key)
+                : adjusted_prefix
+            : adjusted_prefix + (allowDots ? '.' + encoded_key : '[' + encoded_key + ']');
+        sideChannel.set(object, step);
+        const valueSideChannel = new WeakMap();
+        valueSideChannel.set(sentinel, sideChannel);
+        push_to_array(values, inner_stringify(value, key_prefix, generateArrayPrefix, commaRoundTrip, allowEmptyArrays, strictNullHandling, skipNulls, encodeDotInKeys, 
+        // @ts-ignore
+        generateArrayPrefix === 'comma' && encodeValuesOnly && is_array(obj) ? null : encoder, filter, sort, allowDots, serializeDate, format, formatter, encodeValuesOnly, charset, valueSideChannel));
+    }
+    return values;
+}
+function normalize_stringify_options(opts = defaults) {
+    if (typeof opts.allowEmptyArrays !== 'undefined' && typeof opts.allowEmptyArrays !== 'boolean') {
+        throw new TypeError('`allowEmptyArrays` option can only be `true` or `false`, when provided');
+    }
+    if (typeof opts.encodeDotInKeys !== 'undefined' && typeof opts.encodeDotInKeys !== 'boolean') {
+        throw new TypeError('`encodeDotInKeys` option can only be `true` or `false`, when provided');
+    }
+    if (opts.encoder !== null && typeof opts.encoder !== 'undefined' && typeof opts.encoder !== 'function') {
+        throw new TypeError('Encoder has to be a function.');
+    }
+    const charset = opts.charset || defaults.charset;
+    if (typeof opts.charset !== 'undefined' && opts.charset !== 'utf-8' && opts.charset !== 'iso-8859-1') {
+        throw new TypeError('The charset option must be either utf-8, iso-8859-1, or undefined');
+    }
+    let format = default_format;
+    if (typeof opts.format !== 'undefined') {
+        if (!has.call(formatters, opts.format)) {
+            throw new TypeError('Unknown format option provided.');
+        }
+        format = opts.format;
+    }
+    const formatter = formatters[format];
+    let filter = defaults.filter;
+    if (typeof opts.filter === 'function' || is_array(opts.filter)) {
+        filter = opts.filter;
+    }
+    let arrayFormat;
+    if (opts.arrayFormat && opts.arrayFormat in array_prefix_generators) {
+        arrayFormat = opts.arrayFormat;
+    }
+    else if ('indices' in opts) {
+        arrayFormat = opts.indices ? 'indices' : 'repeat';
+    }
+    else {
+        arrayFormat = defaults.arrayFormat;
+    }
+    if ('commaRoundTrip' in opts && typeof opts.commaRoundTrip !== 'boolean') {
+        throw new TypeError('`commaRoundTrip` must be a boolean, or absent');
+    }
+    const allowDots = typeof opts.allowDots === 'undefined' ?
+        !!opts.encodeDotInKeys === true ?
+            true
+            : defaults.allowDots
+        : !!opts.allowDots;
+    return {
+        addQueryPrefix: typeof opts.addQueryPrefix === 'boolean' ? opts.addQueryPrefix : defaults.addQueryPrefix,
+        // @ts-ignore
+        allowDots: allowDots,
+        allowEmptyArrays: typeof opts.allowEmptyArrays === 'boolean' ? !!opts.allowEmptyArrays : defaults.allowEmptyArrays,
+        arrayFormat: arrayFormat,
+        charset: charset,
+        charsetSentinel: typeof opts.charsetSentinel === 'boolean' ? opts.charsetSentinel : defaults.charsetSentinel,
+        commaRoundTrip: !!opts.commaRoundTrip,
+        delimiter: typeof opts.delimiter === 'undefined' ? defaults.delimiter : opts.delimiter,
+        encode: typeof opts.encode === 'boolean' ? opts.encode : defaults.encode,
+        encodeDotInKeys: typeof opts.encodeDotInKeys === 'boolean' ? opts.encodeDotInKeys : defaults.encodeDotInKeys,
+        encoder: typeof opts.encoder === 'function' ? opts.encoder : defaults.encoder,
+        encodeValuesOnly: typeof opts.encodeValuesOnly === 'boolean' ? opts.encodeValuesOnly : defaults.encodeValuesOnly,
+        filter: filter,
+        format: format,
+        formatter: formatter,
+        serializeDate: typeof opts.serializeDate === 'function' ? opts.serializeDate : defaults.serializeDate,
+        skipNulls: typeof opts.skipNulls === 'boolean' ? opts.skipNulls : defaults.skipNulls,
+        // @ts-ignore
+        sort: typeof opts.sort === 'function' ? opts.sort : null,
+        strictNullHandling: typeof opts.strictNullHandling === 'boolean' ? opts.strictNullHandling : defaults.strictNullHandling,
+    };
+}
+function stringify(object, opts = {}) {
+    let obj = object;
+    const options = normalize_stringify_options(opts);
+    let obj_keys;
+    let filter;
+    if (typeof options.filter === 'function') {
+        filter = options.filter;
+        obj = filter('', obj);
+    }
+    else if (is_array(options.filter)) {
+        filter = options.filter;
+        obj_keys = filter;
+    }
+    const keys = [];
+    if (typeof obj !== 'object' || obj === null) {
+        return '';
+    }
+    const generateArrayPrefix = array_prefix_generators[options.arrayFormat];
+    const commaRoundTrip = generateArrayPrefix === 'comma' && options.commaRoundTrip;
+    if (!obj_keys) {
+        obj_keys = Object.keys(obj);
+    }
+    if (options.sort) {
+        obj_keys.sort(options.sort);
+    }
+    const sideChannel = new WeakMap();
+    for (let i = 0; i < obj_keys.length; ++i) {
+        const key = obj_keys[i];
+        if (options.skipNulls && obj[key] === null) {
+            continue;
+        }
+        push_to_array(keys, inner_stringify(obj[key], key, 
+        // @ts-expect-error
+        generateArrayPrefix, commaRoundTrip, options.allowEmptyArrays, options.strictNullHandling, options.skipNulls, options.encodeDotInKeys, options.encode ? options.encoder : null, options.filter, options.sort, options.allowDots, options.serializeDate, options.format, options.formatter, options.encodeValuesOnly, options.charset, sideChannel));
+    }
+    const joined = keys.join(options.delimiter);
+    let prefix = options.addQueryPrefix === true ? '?' : '';
+    if (options.charsetSentinel) {
+        if (options.charset === 'iso-8859-1') {
+            // encodeURIComponent('&#10003;'), the "numeric entity" representation of a checkmark
+            prefix += 'utf8=%26%2310003%3B&';
+        }
+        else {
+            // encodeURIComponent('✓')
+            prefix += 'utf8=%E2%9C%93&';
+        }
+    }
+    return joined.length > 0 ? prefix + joined : '';
+}
+
+const VERSION = '4.104.0'; // x-release-please-version
+
+let auto = false;
+let kind = undefined;
+let fetch$1 = undefined;
+let FormData$1 = undefined;
+let File$1 = undefined;
+let ReadableStream$1 = undefined;
+let getMultipartRequestOptions = undefined;
+let getDefaultAgent = undefined;
+let fileFromPath = undefined;
+let isFsReadStream = undefined;
+function setShims(shims, options = { auto: false }) {
+    if (auto) {
+        throw new Error(`you must \`import 'openai/shims/${shims.kind}'\` before importing anything else from openai`);
+    }
+    if (kind) {
+        throw new Error(`can't \`import 'openai/shims/${shims.kind}'\` after \`import 'openai/shims/${kind}'\``);
+    }
+    auto = options.auto;
+    kind = shims.kind;
+    fetch$1 = shims.fetch;
+    FormData$1 = shims.FormData;
+    File$1 = shims.File;
+    ReadableStream$1 = shims.ReadableStream;
+    getMultipartRequestOptions = shims.getMultipartRequestOptions;
+    getDefaultAgent = shims.getDefaultAgent;
+    fileFromPath = shims.fileFromPath;
+    isFsReadStream = shims.isFsReadStream;
+}
+
+/**
+ * Disclaimer: modules in _shims aren't intended to be imported by SDK users.
+ */
+class MultipartBody {
+    constructor(body) {
+        this.body = body;
+    }
+    get [Symbol.toStringTag]() {
+        return 'MultipartBody';
+    }
+}
+
+function getRuntime({ manuallyImported } = {}) {
+    const recommendation = manuallyImported ?
+        `You may need to use polyfills`
+        : `Add one of these imports before your first \`import … from 'openai'\`:
+- \`import 'openai/shims/node'\` (if you're running on Node)
+- \`import 'openai/shims/web'\` (otherwise)
+`;
+    let _fetch, _Request, _Response, _Headers;
+    try {
+        // @ts-ignore
+        _fetch = fetch;
+        // @ts-ignore
+        _Request = Request;
+        // @ts-ignore
+        _Response = Response;
+        // @ts-ignore
+        _Headers = Headers;
+    }
+    catch (error) {
+        throw new Error(`this environment is missing the following Web Fetch API type: ${error.message}. ${recommendation}`);
+    }
+    return {
+        kind: 'web',
+        fetch: _fetch,
+        Request: _Request,
+        Response: _Response,
+        Headers: _Headers,
+        FormData: 
+        // @ts-ignore
+        typeof FormData !== 'undefined' ? FormData : (class FormData {
+            // @ts-ignore
+            constructor() {
+                throw new Error(`file uploads aren't supported in this environment yet as 'FormData' is undefined. ${recommendation}`);
+            }
+        }),
+        Blob: typeof Blob !== 'undefined' ? Blob : (class Blob {
+            constructor() {
+                throw new Error(`file uploads aren't supported in this environment yet as 'Blob' is undefined. ${recommendation}`);
+            }
+        }),
+        File: 
+        // @ts-ignore
+        typeof File !== 'undefined' ? File : (class File {
+            // @ts-ignore
+            constructor() {
+                throw new Error(`file uploads aren't supported in this environment yet as 'File' is undefined. ${recommendation}`);
+            }
+        }),
+        ReadableStream: 
+        // @ts-ignore
+        typeof ReadableStream !== 'undefined' ? ReadableStream : (class ReadableStream {
+            // @ts-ignore
+            constructor() {
+                throw new Error(`streaming isn't supported in this environment yet as 'ReadableStream' is undefined. ${recommendation}`);
+            }
+        }),
+        getMultipartRequestOptions: async (
+        // @ts-ignore
+        form, opts) => ({
+            ...opts,
+            body: new MultipartBody(form),
+        }),
+        getDefaultAgent: (url) => undefined,
+        fileFromPath: () => {
+            throw new Error('The `fileFromPath` function is only supported in Node. See the README for more details: https://www.github.com/openai/openai-node#file-uploads');
+        },
+        isFsReadStream: (value) => false,
+    };
+}
+
+/**
+ * Disclaimer: modules in _shims aren't intended to be imported by SDK users.
+ */
+const init = () => {
+  if (!kind) setShims(getRuntime(), { auto: true });
+};
+
+init();
+
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+class OpenAIError extends Error {
+}
+class APIError extends OpenAIError {
+    constructor(status, error, message, headers) {
+        super(`${APIError.makeMessage(status, error, message)}`);
+        this.status = status;
+        this.headers = headers;
+        this.request_id = headers?.['x-request-id'];
+        this.error = error;
+        const data = error;
+        this.code = data?.['code'];
+        this.param = data?.['param'];
+        this.type = data?.['type'];
+    }
+    static makeMessage(status, error, message) {
+        const msg = error?.message ?
+            typeof error.message === 'string' ?
+                error.message
+                : JSON.stringify(error.message)
+            : error ? JSON.stringify(error)
+                : message;
+        if (status && msg) {
+            return `${status} ${msg}`;
+        }
+        if (status) {
+            return `${status} status code (no body)`;
+        }
+        if (msg) {
+            return msg;
+        }
+        return '(no status code or body)';
+    }
+    static generate(status, errorResponse, message, headers) {
+        if (!status || !headers) {
+            return new APIConnectionError({ message, cause: castToError(errorResponse) });
+        }
+        const error = errorResponse?.['error'];
+        if (status === 400) {
+            return new BadRequestError(status, error, message, headers);
+        }
+        if (status === 401) {
+            return new AuthenticationError(status, error, message, headers);
+        }
+        if (status === 403) {
+            return new PermissionDeniedError(status, error, message, headers);
+        }
+        if (status === 404) {
+            return new NotFoundError(status, error, message, headers);
+        }
+        if (status === 409) {
+            return new ConflictError(status, error, message, headers);
+        }
+        if (status === 422) {
+            return new UnprocessableEntityError(status, error, message, headers);
+        }
+        if (status === 429) {
+            return new RateLimitError(status, error, message, headers);
+        }
+        if (status >= 500) {
+            return new InternalServerError(status, error, message, headers);
+        }
+        return new APIError(status, error, message, headers);
+    }
+}
+class APIUserAbortError extends APIError {
+    constructor({ message } = {}) {
+        super(undefined, undefined, message || 'Request was aborted.', undefined);
+    }
+}
+class APIConnectionError extends APIError {
+    constructor({ message, cause }) {
+        super(undefined, undefined, message || 'Connection error.', undefined);
+        // in some environments the 'cause' property is already declared
+        // @ts-ignore
+        if (cause)
+            this.cause = cause;
+    }
+}
+class APIConnectionTimeoutError extends APIConnectionError {
+    constructor({ message } = {}) {
+        super({ message: message ?? 'Request timed out.' });
+    }
+}
+class BadRequestError extends APIError {
+}
+class AuthenticationError extends APIError {
+}
+class PermissionDeniedError extends APIError {
+}
+class NotFoundError extends APIError {
+}
+class ConflictError extends APIError {
+}
+class UnprocessableEntityError extends APIError {
+}
+class RateLimitError extends APIError {
+}
+class InternalServerError extends APIError {
+}
+class LengthFinishReasonError extends OpenAIError {
+    constructor() {
+        super(`Could not parse response content as the length limit was reached`);
+    }
+}
+class ContentFilterFinishReasonError extends OpenAIError {
+    constructor() {
+        super(`Could not parse response content as the request was rejected by the content filter`);
+    }
+}
+
+var __classPrivateFieldSet$5 = (undefined && undefined.__classPrivateFieldSet) || function (receiver, state, value, kind, f) {
+    if (kind === "m") throw new TypeError("Private method is not writable");
+    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
+    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot write private member to an object whose class did not declare it");
+    return (kind === "a" ? f.call(receiver, value) : f ? f.value = value : state.set(receiver, value)), value;
+};
+var __classPrivateFieldGet$6 = (undefined && undefined.__classPrivateFieldGet) || function (receiver, state, kind, f) {
+    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a getter");
+    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
+    return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
+};
+var _LineDecoder_carriageReturnIndex;
+/**
+ * A re-implementation of httpx's `LineDecoder` in Python that handles incrementally
+ * reading lines from text.
+ *
+ * https://github.com/encode/httpx/blob/920333ea98118e9cf617f246905d7b202510941c/httpx/_decoders.py#L258
+ */
+class LineDecoder {
+    constructor() {
+        _LineDecoder_carriageReturnIndex.set(this, void 0);
+        this.buffer = new Uint8Array();
+        __classPrivateFieldSet$5(this, _LineDecoder_carriageReturnIndex, null, "f");
+    }
+    decode(chunk) {
+        if (chunk == null) {
+            return [];
+        }
+        const binaryChunk = chunk instanceof ArrayBuffer ? new Uint8Array(chunk)
+            : typeof chunk === 'string' ? new TextEncoder().encode(chunk)
+                : chunk;
+        let newData = new Uint8Array(this.buffer.length + binaryChunk.length);
+        newData.set(this.buffer);
+        newData.set(binaryChunk, this.buffer.length);
+        this.buffer = newData;
+        const lines = [];
+        let patternIndex;
+        while ((patternIndex = findNewlineIndex(this.buffer, __classPrivateFieldGet$6(this, _LineDecoder_carriageReturnIndex, "f"))) != null) {
+            if (patternIndex.carriage && __classPrivateFieldGet$6(this, _LineDecoder_carriageReturnIndex, "f") == null) {
+                // skip until we either get a corresponding `\n`, a new `\r` or nothing
+                __classPrivateFieldSet$5(this, _LineDecoder_carriageReturnIndex, patternIndex.index, "f");
+                continue;
+            }
+            // we got double \r or \rtext\n
+            if (__classPrivateFieldGet$6(this, _LineDecoder_carriageReturnIndex, "f") != null &&
+                (patternIndex.index !== __classPrivateFieldGet$6(this, _LineDecoder_carriageReturnIndex, "f") + 1 || patternIndex.carriage)) {
+                lines.push(this.decodeText(this.buffer.slice(0, __classPrivateFieldGet$6(this, _LineDecoder_carriageReturnIndex, "f") - 1)));
+                this.buffer = this.buffer.slice(__classPrivateFieldGet$6(this, _LineDecoder_carriageReturnIndex, "f"));
+                __classPrivateFieldSet$5(this, _LineDecoder_carriageReturnIndex, null, "f");
+                continue;
+            }
+            const endIndex = __classPrivateFieldGet$6(this, _LineDecoder_carriageReturnIndex, "f") !== null ? patternIndex.preceding - 1 : patternIndex.preceding;
+            const line = this.decodeText(this.buffer.slice(0, endIndex));
+            lines.push(line);
+            this.buffer = this.buffer.slice(patternIndex.index);
+            __classPrivateFieldSet$5(this, _LineDecoder_carriageReturnIndex, null, "f");
+        }
+        return lines;
+    }
+    decodeText(bytes) {
+        if (bytes == null)
+            return '';
+        if (typeof bytes === 'string')
+            return bytes;
+        // Node:
+        if (typeof Buffer !== 'undefined') {
+            if (bytes instanceof Buffer) {
+                return bytes.toString();
+            }
+            if (bytes instanceof Uint8Array) {
+                return Buffer.from(bytes).toString();
+            }
+            throw new OpenAIError(`Unexpected: received non-Uint8Array (${bytes.constructor.name}) stream chunk in an environment with a global "Buffer" defined, which this library assumes to be Node. Please report this error.`);
+        }
+        // Browser
+        if (typeof TextDecoder !== 'undefined') {
+            if (bytes instanceof Uint8Array || bytes instanceof ArrayBuffer) {
+                this.textDecoder ?? (this.textDecoder = new TextDecoder('utf8'));
+                return this.textDecoder.decode(bytes);
+            }
+            throw new OpenAIError(`Unexpected: received non-Uint8Array/ArrayBuffer (${bytes.constructor.name}) in a web platform. Please report this error.`);
+        }
+        throw new OpenAIError(`Unexpected: neither Buffer nor TextDecoder are available as globals. Please report this error.`);
+    }
+    flush() {
+        if (!this.buffer.length) {
+            return [];
+        }
+        return this.decode('\n');
+    }
+}
+_LineDecoder_carriageReturnIndex = new WeakMap();
+// prettier-ignore
+LineDecoder.NEWLINE_CHARS = new Set(['\n', '\r']);
+LineDecoder.NEWLINE_REGEXP = /\r\n|[\n\r]/g;
+/**
+ * This function searches the buffer for the end patterns, (\r or \n)
+ * and returns an object with the index preceding the matched newline and the
+ * index after the newline char. `null` is returned if no new line is found.
+ *
+ * ```ts
+ * findNewLineIndex('abc\ndef') -> { preceding: 2, index: 3 }
+ * ```
+ */
+function findNewlineIndex(buffer, startIndex) {
+    const newline = 0x0a; // \n
+    const carriage = 0x0d; // \r
+    for (let i = startIndex ?? 0; i < buffer.length; i++) {
+        if (buffer[i] === newline) {
+            return { preceding: i, index: i + 1, carriage: false };
+        }
+        if (buffer[i] === carriage) {
+            return { preceding: i, index: i + 1, carriage: true };
+        }
+    }
+    return null;
+}
+function findDoubleNewlineIndex(buffer) {
+    // This function searches the buffer for the end patterns (\r\r, \n\n, \r\n\r\n)
+    // and returns the index right after the first occurrence of any pattern,
+    // or -1 if none of the patterns are found.
+    const newline = 0x0a; // \n
+    const carriage = 0x0d; // \r
+    for (let i = 0; i < buffer.length - 1; i++) {
+        if (buffer[i] === newline && buffer[i + 1] === newline) {
+            // \n\n
+            return i + 2;
+        }
+        if (buffer[i] === carriage && buffer[i + 1] === carriage) {
+            // \r\r
+            return i + 2;
+        }
+        if (buffer[i] === carriage &&
+            buffer[i + 1] === newline &&
+            i + 3 < buffer.length &&
+            buffer[i + 2] === carriage &&
+            buffer[i + 3] === newline) {
+            // \r\n\r\n
+            return i + 4;
+        }
+    }
+    return -1;
+}
+
+/**
+ * Most browsers don't yet have async iterable support for ReadableStream,
+ * and Node has a very different way of reading bytes from its "ReadableStream".
+ *
+ * This polyfill was pulled from https://github.com/MattiasBuelens/web-streams-polyfill/pull/122#issuecomment-1627354490
+ */
+function ReadableStreamToAsyncIterable(stream) {
+    if (stream[Symbol.asyncIterator])
+        return stream;
+    const reader = stream.getReader();
+    return {
+        async next() {
+            try {
+                const result = await reader.read();
+                if (result?.done)
+                    reader.releaseLock(); // release lock when stream becomes closed
+                return result;
+            }
+            catch (e) {
+                reader.releaseLock(); // release lock when stream becomes errored
+                throw e;
+            }
+        },
+        async return() {
+            const cancelPromise = reader.cancel();
+            reader.releaseLock();
+            await cancelPromise;
+            return { done: true, value: undefined };
+        },
+        [Symbol.asyncIterator]() {
+            return this;
+        },
+    };
+}
+
+class Stream {
+    constructor(iterator, controller) {
+        this.iterator = iterator;
+        this.controller = controller;
+    }
+    static fromSSEResponse(response, controller) {
+        let consumed = false;
+        async function* iterator() {
+            if (consumed) {
+                throw new Error('Cannot iterate over a consumed stream, use `.tee()` to split the stream.');
+            }
+            consumed = true;
+            let done = false;
+            try {
+                for await (const sse of _iterSSEMessages(response, controller)) {
+                    if (done)
+                        continue;
+                    if (sse.data.startsWith('[DONE]')) {
+                        done = true;
+                        continue;
+                    }
+                    if (sse.event === null ||
+                        sse.event.startsWith('response.') ||
+                        sse.event.startsWith('transcript.')) {
+                        let data;
+                        try {
+                            data = JSON.parse(sse.data);
+                        }
+                        catch (e) {
+                            console.error(`Could not parse message into JSON:`, sse.data);
+                            console.error(`From chunk:`, sse.raw);
+                            throw e;
+                        }
+                        if (data && data.error) {
+                            throw new APIError(undefined, data.error, undefined, createResponseHeaders(response.headers));
+                        }
+                        yield data;
+                    }
+                    else {
+                        let data;
+                        try {
+                            data = JSON.parse(sse.data);
+                        }
+                        catch (e) {
+                            console.error(`Could not parse message into JSON:`, sse.data);
+                            console.error(`From chunk:`, sse.raw);
+                            throw e;
+                        }
+                        // TODO: Is this where the error should be thrown?
+                        if (sse.event == 'error') {
+                            throw new APIError(undefined, data.error, data.message, undefined);
+                        }
+                        yield { event: sse.event, data: data };
+                    }
+                }
+                done = true;
+            }
+            catch (e) {
+                // If the user calls `stream.controller.abort()`, we should exit without throwing.
+                if (e instanceof Error && e.name === 'AbortError')
+                    return;
+                throw e;
+            }
+            finally {
+                // If the user `break`s, abort the ongoing request.
+                if (!done)
+                    controller.abort();
+            }
+        }
+        return new Stream(iterator, controller);
+    }
+    /**
+     * Generates a Stream from a newline-separated ReadableStream
+     * where each item is a JSON value.
+     */
+    static fromReadableStream(readableStream, controller) {
+        let consumed = false;
+        async function* iterLines() {
+            const lineDecoder = new LineDecoder();
+            const iter = ReadableStreamToAsyncIterable(readableStream);
+            for await (const chunk of iter) {
+                for (const line of lineDecoder.decode(chunk)) {
+                    yield line;
+                }
+            }
+            for (const line of lineDecoder.flush()) {
+                yield line;
+            }
+        }
+        async function* iterator() {
+            if (consumed) {
+                throw new Error('Cannot iterate over a consumed stream, use `.tee()` to split the stream.');
+            }
+            consumed = true;
+            let done = false;
+            try {
+                for await (const line of iterLines()) {
+                    if (done)
+                        continue;
+                    if (line)
+                        yield JSON.parse(line);
+                }
+                done = true;
+            }
+            catch (e) {
+                // If the user calls `stream.controller.abort()`, we should exit without throwing.
+                if (e instanceof Error && e.name === 'AbortError')
+                    return;
+                throw e;
+            }
+            finally {
+                // If the user `break`s, abort the ongoing request.
+                if (!done)
+                    controller.abort();
+            }
+        }
+        return new Stream(iterator, controller);
+    }
+    [Symbol.asyncIterator]() {
+        return this.iterator();
+    }
+    /**
+     * Splits the stream into two streams which can be
+     * independently read from at different speeds.
+     */
+    tee() {
+        const left = [];
+        const right = [];
+        const iterator = this.iterator();
+        const teeIterator = (queue) => {
+            return {
+                next: () => {
+                    if (queue.length === 0) {
+                        const result = iterator.next();
+                        left.push(result);
+                        right.push(result);
+                    }
+                    return queue.shift();
+                },
+            };
+        };
+        return [
+            new Stream(() => teeIterator(left), this.controller),
+            new Stream(() => teeIterator(right), this.controller),
+        ];
+    }
+    /**
+     * Converts this stream to a newline-separated ReadableStream of
+     * JSON stringified values in the stream
+     * which can be turned back into a Stream with `Stream.fromReadableStream()`.
+     */
+    toReadableStream() {
+        const self = this;
+        let iter;
+        const encoder = new TextEncoder();
+        return new ReadableStream$1({
+            async start() {
+                iter = self[Symbol.asyncIterator]();
+            },
+            async pull(ctrl) {
+                try {
+                    const { value, done } = await iter.next();
+                    if (done)
+                        return ctrl.close();
+                    const bytes = encoder.encode(JSON.stringify(value) + '\n');
+                    ctrl.enqueue(bytes);
+                }
+                catch (err) {
+                    ctrl.error(err);
+                }
+            },
+            async cancel() {
+                await iter.return?.();
+            },
+        });
+    }
+}
+async function* _iterSSEMessages(response, controller) {
+    if (!response.body) {
+        controller.abort();
+        throw new OpenAIError(`Attempted to iterate over a response with no body`);
+    }
+    const sseDecoder = new SSEDecoder();
+    const lineDecoder = new LineDecoder();
+    const iter = ReadableStreamToAsyncIterable(response.body);
+    for await (const sseChunk of iterSSEChunks(iter)) {
+        for (const line of lineDecoder.decode(sseChunk)) {
+            const sse = sseDecoder.decode(line);
+            if (sse)
+                yield sse;
+        }
+    }
+    for (const line of lineDecoder.flush()) {
+        const sse = sseDecoder.decode(line);
+        if (sse)
+            yield sse;
+    }
+}
+/**
+ * Given an async iterable iterator, iterates over it and yields full
+ * SSE chunks, i.e. yields when a double new-line is encountered.
+ */
+async function* iterSSEChunks(iterator) {
+    let data = new Uint8Array();
+    for await (const chunk of iterator) {
+        if (chunk == null) {
+            continue;
+        }
+        const binaryChunk = chunk instanceof ArrayBuffer ? new Uint8Array(chunk)
+            : typeof chunk === 'string' ? new TextEncoder().encode(chunk)
+                : chunk;
+        let newData = new Uint8Array(data.length + binaryChunk.length);
+        newData.set(data);
+        newData.set(binaryChunk, data.length);
+        data = newData;
+        let patternIndex;
+        while ((patternIndex = findDoubleNewlineIndex(data)) !== -1) {
+            yield data.slice(0, patternIndex);
+            data = data.slice(patternIndex);
+        }
+    }
+    if (data.length > 0) {
+        yield data;
+    }
+}
+class SSEDecoder {
+    constructor() {
+        this.event = null;
+        this.data = [];
+        this.chunks = [];
+    }
+    decode(line) {
+        if (line.endsWith('\r')) {
+            line = line.substring(0, line.length - 1);
+        }
+        if (!line) {
+            // empty line and we didn't previously encounter any messages
+            if (!this.event && !this.data.length)
+                return null;
+            const sse = {
+                event: this.event,
+                data: this.data.join('\n'),
+                raw: this.chunks,
+            };
+            this.event = null;
+            this.data = [];
+            this.chunks = [];
+            return sse;
+        }
+        this.chunks.push(line);
+        if (line.startsWith(':')) {
+            return null;
+        }
+        let [fieldname, _, value] = partition(line, ':');
+        if (value.startsWith(' ')) {
+            value = value.substring(1);
+        }
+        if (fieldname === 'event') {
+            this.event = value;
+        }
+        else if (fieldname === 'data') {
+            this.data.push(value);
+        }
+        return null;
+    }
+}
+function partition(str, delimiter) {
+    const index = str.indexOf(delimiter);
+    if (index !== -1) {
+        return [str.substring(0, index), delimiter, str.substring(index + delimiter.length)];
+    }
+    return [str, '', ''];
+}
+
+const isResponseLike = (value) => value != null &&
+    typeof value === 'object' &&
+    typeof value.url === 'string' &&
+    typeof value.blob === 'function';
+const isFileLike = (value) => value != null &&
+    typeof value === 'object' &&
+    typeof value.name === 'string' &&
+    typeof value.lastModified === 'number' &&
+    isBlobLike(value);
+/**
+ * The BlobLike type omits arrayBuffer() because @types/node-fetch@^2.6.4 lacks it; but this check
+ * adds the arrayBuffer() method type because it is available and used at runtime
+ */
+const isBlobLike = (value) => value != null &&
+    typeof value === 'object' &&
+    typeof value.size === 'number' &&
+    typeof value.type === 'string' &&
+    typeof value.text === 'function' &&
+    typeof value.slice === 'function' &&
+    typeof value.arrayBuffer === 'function';
+const isUploadable = (value) => {
+    return isFileLike(value) || isResponseLike(value) || isFsReadStream(value);
+};
+/**
+ * Helper for creating a {@link File} to pass to an SDK upload method from a variety of different data formats
+ * @param value the raw content of the file.  Can be an {@link Uploadable}, {@link BlobLikePart}, or {@link AsyncIterable} of {@link BlobLikePart}s
+ * @param {string=} name the name of the file. If omitted, toFile will try to determine a file name from bits if possible
+ * @param {Object=} options additional properties
+ * @param {string=} options.type the MIME type of the content
+ * @param {number=} options.lastModified the last modified timestamp
+ * @returns a {@link File} with the given properties
+ */
+async function toFile(value, name, options) {
+    // If it's a promise, resolve it.
+    value = await value;
+    // If we've been given a `File` we don't need to do anything
+    if (isFileLike(value)) {
+        return value;
+    }
+    if (isResponseLike(value)) {
+        const blob = await value.blob();
+        name || (name = new URL(value.url).pathname.split(/[\\/]/).pop() ?? 'unknown_file');
+        // we need to convert the `Blob` into an array buffer because the `Blob` class
+        // that `node-fetch` defines is incompatible with the web standard which results
+        // in `new File` interpreting it as a string instead of binary data.
+        const data = isBlobLike(blob) ? [(await blob.arrayBuffer())] : [blob];
+        return new File$1(data, name, options);
+    }
+    const bits = await getBytes(value);
+    name || (name = getName(value) ?? 'unknown_file');
+    if (!options?.type) {
+        const type = bits[0]?.type;
+        if (typeof type === 'string') {
+            options = { ...options, type };
+        }
+    }
+    return new File$1(bits, name, options);
+}
+async function getBytes(value) {
+    let parts = [];
+    if (typeof value === 'string' ||
+        ArrayBuffer.isView(value) || // includes Uint8Array, Buffer, etc.
+        value instanceof ArrayBuffer) {
+        parts.push(value);
+    }
+    else if (isBlobLike(value)) {
+        parts.push(await value.arrayBuffer());
+    }
+    else if (isAsyncIterableIterator(value) // includes Readable, ReadableStream, etc.
+    ) {
+        for await (const chunk of value) {
+            parts.push(chunk); // TODO, consider validating?
+        }
+    }
+    else {
+        throw new Error(`Unexpected data type: ${typeof value}; constructor: ${value?.constructor
+            ?.name}; props: ${propsForError(value)}`);
+    }
+    return parts;
+}
+function propsForError(value) {
+    const props = Object.getOwnPropertyNames(value);
+    return `[${props.map((p) => `"${p}"`).join(', ')}]`;
+}
+function getName(value) {
+    return (getStringFromMaybeBuffer(value.name) ||
+        getStringFromMaybeBuffer(value.filename) ||
+        // For fs.ReadStream
+        getStringFromMaybeBuffer(value.path)?.split(/[\\/]/).pop());
+}
+const getStringFromMaybeBuffer = (x) => {
+    if (typeof x === 'string')
+        return x;
+    if (typeof Buffer !== 'undefined' && x instanceof Buffer)
+        return String(x);
+    return undefined;
+};
+const isAsyncIterableIterator = (value) => value != null && typeof value === 'object' && typeof value[Symbol.asyncIterator] === 'function';
+const isMultipartBody = (body) => body && typeof body === 'object' && body.body && body[Symbol.toStringTag] === 'MultipartBody';
+const multipartFormRequestOptions = async (opts) => {
+    const form = await createForm(opts.body);
+    return getMultipartRequestOptions(form, opts);
+};
+const createForm = async (body) => {
+    const form = new FormData$1();
+    await Promise.all(Object.entries(body || {}).map(([key, value]) => addFormValue(form, key, value)));
+    return form;
+};
+const addFormValue = async (form, key, value) => {
+    if (value === undefined)
+        return;
+    if (value == null) {
+        throw new TypeError(`Received null for "${key}"; to pass null in FormData, you must use the string 'null'`);
+    }
+    // TODO: make nested formats configurable
+    if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+        form.append(key, String(value));
+    }
+    else if (isUploadable(value)) {
+        const file = await toFile(value);
+        form.append(key, file);
+    }
+    else if (Array.isArray(value)) {
+        await Promise.all(value.map((entry) => addFormValue(form, key + '[]', entry)));
+    }
+    else if (typeof value === 'object') {
+        await Promise.all(Object.entries(value).map(([name, prop]) => addFormValue(form, `${key}[${name}]`, prop)));
+    }
+    else {
+        throw new TypeError(`Invalid value given to form, expected a string, number, boolean, object, Array, File or Blob but got ${value} instead`);
+    }
+};
+
+var __classPrivateFieldSet$4 = (undefined && undefined.__classPrivateFieldSet) || function (receiver, state, value, kind, f) {
+    if (kind === "m") throw new TypeError("Private method is not writable");
+    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
+    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot write private member to an object whose class did not declare it");
+    return (kind === "a" ? f.call(receiver, value) : f ? f.value = value : state.set(receiver, value)), value;
+};
+var __classPrivateFieldGet$5 = (undefined && undefined.__classPrivateFieldGet) || function (receiver, state, kind, f) {
+    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a getter");
+    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
+    return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
+};
+var _AbstractPage_client;
+// try running side effects outside of _shims/index to workaround https://github.com/vercel/next.js/issues/76881
+init();
+async function defaultParseResponse(props) {
+    const { response } = props;
+    if (props.options.stream) {
+        debug('response', response.status, response.url, response.headers, response.body);
+        // Note: there is an invariant here that isn't represented in the type system
+        // that if you set `stream: true` the response type must also be `Stream<T>`
+        if (props.options.__streamClass) {
+            return props.options.__streamClass.fromSSEResponse(response, props.controller);
+        }
+        return Stream.fromSSEResponse(response, props.controller);
+    }
+    // fetch refuses to read the body when the status code is 204.
+    if (response.status === 204) {
+        return null;
+    }
+    if (props.options.__binaryResponse) {
+        return response;
+    }
+    const contentType = response.headers.get('content-type');
+    const mediaType = contentType?.split(';')[0]?.trim();
+    const isJSON = mediaType?.includes('application/json') || mediaType?.endsWith('+json');
+    if (isJSON) {
+        const json = await response.json();
+        debug('response', response.status, response.url, response.headers, json);
+        return _addRequestID(json, response);
+    }
+    const text = await response.text();
+    debug('response', response.status, response.url, response.headers, text);
+    // TODO handle blob, arraybuffer, other content types, etc.
+    return text;
+}
+function _addRequestID(value, response) {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+        return value;
+    }
+    return Object.defineProperty(value, '_request_id', {
+        value: response.headers.get('x-request-id'),
+        enumerable: false,
+    });
+}
+/**
+ * A subclass of `Promise` providing additional helper methods
+ * for interacting with the SDK.
+ */
+class APIPromise extends Promise {
+    constructor(responsePromise, parseResponse = defaultParseResponse) {
+        super((resolve) => {
+            // this is maybe a bit weird but this has to be a no-op to not implicitly
+            // parse the response body; instead .then, .catch, .finally are overridden
+            // to parse the response
+            resolve(null);
+        });
+        this.responsePromise = responsePromise;
+        this.parseResponse = parseResponse;
+    }
+    _thenUnwrap(transform) {
+        return new APIPromise(this.responsePromise, async (props) => _addRequestID(transform(await this.parseResponse(props), props), props.response));
+    }
+    /**
+     * Gets the raw `Response` instance instead of parsing the response
+     * data.
+     *
+     * If you want to parse the response body but still get the `Response`
+     * instance, you can use {@link withResponse()}.
+     *
+     * 👋 Getting the wrong TypeScript type for `Response`?
+     * Try setting `"moduleResolution": "NodeNext"` if you can,
+     * or add one of these imports before your first `import … from 'openai'`:
+     * - `import 'openai/shims/node'` (if you're running on Node)
+     * - `import 'openai/shims/web'` (otherwise)
+     */
+    asResponse() {
+        return this.responsePromise.then((p) => p.response);
+    }
+    /**
+     * Gets the parsed response data, the raw `Response` instance and the ID of the request,
+     * returned via the X-Request-ID header which is useful for debugging requests and reporting
+     * issues to OpenAI.
+     *
+     * If you just want to get the raw `Response` instance without parsing it,
+     * you can use {@link asResponse()}.
+     *
+     *
+     * 👋 Getting the wrong TypeScript type for `Response`?
+     * Try setting `"moduleResolution": "NodeNext"` if you can,
+     * or add one of these imports before your first `import … from 'openai'`:
+     * - `import 'openai/shims/node'` (if you're running on Node)
+     * - `import 'openai/shims/web'` (otherwise)
+     */
+    async withResponse() {
+        const [data, response] = await Promise.all([this.parse(), this.asResponse()]);
+        return { data, response, request_id: response.headers.get('x-request-id') };
+    }
+    parse() {
+        if (!this.parsedPromise) {
+            this.parsedPromise = this.responsePromise.then(this.parseResponse);
+        }
+        return this.parsedPromise;
+    }
+    then(onfulfilled, onrejected) {
+        return this.parse().then(onfulfilled, onrejected);
+    }
+    catch(onrejected) {
+        return this.parse().catch(onrejected);
+    }
+    finally(onfinally) {
+        return this.parse().finally(onfinally);
+    }
+}
+class APIClient {
+    constructor({ baseURL, maxRetries = 2, timeout = 600000, // 10 minutes
+    httpAgent, fetch: overriddenFetch, }) {
+        this.baseURL = baseURL;
+        this.maxRetries = validatePositiveInteger('maxRetries', maxRetries);
+        this.timeout = validatePositiveInteger('timeout', timeout);
+        this.httpAgent = httpAgent;
+        this.fetch = overriddenFetch ?? fetch$1;
+    }
+    authHeaders(opts) {
+        return {};
+    }
+    /**
+     * Override this to add your own default headers, for example:
+     *
+     *  {
+     *    ...super.defaultHeaders(),
+     *    Authorization: 'Bearer 123',
+     *  }
+     */
+    defaultHeaders(opts) {
+        return {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+            'User-Agent': this.getUserAgent(),
+            ...getPlatformHeaders(),
+            ...this.authHeaders(opts),
+        };
+    }
+    /**
+     * Override this to add your own headers validation:
+     */
+    validateHeaders(headers, customHeaders) { }
+    defaultIdempotencyKey() {
+        return `stainless-node-retry-${uuid4()}`;
+    }
+    get(path, opts) {
+        return this.methodRequest('get', path, opts);
+    }
+    post(path, opts) {
+        return this.methodRequest('post', path, opts);
+    }
+    patch(path, opts) {
+        return this.methodRequest('patch', path, opts);
+    }
+    put(path, opts) {
+        return this.methodRequest('put', path, opts);
+    }
+    delete(path, opts) {
+        return this.methodRequest('delete', path, opts);
+    }
+    methodRequest(method, path, opts) {
+        return this.request(Promise.resolve(opts).then(async (opts) => {
+            const body = opts && isBlobLike(opts?.body) ? new DataView(await opts.body.arrayBuffer())
+                : opts?.body instanceof DataView ? opts.body
+                    : opts?.body instanceof ArrayBuffer ? new DataView(opts.body)
+                        : opts && ArrayBuffer.isView(opts?.body) ? new DataView(opts.body.buffer)
+                            : opts?.body;
+            return { method, path, ...opts, body };
+        }));
+    }
+    getAPIList(path, Page, opts) {
+        return this.requestAPIList(Page, { method: 'get', path, ...opts });
+    }
+    calculateContentLength(body) {
+        if (typeof body === 'string') {
+            if (typeof Buffer !== 'undefined') {
+                return Buffer.byteLength(body, 'utf8').toString();
+            }
+            if (typeof TextEncoder !== 'undefined') {
+                const encoder = new TextEncoder();
+                const encoded = encoder.encode(body);
+                return encoded.length.toString();
+            }
+        }
+        else if (ArrayBuffer.isView(body)) {
+            return body.byteLength.toString();
+        }
+        return null;
+    }
+    buildRequest(inputOptions, { retryCount = 0 } = {}) {
+        const options = { ...inputOptions };
+        const { method, path, query, headers: headers = {} } = options;
+        const body = ArrayBuffer.isView(options.body) || (options.__binaryRequest && typeof options.body === 'string') ?
+            options.body
+            : isMultipartBody(options.body) ? options.body.body
+                : options.body ? JSON.stringify(options.body, null, 2)
+                    : null;
+        const contentLength = this.calculateContentLength(body);
+        const url = this.buildURL(path, query);
+        if ('timeout' in options)
+            validatePositiveInteger('timeout', options.timeout);
+        options.timeout = options.timeout ?? this.timeout;
+        const httpAgent = options.httpAgent ?? this.httpAgent ?? getDefaultAgent(url);
+        const minAgentTimeout = options.timeout + 1000;
+        if (typeof httpAgent?.options?.timeout === 'number' &&
+            minAgentTimeout > (httpAgent.options.timeout ?? 0)) {
+            // Allow any given request to bump our agent active socket timeout.
+            // This may seem strange, but leaking active sockets should be rare and not particularly problematic,
+            // and without mutating agent we would need to create more of them.
+            // This tradeoff optimizes for performance.
+            httpAgent.options.timeout = minAgentTimeout;
+        }
+        if (this.idempotencyHeader && method !== 'get') {
+            if (!inputOptions.idempotencyKey)
+                inputOptions.idempotencyKey = this.defaultIdempotencyKey();
+            headers[this.idempotencyHeader] = inputOptions.idempotencyKey;
+        }
+        const reqHeaders = this.buildHeaders({ options, headers, contentLength, retryCount });
+        const req = {
+            method,
+            ...(body && { body: body }),
+            headers: reqHeaders,
+            ...(httpAgent && { agent: httpAgent }),
+            // @ts-ignore node-fetch uses a custom AbortSignal type that is
+            // not compatible with standard web types
+            signal: options.signal ?? null,
+        };
+        return { req, url, timeout: options.timeout };
+    }
+    buildHeaders({ options, headers, contentLength, retryCount, }) {
+        const reqHeaders = {};
+        if (contentLength) {
+            reqHeaders['content-length'] = contentLength;
+        }
+        const defaultHeaders = this.defaultHeaders(options);
+        applyHeadersMut(reqHeaders, defaultHeaders);
+        applyHeadersMut(reqHeaders, headers);
+        // let builtin fetch set the Content-Type for multipart bodies
+        if (isMultipartBody(options.body) && kind !== 'node') {
+            delete reqHeaders['content-type'];
+        }
+        // Don't set theses headers if they were already set or removed through default headers or by the caller.
+        // We check `defaultHeaders` and `headers`, which can contain nulls, instead of `reqHeaders` to account
+        // for the removal case.
+        if (getHeader(defaultHeaders, 'x-stainless-retry-count') === undefined &&
+            getHeader(headers, 'x-stainless-retry-count') === undefined) {
+            reqHeaders['x-stainless-retry-count'] = String(retryCount);
+        }
+        if (getHeader(defaultHeaders, 'x-stainless-timeout') === undefined &&
+            getHeader(headers, 'x-stainless-timeout') === undefined &&
+            options.timeout) {
+            reqHeaders['x-stainless-timeout'] = String(Math.trunc(options.timeout / 1000));
+        }
+        this.validateHeaders(reqHeaders, headers);
+        return reqHeaders;
+    }
+    /**
+     * Used as a callback for mutating the given `FinalRequestOptions` object.
+     */
+    async prepareOptions(options) { }
+    /**
+     * Used as a callback for mutating the given `RequestInit` object.
+     *
+     * This is useful for cases where you want to add certain headers based off of
+     * the request properties, e.g. `method` or `url`.
+     */
+    async prepareRequest(request, { url, options }) { }
+    parseHeaders(headers) {
+        return (!headers ? {}
+            : Symbol.iterator in headers ?
+                Object.fromEntries(Array.from(headers).map((header) => [...header]))
+                : { ...headers });
+    }
+    makeStatusError(status, error, message, headers) {
+        return APIError.generate(status, error, message, headers);
+    }
+    request(options, remainingRetries = null) {
+        return new APIPromise(this.makeRequest(options, remainingRetries));
+    }
+    async makeRequest(optionsInput, retriesRemaining) {
+        const options = await optionsInput;
+        const maxRetries = options.maxRetries ?? this.maxRetries;
+        if (retriesRemaining == null) {
+            retriesRemaining = maxRetries;
+        }
+        await this.prepareOptions(options);
+        const { req, url, timeout } = this.buildRequest(options, { retryCount: maxRetries - retriesRemaining });
+        await this.prepareRequest(req, { url, options });
+        debug('request', url, options, req.headers);
+        if (options.signal?.aborted) {
+            throw new APIUserAbortError();
+        }
+        const controller = new AbortController();
+        const response = await this.fetchWithTimeout(url, req, timeout, controller).catch(castToError);
+        if (response instanceof Error) {
+            if (options.signal?.aborted) {
+                throw new APIUserAbortError();
+            }
+            if (retriesRemaining) {
+                return this.retryRequest(options, retriesRemaining);
+            }
+            if (response.name === 'AbortError') {
+                throw new APIConnectionTimeoutError();
+            }
+            throw new APIConnectionError({ cause: response });
+        }
+        const responseHeaders = createResponseHeaders(response.headers);
+        if (!response.ok) {
+            if (retriesRemaining && this.shouldRetry(response)) {
+                const retryMessage = `retrying, ${retriesRemaining} attempts remaining`;
+                debug(`response (error; ${retryMessage})`, response.status, url, responseHeaders);
+                return this.retryRequest(options, retriesRemaining, responseHeaders);
+            }
+            const errText = await response.text().catch((e) => castToError(e).message);
+            const errJSON = safeJSON(errText);
+            const errMessage = errJSON ? undefined : errText;
+            const retryMessage = retriesRemaining ? `(error; no more retries left)` : `(error; not retryable)`;
+            debug(`response (error; ${retryMessage})`, response.status, url, responseHeaders, errMessage);
+            const err = this.makeStatusError(response.status, errJSON, errMessage, responseHeaders);
+            throw err;
+        }
+        return { response, options, controller };
+    }
+    requestAPIList(Page, options) {
+        const request = this.makeRequest(options, null);
+        return new PagePromise(this, request, Page);
+    }
+    buildURL(path, query) {
+        const url = isAbsoluteURL(path) ?
+            new URL(path)
+            : new URL(this.baseURL + (this.baseURL.endsWith('/') && path.startsWith('/') ? path.slice(1) : path));
+        const defaultQuery = this.defaultQuery();
+        if (!isEmptyObj(defaultQuery)) {
+            query = { ...defaultQuery, ...query };
+        }
+        if (typeof query === 'object' && query && !Array.isArray(query)) {
+            url.search = this.stringifyQuery(query);
+        }
+        return url.toString();
+    }
+    stringifyQuery(query) {
+        return Object.entries(query)
+            .filter(([_, value]) => typeof value !== 'undefined')
+            .map(([key, value]) => {
+            if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+                return `${encodeURIComponent(key)}=${encodeURIComponent(value)}`;
+            }
+            if (value === null) {
+                return `${encodeURIComponent(key)}=`;
+            }
+            throw new OpenAIError(`Cannot stringify type ${typeof value}; Expected string, number, boolean, or null. If you need to pass nested query parameters, you can manually encode them, e.g. { query: { 'foo[key1]': value1, 'foo[key2]': value2 } }, and please open a GitHub issue requesting better support for your use case.`);
+        })
+            .join('&');
+    }
+    async fetchWithTimeout(url, init, ms, controller) {
+        const { signal, ...options } = init || {};
+        if (signal)
+            signal.addEventListener('abort', () => controller.abort());
+        const timeout = setTimeout(() => controller.abort(), ms);
+        const fetchOptions = {
+            signal: controller.signal,
+            ...options,
+        };
+        if (fetchOptions.method) {
+            // Custom methods like 'patch' need to be uppercased
+            // See https://github.com/nodejs/undici/issues/2294
+            fetchOptions.method = fetchOptions.method.toUpperCase();
+        }
+        return (
+        // use undefined this binding; fetch errors if bound to something else in browser/cloudflare
+        this.fetch.call(undefined, url, fetchOptions).finally(() => {
+            clearTimeout(timeout);
+        }));
+    }
+    shouldRetry(response) {
+        // Note this is not a standard header.
+        const shouldRetryHeader = response.headers.get('x-should-retry');
+        // If the server explicitly says whether or not to retry, obey.
+        if (shouldRetryHeader === 'true')
+            return true;
+        if (shouldRetryHeader === 'false')
+            return false;
+        // Retry on request timeouts.
+        if (response.status === 408)
+            return true;
+        // Retry on lock timeouts.
+        if (response.status === 409)
+            return true;
+        // Retry on rate limits.
+        if (response.status === 429)
+            return true;
+        // Retry internal errors.
+        if (response.status >= 500)
+            return true;
+        return false;
+    }
+    async retryRequest(options, retriesRemaining, responseHeaders) {
+        let timeoutMillis;
+        // Note the `retry-after-ms` header may not be standard, but is a good idea and we'd like proactive support for it.
+        const retryAfterMillisHeader = responseHeaders?.['retry-after-ms'];
+        if (retryAfterMillisHeader) {
+            const timeoutMs = parseFloat(retryAfterMillisHeader);
+            if (!Number.isNaN(timeoutMs)) {
+                timeoutMillis = timeoutMs;
+            }
+        }
+        // About the Retry-After header: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Retry-After
+        const retryAfterHeader = responseHeaders?.['retry-after'];
+        if (retryAfterHeader && !timeoutMillis) {
+            const timeoutSeconds = parseFloat(retryAfterHeader);
+            if (!Number.isNaN(timeoutSeconds)) {
+                timeoutMillis = timeoutSeconds * 1000;
+            }
+            else {
+                timeoutMillis = Date.parse(retryAfterHeader) - Date.now();
+            }
+        }
+        // If the API asks us to wait a certain amount of time (and it's a reasonable amount),
+        // just do what it says, but otherwise calculate a default
+        if (!(timeoutMillis && 0 <= timeoutMillis && timeoutMillis < 60 * 1000)) {
+            const maxRetries = options.maxRetries ?? this.maxRetries;
+            timeoutMillis = this.calculateDefaultRetryTimeoutMillis(retriesRemaining, maxRetries);
+        }
+        await sleep(timeoutMillis);
+        return this.makeRequest(options, retriesRemaining - 1);
+    }
+    calculateDefaultRetryTimeoutMillis(retriesRemaining, maxRetries) {
+        const initialRetryDelay = 0.5;
+        const maxRetryDelay = 8.0;
+        const numRetries = maxRetries - retriesRemaining;
+        // Apply exponential backoff, but not more than the max.
+        const sleepSeconds = Math.min(initialRetryDelay * Math.pow(2, numRetries), maxRetryDelay);
+        // Apply some jitter, take up to at most 25 percent of the retry time.
+        const jitter = 1 - Math.random() * 0.25;
+        return sleepSeconds * jitter * 1000;
+    }
+    getUserAgent() {
+        return `${this.constructor.name}/JS ${VERSION}`;
+    }
+}
+class AbstractPage {
+    constructor(client, response, body, options) {
+        _AbstractPage_client.set(this, void 0);
+        __classPrivateFieldSet$4(this, _AbstractPage_client, client, "f");
+        this.options = options;
+        this.response = response;
+        this.body = body;
+    }
+    hasNextPage() {
+        const items = this.getPaginatedItems();
+        if (!items.length)
+            return false;
+        return this.nextPageInfo() != null;
+    }
+    async getNextPage() {
+        const nextInfo = this.nextPageInfo();
+        if (!nextInfo) {
+            throw new OpenAIError('No next page expected; please check `.hasNextPage()` before calling `.getNextPage()`.');
+        }
+        const nextOptions = { ...this.options };
+        if ('params' in nextInfo && typeof nextOptions.query === 'object') {
+            nextOptions.query = { ...nextOptions.query, ...nextInfo.params };
+        }
+        else if ('url' in nextInfo) {
+            const params = [...Object.entries(nextOptions.query || {}), ...nextInfo.url.searchParams.entries()];
+            for (const [key, value] of params) {
+                nextInfo.url.searchParams.set(key, value);
+            }
+            nextOptions.query = undefined;
+            nextOptions.path = nextInfo.url.toString();
+        }
+        return await __classPrivateFieldGet$5(this, _AbstractPage_client, "f").requestAPIList(this.constructor, nextOptions);
+    }
+    async *iterPages() {
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
+        let page = this;
+        yield page;
+        while (page.hasNextPage()) {
+            page = await page.getNextPage();
+            yield page;
+        }
+    }
+    async *[(_AbstractPage_client = new WeakMap(), Symbol.asyncIterator)]() {
+        for await (const page of this.iterPages()) {
+            for (const item of page.getPaginatedItems()) {
+                yield item;
+            }
+        }
+    }
+}
+/**
+ * This subclass of Promise will resolve to an instantiated Page once the request completes.
+ *
+ * It also implements AsyncIterable to allow auto-paginating iteration on an unawaited list call, eg:
+ *
+ *    for await (const item of client.items.list()) {
+ *      console.log(item)
+ *    }
+ */
+class PagePromise extends APIPromise {
+    constructor(client, request, Page) {
+        super(request, async (props) => new Page(client, props.response, await defaultParseResponse(props), props.options));
+    }
+    /**
+     * Allow auto-paginating iteration on an unawaited list call, eg:
+     *
+     *    for await (const item of client.items.list()) {
+     *      console.log(item)
+     *    }
+     */
+    async *[Symbol.asyncIterator]() {
+        const page = await this;
+        for await (const item of page) {
+            yield item;
+        }
+    }
+}
+const createResponseHeaders = (headers) => {
+    return new Proxy(Object.fromEntries(
+    // @ts-ignore
+    headers.entries()), {
+        get(target, name) {
+            const key = name.toString();
+            return target[key.toLowerCase()] || target[key];
+        },
+    });
+};
+// This is required so that we can determine if a given object matches the RequestOptions
+// type at runtime. While this requires duplication, it is enforced by the TypeScript
+// compiler such that any missing / extraneous keys will cause an error.
+const requestOptionsKeys = {
+    method: true,
+    path: true,
+    query: true,
+    body: true,
+    headers: true,
+    maxRetries: true,
+    stream: true,
+    timeout: true,
+    httpAgent: true,
+    signal: true,
+    idempotencyKey: true,
+    __metadata: true,
+    __binaryRequest: true,
+    __binaryResponse: true,
+    __streamClass: true,
+};
+const isRequestOptions = (obj) => {
+    return (typeof obj === 'object' &&
+        obj !== null &&
+        !isEmptyObj(obj) &&
+        Object.keys(obj).every((k) => hasOwn(requestOptionsKeys, k)));
+};
+const getPlatformProperties = () => {
+    if (typeof Deno !== 'undefined' && Deno.build != null) {
+        return {
+            'X-Stainless-Lang': 'js',
+            'X-Stainless-Package-Version': VERSION,
+            'X-Stainless-OS': normalizePlatform(Deno.build.os),
+            'X-Stainless-Arch': normalizeArch(Deno.build.arch),
+            'X-Stainless-Runtime': 'deno',
+            'X-Stainless-Runtime-Version': typeof Deno.version === 'string' ? Deno.version : Deno.version?.deno ?? 'unknown',
+        };
+    }
+    if (typeof EdgeRuntime !== 'undefined') {
+        return {
+            'X-Stainless-Lang': 'js',
+            'X-Stainless-Package-Version': VERSION,
+            'X-Stainless-OS': 'Unknown',
+            'X-Stainless-Arch': `other:${EdgeRuntime}`,
+            'X-Stainless-Runtime': 'edge',
+            'X-Stainless-Runtime-Version': process.version,
+        };
+    }
+    // Check if Node.js
+    if (Object.prototype.toString.call(typeof process !== 'undefined' ? process : 0) === '[object process]') {
+        return {
+            'X-Stainless-Lang': 'js',
+            'X-Stainless-Package-Version': VERSION,
+            'X-Stainless-OS': normalizePlatform(process.platform),
+            'X-Stainless-Arch': normalizeArch(process.arch),
+            'X-Stainless-Runtime': 'node',
+            'X-Stainless-Runtime-Version': process.version,
+        };
+    }
+    const browserInfo = getBrowserInfo();
+    if (browserInfo) {
+        return {
+            'X-Stainless-Lang': 'js',
+            'X-Stainless-Package-Version': VERSION,
+            'X-Stainless-OS': 'Unknown',
+            'X-Stainless-Arch': 'unknown',
+            'X-Stainless-Runtime': `browser:${browserInfo.browser}`,
+            'X-Stainless-Runtime-Version': browserInfo.version,
+        };
+    }
+    // TODO add support for Cloudflare workers, etc.
+    return {
+        'X-Stainless-Lang': 'js',
+        'X-Stainless-Package-Version': VERSION,
+        'X-Stainless-OS': 'Unknown',
+        'X-Stainless-Arch': 'unknown',
+        'X-Stainless-Runtime': 'unknown',
+        'X-Stainless-Runtime-Version': 'unknown',
+    };
+};
+// Note: modified from https://github.com/JS-DevTools/host-environment/blob/b1ab79ecde37db5d6e163c050e54fe7d287d7c92/src/isomorphic.browser.ts
+function getBrowserInfo() {
+    if (typeof navigator === 'undefined' || !navigator) {
+        return null;
+    }
+    // NOTE: The order matters here!
+    const browserPatterns = [
+        { key: 'edge', pattern: /Edge(?:\W+(\d+)\.(\d+)(?:\.(\d+))?)?/ },
+        { key: 'ie', pattern: /MSIE(?:\W+(\d+)\.(\d+)(?:\.(\d+))?)?/ },
+        { key: 'ie', pattern: /Trident(?:.*rv\:(\d+)\.(\d+)(?:\.(\d+))?)?/ },
+        { key: 'chrome', pattern: /Chrome(?:\W+(\d+)\.(\d+)(?:\.(\d+))?)?/ },
+        { key: 'firefox', pattern: /Firefox(?:\W+(\d+)\.(\d+)(?:\.(\d+))?)?/ },
+        { key: 'safari', pattern: /(?:Version\W+(\d+)\.(\d+)(?:\.(\d+))?)?(?:\W+Mobile\S*)?\W+Safari/ },
+    ];
+    // Find the FIRST matching browser
+    for (const { key, pattern } of browserPatterns) {
+        const match = pattern.exec(navigator.userAgent);
+        if (match) {
+            const major = match[1] || 0;
+            const minor = match[2] || 0;
+            const patch = match[3] || 0;
+            return { browser: key, version: `${major}.${minor}.${patch}` };
+        }
+    }
+    return null;
+}
+const normalizeArch = (arch) => {
+    // Node docs:
+    // - https://nodejs.org/api/process.html#processarch
+    // Deno docs:
+    // - https://doc.deno.land/deno/stable/~/Deno.build
+    if (arch === 'x32')
+        return 'x32';
+    if (arch === 'x86_64' || arch === 'x64')
+        return 'x64';
+    if (arch === 'arm')
+        return 'arm';
+    if (arch === 'aarch64' || arch === 'arm64')
+        return 'arm64';
+    if (arch)
+        return `other:${arch}`;
+    return 'unknown';
+};
+const normalizePlatform = (platform) => {
+    // Node platforms:
+    // - https://nodejs.org/api/process.html#processplatform
+    // Deno platforms:
+    // - https://doc.deno.land/deno/stable/~/Deno.build
+    // - https://github.com/denoland/deno/issues/14799
+    platform = platform.toLowerCase();
+    // NOTE: this iOS check is untested and may not work
+    // Node does not work natively on IOS, there is a fork at
+    // https://github.com/nodejs-mobile/nodejs-mobile
+    // however it is unknown at the time of writing how to detect if it is running
+    if (platform.includes('ios'))
+        return 'iOS';
+    if (platform === 'android')
+        return 'Android';
+    if (platform === 'darwin')
+        return 'MacOS';
+    if (platform === 'win32')
+        return 'Windows';
+    if (platform === 'freebsd')
+        return 'FreeBSD';
+    if (platform === 'openbsd')
+        return 'OpenBSD';
+    if (platform === 'linux')
+        return 'Linux';
+    if (platform)
+        return `Other:${platform}`;
+    return 'Unknown';
+};
+let _platformHeaders;
+const getPlatformHeaders = () => {
+    return (_platformHeaders ?? (_platformHeaders = getPlatformProperties()));
+};
+const safeJSON = (text) => {
+    try {
+        return JSON.parse(text);
+    }
+    catch (err) {
+        return undefined;
+    }
+};
+// https://url.spec.whatwg.org/#url-scheme-string
+const startsWithSchemeRegexp = /^[a-z][a-z0-9+.-]*:/i;
+const isAbsoluteURL = (url) => {
+    return startsWithSchemeRegexp.test(url);
+};
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const validatePositiveInteger = (name, n) => {
+    if (typeof n !== 'number' || !Number.isInteger(n)) {
+        throw new OpenAIError(`${name} must be an integer`);
+    }
+    if (n < 0) {
+        throw new OpenAIError(`${name} must be a positive integer`);
+    }
+    return n;
+};
+const castToError = (err) => {
+    if (err instanceof Error)
+        return err;
+    if (typeof err === 'object' && err !== null) {
+        try {
+            return new Error(JSON.stringify(err));
+        }
+        catch { }
+    }
+    return new Error(err);
+};
+/**
+ * Read an environment variable.
+ *
+ * Trims beginning and trailing whitespace.
+ *
+ * Will return undefined if the environment variable doesn't exist or cannot be accessed.
+ */
+const readEnv = (env) => {
+    if (typeof process !== 'undefined') {
+        return process.env?.[env]?.trim() ?? undefined;
+    }
+    if (typeof Deno !== 'undefined') {
+        return Deno.env?.get?.(env)?.trim();
+    }
+    return undefined;
+};
+// https://stackoverflow.com/a/34491287
+function isEmptyObj(obj) {
+    if (!obj)
+        return true;
+    for (const _k in obj)
+        return false;
+    return true;
+}
+// https://eslint.org/docs/latest/rules/no-prototype-builtins
+function hasOwn(obj, key) {
+    return Object.prototype.hasOwnProperty.call(obj, key);
+}
+/**
+ * Copies headers from "newHeaders" onto "targetHeaders",
+ * using lower-case for all properties,
+ * ignoring any keys with undefined values,
+ * and deleting any keys with null values.
+ */
+function applyHeadersMut(targetHeaders, newHeaders) {
+    for (const k in newHeaders) {
+        if (!hasOwn(newHeaders, k))
+            continue;
+        const lowerKey = k.toLowerCase();
+        if (!lowerKey)
+            continue;
+        const val = newHeaders[k];
+        if (val === null) {
+            delete targetHeaders[lowerKey];
+        }
+        else if (val !== undefined) {
+            targetHeaders[lowerKey] = val;
+        }
+    }
+}
+const SENSITIVE_HEADERS = new Set(['authorization', 'api-key']);
+function debug(action, ...args) {
+    if (typeof process !== 'undefined' && process?.env?.['DEBUG'] === 'true') {
+        const modifiedArgs = args.map((arg) => {
+            if (!arg) {
+                return arg;
+            }
+            // Check for sensitive headers in request body 'headers' object
+            if (arg['headers']) {
+                // clone so we don't mutate
+                const modifiedArg = { ...arg, headers: { ...arg['headers'] } };
+                for (const header in arg['headers']) {
+                    if (SENSITIVE_HEADERS.has(header.toLowerCase())) {
+                        modifiedArg['headers'][header] = 'REDACTED';
+                    }
+                }
+                return modifiedArg;
+            }
+            let modifiedArg = null;
+            // Check for sensitive headers in headers object
+            for (const header in arg) {
+                if (SENSITIVE_HEADERS.has(header.toLowerCase())) {
+                    // avoid making a copy until we need to
+                    modifiedArg ?? (modifiedArg = { ...arg });
+                    modifiedArg[header] = 'REDACTED';
+                }
+            }
+            return modifiedArg ?? arg;
+        });
+        console.log(`OpenAI:DEBUG:${action}`, ...modifiedArgs);
+    }
+}
+/**
+ * https://stackoverflow.com/a/2117523
+ */
+const uuid4 = () => {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+        const r = (Math.random() * 16) | 0;
+        const v = c === 'x' ? r : (r & 0x3) | 0x8;
+        return v.toString(16);
+    });
+};
+const isRunningInBrowser = () => {
+    return (
+    // @ts-ignore
+    typeof window !== 'undefined' &&
+        // @ts-ignore
+        typeof window.document !== 'undefined' &&
+        // @ts-ignore
+        typeof navigator !== 'undefined');
+};
+const isHeadersProtocol = (headers) => {
+    return typeof headers?.get === 'function';
+};
+const getHeader = (headers, header) => {
+    const lowerCasedHeader = header.toLowerCase();
+    if (isHeadersProtocol(headers)) {
+        // to deal with the case where the header looks like Stainless-Event-Id
+        const intercapsHeader = header[0]?.toUpperCase() +
+            header.substring(1).replace(/([^\w])(\w)/g, (_m, g1, g2) => g1 + g2.toUpperCase());
+        for (const key of [header, lowerCasedHeader, header.toUpperCase(), intercapsHeader]) {
+            const value = headers.get(key);
+            if (value) {
+                return value;
+            }
+        }
+    }
+    for (const [key, value] of Object.entries(headers)) {
+        if (key.toLowerCase() === lowerCasedHeader) {
+            if (Array.isArray(value)) {
+                if (value.length <= 1)
+                    return value[0];
+                console.warn(`Received ${value.length} entries for the ${header} header, using the first entry.`);
+                return value[0];
+            }
+            return value;
+        }
+    }
+    return undefined;
+};
+/**
+ * Converts a Base64 encoded string to a Float32Array.
+ * @param base64Str - The Base64 encoded string.
+ * @returns An Array of numbers interpreted as Float32 values.
+ */
+const toFloat32Array = (base64Str) => {
+    if (typeof Buffer !== 'undefined') {
+        // for Node.js environment
+        const buf = Buffer.from(base64Str, 'base64');
+        return Array.from(new Float32Array(buf.buffer, buf.byteOffset, buf.length / Float32Array.BYTES_PER_ELEMENT));
+    }
+    else {
+        // for legacy web platform APIs
+        const binaryStr = atob(base64Str);
+        const len = binaryStr.length;
+        const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) {
+            bytes[i] = binaryStr.charCodeAt(i);
+        }
+        return Array.from(new Float32Array(bytes.buffer));
+    }
+};
+function isObj(obj) {
+    return obj != null && typeof obj === 'object' && !Array.isArray(obj);
+}
+
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+/**
+ * Note: no pagination actually occurs yet, this is for forwards-compatibility.
+ */
+class Page extends AbstractPage {
+    constructor(client, response, body, options) {
+        super(client, response, body, options);
+        this.data = body.data || [];
+        this.object = body.object;
+    }
+    getPaginatedItems() {
+        return this.data ?? [];
+    }
+    // @deprecated Please use `nextPageInfo()` instead
+    /**
+     * This page represents a response that isn't actually paginated at the API level
+     * so there will never be any next page params.
+     */
+    nextPageParams() {
+        return null;
+    }
+    nextPageInfo() {
+        return null;
+    }
+}
+class CursorPage extends AbstractPage {
+    constructor(client, response, body, options) {
+        super(client, response, body, options);
+        this.data = body.data || [];
+        this.has_more = body.has_more || false;
+    }
+    getPaginatedItems() {
+        return this.data ?? [];
+    }
+    hasNextPage() {
+        if (this.has_more === false) {
+            return false;
+        }
+        return super.hasNextPage();
+    }
+    // @deprecated Please use `nextPageInfo()` instead
+    nextPageParams() {
+        const info = this.nextPageInfo();
+        if (!info)
+            return null;
+        if ('params' in info)
+            return info.params;
+        const params = Object.fromEntries(info.url.searchParams);
+        if (!Object.keys(params).length)
+            return null;
+        return params;
+    }
+    nextPageInfo() {
+        const data = this.getPaginatedItems();
+        if (!data.length) {
+            return null;
+        }
+        const id = data[data.length - 1]?.id;
+        if (!id) {
+            return null;
+        }
+        return { params: { after: id } };
+    }
+}
+
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+class APIResource {
+    constructor(client) {
+        this._client = client;
+    }
+}
+
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+let Messages$1 = class Messages extends APIResource {
+    list(completionId, query = {}, options) {
+        if (isRequestOptions(query)) {
+            return this.list(completionId, {}, query);
+        }
+        return this._client.getAPIList(`/chat/completions/${completionId}/messages`, ChatCompletionStoreMessagesPage, { query, ...options });
+    }
+};
+
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+let Completions$2 = class Completions extends APIResource {
+    constructor() {
+        super(...arguments);
+        this.messages = new Messages$1(this._client);
+    }
+    create(body, options) {
+        return this._client.post('/chat/completions', { body, ...options, stream: body.stream ?? false });
+    }
+    /**
+     * Get a stored chat completion. Only Chat Completions that have been created with
+     * the `store` parameter set to `true` will be returned.
+     *
+     * @example
+     * ```ts
+     * const chatCompletion =
+     *   await client.chat.completions.retrieve('completion_id');
+     * ```
+     */
+    retrieve(completionId, options) {
+        return this._client.get(`/chat/completions/${completionId}`, options);
+    }
+    /**
+     * Modify a stored chat completion. Only Chat Completions that have been created
+     * with the `store` parameter set to `true` can be modified. Currently, the only
+     * supported modification is to update the `metadata` field.
+     *
+     * @example
+     * ```ts
+     * const chatCompletion = await client.chat.completions.update(
+     *   'completion_id',
+     *   { metadata: { foo: 'string' } },
+     * );
+     * ```
+     */
+    update(completionId, body, options) {
+        return this._client.post(`/chat/completions/${completionId}`, { body, ...options });
+    }
+    list(query = {}, options) {
+        if (isRequestOptions(query)) {
+            return this.list({}, query);
+        }
+        return this._client.getAPIList('/chat/completions', ChatCompletionsPage, { query, ...options });
+    }
+    /**
+     * Delete a stored chat completion. Only Chat Completions that have been created
+     * with the `store` parameter set to `true` can be deleted.
+     *
+     * @example
+     * ```ts
+     * const chatCompletionDeleted =
+     *   await client.chat.completions.del('completion_id');
+     * ```
+     */
+    del(completionId, options) {
+        return this._client.delete(`/chat/completions/${completionId}`, options);
+    }
+};
+class ChatCompletionsPage extends CursorPage {
+}
+class ChatCompletionStoreMessagesPage extends CursorPage {
+}
+Completions$2.ChatCompletionsPage = ChatCompletionsPage;
+Completions$2.Messages = Messages$1;
+
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+let Chat$1 = class Chat extends APIResource {
+    constructor() {
+        super(...arguments);
+        this.completions = new Completions$2(this._client);
+    }
+};
+Chat$1.Completions = Completions$2;
+Chat$1.ChatCompletionsPage = ChatCompletionsPage;
+
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+class Speech extends APIResource {
+    /**
+     * Generates audio from the input text.
+     *
+     * @example
+     * ```ts
+     * const speech = await client.audio.speech.create({
+     *   input: 'input',
+     *   model: 'string',
+     *   voice: 'ash',
+     * });
+     *
+     * const content = await speech.blob();
+     * console.log(content);
+     * ```
+     */
+    create(body, options) {
+        return this._client.post('/audio/speech', {
+            body,
+            ...options,
+            headers: { Accept: 'application/octet-stream', ...options?.headers },
+            __binaryResponse: true,
+        });
+    }
+}
+
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+class Transcriptions extends APIResource {
+    create(body, options) {
+        return this._client.post('/audio/transcriptions', multipartFormRequestOptions({
+            body,
+            ...options,
+            stream: body.stream ?? false,
+            __metadata: { model: body.model },
+        }));
+    }
+}
+
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+class Translations extends APIResource {
+    create(body, options) {
+        return this._client.post('/audio/translations', multipartFormRequestOptions({ body, ...options, __metadata: { model: body.model } }));
+    }
+}
+
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+class Audio extends APIResource {
+    constructor() {
+        super(...arguments);
+        this.transcriptions = new Transcriptions(this._client);
+        this.translations = new Translations(this._client);
+        this.speech = new Speech(this._client);
+    }
+}
+Audio.Transcriptions = Transcriptions;
+Audio.Translations = Translations;
+Audio.Speech = Speech;
+
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+class Batches extends APIResource {
+    /**
+     * Creates and executes a batch from an uploaded file of requests
+     */
+    create(body, options) {
+        return this._client.post('/batches', { body, ...options });
+    }
+    /**
+     * Retrieves a batch.
+     */
+    retrieve(batchId, options) {
+        return this._client.get(`/batches/${batchId}`, options);
+    }
+    list(query = {}, options) {
+        if (isRequestOptions(query)) {
+            return this.list({}, query);
+        }
+        return this._client.getAPIList('/batches', BatchesPage, { query, ...options });
+    }
+    /**
+     * Cancels an in-progress batch. The batch will be in status `cancelling` for up to
+     * 10 minutes, before changing to `cancelled`, where it will have partial results
+     * (if any) available in the output file.
+     */
+    cancel(batchId, options) {
+        return this._client.post(`/batches/${batchId}/cancel`, options);
+    }
+}
+class BatchesPage extends CursorPage {
+}
+Batches.BatchesPage = BatchesPage;
+
+var __classPrivateFieldSet$3 = (undefined && undefined.__classPrivateFieldSet) || function (receiver, state, value, kind, f) {
+    if (kind === "m") throw new TypeError("Private method is not writable");
+    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
+    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot write private member to an object whose class did not declare it");
+    return (kind === "a" ? f.call(receiver, value) : f ? f.value = value : state.set(receiver, value)), value;
+};
+var __classPrivateFieldGet$4 = (undefined && undefined.__classPrivateFieldGet) || function (receiver, state, kind, f) {
+    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a getter");
+    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
+    return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
+};
+var _EventStream_instances, _EventStream_connectedPromise, _EventStream_resolveConnectedPromise, _EventStream_rejectConnectedPromise, _EventStream_endPromise, _EventStream_resolveEndPromise, _EventStream_rejectEndPromise, _EventStream_listeners, _EventStream_ended, _EventStream_errored, _EventStream_aborted, _EventStream_catchingPromiseCreated, _EventStream_handleError;
+class EventStream {
+    constructor() {
+        _EventStream_instances.add(this);
+        this.controller = new AbortController();
+        _EventStream_connectedPromise.set(this, void 0);
+        _EventStream_resolveConnectedPromise.set(this, () => { });
+        _EventStream_rejectConnectedPromise.set(this, () => { });
+        _EventStream_endPromise.set(this, void 0);
+        _EventStream_resolveEndPromise.set(this, () => { });
+        _EventStream_rejectEndPromise.set(this, () => { });
+        _EventStream_listeners.set(this, {});
+        _EventStream_ended.set(this, false);
+        _EventStream_errored.set(this, false);
+        _EventStream_aborted.set(this, false);
+        _EventStream_catchingPromiseCreated.set(this, false);
+        __classPrivateFieldSet$3(this, _EventStream_connectedPromise, new Promise((resolve, reject) => {
+            __classPrivateFieldSet$3(this, _EventStream_resolveConnectedPromise, resolve, "f");
+            __classPrivateFieldSet$3(this, _EventStream_rejectConnectedPromise, reject, "f");
+        }), "f");
+        __classPrivateFieldSet$3(this, _EventStream_endPromise, new Promise((resolve, reject) => {
+            __classPrivateFieldSet$3(this, _EventStream_resolveEndPromise, resolve, "f");
+            __classPrivateFieldSet$3(this, _EventStream_rejectEndPromise, reject, "f");
+        }), "f");
+        // Don't let these promises cause unhandled rejection errors.
+        // we will manually cause an unhandled rejection error later
+        // if the user hasn't registered any error listener or called
+        // any promise-returning method.
+        __classPrivateFieldGet$4(this, _EventStream_connectedPromise, "f").catch(() => { });
+        __classPrivateFieldGet$4(this, _EventStream_endPromise, "f").catch(() => { });
+    }
+    _run(executor) {
+        // Unfortunately if we call `executor()` immediately we get runtime errors about
+        // references to `this` before the `super()` constructor call returns.
+        setTimeout(() => {
+            executor().then(() => {
+                this._emitFinal();
+                this._emit('end');
+            }, __classPrivateFieldGet$4(this, _EventStream_instances, "m", _EventStream_handleError).bind(this));
+        }, 0);
+    }
+    _connected() {
+        if (this.ended)
+            return;
+        __classPrivateFieldGet$4(this, _EventStream_resolveConnectedPromise, "f").call(this);
+        this._emit('connect');
+    }
+    get ended() {
+        return __classPrivateFieldGet$4(this, _EventStream_ended, "f");
+    }
+    get errored() {
+        return __classPrivateFieldGet$4(this, _EventStream_errored, "f");
+    }
+    get aborted() {
+        return __classPrivateFieldGet$4(this, _EventStream_aborted, "f");
+    }
+    abort() {
+        this.controller.abort();
+    }
+    /**
+     * Adds the listener function to the end of the listeners array for the event.
+     * No checks are made to see if the listener has already been added. Multiple calls passing
+     * the same combination of event and listener will result in the listener being added, and
+     * called, multiple times.
+     * @returns this ChatCompletionStream, so that calls can be chained
+     */
+    on(event, listener) {
+        const listeners = __classPrivateFieldGet$4(this, _EventStream_listeners, "f")[event] || (__classPrivateFieldGet$4(this, _EventStream_listeners, "f")[event] = []);
+        listeners.push({ listener });
+        return this;
+    }
+    /**
+     * Removes the specified listener from the listener array for the event.
+     * off() will remove, at most, one instance of a listener from the listener array. If any single
+     * listener has been added multiple times to the listener array for the specified event, then
+     * off() must be called multiple times to remove each instance.
+     * @returns this ChatCompletionStream, so that calls can be chained
+     */
+    off(event, listener) {
+        const listeners = __classPrivateFieldGet$4(this, _EventStream_listeners, "f")[event];
+        if (!listeners)
+            return this;
+        const index = listeners.findIndex((l) => l.listener === listener);
+        if (index >= 0)
+            listeners.splice(index, 1);
+        return this;
+    }
+    /**
+     * Adds a one-time listener function for the event. The next time the event is triggered,
+     * this listener is removed and then invoked.
+     * @returns this ChatCompletionStream, so that calls can be chained
+     */
+    once(event, listener) {
+        const listeners = __classPrivateFieldGet$4(this, _EventStream_listeners, "f")[event] || (__classPrivateFieldGet$4(this, _EventStream_listeners, "f")[event] = []);
+        listeners.push({ listener, once: true });
+        return this;
+    }
+    /**
+     * This is similar to `.once()`, but returns a Promise that resolves the next time
+     * the event is triggered, instead of calling a listener callback.
+     * @returns a Promise that resolves the next time given event is triggered,
+     * or rejects if an error is emitted.  (If you request the 'error' event,
+     * returns a promise that resolves with the error).
+     *
+     * Example:
+     *
+     *   const message = await stream.emitted('message') // rejects if the stream errors
+     */
+    emitted(event) {
+        return new Promise((resolve, reject) => {
+            __classPrivateFieldSet$3(this, _EventStream_catchingPromiseCreated, true, "f");
+            if (event !== 'error')
+                this.once('error', reject);
+            this.once(event, resolve);
+        });
+    }
+    async done() {
+        __classPrivateFieldSet$3(this, _EventStream_catchingPromiseCreated, true, "f");
+        await __classPrivateFieldGet$4(this, _EventStream_endPromise, "f");
+    }
+    _emit(event, ...args) {
+        // make sure we don't emit any events after end
+        if (__classPrivateFieldGet$4(this, _EventStream_ended, "f")) {
+            return;
+        }
+        if (event === 'end') {
+            __classPrivateFieldSet$3(this, _EventStream_ended, true, "f");
+            __classPrivateFieldGet$4(this, _EventStream_resolveEndPromise, "f").call(this);
+        }
+        const listeners = __classPrivateFieldGet$4(this, _EventStream_listeners, "f")[event];
+        if (listeners) {
+            __classPrivateFieldGet$4(this, _EventStream_listeners, "f")[event] = listeners.filter((l) => !l.once);
+            listeners.forEach(({ listener }) => listener(...args));
+        }
+        if (event === 'abort') {
+            const error = args[0];
+            if (!__classPrivateFieldGet$4(this, _EventStream_catchingPromiseCreated, "f") && !listeners?.length) {
+                Promise.reject(error);
+            }
+            __classPrivateFieldGet$4(this, _EventStream_rejectConnectedPromise, "f").call(this, error);
+            __classPrivateFieldGet$4(this, _EventStream_rejectEndPromise, "f").call(this, error);
+            this._emit('end');
+            return;
+        }
+        if (event === 'error') {
+            // NOTE: _emit('error', error) should only be called from #handleError().
+            const error = args[0];
+            if (!__classPrivateFieldGet$4(this, _EventStream_catchingPromiseCreated, "f") && !listeners?.length) {
+                // Trigger an unhandled rejection if the user hasn't registered any error handlers.
+                // If you are seeing stack traces here, make sure to handle errors via either:
+                // - runner.on('error', () => ...)
+                // - await runner.done()
+                // - await runner.finalChatCompletion()
+                // - etc.
+                Promise.reject(error);
+            }
+            __classPrivateFieldGet$4(this, _EventStream_rejectConnectedPromise, "f").call(this, error);
+            __classPrivateFieldGet$4(this, _EventStream_rejectEndPromise, "f").call(this, error);
+            this._emit('end');
+        }
+    }
+    _emitFinal() { }
+}
+_EventStream_connectedPromise = new WeakMap(), _EventStream_resolveConnectedPromise = new WeakMap(), _EventStream_rejectConnectedPromise = new WeakMap(), _EventStream_endPromise = new WeakMap(), _EventStream_resolveEndPromise = new WeakMap(), _EventStream_rejectEndPromise = new WeakMap(), _EventStream_listeners = new WeakMap(), _EventStream_ended = new WeakMap(), _EventStream_errored = new WeakMap(), _EventStream_aborted = new WeakMap(), _EventStream_catchingPromiseCreated = new WeakMap(), _EventStream_instances = new WeakSet(), _EventStream_handleError = function _EventStream_handleError(error) {
+    __classPrivateFieldSet$3(this, _EventStream_errored, true, "f");
+    if (error instanceof Error && error.name === 'AbortError') {
+        error = new APIUserAbortError();
+    }
+    if (error instanceof APIUserAbortError) {
+        __classPrivateFieldSet$3(this, _EventStream_aborted, true, "f");
+        return this._emit('abort', error);
+    }
+    if (error instanceof OpenAIError) {
+        return this._emit('error', error);
+    }
+    if (error instanceof Error) {
+        const openAIError = new OpenAIError(error.message);
+        // @ts-ignore
+        openAIError.cause = error;
+        return this._emit('error', openAIError);
+    }
+    return this._emit('error', new OpenAIError(String(error)));
+};
+
+var __classPrivateFieldGet$3 = (undefined && undefined.__classPrivateFieldGet) || function (receiver, state, kind, f) {
+    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a getter");
+    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
+    return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
+};
+var __classPrivateFieldSet$2 = (undefined && undefined.__classPrivateFieldSet) || function (receiver, state, value, kind, f) {
+    if (kind === "m") throw new TypeError("Private method is not writable");
+    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
+    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot write private member to an object whose class did not declare it");
+    return (kind === "a" ? f.call(receiver, value) : f ? f.value = value : state.set(receiver, value)), value;
+};
+var _AssistantStream_instances, _AssistantStream_events, _AssistantStream_runStepSnapshots, _AssistantStream_messageSnapshots, _AssistantStream_messageSnapshot, _AssistantStream_finalRun, _AssistantStream_currentContentIndex, _AssistantStream_currentContent, _AssistantStream_currentToolCallIndex, _AssistantStream_currentToolCall, _AssistantStream_currentEvent, _AssistantStream_currentRunSnapshot, _AssistantStream_currentRunStepSnapshot, _AssistantStream_addEvent, _AssistantStream_endRequest, _AssistantStream_handleMessage, _AssistantStream_handleRunStep, _AssistantStream_handleEvent, _AssistantStream_accumulateRunStep, _AssistantStream_accumulateMessage, _AssistantStream_accumulateContent, _AssistantStream_handleRun;
+class AssistantStream extends EventStream {
+    constructor() {
+        super(...arguments);
+        _AssistantStream_instances.add(this);
+        //Track all events in a single list for reference
+        _AssistantStream_events.set(this, []);
+        //Used to accumulate deltas
+        //We are accumulating many types so the value here is not strict
+        _AssistantStream_runStepSnapshots.set(this, {});
+        _AssistantStream_messageSnapshots.set(this, {});
+        _AssistantStream_messageSnapshot.set(this, void 0);
+        _AssistantStream_finalRun.set(this, void 0);
+        _AssistantStream_currentContentIndex.set(this, void 0);
+        _AssistantStream_currentContent.set(this, void 0);
+        _AssistantStream_currentToolCallIndex.set(this, void 0);
+        _AssistantStream_currentToolCall.set(this, void 0);
+        //For current snapshot methods
+        _AssistantStream_currentEvent.set(this, void 0);
+        _AssistantStream_currentRunSnapshot.set(this, void 0);
+        _AssistantStream_currentRunStepSnapshot.set(this, void 0);
+    }
+    [(_AssistantStream_events = new WeakMap(), _AssistantStream_runStepSnapshots = new WeakMap(), _AssistantStream_messageSnapshots = new WeakMap(), _AssistantStream_messageSnapshot = new WeakMap(), _AssistantStream_finalRun = new WeakMap(), _AssistantStream_currentContentIndex = new WeakMap(), _AssistantStream_currentContent = new WeakMap(), _AssistantStream_currentToolCallIndex = new WeakMap(), _AssistantStream_currentToolCall = new WeakMap(), _AssistantStream_currentEvent = new WeakMap(), _AssistantStream_currentRunSnapshot = new WeakMap(), _AssistantStream_currentRunStepSnapshot = new WeakMap(), _AssistantStream_instances = new WeakSet(), Symbol.asyncIterator)]() {
+        const pushQueue = [];
+        const readQueue = [];
+        let done = false;
+        //Catch all for passing along all events
+        this.on('event', (event) => {
+            const reader = readQueue.shift();
+            if (reader) {
+                reader.resolve(event);
+            }
+            else {
+                pushQueue.push(event);
+            }
+        });
+        this.on('end', () => {
+            done = true;
+            for (const reader of readQueue) {
+                reader.resolve(undefined);
+            }
+            readQueue.length = 0;
+        });
+        this.on('abort', (err) => {
+            done = true;
+            for (const reader of readQueue) {
+                reader.reject(err);
+            }
+            readQueue.length = 0;
+        });
+        this.on('error', (err) => {
+            done = true;
+            for (const reader of readQueue) {
+                reader.reject(err);
+            }
+            readQueue.length = 0;
+        });
+        return {
+            next: async () => {
+                if (!pushQueue.length) {
+                    if (done) {
+                        return { value: undefined, done: true };
+                    }
+                    return new Promise((resolve, reject) => readQueue.push({ resolve, reject })).then((chunk) => (chunk ? { value: chunk, done: false } : { value: undefined, done: true }));
+                }
+                const chunk = pushQueue.shift();
+                return { value: chunk, done: false };
+            },
+            return: async () => {
+                this.abort();
+                return { value: undefined, done: true };
+            },
+        };
+    }
+    static fromReadableStream(stream) {
+        const runner = new AssistantStream();
+        runner._run(() => runner._fromReadableStream(stream));
+        return runner;
+    }
+    async _fromReadableStream(readableStream, options) {
+        const signal = options?.signal;
+        if (signal) {
+            if (signal.aborted)
+                this.controller.abort();
+            signal.addEventListener('abort', () => this.controller.abort());
+        }
+        this._connected();
+        const stream = Stream.fromReadableStream(readableStream, this.controller);
+        for await (const event of stream) {
+            __classPrivateFieldGet$3(this, _AssistantStream_instances, "m", _AssistantStream_addEvent).call(this, event);
+        }
+        if (stream.controller.signal?.aborted) {
+            throw new APIUserAbortError();
+        }
+        return this._addRun(__classPrivateFieldGet$3(this, _AssistantStream_instances, "m", _AssistantStream_endRequest).call(this));
+    }
+    toReadableStream() {
+        const stream = new Stream(this[Symbol.asyncIterator].bind(this), this.controller);
+        return stream.toReadableStream();
+    }
+    static createToolAssistantStream(threadId, runId, runs, params, options) {
+        const runner = new AssistantStream();
+        runner._run(() => runner._runToolAssistantStream(threadId, runId, runs, params, {
+            ...options,
+            headers: { ...options?.headers, 'X-Stainless-Helper-Method': 'stream' },
+        }));
+        return runner;
+    }
+    async _createToolAssistantStream(run, threadId, runId, params, options) {
+        const signal = options?.signal;
+        if (signal) {
+            if (signal.aborted)
+                this.controller.abort();
+            signal.addEventListener('abort', () => this.controller.abort());
+        }
+        const body = { ...params, stream: true };
+        const stream = await run.submitToolOutputs(threadId, runId, body, {
+            ...options,
+            signal: this.controller.signal,
+        });
+        this._connected();
+        for await (const event of stream) {
+            __classPrivateFieldGet$3(this, _AssistantStream_instances, "m", _AssistantStream_addEvent).call(this, event);
+        }
+        if (stream.controller.signal?.aborted) {
+            throw new APIUserAbortError();
+        }
+        return this._addRun(__classPrivateFieldGet$3(this, _AssistantStream_instances, "m", _AssistantStream_endRequest).call(this));
+    }
+    static createThreadAssistantStream(params, thread, options) {
+        const runner = new AssistantStream();
+        runner._run(() => runner._threadAssistantStream(params, thread, {
+            ...options,
+            headers: { ...options?.headers, 'X-Stainless-Helper-Method': 'stream' },
+        }));
+        return runner;
+    }
+    static createAssistantStream(threadId, runs, params, options) {
+        const runner = new AssistantStream();
+        runner._run(() => runner._runAssistantStream(threadId, runs, params, {
+            ...options,
+            headers: { ...options?.headers, 'X-Stainless-Helper-Method': 'stream' },
+        }));
+        return runner;
+    }
+    currentEvent() {
+        return __classPrivateFieldGet$3(this, _AssistantStream_currentEvent, "f");
+    }
+    currentRun() {
+        return __classPrivateFieldGet$3(this, _AssistantStream_currentRunSnapshot, "f");
+    }
+    currentMessageSnapshot() {
+        return __classPrivateFieldGet$3(this, _AssistantStream_messageSnapshot, "f");
+    }
+    currentRunStepSnapshot() {
+        return __classPrivateFieldGet$3(this, _AssistantStream_currentRunStepSnapshot, "f");
+    }
+    async finalRunSteps() {
+        await this.done();
+        return Object.values(__classPrivateFieldGet$3(this, _AssistantStream_runStepSnapshots, "f"));
+    }
+    async finalMessages() {
+        await this.done();
+        return Object.values(__classPrivateFieldGet$3(this, _AssistantStream_messageSnapshots, "f"));
+    }
+    async finalRun() {
+        await this.done();
+        if (!__classPrivateFieldGet$3(this, _AssistantStream_finalRun, "f"))
+            throw Error('Final run was not received.');
+        return __classPrivateFieldGet$3(this, _AssistantStream_finalRun, "f");
+    }
+    async _createThreadAssistantStream(thread, params, options) {
+        const signal = options?.signal;
+        if (signal) {
+            if (signal.aborted)
+                this.controller.abort();
+            signal.addEventListener('abort', () => this.controller.abort());
+        }
+        const body = { ...params, stream: true };
+        const stream = await thread.createAndRun(body, { ...options, signal: this.controller.signal });
+        this._connected();
+        for await (const event of stream) {
+            __classPrivateFieldGet$3(this, _AssistantStream_instances, "m", _AssistantStream_addEvent).call(this, event);
+        }
+        if (stream.controller.signal?.aborted) {
+            throw new APIUserAbortError();
+        }
+        return this._addRun(__classPrivateFieldGet$3(this, _AssistantStream_instances, "m", _AssistantStream_endRequest).call(this));
+    }
+    async _createAssistantStream(run, threadId, params, options) {
+        const signal = options?.signal;
+        if (signal) {
+            if (signal.aborted)
+                this.controller.abort();
+            signal.addEventListener('abort', () => this.controller.abort());
+        }
+        const body = { ...params, stream: true };
+        const stream = await run.create(threadId, body, { ...options, signal: this.controller.signal });
+        this._connected();
+        for await (const event of stream) {
+            __classPrivateFieldGet$3(this, _AssistantStream_instances, "m", _AssistantStream_addEvent).call(this, event);
+        }
+        if (stream.controller.signal?.aborted) {
+            throw new APIUserAbortError();
+        }
+        return this._addRun(__classPrivateFieldGet$3(this, _AssistantStream_instances, "m", _AssistantStream_endRequest).call(this));
+    }
+    static accumulateDelta(acc, delta) {
+        for (const [key, deltaValue] of Object.entries(delta)) {
+            if (!acc.hasOwnProperty(key)) {
+                acc[key] = deltaValue;
+                continue;
+            }
+            let accValue = acc[key];
+            if (accValue === null || accValue === undefined) {
+                acc[key] = deltaValue;
+                continue;
+            }
+            // We don't accumulate these special properties
+            if (key === 'index' || key === 'type') {
+                acc[key] = deltaValue;
+                continue;
+            }
+            // Type-specific accumulation logic
+            if (typeof accValue === 'string' && typeof deltaValue === 'string') {
+                accValue += deltaValue;
+            }
+            else if (typeof accValue === 'number' && typeof deltaValue === 'number') {
+                accValue += deltaValue;
+            }
+            else if (isObj(accValue) && isObj(deltaValue)) {
+                accValue = this.accumulateDelta(accValue, deltaValue);
+            }
+            else if (Array.isArray(accValue) && Array.isArray(deltaValue)) {
+                if (accValue.every((x) => typeof x === 'string' || typeof x === 'number')) {
+                    accValue.push(...deltaValue); // Use spread syntax for efficient addition
+                    continue;
+                }
+                for (const deltaEntry of deltaValue) {
+                    if (!isObj(deltaEntry)) {
+                        throw new Error(`Expected array delta entry to be an object but got: ${deltaEntry}`);
+                    }
+                    const index = deltaEntry['index'];
+                    if (index == null) {
+                        console.error(deltaEntry);
+                        throw new Error('Expected array delta entry to have an `index` property');
+                    }
+                    if (typeof index !== 'number') {
+                        throw new Error(`Expected array delta entry \`index\` property to be a number but got ${index}`);
+                    }
+                    const accEntry = accValue[index];
+                    if (accEntry == null) {
+                        accValue.push(deltaEntry);
+                    }
+                    else {
+                        accValue[index] = this.accumulateDelta(accEntry, deltaEntry);
+                    }
+                }
+                continue;
+            }
+            else {
+                throw Error(`Unhandled record type: ${key}, deltaValue: ${deltaValue}, accValue: ${accValue}`);
+            }
+            acc[key] = accValue;
+        }
+        return acc;
+    }
+    _addRun(run) {
+        return run;
+    }
+    async _threadAssistantStream(params, thread, options) {
+        return await this._createThreadAssistantStream(thread, params, options);
+    }
+    async _runAssistantStream(threadId, runs, params, options) {
+        return await this._createAssistantStream(runs, threadId, params, options);
+    }
+    async _runToolAssistantStream(threadId, runId, runs, params, options) {
+        return await this._createToolAssistantStream(runs, threadId, runId, params, options);
+    }
+}
+_AssistantStream_addEvent = function _AssistantStream_addEvent(event) {
+    if (this.ended)
+        return;
+    __classPrivateFieldSet$2(this, _AssistantStream_currentEvent, event, "f");
+    __classPrivateFieldGet$3(this, _AssistantStream_instances, "m", _AssistantStream_handleEvent).call(this, event);
+    switch (event.event) {
+        case 'thread.created':
+            //No action on this event.
+            break;
+        case 'thread.run.created':
+        case 'thread.run.queued':
+        case 'thread.run.in_progress':
+        case 'thread.run.requires_action':
+        case 'thread.run.completed':
+        case 'thread.run.incomplete':
+        case 'thread.run.failed':
+        case 'thread.run.cancelling':
+        case 'thread.run.cancelled':
+        case 'thread.run.expired':
+            __classPrivateFieldGet$3(this, _AssistantStream_instances, "m", _AssistantStream_handleRun).call(this, event);
+            break;
+        case 'thread.run.step.created':
+        case 'thread.run.step.in_progress':
+        case 'thread.run.step.delta':
+        case 'thread.run.step.completed':
+        case 'thread.run.step.failed':
+        case 'thread.run.step.cancelled':
+        case 'thread.run.step.expired':
+            __classPrivateFieldGet$3(this, _AssistantStream_instances, "m", _AssistantStream_handleRunStep).call(this, event);
+            break;
+        case 'thread.message.created':
+        case 'thread.message.in_progress':
+        case 'thread.message.delta':
+        case 'thread.message.completed':
+        case 'thread.message.incomplete':
+            __classPrivateFieldGet$3(this, _AssistantStream_instances, "m", _AssistantStream_handleMessage).call(this, event);
+            break;
+        case 'error':
+            //This is included for completeness, but errors are processed in the SSE event processing so this should not occur
+            throw new Error('Encountered an error event in event processing - errors should be processed earlier');
+    }
+}, _AssistantStream_endRequest = function _AssistantStream_endRequest() {
+    if (this.ended) {
+        throw new OpenAIError(`stream has ended, this shouldn't happen`);
+    }
+    if (!__classPrivateFieldGet$3(this, _AssistantStream_finalRun, "f"))
+        throw Error('Final run has not been received');
+    return __classPrivateFieldGet$3(this, _AssistantStream_finalRun, "f");
+}, _AssistantStream_handleMessage = function _AssistantStream_handleMessage(event) {
+    const [accumulatedMessage, newContent] = __classPrivateFieldGet$3(this, _AssistantStream_instances, "m", _AssistantStream_accumulateMessage).call(this, event, __classPrivateFieldGet$3(this, _AssistantStream_messageSnapshot, "f"));
+    __classPrivateFieldSet$2(this, _AssistantStream_messageSnapshot, accumulatedMessage, "f");
+    __classPrivateFieldGet$3(this, _AssistantStream_messageSnapshots, "f")[accumulatedMessage.id] = accumulatedMessage;
+    for (const content of newContent) {
+        const snapshotContent = accumulatedMessage.content[content.index];
+        if (snapshotContent?.type == 'text') {
+            this._emit('textCreated', snapshotContent.text);
+        }
+    }
+    switch (event.event) {
+        case 'thread.message.created':
+            this._emit('messageCreated', event.data);
+            break;
+        case 'thread.message.in_progress':
+            break;
+        case 'thread.message.delta':
+            this._emit('messageDelta', event.data.delta, accumulatedMessage);
+            if (event.data.delta.content) {
+                for (const content of event.data.delta.content) {
+                    //If it is text delta, emit a text delta event
+                    if (content.type == 'text' && content.text) {
+                        let textDelta = content.text;
+                        let snapshot = accumulatedMessage.content[content.index];
+                        if (snapshot && snapshot.type == 'text') {
+                            this._emit('textDelta', textDelta, snapshot.text);
+                        }
+                        else {
+                            throw Error('The snapshot associated with this text delta is not text or missing');
+                        }
+                    }
+                    if (content.index != __classPrivateFieldGet$3(this, _AssistantStream_currentContentIndex, "f")) {
+                        //See if we have in progress content
+                        if (__classPrivateFieldGet$3(this, _AssistantStream_currentContent, "f")) {
+                            switch (__classPrivateFieldGet$3(this, _AssistantStream_currentContent, "f").type) {
+                                case 'text':
+                                    this._emit('textDone', __classPrivateFieldGet$3(this, _AssistantStream_currentContent, "f").text, __classPrivateFieldGet$3(this, _AssistantStream_messageSnapshot, "f"));
+                                    break;
+                                case 'image_file':
+                                    this._emit('imageFileDone', __classPrivateFieldGet$3(this, _AssistantStream_currentContent, "f").image_file, __classPrivateFieldGet$3(this, _AssistantStream_messageSnapshot, "f"));
+                                    break;
+                            }
+                        }
+                        __classPrivateFieldSet$2(this, _AssistantStream_currentContentIndex, content.index, "f");
+                    }
+                    __classPrivateFieldSet$2(this, _AssistantStream_currentContent, accumulatedMessage.content[content.index], "f");
+                }
+            }
+            break;
+        case 'thread.message.completed':
+        case 'thread.message.incomplete':
+            //We emit the latest content we were working on on completion (including incomplete)
+            if (__classPrivateFieldGet$3(this, _AssistantStream_currentContentIndex, "f") !== undefined) {
+                const currentContent = event.data.content[__classPrivateFieldGet$3(this, _AssistantStream_currentContentIndex, "f")];
+                if (currentContent) {
+                    switch (currentContent.type) {
+                        case 'image_file':
+                            this._emit('imageFileDone', currentContent.image_file, __classPrivateFieldGet$3(this, _AssistantStream_messageSnapshot, "f"));
+                            break;
+                        case 'text':
+                            this._emit('textDone', currentContent.text, __classPrivateFieldGet$3(this, _AssistantStream_messageSnapshot, "f"));
+                            break;
+                    }
+                }
+            }
+            if (__classPrivateFieldGet$3(this, _AssistantStream_messageSnapshot, "f")) {
+                this._emit('messageDone', event.data);
+            }
+            __classPrivateFieldSet$2(this, _AssistantStream_messageSnapshot, undefined, "f");
+    }
+}, _AssistantStream_handleRunStep = function _AssistantStream_handleRunStep(event) {
+    const accumulatedRunStep = __classPrivateFieldGet$3(this, _AssistantStream_instances, "m", _AssistantStream_accumulateRunStep).call(this, event);
+    __classPrivateFieldSet$2(this, _AssistantStream_currentRunStepSnapshot, accumulatedRunStep, "f");
+    switch (event.event) {
+        case 'thread.run.step.created':
+            this._emit('runStepCreated', event.data);
+            break;
+        case 'thread.run.step.delta':
+            const delta = event.data.delta;
+            if (delta.step_details &&
+                delta.step_details.type == 'tool_calls' &&
+                delta.step_details.tool_calls &&
+                accumulatedRunStep.step_details.type == 'tool_calls') {
+                for (const toolCall of delta.step_details.tool_calls) {
+                    if (toolCall.index == __classPrivateFieldGet$3(this, _AssistantStream_currentToolCallIndex, "f")) {
+                        this._emit('toolCallDelta', toolCall, accumulatedRunStep.step_details.tool_calls[toolCall.index]);
+                    }
+                    else {
+                        if (__classPrivateFieldGet$3(this, _AssistantStream_currentToolCall, "f")) {
+                            this._emit('toolCallDone', __classPrivateFieldGet$3(this, _AssistantStream_currentToolCall, "f"));
+                        }
+                        __classPrivateFieldSet$2(this, _AssistantStream_currentToolCallIndex, toolCall.index, "f");
+                        __classPrivateFieldSet$2(this, _AssistantStream_currentToolCall, accumulatedRunStep.step_details.tool_calls[toolCall.index], "f");
+                        if (__classPrivateFieldGet$3(this, _AssistantStream_currentToolCall, "f"))
+                            this._emit('toolCallCreated', __classPrivateFieldGet$3(this, _AssistantStream_currentToolCall, "f"));
+                    }
+                }
+            }
+            this._emit('runStepDelta', event.data.delta, accumulatedRunStep);
+            break;
+        case 'thread.run.step.completed':
+        case 'thread.run.step.failed':
+        case 'thread.run.step.cancelled':
+        case 'thread.run.step.expired':
+            __classPrivateFieldSet$2(this, _AssistantStream_currentRunStepSnapshot, undefined, "f");
+            const details = event.data.step_details;
+            if (details.type == 'tool_calls') {
+                if (__classPrivateFieldGet$3(this, _AssistantStream_currentToolCall, "f")) {
+                    this._emit('toolCallDone', __classPrivateFieldGet$3(this, _AssistantStream_currentToolCall, "f"));
+                    __classPrivateFieldSet$2(this, _AssistantStream_currentToolCall, undefined, "f");
+                }
+            }
+            this._emit('runStepDone', event.data, accumulatedRunStep);
+            break;
+    }
+}, _AssistantStream_handleEvent = function _AssistantStream_handleEvent(event) {
+    __classPrivateFieldGet$3(this, _AssistantStream_events, "f").push(event);
+    this._emit('event', event);
+}, _AssistantStream_accumulateRunStep = function _AssistantStream_accumulateRunStep(event) {
+    switch (event.event) {
+        case 'thread.run.step.created':
+            __classPrivateFieldGet$3(this, _AssistantStream_runStepSnapshots, "f")[event.data.id] = event.data;
+            return event.data;
+        case 'thread.run.step.delta':
+            let snapshot = __classPrivateFieldGet$3(this, _AssistantStream_runStepSnapshots, "f")[event.data.id];
+            if (!snapshot) {
+                throw Error('Received a RunStepDelta before creation of a snapshot');
+            }
+            let data = event.data;
+            if (data.delta) {
+                const accumulated = AssistantStream.accumulateDelta(snapshot, data.delta);
+                __classPrivateFieldGet$3(this, _AssistantStream_runStepSnapshots, "f")[event.data.id] = accumulated;
+            }
+            return __classPrivateFieldGet$3(this, _AssistantStream_runStepSnapshots, "f")[event.data.id];
+        case 'thread.run.step.completed':
+        case 'thread.run.step.failed':
+        case 'thread.run.step.cancelled':
+        case 'thread.run.step.expired':
+        case 'thread.run.step.in_progress':
+            __classPrivateFieldGet$3(this, _AssistantStream_runStepSnapshots, "f")[event.data.id] = event.data;
+            break;
+    }
+    if (__classPrivateFieldGet$3(this, _AssistantStream_runStepSnapshots, "f")[event.data.id])
+        return __classPrivateFieldGet$3(this, _AssistantStream_runStepSnapshots, "f")[event.data.id];
+    throw new Error('No snapshot available');
+}, _AssistantStream_accumulateMessage = function _AssistantStream_accumulateMessage(event, snapshot) {
+    let newContent = [];
+    switch (event.event) {
+        case 'thread.message.created':
+            //On creation the snapshot is just the initial message
+            return [event.data, newContent];
+        case 'thread.message.delta':
+            if (!snapshot) {
+                throw Error('Received a delta with no existing snapshot (there should be one from message creation)');
+            }
+            let data = event.data;
+            //If this delta does not have content, nothing to process
+            if (data.delta.content) {
+                for (const contentElement of data.delta.content) {
+                    if (contentElement.index in snapshot.content) {
+                        let currentContent = snapshot.content[contentElement.index];
+                        snapshot.content[contentElement.index] = __classPrivateFieldGet$3(this, _AssistantStream_instances, "m", _AssistantStream_accumulateContent).call(this, contentElement, currentContent);
+                    }
+                    else {
+                        snapshot.content[contentElement.index] = contentElement;
+                        // This is a new element
+                        newContent.push(contentElement);
+                    }
+                }
+            }
+            return [snapshot, newContent];
+        case 'thread.message.in_progress':
+        case 'thread.message.completed':
+        case 'thread.message.incomplete':
+            //No changes on other thread events
+            if (snapshot) {
+                return [snapshot, newContent];
+            }
+            else {
+                throw Error('Received thread message event with no existing snapshot');
+            }
+    }
+    throw Error('Tried to accumulate a non-message event');
+}, _AssistantStream_accumulateContent = function _AssistantStream_accumulateContent(contentElement, currentContent) {
+    return AssistantStream.accumulateDelta(currentContent, contentElement);
+}, _AssistantStream_handleRun = function _AssistantStream_handleRun(event) {
+    __classPrivateFieldSet$2(this, _AssistantStream_currentRunSnapshot, event.data, "f");
+    switch (event.event) {
+        case 'thread.run.created':
+            break;
+        case 'thread.run.queued':
+            break;
+        case 'thread.run.in_progress':
+            break;
+        case 'thread.run.requires_action':
+        case 'thread.run.cancelled':
+        case 'thread.run.failed':
+        case 'thread.run.completed':
+        case 'thread.run.expired':
+            __classPrivateFieldSet$2(this, _AssistantStream_finalRun, event.data, "f");
+            if (__classPrivateFieldGet$3(this, _AssistantStream_currentToolCall, "f")) {
+                this._emit('toolCallDone', __classPrivateFieldGet$3(this, _AssistantStream_currentToolCall, "f"));
+                __classPrivateFieldSet$2(this, _AssistantStream_currentToolCall, undefined, "f");
+            }
+            break;
+    }
+};
+
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+class Assistants extends APIResource {
+    /**
+     * Create an assistant with a model and instructions.
+     *
+     * @example
+     * ```ts
+     * const assistant = await client.beta.assistants.create({
+     *   model: 'gpt-4o',
+     * });
+     * ```
+     */
+    create(body, options) {
+        return this._client.post('/assistants', {
+            body,
+            ...options,
+            headers: { 'OpenAI-Beta': 'assistants=v2', ...options?.headers },
+        });
+    }
+    /**
+     * Retrieves an assistant.
+     *
+     * @example
+     * ```ts
+     * const assistant = await client.beta.assistants.retrieve(
+     *   'assistant_id',
+     * );
+     * ```
+     */
+    retrieve(assistantId, options) {
+        return this._client.get(`/assistants/${assistantId}`, {
+            ...options,
+            headers: { 'OpenAI-Beta': 'assistants=v2', ...options?.headers },
+        });
+    }
+    /**
+     * Modifies an assistant.
+     *
+     * @example
+     * ```ts
+     * const assistant = await client.beta.assistants.update(
+     *   'assistant_id',
+     * );
+     * ```
+     */
+    update(assistantId, body, options) {
+        return this._client.post(`/assistants/${assistantId}`, {
+            body,
+            ...options,
+            headers: { 'OpenAI-Beta': 'assistants=v2', ...options?.headers },
+        });
+    }
+    list(query = {}, options) {
+        if (isRequestOptions(query)) {
+            return this.list({}, query);
+        }
+        return this._client.getAPIList('/assistants', AssistantsPage, {
+            query,
+            ...options,
+            headers: { 'OpenAI-Beta': 'assistants=v2', ...options?.headers },
+        });
+    }
+    /**
+     * Delete an assistant.
+     *
+     * @example
+     * ```ts
+     * const assistantDeleted = await client.beta.assistants.del(
+     *   'assistant_id',
+     * );
+     * ```
+     */
+    del(assistantId, options) {
+        return this._client.delete(`/assistants/${assistantId}`, {
+            ...options,
+            headers: { 'OpenAI-Beta': 'assistants=v2', ...options?.headers },
+        });
+    }
+}
+class AssistantsPage extends CursorPage {
+}
+Assistants.AssistantsPage = AssistantsPage;
+
+function isRunnableFunctionWithParse(fn) {
+    return typeof fn.parse === 'function';
+}
+
+const isAssistantMessage = (message) => {
+    return message?.role === 'assistant';
+};
+const isFunctionMessage = (message) => {
+    return message?.role === 'function';
+};
+const isToolMessage = (message) => {
+    return message?.role === 'tool';
+};
+
+function isAutoParsableResponseFormat(response_format) {
+    return response_format?.['$brand'] === 'auto-parseable-response-format';
+}
+function isAutoParsableTool$1(tool) {
+    return tool?.['$brand'] === 'auto-parseable-tool';
+}
+function maybeParseChatCompletion(completion, params) {
+    if (!params || !hasAutoParseableInput$1(params)) {
+        return {
+            ...completion,
+            choices: completion.choices.map((choice) => ({
+                ...choice,
+                message: {
+                    ...choice.message,
+                    parsed: null,
+                    ...(choice.message.tool_calls ?
+                        {
+                            tool_calls: choice.message.tool_calls,
+                        }
+                        : undefined),
+                },
+            })),
+        };
+    }
+    return parseChatCompletion(completion, params);
+}
+function parseChatCompletion(completion, params) {
+    const choices = completion.choices.map((choice) => {
+        if (choice.finish_reason === 'length') {
+            throw new LengthFinishReasonError();
+        }
+        if (choice.finish_reason === 'content_filter') {
+            throw new ContentFilterFinishReasonError();
+        }
+        return {
+            ...choice,
+            message: {
+                ...choice.message,
+                ...(choice.message.tool_calls ?
+                    {
+                        tool_calls: choice.message.tool_calls?.map((toolCall) => parseToolCall$1(params, toolCall)) ?? undefined,
+                    }
+                    : undefined),
+                parsed: choice.message.content && !choice.message.refusal ?
+                    parseResponseFormat(params, choice.message.content)
+                    : null,
+            },
+        };
+    });
+    return { ...completion, choices };
+}
+function parseResponseFormat(params, content) {
+    if (params.response_format?.type !== 'json_schema') {
+        return null;
+    }
+    if (params.response_format?.type === 'json_schema') {
+        if ('$parseRaw' in params.response_format) {
+            const response_format = params.response_format;
+            return response_format.$parseRaw(content);
+        }
+        return JSON.parse(content);
+    }
+    return null;
+}
+function parseToolCall$1(params, toolCall) {
+    const inputTool = params.tools?.find((inputTool) => inputTool.function?.name === toolCall.function.name);
+    return {
+        ...toolCall,
+        function: {
+            ...toolCall.function,
+            parsed_arguments: isAutoParsableTool$1(inputTool) ? inputTool.$parseRaw(toolCall.function.arguments)
+                : inputTool?.function.strict ? JSON.parse(toolCall.function.arguments)
+                    : null,
+        },
+    };
+}
+function shouldParseToolCall(params, toolCall) {
+    if (!params) {
+        return false;
+    }
+    const inputTool = params.tools?.find((inputTool) => inputTool.function?.name === toolCall.function.name);
+    return isAutoParsableTool$1(inputTool) || inputTool?.function.strict || false;
+}
+function hasAutoParseableInput$1(params) {
+    if (isAutoParsableResponseFormat(params.response_format)) {
+        return true;
+    }
+    return (params.tools?.some((t) => isAutoParsableTool$1(t) || (t.type === 'function' && t.function.strict === true)) ?? false);
+}
+function validateInputTools(tools) {
+    for (const tool of tools ?? []) {
+        if (tool.type !== 'function') {
+            throw new OpenAIError(`Currently only \`function\` tool types support auto-parsing; Received \`${tool.type}\``);
+        }
+        if (tool.function.strict !== true) {
+            throw new OpenAIError(`The \`${tool.function.name}\` tool is not marked with \`strict: true\`. Only strict function tools can be auto-parsed`);
+        }
+    }
+}
+
+var __classPrivateFieldGet$2 = (undefined && undefined.__classPrivateFieldGet) || function (receiver, state, kind, f) {
+    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a getter");
+    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
+    return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
+};
+var _AbstractChatCompletionRunner_instances, _AbstractChatCompletionRunner_getFinalContent, _AbstractChatCompletionRunner_getFinalMessage, _AbstractChatCompletionRunner_getFinalFunctionCall, _AbstractChatCompletionRunner_getFinalFunctionCallResult, _AbstractChatCompletionRunner_calculateTotalUsage, _AbstractChatCompletionRunner_validateParams, _AbstractChatCompletionRunner_stringifyFunctionCallResult;
+const DEFAULT_MAX_CHAT_COMPLETIONS = 10;
+class AbstractChatCompletionRunner extends EventStream {
+    constructor() {
+        super(...arguments);
+        _AbstractChatCompletionRunner_instances.add(this);
+        this._chatCompletions = [];
+        this.messages = [];
+    }
+    _addChatCompletion(chatCompletion) {
+        this._chatCompletions.push(chatCompletion);
+        this._emit('chatCompletion', chatCompletion);
+        const message = chatCompletion.choices[0]?.message;
+        if (message)
+            this._addMessage(message);
+        return chatCompletion;
+    }
+    _addMessage(message, emit = true) {
+        if (!('content' in message))
+            message.content = null;
+        this.messages.push(message);
+        if (emit) {
+            this._emit('message', message);
+            if ((isFunctionMessage(message) || isToolMessage(message)) && message.content) {
+                // Note, this assumes that {role: 'tool', content: …} is always the result of a call of tool of type=function.
+                this._emit('functionCallResult', message.content);
+            }
+            else if (isAssistantMessage(message) && message.function_call) {
+                this._emit('functionCall', message.function_call);
+            }
+            else if (isAssistantMessage(message) && message.tool_calls) {
+                for (const tool_call of message.tool_calls) {
+                    if (tool_call.type === 'function') {
+                        this._emit('functionCall', tool_call.function);
+                    }
+                }
+            }
+        }
+    }
+    /**
+     * @returns a promise that resolves with the final ChatCompletion, or rejects
+     * if an error occurred or the stream ended prematurely without producing a ChatCompletion.
+     */
+    async finalChatCompletion() {
+        await this.done();
+        const completion = this._chatCompletions[this._chatCompletions.length - 1];
+        if (!completion)
+            throw new OpenAIError('stream ended without producing a ChatCompletion');
+        return completion;
+    }
+    /**
+     * @returns a promise that resolves with the content of the final ChatCompletionMessage, or rejects
+     * if an error occurred or the stream ended prematurely without producing a ChatCompletionMessage.
+     */
+    async finalContent() {
+        await this.done();
+        return __classPrivateFieldGet$2(this, _AbstractChatCompletionRunner_instances, "m", _AbstractChatCompletionRunner_getFinalContent).call(this);
+    }
+    /**
+     * @returns a promise that resolves with the the final assistant ChatCompletionMessage response,
+     * or rejects if an error occurred or the stream ended prematurely without producing a ChatCompletionMessage.
+     */
+    async finalMessage() {
+        await this.done();
+        return __classPrivateFieldGet$2(this, _AbstractChatCompletionRunner_instances, "m", _AbstractChatCompletionRunner_getFinalMessage).call(this);
+    }
+    /**
+     * @returns a promise that resolves with the content of the final FunctionCall, or rejects
+     * if an error occurred or the stream ended prematurely without producing a ChatCompletionMessage.
+     */
+    async finalFunctionCall() {
+        await this.done();
+        return __classPrivateFieldGet$2(this, _AbstractChatCompletionRunner_instances, "m", _AbstractChatCompletionRunner_getFinalFunctionCall).call(this);
+    }
+    async finalFunctionCallResult() {
+        await this.done();
+        return __classPrivateFieldGet$2(this, _AbstractChatCompletionRunner_instances, "m", _AbstractChatCompletionRunner_getFinalFunctionCallResult).call(this);
+    }
+    async totalUsage() {
+        await this.done();
+        return __classPrivateFieldGet$2(this, _AbstractChatCompletionRunner_instances, "m", _AbstractChatCompletionRunner_calculateTotalUsage).call(this);
+    }
+    allChatCompletions() {
+        return [...this._chatCompletions];
+    }
+    _emitFinal() {
+        const completion = this._chatCompletions[this._chatCompletions.length - 1];
+        if (completion)
+            this._emit('finalChatCompletion', completion);
+        const finalMessage = __classPrivateFieldGet$2(this, _AbstractChatCompletionRunner_instances, "m", _AbstractChatCompletionRunner_getFinalMessage).call(this);
+        if (finalMessage)
+            this._emit('finalMessage', finalMessage);
+        const finalContent = __classPrivateFieldGet$2(this, _AbstractChatCompletionRunner_instances, "m", _AbstractChatCompletionRunner_getFinalContent).call(this);
+        if (finalContent)
+            this._emit('finalContent', finalContent);
+        const finalFunctionCall = __classPrivateFieldGet$2(this, _AbstractChatCompletionRunner_instances, "m", _AbstractChatCompletionRunner_getFinalFunctionCall).call(this);
+        if (finalFunctionCall)
+            this._emit('finalFunctionCall', finalFunctionCall);
+        const finalFunctionCallResult = __classPrivateFieldGet$2(this, _AbstractChatCompletionRunner_instances, "m", _AbstractChatCompletionRunner_getFinalFunctionCallResult).call(this);
+        if (finalFunctionCallResult != null)
+            this._emit('finalFunctionCallResult', finalFunctionCallResult);
+        if (this._chatCompletions.some((c) => c.usage)) {
+            this._emit('totalUsage', __classPrivateFieldGet$2(this, _AbstractChatCompletionRunner_instances, "m", _AbstractChatCompletionRunner_calculateTotalUsage).call(this));
+        }
+    }
+    async _createChatCompletion(client, params, options) {
+        const signal = options?.signal;
+        if (signal) {
+            if (signal.aborted)
+                this.controller.abort();
+            signal.addEventListener('abort', () => this.controller.abort());
+        }
+        __classPrivateFieldGet$2(this, _AbstractChatCompletionRunner_instances, "m", _AbstractChatCompletionRunner_validateParams).call(this, params);
+        const chatCompletion = await client.chat.completions.create({ ...params, stream: false }, { ...options, signal: this.controller.signal });
+        this._connected();
+        return this._addChatCompletion(parseChatCompletion(chatCompletion, params));
+    }
+    async _runChatCompletion(client, params, options) {
+        for (const message of params.messages) {
+            this._addMessage(message, false);
+        }
+        return await this._createChatCompletion(client, params, options);
+    }
+    async _runFunctions(client, params, options) {
+        const role = 'function';
+        const { function_call = 'auto', stream, ...restParams } = params;
+        const singleFunctionToCall = typeof function_call !== 'string' && function_call?.name;
+        const { maxChatCompletions = DEFAULT_MAX_CHAT_COMPLETIONS } = options || {};
+        const functionsByName = {};
+        for (const f of params.functions) {
+            functionsByName[f.name || f.function.name] = f;
+        }
+        const functions = params.functions.map((f) => ({
+            name: f.name || f.function.name,
+            parameters: f.parameters,
+            description: f.description,
+        }));
+        for (const message of params.messages) {
+            this._addMessage(message, false);
+        }
+        for (let i = 0; i < maxChatCompletions; ++i) {
+            const chatCompletion = await this._createChatCompletion(client, {
+                ...restParams,
+                function_call,
+                functions,
+                messages: [...this.messages],
+            }, options);
+            const message = chatCompletion.choices[0]?.message;
+            if (!message) {
+                throw new OpenAIError(`missing message in ChatCompletion response`);
+            }
+            if (!message.function_call)
+                return;
+            const { name, arguments: args } = message.function_call;
+            const fn = functionsByName[name];
+            if (!fn) {
+                const content = `Invalid function_call: ${JSON.stringify(name)}. Available options are: ${functions
+                    .map((f) => JSON.stringify(f.name))
+                    .join(', ')}. Please try again`;
+                this._addMessage({ role, name, content });
+                continue;
+            }
+            else if (singleFunctionToCall && singleFunctionToCall !== name) {
+                const content = `Invalid function_call: ${JSON.stringify(name)}. ${JSON.stringify(singleFunctionToCall)} requested. Please try again`;
+                this._addMessage({ role, name, content });
+                continue;
+            }
+            let parsed;
+            try {
+                parsed = isRunnableFunctionWithParse(fn) ? await fn.parse(args) : args;
+            }
+            catch (error) {
+                this._addMessage({
+                    role,
+                    name,
+                    content: error instanceof Error ? error.message : String(error),
+                });
+                continue;
+            }
+            // @ts-expect-error it can't rule out `never` type.
+            const rawContent = await fn.function(parsed, this);
+            const content = __classPrivateFieldGet$2(this, _AbstractChatCompletionRunner_instances, "m", _AbstractChatCompletionRunner_stringifyFunctionCallResult).call(this, rawContent);
+            this._addMessage({ role, name, content });
+            if (singleFunctionToCall)
+                return;
+        }
+    }
+    async _runTools(client, params, options) {
+        const role = 'tool';
+        const { tool_choice = 'auto', stream, ...restParams } = params;
+        const singleFunctionToCall = typeof tool_choice !== 'string' && tool_choice?.function?.name;
+        const { maxChatCompletions = DEFAULT_MAX_CHAT_COMPLETIONS } = options || {};
+        // TODO(someday): clean this logic up
+        const inputTools = params.tools.map((tool) => {
+            if (isAutoParsableTool$1(tool)) {
+                if (!tool.$callback) {
+                    throw new OpenAIError('Tool given to `.runTools()` that does not have an associated function');
+                }
+                return {
+                    type: 'function',
+                    function: {
+                        function: tool.$callback,
+                        name: tool.function.name,
+                        description: tool.function.description || '',
+                        parameters: tool.function.parameters,
+                        parse: tool.$parseRaw,
+                        strict: true,
+                    },
+                };
+            }
+            return tool;
+        });
+        const functionsByName = {};
+        for (const f of inputTools) {
+            if (f.type === 'function') {
+                functionsByName[f.function.name || f.function.function.name] = f.function;
+            }
+        }
+        const tools = 'tools' in params ?
+            inputTools.map((t) => t.type === 'function' ?
+                {
+                    type: 'function',
+                    function: {
+                        name: t.function.name || t.function.function.name,
+                        parameters: t.function.parameters,
+                        description: t.function.description,
+                        strict: t.function.strict,
+                    },
+                }
+                : t)
+            : undefined;
+        for (const message of params.messages) {
+            this._addMessage(message, false);
+        }
+        for (let i = 0; i < maxChatCompletions; ++i) {
+            const chatCompletion = await this._createChatCompletion(client, {
+                ...restParams,
+                tool_choice,
+                tools,
+                messages: [...this.messages],
+            }, options);
+            const message = chatCompletion.choices[0]?.message;
+            if (!message) {
+                throw new OpenAIError(`missing message in ChatCompletion response`);
+            }
+            if (!message.tool_calls?.length) {
+                return;
+            }
+            for (const tool_call of message.tool_calls) {
+                if (tool_call.type !== 'function')
+                    continue;
+                const tool_call_id = tool_call.id;
+                const { name, arguments: args } = tool_call.function;
+                const fn = functionsByName[name];
+                if (!fn) {
+                    const content = `Invalid tool_call: ${JSON.stringify(name)}. Available options are: ${Object.keys(functionsByName)
+                        .map((name) => JSON.stringify(name))
+                        .join(', ')}. Please try again`;
+                    this._addMessage({ role, tool_call_id, content });
+                    continue;
+                }
+                else if (singleFunctionToCall && singleFunctionToCall !== name) {
+                    const content = `Invalid tool_call: ${JSON.stringify(name)}. ${JSON.stringify(singleFunctionToCall)} requested. Please try again`;
+                    this._addMessage({ role, tool_call_id, content });
+                    continue;
+                }
+                let parsed;
+                try {
+                    parsed = isRunnableFunctionWithParse(fn) ? await fn.parse(args) : args;
+                }
+                catch (error) {
+                    const content = error instanceof Error ? error.message : String(error);
+                    this._addMessage({ role, tool_call_id, content });
+                    continue;
+                }
+                // @ts-expect-error it can't rule out `never` type.
+                const rawContent = await fn.function(parsed, this);
+                const content = __classPrivateFieldGet$2(this, _AbstractChatCompletionRunner_instances, "m", _AbstractChatCompletionRunner_stringifyFunctionCallResult).call(this, rawContent);
+                this._addMessage({ role, tool_call_id, content });
+                if (singleFunctionToCall) {
+                    return;
+                }
+            }
+        }
+        return;
+    }
+}
+_AbstractChatCompletionRunner_instances = new WeakSet(), _AbstractChatCompletionRunner_getFinalContent = function _AbstractChatCompletionRunner_getFinalContent() {
+    return __classPrivateFieldGet$2(this, _AbstractChatCompletionRunner_instances, "m", _AbstractChatCompletionRunner_getFinalMessage).call(this).content ?? null;
+}, _AbstractChatCompletionRunner_getFinalMessage = function _AbstractChatCompletionRunner_getFinalMessage() {
+    let i = this.messages.length;
+    while (i-- > 0) {
+        const message = this.messages[i];
+        if (isAssistantMessage(message)) {
+            const { function_call, ...rest } = message;
+            // TODO: support audio here
+            const ret = {
+                ...rest,
+                content: message.content ?? null,
+                refusal: message.refusal ?? null,
+            };
+            if (function_call) {
+                ret.function_call = function_call;
+            }
+            return ret;
+        }
+    }
+    throw new OpenAIError('stream ended without producing a ChatCompletionMessage with role=assistant');
+}, _AbstractChatCompletionRunner_getFinalFunctionCall = function _AbstractChatCompletionRunner_getFinalFunctionCall() {
+    for (let i = this.messages.length - 1; i >= 0; i--) {
+        const message = this.messages[i];
+        if (isAssistantMessage(message) && message?.function_call) {
+            return message.function_call;
+        }
+        if (isAssistantMessage(message) && message?.tool_calls?.length) {
+            return message.tool_calls.at(-1)?.function;
+        }
+    }
+    return;
+}, _AbstractChatCompletionRunner_getFinalFunctionCallResult = function _AbstractChatCompletionRunner_getFinalFunctionCallResult() {
+    for (let i = this.messages.length - 1; i >= 0; i--) {
+        const message = this.messages[i];
+        if (isFunctionMessage(message) && message.content != null) {
+            return message.content;
+        }
+        if (isToolMessage(message) &&
+            message.content != null &&
+            typeof message.content === 'string' &&
+            this.messages.some((x) => x.role === 'assistant' &&
+                x.tool_calls?.some((y) => y.type === 'function' && y.id === message.tool_call_id))) {
+            return message.content;
+        }
+    }
+    return;
+}, _AbstractChatCompletionRunner_calculateTotalUsage = function _AbstractChatCompletionRunner_calculateTotalUsage() {
+    const total = {
+        completion_tokens: 0,
+        prompt_tokens: 0,
+        total_tokens: 0,
+    };
+    for (const { usage } of this._chatCompletions) {
+        if (usage) {
+            total.completion_tokens += usage.completion_tokens;
+            total.prompt_tokens += usage.prompt_tokens;
+            total.total_tokens += usage.total_tokens;
+        }
+    }
+    return total;
+}, _AbstractChatCompletionRunner_validateParams = function _AbstractChatCompletionRunner_validateParams(params) {
+    if (params.n != null && params.n > 1) {
+        throw new OpenAIError('ChatCompletion convenience helpers only support n=1 at this time. To use n>1, please use chat.completions.create() directly.');
+    }
+}, _AbstractChatCompletionRunner_stringifyFunctionCallResult = function _AbstractChatCompletionRunner_stringifyFunctionCallResult(rawContent) {
+    return (typeof rawContent === 'string' ? rawContent
+        : rawContent === undefined ? 'undefined'
+            : JSON.stringify(rawContent));
+};
+
+class ChatCompletionRunner extends AbstractChatCompletionRunner {
+    /** @deprecated - please use `runTools` instead. */
+    static runFunctions(client, params, options) {
+        const runner = new ChatCompletionRunner();
+        const opts = {
+            ...options,
+            headers: { ...options?.headers, 'X-Stainless-Helper-Method': 'runFunctions' },
+        };
+        runner._run(() => runner._runFunctions(client, params, opts));
+        return runner;
+    }
+    static runTools(client, params, options) {
+        const runner = new ChatCompletionRunner();
+        const opts = {
+            ...options,
+            headers: { ...options?.headers, 'X-Stainless-Helper-Method': 'runTools' },
+        };
+        runner._run(() => runner._runTools(client, params, opts));
+        return runner;
+    }
+    _addMessage(message, emit = true) {
+        super._addMessage(message, emit);
+        if (isAssistantMessage(message) && message.content) {
+            this._emit('content', message.content);
+        }
+    }
+}
+
+const STR = 0b000000001;
+const NUM = 0b000000010;
+const ARR = 0b000000100;
+const OBJ = 0b000001000;
+const NULL = 0b000010000;
+const BOOL = 0b000100000;
+const NAN = 0b001000000;
+const INFINITY = 0b010000000;
+const MINUS_INFINITY = 0b100000000;
+const INF = INFINITY | MINUS_INFINITY;
+const SPECIAL = NULL | BOOL | INF | NAN;
+const ATOM = STR | NUM | SPECIAL;
+const COLLECTION = ARR | OBJ;
+const ALL = ATOM | COLLECTION;
+const Allow = {
+    STR,
+    NUM,
+    ARR,
+    OBJ,
+    NULL,
+    BOOL,
+    NAN,
+    INFINITY,
+    MINUS_INFINITY,
+    INF,
+    SPECIAL,
+    ATOM,
+    COLLECTION,
+    ALL,
+};
+// The JSON string segment was unable to be parsed completely
+class PartialJSON extends Error {
+}
+class MalformedJSON extends Error {
+}
+/**
+ * Parse incomplete JSON
+ * @param {string} jsonString Partial JSON to be parsed
+ * @param {number} allowPartial Specify what types are allowed to be partial, see {@link Allow} for details
+ * @returns The parsed JSON
+ * @throws {PartialJSON} If the JSON is incomplete (related to the `allow` parameter)
+ * @throws {MalformedJSON} If the JSON is malformed
+ */
+function parseJSON(jsonString, allowPartial = Allow.ALL) {
+    if (typeof jsonString !== 'string') {
+        throw new TypeError(`expecting str, got ${typeof jsonString}`);
+    }
+    if (!jsonString.trim()) {
+        throw new Error(`${jsonString} is empty`);
+    }
+    return _parseJSON(jsonString.trim(), allowPartial);
+}
+const _parseJSON = (jsonString, allow) => {
+    const length = jsonString.length;
+    let index = 0;
+    const markPartialJSON = (msg) => {
+        throw new PartialJSON(`${msg} at position ${index}`);
+    };
+    const throwMalformedError = (msg) => {
+        throw new MalformedJSON(`${msg} at position ${index}`);
+    };
+    const parseAny = () => {
+        skipBlank();
+        if (index >= length)
+            markPartialJSON('Unexpected end of input');
+        if (jsonString[index] === '"')
+            return parseStr();
+        if (jsonString[index] === '{')
+            return parseObj();
+        if (jsonString[index] === '[')
+            return parseArr();
+        if (jsonString.substring(index, index + 4) === 'null' ||
+            (Allow.NULL & allow && length - index < 4 && 'null'.startsWith(jsonString.substring(index)))) {
+            index += 4;
+            return null;
+        }
+        if (jsonString.substring(index, index + 4) === 'true' ||
+            (Allow.BOOL & allow && length - index < 4 && 'true'.startsWith(jsonString.substring(index)))) {
+            index += 4;
+            return true;
+        }
+        if (jsonString.substring(index, index + 5) === 'false' ||
+            (Allow.BOOL & allow && length - index < 5 && 'false'.startsWith(jsonString.substring(index)))) {
+            index += 5;
+            return false;
+        }
+        if (jsonString.substring(index, index + 8) === 'Infinity' ||
+            (Allow.INFINITY & allow && length - index < 8 && 'Infinity'.startsWith(jsonString.substring(index)))) {
+            index += 8;
+            return Infinity;
+        }
+        if (jsonString.substring(index, index + 9) === '-Infinity' ||
+            (Allow.MINUS_INFINITY & allow &&
+                1 < length - index &&
+                length - index < 9 &&
+                '-Infinity'.startsWith(jsonString.substring(index)))) {
+            index += 9;
+            return -Infinity;
+        }
+        if (jsonString.substring(index, index + 3) === 'NaN' ||
+            (Allow.NAN & allow && length - index < 3 && 'NaN'.startsWith(jsonString.substring(index)))) {
+            index += 3;
+            return NaN;
+        }
+        return parseNum();
+    };
+    const parseStr = () => {
+        const start = index;
+        let escape = false;
+        index++; // skip initial quote
+        while (index < length && (jsonString[index] !== '"' || (escape && jsonString[index - 1] === '\\'))) {
+            escape = jsonString[index] === '\\' ? !escape : false;
+            index++;
+        }
+        if (jsonString.charAt(index) == '"') {
+            try {
+                return JSON.parse(jsonString.substring(start, ++index - Number(escape)));
+            }
+            catch (e) {
+                throwMalformedError(String(e));
+            }
+        }
+        else if (Allow.STR & allow) {
+            try {
+                return JSON.parse(jsonString.substring(start, index - Number(escape)) + '"');
+            }
+            catch (e) {
+                // SyntaxError: Invalid escape sequence
+                return JSON.parse(jsonString.substring(start, jsonString.lastIndexOf('\\')) + '"');
+            }
+        }
+        markPartialJSON('Unterminated string literal');
+    };
+    const parseObj = () => {
+        index++; // skip initial brace
+        skipBlank();
+        const obj = {};
+        try {
+            while (jsonString[index] !== '}') {
+                skipBlank();
+                if (index >= length && Allow.OBJ & allow)
+                    return obj;
+                const key = parseStr();
+                skipBlank();
+                index++; // skip colon
+                try {
+                    const value = parseAny();
+                    Object.defineProperty(obj, key, { value, writable: true, enumerable: true, configurable: true });
+                }
+                catch (e) {
+                    if (Allow.OBJ & allow)
+                        return obj;
+                    else
+                        throw e;
+                }
+                skipBlank();
+                if (jsonString[index] === ',')
+                    index++; // skip comma
+            }
+        }
+        catch (e) {
+            if (Allow.OBJ & allow)
+                return obj;
+            else
+                markPartialJSON("Expected '}' at end of object");
+        }
+        index++; // skip final brace
+        return obj;
+    };
+    const parseArr = () => {
+        index++; // skip initial bracket
+        const arr = [];
+        try {
+            while (jsonString[index] !== ']') {
+                arr.push(parseAny());
+                skipBlank();
+                if (jsonString[index] === ',') {
+                    index++; // skip comma
+                }
+            }
+        }
+        catch (e) {
+            if (Allow.ARR & allow) {
+                return arr;
+            }
+            markPartialJSON("Expected ']' at end of array");
+        }
+        index++; // skip final bracket
+        return arr;
+    };
+    const parseNum = () => {
+        if (index === 0) {
+            if (jsonString === '-' && Allow.NUM & allow)
+                markPartialJSON("Not sure what '-' is");
+            try {
+                return JSON.parse(jsonString);
+            }
+            catch (e) {
+                if (Allow.NUM & allow) {
+                    try {
+                        if ('.' === jsonString[jsonString.length - 1])
+                            return JSON.parse(jsonString.substring(0, jsonString.lastIndexOf('.')));
+                        return JSON.parse(jsonString.substring(0, jsonString.lastIndexOf('e')));
+                    }
+                    catch (e) { }
+                }
+                throwMalformedError(String(e));
+            }
+        }
+        const start = index;
+        if (jsonString[index] === '-')
+            index++;
+        while (jsonString[index] && !',]}'.includes(jsonString[index]))
+            index++;
+        if (index == length && !(Allow.NUM & allow))
+            markPartialJSON('Unterminated number literal');
+        try {
+            return JSON.parse(jsonString.substring(start, index));
+        }
+        catch (e) {
+            if (jsonString.substring(start, index) === '-' && Allow.NUM & allow)
+                markPartialJSON("Not sure what '-' is");
+            try {
+                return JSON.parse(jsonString.substring(start, jsonString.lastIndexOf('e')));
+            }
+            catch (e) {
+                throwMalformedError(String(e));
+            }
+        }
+    };
+    const skipBlank = () => {
+        while (index < length && ' \n\r\t'.includes(jsonString[index])) {
+            index++;
+        }
+    };
+    return parseAny();
+};
+// using this function with malformed JSON is undefined behavior
+const partialParse = (input) => parseJSON(input, Allow.ALL ^ Allow.NUM);
+
+var __classPrivateFieldSet$1 = (undefined && undefined.__classPrivateFieldSet) || function (receiver, state, value, kind, f) {
+    if (kind === "m") throw new TypeError("Private method is not writable");
+    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
+    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot write private member to an object whose class did not declare it");
+    return (kind === "a" ? f.call(receiver, value) : f ? f.value = value : state.set(receiver, value)), value;
+};
+var __classPrivateFieldGet$1 = (undefined && undefined.__classPrivateFieldGet) || function (receiver, state, kind, f) {
+    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a getter");
+    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
+    return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
+};
+var _ChatCompletionStream_instances, _ChatCompletionStream_params, _ChatCompletionStream_choiceEventStates, _ChatCompletionStream_currentChatCompletionSnapshot, _ChatCompletionStream_beginRequest, _ChatCompletionStream_getChoiceEventState, _ChatCompletionStream_addChunk, _ChatCompletionStream_emitToolCallDoneEvent, _ChatCompletionStream_emitContentDoneEvents, _ChatCompletionStream_endRequest, _ChatCompletionStream_getAutoParseableResponseFormat, _ChatCompletionStream_accumulateChatCompletion;
+class ChatCompletionStream extends AbstractChatCompletionRunner {
+    constructor(params) {
+        super();
+        _ChatCompletionStream_instances.add(this);
+        _ChatCompletionStream_params.set(this, void 0);
+        _ChatCompletionStream_choiceEventStates.set(this, void 0);
+        _ChatCompletionStream_currentChatCompletionSnapshot.set(this, void 0);
+        __classPrivateFieldSet$1(this, _ChatCompletionStream_params, params, "f");
+        __classPrivateFieldSet$1(this, _ChatCompletionStream_choiceEventStates, [], "f");
+    }
+    get currentChatCompletionSnapshot() {
+        return __classPrivateFieldGet$1(this, _ChatCompletionStream_currentChatCompletionSnapshot, "f");
+    }
+    /**
+     * Intended for use on the frontend, consuming a stream produced with
+     * `.toReadableStream()` on the backend.
+     *
+     * Note that messages sent to the model do not appear in `.on('message')`
+     * in this context.
+     */
+    static fromReadableStream(stream) {
+        const runner = new ChatCompletionStream(null);
+        runner._run(() => runner._fromReadableStream(stream));
+        return runner;
+    }
+    static createChatCompletion(client, params, options) {
+        const runner = new ChatCompletionStream(params);
+        runner._run(() => runner._runChatCompletion(client, { ...params, stream: true }, { ...options, headers: { ...options?.headers, 'X-Stainless-Helper-Method': 'stream' } }));
+        return runner;
+    }
+    async _createChatCompletion(client, params, options) {
+        super._createChatCompletion;
+        const signal = options?.signal;
+        if (signal) {
+            if (signal.aborted)
+                this.controller.abort();
+            signal.addEventListener('abort', () => this.controller.abort());
+        }
+        __classPrivateFieldGet$1(this, _ChatCompletionStream_instances, "m", _ChatCompletionStream_beginRequest).call(this);
+        const stream = await client.chat.completions.create({ ...params, stream: true }, { ...options, signal: this.controller.signal });
+        this._connected();
+        for await (const chunk of stream) {
+            __classPrivateFieldGet$1(this, _ChatCompletionStream_instances, "m", _ChatCompletionStream_addChunk).call(this, chunk);
+        }
+        if (stream.controller.signal?.aborted) {
+            throw new APIUserAbortError();
+        }
+        return this._addChatCompletion(__classPrivateFieldGet$1(this, _ChatCompletionStream_instances, "m", _ChatCompletionStream_endRequest).call(this));
+    }
+    async _fromReadableStream(readableStream, options) {
+        const signal = options?.signal;
+        if (signal) {
+            if (signal.aborted)
+                this.controller.abort();
+            signal.addEventListener('abort', () => this.controller.abort());
+        }
+        __classPrivateFieldGet$1(this, _ChatCompletionStream_instances, "m", _ChatCompletionStream_beginRequest).call(this);
+        this._connected();
+        const stream = Stream.fromReadableStream(readableStream, this.controller);
+        let chatId;
+        for await (const chunk of stream) {
+            if (chatId && chatId !== chunk.id) {
+                // A new request has been made.
+                this._addChatCompletion(__classPrivateFieldGet$1(this, _ChatCompletionStream_instances, "m", _ChatCompletionStream_endRequest).call(this));
+            }
+            __classPrivateFieldGet$1(this, _ChatCompletionStream_instances, "m", _ChatCompletionStream_addChunk).call(this, chunk);
+            chatId = chunk.id;
+        }
+        if (stream.controller.signal?.aborted) {
+            throw new APIUserAbortError();
+        }
+        return this._addChatCompletion(__classPrivateFieldGet$1(this, _ChatCompletionStream_instances, "m", _ChatCompletionStream_endRequest).call(this));
+    }
+    [(_ChatCompletionStream_params = new WeakMap(), _ChatCompletionStream_choiceEventStates = new WeakMap(), _ChatCompletionStream_currentChatCompletionSnapshot = new WeakMap(), _ChatCompletionStream_instances = new WeakSet(), _ChatCompletionStream_beginRequest = function _ChatCompletionStream_beginRequest() {
+        if (this.ended)
+            return;
+        __classPrivateFieldSet$1(this, _ChatCompletionStream_currentChatCompletionSnapshot, undefined, "f");
+    }, _ChatCompletionStream_getChoiceEventState = function _ChatCompletionStream_getChoiceEventState(choice) {
+        let state = __classPrivateFieldGet$1(this, _ChatCompletionStream_choiceEventStates, "f")[choice.index];
+        if (state) {
+            return state;
+        }
+        state = {
+            content_done: false,
+            refusal_done: false,
+            logprobs_content_done: false,
+            logprobs_refusal_done: false,
+            done_tool_calls: new Set(),
+            current_tool_call_index: null,
+        };
+        __classPrivateFieldGet$1(this, _ChatCompletionStream_choiceEventStates, "f")[choice.index] = state;
+        return state;
+    }, _ChatCompletionStream_addChunk = function _ChatCompletionStream_addChunk(chunk) {
+        if (this.ended)
+            return;
+        const completion = __classPrivateFieldGet$1(this, _ChatCompletionStream_instances, "m", _ChatCompletionStream_accumulateChatCompletion).call(this, chunk);
+        this._emit('chunk', chunk, completion);
+        for (const choice of chunk.choices) {
+            const choiceSnapshot = completion.choices[choice.index];
+            if (choice.delta.content != null &&
+                choiceSnapshot.message?.role === 'assistant' &&
+                choiceSnapshot.message?.content) {
+                this._emit('content', choice.delta.content, choiceSnapshot.message.content);
+                this._emit('content.delta', {
+                    delta: choice.delta.content,
+                    snapshot: choiceSnapshot.message.content,
+                    parsed: choiceSnapshot.message.parsed,
+                });
+            }
+            if (choice.delta.refusal != null &&
+                choiceSnapshot.message?.role === 'assistant' &&
+                choiceSnapshot.message?.refusal) {
+                this._emit('refusal.delta', {
+                    delta: choice.delta.refusal,
+                    snapshot: choiceSnapshot.message.refusal,
+                });
+            }
+            if (choice.logprobs?.content != null && choiceSnapshot.message?.role === 'assistant') {
+                this._emit('logprobs.content.delta', {
+                    content: choice.logprobs?.content,
+                    snapshot: choiceSnapshot.logprobs?.content ?? [],
+                });
+            }
+            if (choice.logprobs?.refusal != null && choiceSnapshot.message?.role === 'assistant') {
+                this._emit('logprobs.refusal.delta', {
+                    refusal: choice.logprobs?.refusal,
+                    snapshot: choiceSnapshot.logprobs?.refusal ?? [],
+                });
+            }
+            const state = __classPrivateFieldGet$1(this, _ChatCompletionStream_instances, "m", _ChatCompletionStream_getChoiceEventState).call(this, choiceSnapshot);
+            if (choiceSnapshot.finish_reason) {
+                __classPrivateFieldGet$1(this, _ChatCompletionStream_instances, "m", _ChatCompletionStream_emitContentDoneEvents).call(this, choiceSnapshot);
+                if (state.current_tool_call_index != null) {
+                    __classPrivateFieldGet$1(this, _ChatCompletionStream_instances, "m", _ChatCompletionStream_emitToolCallDoneEvent).call(this, choiceSnapshot, state.current_tool_call_index);
+                }
+            }
+            for (const toolCall of choice.delta.tool_calls ?? []) {
+                if (state.current_tool_call_index !== toolCall.index) {
+                    __classPrivateFieldGet$1(this, _ChatCompletionStream_instances, "m", _ChatCompletionStream_emitContentDoneEvents).call(this, choiceSnapshot);
+                    // new tool call started, the previous one is done
+                    if (state.current_tool_call_index != null) {
+                        __classPrivateFieldGet$1(this, _ChatCompletionStream_instances, "m", _ChatCompletionStream_emitToolCallDoneEvent).call(this, choiceSnapshot, state.current_tool_call_index);
+                    }
+                }
+                state.current_tool_call_index = toolCall.index;
+            }
+            for (const toolCallDelta of choice.delta.tool_calls ?? []) {
+                const toolCallSnapshot = choiceSnapshot.message.tool_calls?.[toolCallDelta.index];
+                if (!toolCallSnapshot?.type) {
+                    continue;
+                }
+                if (toolCallSnapshot?.type === 'function') {
+                    this._emit('tool_calls.function.arguments.delta', {
+                        name: toolCallSnapshot.function?.name,
+                        index: toolCallDelta.index,
+                        arguments: toolCallSnapshot.function.arguments,
+                        parsed_arguments: toolCallSnapshot.function.parsed_arguments,
+                        arguments_delta: toolCallDelta.function?.arguments ?? '',
+                    });
+                }
+                else {
+                    assertNever(toolCallSnapshot?.type);
+                }
+            }
+        }
+    }, _ChatCompletionStream_emitToolCallDoneEvent = function _ChatCompletionStream_emitToolCallDoneEvent(choiceSnapshot, toolCallIndex) {
+        const state = __classPrivateFieldGet$1(this, _ChatCompletionStream_instances, "m", _ChatCompletionStream_getChoiceEventState).call(this, choiceSnapshot);
+        if (state.done_tool_calls.has(toolCallIndex)) {
+            // we've already fired the done event
+            return;
+        }
+        const toolCallSnapshot = choiceSnapshot.message.tool_calls?.[toolCallIndex];
+        if (!toolCallSnapshot) {
+            throw new Error('no tool call snapshot');
+        }
+        if (!toolCallSnapshot.type) {
+            throw new Error('tool call snapshot missing `type`');
+        }
+        if (toolCallSnapshot.type === 'function') {
+            const inputTool = __classPrivateFieldGet$1(this, _ChatCompletionStream_params, "f")?.tools?.find((tool) => tool.type === 'function' && tool.function.name === toolCallSnapshot.function.name);
+            this._emit('tool_calls.function.arguments.done', {
+                name: toolCallSnapshot.function.name,
+                index: toolCallIndex,
+                arguments: toolCallSnapshot.function.arguments,
+                parsed_arguments: isAutoParsableTool$1(inputTool) ? inputTool.$parseRaw(toolCallSnapshot.function.arguments)
+                    : inputTool?.function.strict ? JSON.parse(toolCallSnapshot.function.arguments)
+                        : null,
+            });
+        }
+        else {
+            assertNever(toolCallSnapshot.type);
+        }
+    }, _ChatCompletionStream_emitContentDoneEvents = function _ChatCompletionStream_emitContentDoneEvents(choiceSnapshot) {
+        const state = __classPrivateFieldGet$1(this, _ChatCompletionStream_instances, "m", _ChatCompletionStream_getChoiceEventState).call(this, choiceSnapshot);
+        if (choiceSnapshot.message.content && !state.content_done) {
+            state.content_done = true;
+            const responseFormat = __classPrivateFieldGet$1(this, _ChatCompletionStream_instances, "m", _ChatCompletionStream_getAutoParseableResponseFormat).call(this);
+            this._emit('content.done', {
+                content: choiceSnapshot.message.content,
+                parsed: responseFormat ? responseFormat.$parseRaw(choiceSnapshot.message.content) : null,
+            });
+        }
+        if (choiceSnapshot.message.refusal && !state.refusal_done) {
+            state.refusal_done = true;
+            this._emit('refusal.done', { refusal: choiceSnapshot.message.refusal });
+        }
+        if (choiceSnapshot.logprobs?.content && !state.logprobs_content_done) {
+            state.logprobs_content_done = true;
+            this._emit('logprobs.content.done', { content: choiceSnapshot.logprobs.content });
+        }
+        if (choiceSnapshot.logprobs?.refusal && !state.logprobs_refusal_done) {
+            state.logprobs_refusal_done = true;
+            this._emit('logprobs.refusal.done', { refusal: choiceSnapshot.logprobs.refusal });
+        }
+    }, _ChatCompletionStream_endRequest = function _ChatCompletionStream_endRequest() {
+        if (this.ended) {
+            throw new OpenAIError(`stream has ended, this shouldn't happen`);
+        }
+        const snapshot = __classPrivateFieldGet$1(this, _ChatCompletionStream_currentChatCompletionSnapshot, "f");
+        if (!snapshot) {
+            throw new OpenAIError(`request ended without sending any chunks`);
+        }
+        __classPrivateFieldSet$1(this, _ChatCompletionStream_currentChatCompletionSnapshot, undefined, "f");
+        __classPrivateFieldSet$1(this, _ChatCompletionStream_choiceEventStates, [], "f");
+        return finalizeChatCompletion(snapshot, __classPrivateFieldGet$1(this, _ChatCompletionStream_params, "f"));
+    }, _ChatCompletionStream_getAutoParseableResponseFormat = function _ChatCompletionStream_getAutoParseableResponseFormat() {
+        const responseFormat = __classPrivateFieldGet$1(this, _ChatCompletionStream_params, "f")?.response_format;
+        if (isAutoParsableResponseFormat(responseFormat)) {
+            return responseFormat;
+        }
+        return null;
+    }, _ChatCompletionStream_accumulateChatCompletion = function _ChatCompletionStream_accumulateChatCompletion(chunk) {
+        var _a, _b, _c, _d;
+        let snapshot = __classPrivateFieldGet$1(this, _ChatCompletionStream_currentChatCompletionSnapshot, "f");
+        const { choices, ...rest } = chunk;
+        if (!snapshot) {
+            snapshot = __classPrivateFieldSet$1(this, _ChatCompletionStream_currentChatCompletionSnapshot, {
+                ...rest,
+                choices: [],
+            }, "f");
+        }
+        else {
+            Object.assign(snapshot, rest);
+        }
+        for (const { delta, finish_reason, index, logprobs = null, ...other } of chunk.choices) {
+            let choice = snapshot.choices[index];
+            if (!choice) {
+                choice = snapshot.choices[index] = { finish_reason, index, message: {}, logprobs, ...other };
+            }
+            if (logprobs) {
+                if (!choice.logprobs) {
+                    choice.logprobs = Object.assign({}, logprobs);
+                }
+                else {
+                    const { content, refusal, ...rest } = logprobs;
+                    Object.assign(choice.logprobs, rest);
+                    if (content) {
+                        (_a = choice.logprobs).content ?? (_a.content = []);
+                        choice.logprobs.content.push(...content);
+                    }
+                    if (refusal) {
+                        (_b = choice.logprobs).refusal ?? (_b.refusal = []);
+                        choice.logprobs.refusal.push(...refusal);
+                    }
+                }
+            }
+            if (finish_reason) {
+                choice.finish_reason = finish_reason;
+                if (__classPrivateFieldGet$1(this, _ChatCompletionStream_params, "f") && hasAutoParseableInput$1(__classPrivateFieldGet$1(this, _ChatCompletionStream_params, "f"))) {
+                    if (finish_reason === 'length') {
+                        throw new LengthFinishReasonError();
+                    }
+                    if (finish_reason === 'content_filter') {
+                        throw new ContentFilterFinishReasonError();
+                    }
+                }
+            }
+            Object.assign(choice, other);
+            if (!delta)
+                continue; // Shouldn't happen; just in case.
+            const { content, refusal, function_call, role, tool_calls, ...rest } = delta;
+            Object.assign(choice.message, rest);
+            if (refusal) {
+                choice.message.refusal = (choice.message.refusal || '') + refusal;
+            }
+            if (role)
+                choice.message.role = role;
+            if (function_call) {
+                if (!choice.message.function_call) {
+                    choice.message.function_call = function_call;
+                }
+                else {
+                    if (function_call.name)
+                        choice.message.function_call.name = function_call.name;
+                    if (function_call.arguments) {
+                        (_c = choice.message.function_call).arguments ?? (_c.arguments = '');
+                        choice.message.function_call.arguments += function_call.arguments;
+                    }
+                }
+            }
+            if (content) {
+                choice.message.content = (choice.message.content || '') + content;
+                if (!choice.message.refusal && __classPrivateFieldGet$1(this, _ChatCompletionStream_instances, "m", _ChatCompletionStream_getAutoParseableResponseFormat).call(this)) {
+                    choice.message.parsed = partialParse(choice.message.content);
+                }
+            }
+            if (tool_calls) {
+                if (!choice.message.tool_calls)
+                    choice.message.tool_calls = [];
+                for (const { index, id, type, function: fn, ...rest } of tool_calls) {
+                    const tool_call = ((_d = choice.message.tool_calls)[index] ?? (_d[index] = {}));
+                    Object.assign(tool_call, rest);
+                    if (id)
+                        tool_call.id = id;
+                    if (type)
+                        tool_call.type = type;
+                    if (fn)
+                        tool_call.function ?? (tool_call.function = { name: fn.name ?? '', arguments: '' });
+                    if (fn?.name)
+                        tool_call.function.name = fn.name;
+                    if (fn?.arguments) {
+                        tool_call.function.arguments += fn.arguments;
+                        if (shouldParseToolCall(__classPrivateFieldGet$1(this, _ChatCompletionStream_params, "f"), tool_call)) {
+                            tool_call.function.parsed_arguments = partialParse(tool_call.function.arguments);
+                        }
+                    }
+                }
+            }
+        }
+        return snapshot;
+    }, Symbol.asyncIterator)]() {
+        const pushQueue = [];
+        const readQueue = [];
+        let done = false;
+        this.on('chunk', (chunk) => {
+            const reader = readQueue.shift();
+            if (reader) {
+                reader.resolve(chunk);
+            }
+            else {
+                pushQueue.push(chunk);
+            }
+        });
+        this.on('end', () => {
+            done = true;
+            for (const reader of readQueue) {
+                reader.resolve(undefined);
+            }
+            readQueue.length = 0;
+        });
+        this.on('abort', (err) => {
+            done = true;
+            for (const reader of readQueue) {
+                reader.reject(err);
+            }
+            readQueue.length = 0;
+        });
+        this.on('error', (err) => {
+            done = true;
+            for (const reader of readQueue) {
+                reader.reject(err);
+            }
+            readQueue.length = 0;
+        });
+        return {
+            next: async () => {
+                if (!pushQueue.length) {
+                    if (done) {
+                        return { value: undefined, done: true };
+                    }
+                    return new Promise((resolve, reject) => readQueue.push({ resolve, reject })).then((chunk) => (chunk ? { value: chunk, done: false } : { value: undefined, done: true }));
+                }
+                const chunk = pushQueue.shift();
+                return { value: chunk, done: false };
+            },
+            return: async () => {
+                this.abort();
+                return { value: undefined, done: true };
+            },
+        };
+    }
+    toReadableStream() {
+        const stream = new Stream(this[Symbol.asyncIterator].bind(this), this.controller);
+        return stream.toReadableStream();
+    }
+}
+function finalizeChatCompletion(snapshot, params) {
+    const { id, choices, created, model, system_fingerprint, ...rest } = snapshot;
+    const completion = {
+        ...rest,
+        id,
+        choices: choices.map(({ message, finish_reason, index, logprobs, ...choiceRest }) => {
+            if (!finish_reason) {
+                throw new OpenAIError(`missing finish_reason for choice ${index}`);
+            }
+            const { content = null, function_call, tool_calls, ...messageRest } = message;
+            const role = message.role; // this is what we expect; in theory it could be different which would make our types a slight lie but would be fine.
+            if (!role) {
+                throw new OpenAIError(`missing role for choice ${index}`);
+            }
+            if (function_call) {
+                const { arguments: args, name } = function_call;
+                if (args == null) {
+                    throw new OpenAIError(`missing function_call.arguments for choice ${index}`);
+                }
+                if (!name) {
+                    throw new OpenAIError(`missing function_call.name for choice ${index}`);
+                }
+                return {
+                    ...choiceRest,
+                    message: {
+                        content,
+                        function_call: { arguments: args, name },
+                        role,
+                        refusal: message.refusal ?? null,
+                    },
+                    finish_reason,
+                    index,
+                    logprobs,
+                };
+            }
+            if (tool_calls) {
+                return {
+                    ...choiceRest,
+                    index,
+                    finish_reason,
+                    logprobs,
+                    message: {
+                        ...messageRest,
+                        role,
+                        content,
+                        refusal: message.refusal ?? null,
+                        tool_calls: tool_calls.map((tool_call, i) => {
+                            const { function: fn, type, id, ...toolRest } = tool_call;
+                            const { arguments: args, name, ...fnRest } = fn || {};
+                            if (id == null) {
+                                throw new OpenAIError(`missing choices[${index}].tool_calls[${i}].id\n${str(snapshot)}`);
+                            }
+                            if (type == null) {
+                                throw new OpenAIError(`missing choices[${index}].tool_calls[${i}].type\n${str(snapshot)}`);
+                            }
+                            if (name == null) {
+                                throw new OpenAIError(`missing choices[${index}].tool_calls[${i}].function.name\n${str(snapshot)}`);
+                            }
+                            if (args == null) {
+                                throw new OpenAIError(`missing choices[${index}].tool_calls[${i}].function.arguments\n${str(snapshot)}`);
+                            }
+                            return { ...toolRest, id, type, function: { ...fnRest, name, arguments: args } };
+                        }),
+                    },
+                };
+            }
+            return {
+                ...choiceRest,
+                message: { ...messageRest, content, role, refusal: message.refusal ?? null },
+                finish_reason,
+                index,
+                logprobs,
+            };
+        }),
+        created,
+        model,
+        object: 'chat.completion',
+        ...(system_fingerprint ? { system_fingerprint } : {}),
+    };
+    return maybeParseChatCompletion(completion, params);
+}
+function str(x) {
+    return JSON.stringify(x);
+}
+function assertNever(_x) { }
+
+class ChatCompletionStreamingRunner extends ChatCompletionStream {
+    static fromReadableStream(stream) {
+        const runner = new ChatCompletionStreamingRunner(null);
+        runner._run(() => runner._fromReadableStream(stream));
+        return runner;
+    }
+    /** @deprecated - please use `runTools` instead. */
+    static runFunctions(client, params, options) {
+        const runner = new ChatCompletionStreamingRunner(null);
+        const opts = {
+            ...options,
+            headers: { ...options?.headers, 'X-Stainless-Helper-Method': 'runFunctions' },
+        };
+        runner._run(() => runner._runFunctions(client, params, opts));
+        return runner;
+    }
+    static runTools(client, params, options) {
+        const runner = new ChatCompletionStreamingRunner(
+        // @ts-expect-error TODO these types are incompatible
+        params);
+        const opts = {
+            ...options,
+            headers: { ...options?.headers, 'X-Stainless-Helper-Method': 'runTools' },
+        };
+        runner._run(() => runner._runTools(client, params, opts));
+        return runner;
+    }
+}
+
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+let Completions$1 = class Completions extends APIResource {
+    parse(body, options) {
+        validateInputTools(body.tools);
+        return this._client.chat.completions
+            .create(body, {
+            ...options,
+            headers: {
+                ...options?.headers,
+                'X-Stainless-Helper-Method': 'beta.chat.completions.parse',
+            },
+        })
+            ._thenUnwrap((completion) => parseChatCompletion(completion, body));
+    }
+    runFunctions(body, options) {
+        if (body.stream) {
+            return ChatCompletionStreamingRunner.runFunctions(this._client, body, options);
+        }
+        return ChatCompletionRunner.runFunctions(this._client, body, options);
+    }
+    runTools(body, options) {
+        if (body.stream) {
+            return ChatCompletionStreamingRunner.runTools(this._client, body, options);
+        }
+        return ChatCompletionRunner.runTools(this._client, body, options);
+    }
+    /**
+     * Creates a chat completion stream
+     */
+    stream(body, options) {
+        return ChatCompletionStream.createChatCompletion(this._client, body, options);
+    }
+};
+
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+class Chat extends APIResource {
+    constructor() {
+        super(...arguments);
+        this.completions = new Completions$1(this._client);
+    }
+}
+(function (Chat) {
+    Chat.Completions = Completions$1;
+})(Chat || (Chat = {}));
+
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+class Sessions extends APIResource {
+    /**
+     * Create an ephemeral API token for use in client-side applications with the
+     * Realtime API. Can be configured with the same session parameters as the
+     * `session.update` client event.
+     *
+     * It responds with a session object, plus a `client_secret` key which contains a
+     * usable ephemeral API token that can be used to authenticate browser clients for
+     * the Realtime API.
+     *
+     * @example
+     * ```ts
+     * const session =
+     *   await client.beta.realtime.sessions.create();
+     * ```
+     */
+    create(body, options) {
+        return this._client.post('/realtime/sessions', {
+            body,
+            ...options,
+            headers: { 'OpenAI-Beta': 'assistants=v2', ...options?.headers },
+        });
+    }
+}
+
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+class TranscriptionSessions extends APIResource {
+    /**
+     * Create an ephemeral API token for use in client-side applications with the
+     * Realtime API specifically for realtime transcriptions. Can be configured with
+     * the same session parameters as the `transcription_session.update` client event.
+     *
+     * It responds with a session object, plus a `client_secret` key which contains a
+     * usable ephemeral API token that can be used to authenticate browser clients for
+     * the Realtime API.
+     *
+     * @example
+     * ```ts
+     * const transcriptionSession =
+     *   await client.beta.realtime.transcriptionSessions.create();
+     * ```
+     */
+    create(body, options) {
+        return this._client.post('/realtime/transcription_sessions', {
+            body,
+            ...options,
+            headers: { 'OpenAI-Beta': 'assistants=v2', ...options?.headers },
+        });
+    }
+}
+
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+class Realtime extends APIResource {
+    constructor() {
+        super(...arguments);
+        this.sessions = new Sessions(this._client);
+        this.transcriptionSessions = new TranscriptionSessions(this._client);
+    }
+}
+Realtime.Sessions = Sessions;
+Realtime.TranscriptionSessions = TranscriptionSessions;
+
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+/**
+ * @deprecated The Assistants API is deprecated in favor of the Responses API
+ */
+class Messages extends APIResource {
+    /**
+     * Create a message.
+     *
+     * @deprecated The Assistants API is deprecated in favor of the Responses API
+     */
+    create(threadId, body, options) {
+        return this._client.post(`/threads/${threadId}/messages`, {
+            body,
+            ...options,
+            headers: { 'OpenAI-Beta': 'assistants=v2', ...options?.headers },
+        });
+    }
+    /**
+     * Retrieve a message.
+     *
+     * @deprecated The Assistants API is deprecated in favor of the Responses API
+     */
+    retrieve(threadId, messageId, options) {
+        return this._client.get(`/threads/${threadId}/messages/${messageId}`, {
+            ...options,
+            headers: { 'OpenAI-Beta': 'assistants=v2', ...options?.headers },
+        });
+    }
+    /**
+     * Modifies a message.
+     *
+     * @deprecated The Assistants API is deprecated in favor of the Responses API
+     */
+    update(threadId, messageId, body, options) {
+        return this._client.post(`/threads/${threadId}/messages/${messageId}`, {
+            body,
+            ...options,
+            headers: { 'OpenAI-Beta': 'assistants=v2', ...options?.headers },
+        });
+    }
+    list(threadId, query = {}, options) {
+        if (isRequestOptions(query)) {
+            return this.list(threadId, {}, query);
+        }
+        return this._client.getAPIList(`/threads/${threadId}/messages`, MessagesPage, {
+            query,
+            ...options,
+            headers: { 'OpenAI-Beta': 'assistants=v2', ...options?.headers },
+        });
+    }
+    /**
+     * Deletes a message.
+     *
+     * @deprecated The Assistants API is deprecated in favor of the Responses API
+     */
+    del(threadId, messageId, options) {
+        return this._client.delete(`/threads/${threadId}/messages/${messageId}`, {
+            ...options,
+            headers: { 'OpenAI-Beta': 'assistants=v2', ...options?.headers },
+        });
+    }
+}
+class MessagesPage extends CursorPage {
+}
+Messages.MessagesPage = MessagesPage;
+
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+/**
+ * @deprecated The Assistants API is deprecated in favor of the Responses API
+ */
+class Steps extends APIResource {
+    retrieve(threadId, runId, stepId, query = {}, options) {
+        if (isRequestOptions(query)) {
+            return this.retrieve(threadId, runId, stepId, {}, query);
+        }
+        return this._client.get(`/threads/${threadId}/runs/${runId}/steps/${stepId}`, {
+            query,
+            ...options,
+            headers: { 'OpenAI-Beta': 'assistants=v2', ...options?.headers },
+        });
+    }
+    list(threadId, runId, query = {}, options) {
+        if (isRequestOptions(query)) {
+            return this.list(threadId, runId, {}, query);
+        }
+        return this._client.getAPIList(`/threads/${threadId}/runs/${runId}/steps`, RunStepsPage, {
+            query,
+            ...options,
+            headers: { 'OpenAI-Beta': 'assistants=v2', ...options?.headers },
+        });
+    }
+}
+class RunStepsPage extends CursorPage {
+}
+Steps.RunStepsPage = RunStepsPage;
+
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+/**
+ * @deprecated The Assistants API is deprecated in favor of the Responses API
+ */
+let Runs$1 = class Runs extends APIResource {
+    constructor() {
+        super(...arguments);
+        this.steps = new Steps(this._client);
+    }
+    create(threadId, params, options) {
+        const { include, ...body } = params;
+        return this._client.post(`/threads/${threadId}/runs`, {
+            query: { include },
+            body,
+            ...options,
+            headers: { 'OpenAI-Beta': 'assistants=v2', ...options?.headers },
+            stream: params.stream ?? false,
+        });
+    }
+    /**
+     * Retrieves a run.
+     *
+     * @deprecated The Assistants API is deprecated in favor of the Responses API
+     */
+    retrieve(threadId, runId, options) {
+        return this._client.get(`/threads/${threadId}/runs/${runId}`, {
+            ...options,
+            headers: { 'OpenAI-Beta': 'assistants=v2', ...options?.headers },
+        });
+    }
+    /**
+     * Modifies a run.
+     *
+     * @deprecated The Assistants API is deprecated in favor of the Responses API
+     */
+    update(threadId, runId, body, options) {
+        return this._client.post(`/threads/${threadId}/runs/${runId}`, {
+            body,
+            ...options,
+            headers: { 'OpenAI-Beta': 'assistants=v2', ...options?.headers },
+        });
+    }
+    list(threadId, query = {}, options) {
+        if (isRequestOptions(query)) {
+            return this.list(threadId, {}, query);
+        }
+        return this._client.getAPIList(`/threads/${threadId}/runs`, RunsPage, {
+            query,
+            ...options,
+            headers: { 'OpenAI-Beta': 'assistants=v2', ...options?.headers },
+        });
+    }
+    /**
+     * Cancels a run that is `in_progress`.
+     *
+     * @deprecated The Assistants API is deprecated in favor of the Responses API
+     */
+    cancel(threadId, runId, options) {
+        return this._client.post(`/threads/${threadId}/runs/${runId}/cancel`, {
+            ...options,
+            headers: { 'OpenAI-Beta': 'assistants=v2', ...options?.headers },
+        });
+    }
+    /**
+     * A helper to create a run an poll for a terminal state. More information on Run
+     * lifecycles can be found here:
+     * https://platform.openai.com/docs/assistants/how-it-works/runs-and-run-steps
+     */
+    async createAndPoll(threadId, body, options) {
+        const run = await this.create(threadId, body, options);
+        return await this.poll(threadId, run.id, options);
+    }
+    /**
+     * Create a Run stream
+     *
+     * @deprecated use `stream` instead
+     */
+    createAndStream(threadId, body, options) {
+        return AssistantStream.createAssistantStream(threadId, this._client.beta.threads.runs, body, options);
+    }
+    /**
+     * A helper to poll a run status until it reaches a terminal state. More
+     * information on Run lifecycles can be found here:
+     * https://platform.openai.com/docs/assistants/how-it-works/runs-and-run-steps
+     */
+    async poll(threadId, runId, options) {
+        const headers = { ...options?.headers, 'X-Stainless-Poll-Helper': 'true' };
+        if (options?.pollIntervalMs) {
+            headers['X-Stainless-Custom-Poll-Interval'] = options.pollIntervalMs.toString();
+        }
+        while (true) {
+            const { data: run, response } = await this.retrieve(threadId, runId, {
+                ...options,
+                headers: { ...options?.headers, ...headers },
+            }).withResponse();
+            switch (run.status) {
+                //If we are in any sort of intermediate state we poll
+                case 'queued':
+                case 'in_progress':
+                case 'cancelling':
+                    let sleepInterval = 5000;
+                    if (options?.pollIntervalMs) {
+                        sleepInterval = options.pollIntervalMs;
+                    }
+                    else {
+                        const headerInterval = response.headers.get('openai-poll-after-ms');
+                        if (headerInterval) {
+                            const headerIntervalMs = parseInt(headerInterval);
+                            if (!isNaN(headerIntervalMs)) {
+                                sleepInterval = headerIntervalMs;
+                            }
+                        }
+                    }
+                    await sleep(sleepInterval);
+                    break;
+                //We return the run in any terminal state.
+                case 'requires_action':
+                case 'incomplete':
+                case 'cancelled':
+                case 'completed':
+                case 'failed':
+                case 'expired':
+                    return run;
+            }
+        }
+    }
+    /**
+     * Create a Run stream
+     */
+    stream(threadId, body, options) {
+        return AssistantStream.createAssistantStream(threadId, this._client.beta.threads.runs, body, options);
+    }
+    submitToolOutputs(threadId, runId, body, options) {
+        return this._client.post(`/threads/${threadId}/runs/${runId}/submit_tool_outputs`, {
+            body,
+            ...options,
+            headers: { 'OpenAI-Beta': 'assistants=v2', ...options?.headers },
+            stream: body.stream ?? false,
+        });
+    }
+    /**
+     * A helper to submit a tool output to a run and poll for a terminal run state.
+     * More information on Run lifecycles can be found here:
+     * https://platform.openai.com/docs/assistants/how-it-works/runs-and-run-steps
+     */
+    async submitToolOutputsAndPoll(threadId, runId, body, options) {
+        const run = await this.submitToolOutputs(threadId, runId, body, options);
+        return await this.poll(threadId, run.id, options);
+    }
+    /**
+     * Submit the tool outputs from a previous run and stream the run to a terminal
+     * state. More information on Run lifecycles can be found here:
+     * https://platform.openai.com/docs/assistants/how-it-works/runs-and-run-steps
+     */
+    submitToolOutputsStream(threadId, runId, body, options) {
+        return AssistantStream.createToolAssistantStream(threadId, runId, this._client.beta.threads.runs, body, options);
+    }
+};
+class RunsPage extends CursorPage {
+}
+Runs$1.RunsPage = RunsPage;
+Runs$1.Steps = Steps;
+Runs$1.RunStepsPage = RunStepsPage;
+
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+/**
+ * @deprecated The Assistants API is deprecated in favor of the Responses API
+ */
+class Threads extends APIResource {
+    constructor() {
+        super(...arguments);
+        this.runs = new Runs$1(this._client);
+        this.messages = new Messages(this._client);
+    }
+    create(body = {}, options) {
+        if (isRequestOptions(body)) {
+            return this.create({}, body);
+        }
+        return this._client.post('/threads', {
+            body,
+            ...options,
+            headers: { 'OpenAI-Beta': 'assistants=v2', ...options?.headers },
+        });
+    }
+    /**
+     * Retrieves a thread.
+     *
+     * @deprecated The Assistants API is deprecated in favor of the Responses API
+     */
+    retrieve(threadId, options) {
+        return this._client.get(`/threads/${threadId}`, {
+            ...options,
+            headers: { 'OpenAI-Beta': 'assistants=v2', ...options?.headers },
+        });
+    }
+    /**
+     * Modifies a thread.
+     *
+     * @deprecated The Assistants API is deprecated in favor of the Responses API
+     */
+    update(threadId, body, options) {
+        return this._client.post(`/threads/${threadId}`, {
+            body,
+            ...options,
+            headers: { 'OpenAI-Beta': 'assistants=v2', ...options?.headers },
+        });
+    }
+    /**
+     * Delete a thread.
+     *
+     * @deprecated The Assistants API is deprecated in favor of the Responses API
+     */
+    del(threadId, options) {
+        return this._client.delete(`/threads/${threadId}`, {
+            ...options,
+            headers: { 'OpenAI-Beta': 'assistants=v2', ...options?.headers },
+        });
+    }
+    createAndRun(body, options) {
+        return this._client.post('/threads/runs', {
+            body,
+            ...options,
+            headers: { 'OpenAI-Beta': 'assistants=v2', ...options?.headers },
+            stream: body.stream ?? false,
+        });
+    }
+    /**
+     * A helper to create a thread, start a run and then poll for a terminal state.
+     * More information on Run lifecycles can be found here:
+     * https://platform.openai.com/docs/assistants/how-it-works/runs-and-run-steps
+     */
+    async createAndRunPoll(body, options) {
+        const run = await this.createAndRun(body, options);
+        return await this.runs.poll(run.thread_id, run.id, options);
+    }
+    /**
+     * Create a thread and stream the run back
+     */
+    createAndRunStream(body, options) {
+        return AssistantStream.createThreadAssistantStream(body, this._client.beta.threads, options);
+    }
+}
+Threads.Runs = Runs$1;
+Threads.RunsPage = RunsPage;
+Threads.Messages = Messages;
+Threads.MessagesPage = MessagesPage;
+
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+class Beta extends APIResource {
+    constructor() {
+        super(...arguments);
+        this.realtime = new Realtime(this._client);
+        this.chat = new Chat(this._client);
+        this.assistants = new Assistants(this._client);
+        this.threads = new Threads(this._client);
+    }
+}
+Beta.Realtime = Realtime;
+Beta.Assistants = Assistants;
+Beta.AssistantsPage = AssistantsPage;
+Beta.Threads = Threads;
+
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+class Completions extends APIResource {
+    create(body, options) {
+        return this._client.post('/completions', { body, ...options, stream: body.stream ?? false });
+    }
+}
+
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+class Content extends APIResource {
+    /**
+     * Retrieve Container File Content
+     */
+    retrieve(containerId, fileId, options) {
+        return this._client.get(`/containers/${containerId}/files/${fileId}/content`, {
+            ...options,
+            headers: { Accept: 'application/binary', ...options?.headers },
+            __binaryResponse: true,
+        });
+    }
+}
+
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+let Files$2 = class Files extends APIResource {
+    constructor() {
+        super(...arguments);
+        this.content = new Content(this._client);
+    }
+    /**
+     * Create a Container File
+     *
+     * You can send either a multipart/form-data request with the raw file content, or
+     * a JSON request with a file ID.
+     */
+    create(containerId, body, options) {
+        return this._client.post(`/containers/${containerId}/files`, multipartFormRequestOptions({ body, ...options }));
+    }
+    /**
+     * Retrieve Container File
+     */
+    retrieve(containerId, fileId, options) {
+        return this._client.get(`/containers/${containerId}/files/${fileId}`, options);
+    }
+    list(containerId, query = {}, options) {
+        if (isRequestOptions(query)) {
+            return this.list(containerId, {}, query);
+        }
+        return this._client.getAPIList(`/containers/${containerId}/files`, FileListResponsesPage, {
+            query,
+            ...options,
+        });
+    }
+    /**
+     * Delete Container File
+     */
+    del(containerId, fileId, options) {
+        return this._client.delete(`/containers/${containerId}/files/${fileId}`, {
+            ...options,
+            headers: { Accept: '*/*', ...options?.headers },
+        });
+    }
+};
+class FileListResponsesPage extends CursorPage {
+}
+Files$2.FileListResponsesPage = FileListResponsesPage;
+Files$2.Content = Content;
+
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+class Containers extends APIResource {
+    constructor() {
+        super(...arguments);
+        this.files = new Files$2(this._client);
+    }
+    /**
+     * Create Container
+     */
+    create(body, options) {
+        return this._client.post('/containers', { body, ...options });
+    }
+    /**
+     * Retrieve Container
+     */
+    retrieve(containerId, options) {
+        return this._client.get(`/containers/${containerId}`, options);
+    }
+    list(query = {}, options) {
+        if (isRequestOptions(query)) {
+            return this.list({}, query);
+        }
+        return this._client.getAPIList('/containers', ContainerListResponsesPage, { query, ...options });
+    }
+    /**
+     * Delete Container
+     */
+    del(containerId, options) {
+        return this._client.delete(`/containers/${containerId}`, {
+            ...options,
+            headers: { Accept: '*/*', ...options?.headers },
+        });
+    }
+}
+class ContainerListResponsesPage extends CursorPage {
+}
+Containers.ContainerListResponsesPage = ContainerListResponsesPage;
+Containers.Files = Files$2;
+Containers.FileListResponsesPage = FileListResponsesPage;
+
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+class Embeddings extends APIResource {
+    /**
+     * Creates an embedding vector representing the input text.
+     *
+     * @example
+     * ```ts
+     * const createEmbeddingResponse =
+     *   await client.embeddings.create({
+     *     input: 'The quick brown fox jumped over the lazy dog',
+     *     model: 'text-embedding-3-small',
+     *   });
+     * ```
+     */
+    create(body, options) {
+        const hasUserProvidedEncodingFormat = !!body.encoding_format;
+        // No encoding_format specified, defaulting to base64 for performance reasons
+        // See https://github.com/openai/openai-node/pull/1312
+        let encoding_format = hasUserProvidedEncodingFormat ? body.encoding_format : 'base64';
+        if (hasUserProvidedEncodingFormat) {
+            debug('Request', 'User defined encoding_format:', body.encoding_format);
+        }
+        const response = this._client.post('/embeddings', {
+            body: {
+                ...body,
+                encoding_format: encoding_format,
+            },
+            ...options,
+        });
+        // if the user specified an encoding_format, return the response as-is
+        if (hasUserProvidedEncodingFormat) {
+            return response;
+        }
+        // in this stage, we are sure the user did not specify an encoding_format
+        // and we defaulted to base64 for performance reasons
+        // we are sure then that the response is base64 encoded, let's decode it
+        // the returned result will be a float32 array since this is OpenAI API's default encoding
+        debug('response', 'Decoding base64 embeddings to float32 array');
+        return response._thenUnwrap((response) => {
+            if (response && response.data) {
+                response.data.forEach((embeddingBase64Obj) => {
+                    const embeddingBase64Str = embeddingBase64Obj.embedding;
+                    embeddingBase64Obj.embedding = toFloat32Array(embeddingBase64Str);
+                });
+            }
+            return response;
+        });
+    }
+}
+
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+class OutputItems extends APIResource {
+    /**
+     * Get an evaluation run output item by ID.
+     */
+    retrieve(evalId, runId, outputItemId, options) {
+        return this._client.get(`/evals/${evalId}/runs/${runId}/output_items/${outputItemId}`, options);
+    }
+    list(evalId, runId, query = {}, options) {
+        if (isRequestOptions(query)) {
+            return this.list(evalId, runId, {}, query);
+        }
+        return this._client.getAPIList(`/evals/${evalId}/runs/${runId}/output_items`, OutputItemListResponsesPage, { query, ...options });
+    }
+}
+class OutputItemListResponsesPage extends CursorPage {
+}
+OutputItems.OutputItemListResponsesPage = OutputItemListResponsesPage;
+
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+class Runs extends APIResource {
+    constructor() {
+        super(...arguments);
+        this.outputItems = new OutputItems(this._client);
+    }
+    /**
+     * Kicks off a new run for a given evaluation, specifying the data source, and what
+     * model configuration to use to test. The datasource will be validated against the
+     * schema specified in the config of the evaluation.
+     */
+    create(evalId, body, options) {
+        return this._client.post(`/evals/${evalId}/runs`, { body, ...options });
+    }
+    /**
+     * Get an evaluation run by ID.
+     */
+    retrieve(evalId, runId, options) {
+        return this._client.get(`/evals/${evalId}/runs/${runId}`, options);
+    }
+    list(evalId, query = {}, options) {
+        if (isRequestOptions(query)) {
+            return this.list(evalId, {}, query);
+        }
+        return this._client.getAPIList(`/evals/${evalId}/runs`, RunListResponsesPage, { query, ...options });
+    }
+    /**
+     * Delete an eval run.
+     */
+    del(evalId, runId, options) {
+        return this._client.delete(`/evals/${evalId}/runs/${runId}`, options);
+    }
+    /**
+     * Cancel an ongoing evaluation run.
+     */
+    cancel(evalId, runId, options) {
+        return this._client.post(`/evals/${evalId}/runs/${runId}`, options);
+    }
+}
+class RunListResponsesPage extends CursorPage {
+}
+Runs.RunListResponsesPage = RunListResponsesPage;
+Runs.OutputItems = OutputItems;
+Runs.OutputItemListResponsesPage = OutputItemListResponsesPage;
+
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+class Evals extends APIResource {
+    constructor() {
+        super(...arguments);
+        this.runs = new Runs(this._client);
+    }
+    /**
+     * Create the structure of an evaluation that can be used to test a model's
+     * performance. An evaluation is a set of testing criteria and the config for a
+     * data source, which dictates the schema of the data used in the evaluation. After
+     * creating an evaluation, you can run it on different models and model parameters.
+     * We support several types of graders and datasources. For more information, see
+     * the [Evals guide](https://platform.openai.com/docs/guides/evals).
+     */
+    create(body, options) {
+        return this._client.post('/evals', { body, ...options });
+    }
+    /**
+     * Get an evaluation by ID.
+     */
+    retrieve(evalId, options) {
+        return this._client.get(`/evals/${evalId}`, options);
+    }
+    /**
+     * Update certain properties of an evaluation.
+     */
+    update(evalId, body, options) {
+        return this._client.post(`/evals/${evalId}`, { body, ...options });
+    }
+    list(query = {}, options) {
+        if (isRequestOptions(query)) {
+            return this.list({}, query);
+        }
+        return this._client.getAPIList('/evals', EvalListResponsesPage, { query, ...options });
+    }
+    /**
+     * Delete an evaluation.
+     */
+    del(evalId, options) {
+        return this._client.delete(`/evals/${evalId}`, options);
+    }
+}
+class EvalListResponsesPage extends CursorPage {
+}
+Evals.EvalListResponsesPage = EvalListResponsesPage;
+Evals.Runs = Runs;
+Evals.RunListResponsesPage = RunListResponsesPage;
+
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+let Files$1 = class Files extends APIResource {
+    /**
+     * Upload a file that can be used across various endpoints. Individual files can be
+     * up to 512 MB, and the size of all files uploaded by one organization can be up
+     * to 100 GB.
+     *
+     * The Assistants API supports files up to 2 million tokens and of specific file
+     * types. See the
+     * [Assistants Tools guide](https://platform.openai.com/docs/assistants/tools) for
+     * details.
+     *
+     * The Fine-tuning API only supports `.jsonl` files. The input also has certain
+     * required formats for fine-tuning
+     * [chat](https://platform.openai.com/docs/api-reference/fine-tuning/chat-input) or
+     * [completions](https://platform.openai.com/docs/api-reference/fine-tuning/completions-input)
+     * models.
+     *
+     * The Batch API only supports `.jsonl` files up to 200 MB in size. The input also
+     * has a specific required
+     * [format](https://platform.openai.com/docs/api-reference/batch/request-input).
+     *
+     * Please [contact us](https://help.openai.com/) if you need to increase these
+     * storage limits.
+     */
+    create(body, options) {
+        return this._client.post('/files', multipartFormRequestOptions({ body, ...options }));
+    }
+    /**
+     * Returns information about a specific file.
+     */
+    retrieve(fileId, options) {
+        return this._client.get(`/files/${fileId}`, options);
+    }
+    list(query = {}, options) {
+        if (isRequestOptions(query)) {
+            return this.list({}, query);
+        }
+        return this._client.getAPIList('/files', FileObjectsPage, { query, ...options });
+    }
+    /**
+     * Delete a file.
+     */
+    del(fileId, options) {
+        return this._client.delete(`/files/${fileId}`, options);
+    }
+    /**
+     * Returns the contents of the specified file.
+     */
+    content(fileId, options) {
+        return this._client.get(`/files/${fileId}/content`, {
+            ...options,
+            headers: { Accept: 'application/binary', ...options?.headers },
+            __binaryResponse: true,
+        });
+    }
+    /**
+     * Returns the contents of the specified file.
+     *
+     * @deprecated The `.content()` method should be used instead
+     */
+    retrieveContent(fileId, options) {
+        return this._client.get(`/files/${fileId}/content`, options);
+    }
+    /**
+     * Waits for the given file to be processed, default timeout is 30 mins.
+     */
+    async waitForProcessing(id, { pollInterval = 5000, maxWait = 30 * 60 * 1000 } = {}) {
+        const TERMINAL_STATES = new Set(['processed', 'error', 'deleted']);
+        const start = Date.now();
+        let file = await this.retrieve(id);
+        while (!file.status || !TERMINAL_STATES.has(file.status)) {
+            await sleep(pollInterval);
+            file = await this.retrieve(id);
+            if (Date.now() - start > maxWait) {
+                throw new APIConnectionTimeoutError({
+                    message: `Giving up on waiting for file ${id} to finish processing after ${maxWait} milliseconds.`,
+                });
+            }
+        }
+        return file;
+    }
+};
+class FileObjectsPage extends CursorPage {
+}
+Files$1.FileObjectsPage = FileObjectsPage;
+
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+class Methods extends APIResource {
+}
+
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+let Graders$1 = class Graders extends APIResource {
+    /**
+     * Run a grader.
+     *
+     * @example
+     * ```ts
+     * const response = await client.fineTuning.alpha.graders.run({
+     *   grader: {
+     *     input: 'input',
+     *     name: 'name',
+     *     operation: 'eq',
+     *     reference: 'reference',
+     *     type: 'string_check',
+     *   },
+     *   model_sample: 'model_sample',
+     *   reference_answer: 'string',
+     * });
+     * ```
+     */
+    run(body, options) {
+        return this._client.post('/fine_tuning/alpha/graders/run', { body, ...options });
+    }
+    /**
+     * Validate a grader.
+     *
+     * @example
+     * ```ts
+     * const response =
+     *   await client.fineTuning.alpha.graders.validate({
+     *     grader: {
+     *       input: 'input',
+     *       name: 'name',
+     *       operation: 'eq',
+     *       reference: 'reference',
+     *       type: 'string_check',
+     *     },
+     *   });
+     * ```
+     */
+    validate(body, options) {
+        return this._client.post('/fine_tuning/alpha/graders/validate', { body, ...options });
+    }
+};
+
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+class Alpha extends APIResource {
+    constructor() {
+        super(...arguments);
+        this.graders = new Graders$1(this._client);
+    }
+}
+Alpha.Graders = Graders$1;
+
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+class Permissions extends APIResource {
+    /**
+     * **NOTE:** Calling this endpoint requires an [admin API key](../admin-api-keys).
+     *
+     * This enables organization owners to share fine-tuned models with other projects
+     * in their organization.
+     *
+     * @example
+     * ```ts
+     * // Automatically fetches more pages as needed.
+     * for await (const permissionCreateResponse of client.fineTuning.checkpoints.permissions.create(
+     *   'ft:gpt-4o-mini-2024-07-18:org:weather:B7R9VjQd',
+     *   { project_ids: ['string'] },
+     * )) {
+     *   // ...
+     * }
+     * ```
+     */
+    create(fineTunedModelCheckpoint, body, options) {
+        return this._client.getAPIList(`/fine_tuning/checkpoints/${fineTunedModelCheckpoint}/permissions`, PermissionCreateResponsesPage, { body, method: 'post', ...options });
+    }
+    retrieve(fineTunedModelCheckpoint, query = {}, options) {
+        if (isRequestOptions(query)) {
+            return this.retrieve(fineTunedModelCheckpoint, {}, query);
+        }
+        return this._client.get(`/fine_tuning/checkpoints/${fineTunedModelCheckpoint}/permissions`, {
+            query,
+            ...options,
+        });
+    }
+    /**
+     * **NOTE:** This endpoint requires an [admin API key](../admin-api-keys).
+     *
+     * Organization owners can use this endpoint to delete a permission for a
+     * fine-tuned model checkpoint.
+     *
+     * @example
+     * ```ts
+     * const permission =
+     *   await client.fineTuning.checkpoints.permissions.del(
+     *     'ft:gpt-4o-mini-2024-07-18:org:weather:B7R9VjQd',
+     *     'cp_zc4Q7MP6XxulcVzj4MZdwsAB',
+     *   );
+     * ```
+     */
+    del(fineTunedModelCheckpoint, permissionId, options) {
+        return this._client.delete(`/fine_tuning/checkpoints/${fineTunedModelCheckpoint}/permissions/${permissionId}`, options);
+    }
+}
+/**
+ * Note: no pagination actually occurs yet, this is for forwards-compatibility.
+ */
+class PermissionCreateResponsesPage extends Page {
+}
+Permissions.PermissionCreateResponsesPage = PermissionCreateResponsesPage;
+
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+let Checkpoints$1 = class Checkpoints extends APIResource {
+    constructor() {
+        super(...arguments);
+        this.permissions = new Permissions(this._client);
+    }
+};
+Checkpoints$1.Permissions = Permissions;
+Checkpoints$1.PermissionCreateResponsesPage = PermissionCreateResponsesPage;
+
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+class Checkpoints extends APIResource {
+    list(fineTuningJobId, query = {}, options) {
+        if (isRequestOptions(query)) {
+            return this.list(fineTuningJobId, {}, query);
+        }
+        return this._client.getAPIList(`/fine_tuning/jobs/${fineTuningJobId}/checkpoints`, FineTuningJobCheckpointsPage, { query, ...options });
+    }
+}
+class FineTuningJobCheckpointsPage extends CursorPage {
+}
+Checkpoints.FineTuningJobCheckpointsPage = FineTuningJobCheckpointsPage;
+
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+class Jobs extends APIResource {
+    constructor() {
+        super(...arguments);
+        this.checkpoints = new Checkpoints(this._client);
+    }
+    /**
+     * Creates a fine-tuning job which begins the process of creating a new model from
+     * a given dataset.
+     *
+     * Response includes details of the enqueued job including job status and the name
+     * of the fine-tuned models once complete.
+     *
+     * [Learn more about fine-tuning](https://platform.openai.com/docs/guides/fine-tuning)
+     *
+     * @example
+     * ```ts
+     * const fineTuningJob = await client.fineTuning.jobs.create({
+     *   model: 'gpt-4o-mini',
+     *   training_file: 'file-abc123',
+     * });
+     * ```
+     */
+    create(body, options) {
+        return this._client.post('/fine_tuning/jobs', { body, ...options });
+    }
+    /**
+     * Get info about a fine-tuning job.
+     *
+     * [Learn more about fine-tuning](https://platform.openai.com/docs/guides/fine-tuning)
+     *
+     * @example
+     * ```ts
+     * const fineTuningJob = await client.fineTuning.jobs.retrieve(
+     *   'ft-AF1WoRqd3aJAHsqc9NY7iL8F',
+     * );
+     * ```
+     */
+    retrieve(fineTuningJobId, options) {
+        return this._client.get(`/fine_tuning/jobs/${fineTuningJobId}`, options);
+    }
+    list(query = {}, options) {
+        if (isRequestOptions(query)) {
+            return this.list({}, query);
+        }
+        return this._client.getAPIList('/fine_tuning/jobs', FineTuningJobsPage, { query, ...options });
+    }
+    /**
+     * Immediately cancel a fine-tune job.
+     *
+     * @example
+     * ```ts
+     * const fineTuningJob = await client.fineTuning.jobs.cancel(
+     *   'ft-AF1WoRqd3aJAHsqc9NY7iL8F',
+     * );
+     * ```
+     */
+    cancel(fineTuningJobId, options) {
+        return this._client.post(`/fine_tuning/jobs/${fineTuningJobId}/cancel`, options);
+    }
+    listEvents(fineTuningJobId, query = {}, options) {
+        if (isRequestOptions(query)) {
+            return this.listEvents(fineTuningJobId, {}, query);
+        }
+        return this._client.getAPIList(`/fine_tuning/jobs/${fineTuningJobId}/events`, FineTuningJobEventsPage, {
+            query,
+            ...options,
+        });
+    }
+    /**
+     * Pause a fine-tune job.
+     *
+     * @example
+     * ```ts
+     * const fineTuningJob = await client.fineTuning.jobs.pause(
+     *   'ft-AF1WoRqd3aJAHsqc9NY7iL8F',
+     * );
+     * ```
+     */
+    pause(fineTuningJobId, options) {
+        return this._client.post(`/fine_tuning/jobs/${fineTuningJobId}/pause`, options);
+    }
+    /**
+     * Resume a fine-tune job.
+     *
+     * @example
+     * ```ts
+     * const fineTuningJob = await client.fineTuning.jobs.resume(
+     *   'ft-AF1WoRqd3aJAHsqc9NY7iL8F',
+     * );
+     * ```
+     */
+    resume(fineTuningJobId, options) {
+        return this._client.post(`/fine_tuning/jobs/${fineTuningJobId}/resume`, options);
+    }
+}
+class FineTuningJobsPage extends CursorPage {
+}
+class FineTuningJobEventsPage extends CursorPage {
+}
+Jobs.FineTuningJobsPage = FineTuningJobsPage;
+Jobs.FineTuningJobEventsPage = FineTuningJobEventsPage;
+Jobs.Checkpoints = Checkpoints;
+Jobs.FineTuningJobCheckpointsPage = FineTuningJobCheckpointsPage;
+
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+class FineTuning extends APIResource {
+    constructor() {
+        super(...arguments);
+        this.methods = new Methods(this._client);
+        this.jobs = new Jobs(this._client);
+        this.checkpoints = new Checkpoints$1(this._client);
+        this.alpha = new Alpha(this._client);
+    }
+}
+FineTuning.Methods = Methods;
+FineTuning.Jobs = Jobs;
+FineTuning.FineTuningJobsPage = FineTuningJobsPage;
+FineTuning.FineTuningJobEventsPage = FineTuningJobEventsPage;
+FineTuning.Checkpoints = Checkpoints$1;
+FineTuning.Alpha = Alpha;
+
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+class GraderModels extends APIResource {
+}
+
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+class Graders extends APIResource {
+    constructor() {
+        super(...arguments);
+        this.graderModels = new GraderModels(this._client);
+    }
+}
+Graders.GraderModels = GraderModels;
+
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+class Images extends APIResource {
+    /**
+     * Creates a variation of a given image. This endpoint only supports `dall-e-2`.
+     *
+     * @example
+     * ```ts
+     * const imagesResponse = await client.images.createVariation({
+     *   image: fs.createReadStream('otter.png'),
+     * });
+     * ```
+     */
+    createVariation(body, options) {
+        return this._client.post('/images/variations', multipartFormRequestOptions({ body, ...options }));
+    }
+    /**
+     * Creates an edited or extended image given one or more source images and a
+     * prompt. This endpoint only supports `gpt-image-1` and `dall-e-2`.
+     *
+     * @example
+     * ```ts
+     * const imagesResponse = await client.images.edit({
+     *   image: fs.createReadStream('path/to/file'),
+     *   prompt: 'A cute baby sea otter wearing a beret',
+     * });
+     * ```
+     */
+    edit(body, options) {
+        return this._client.post('/images/edits', multipartFormRequestOptions({ body, ...options }));
+    }
+    /**
+     * Creates an image given a prompt.
+     * [Learn more](https://platform.openai.com/docs/guides/images).
+     *
+     * @example
+     * ```ts
+     * const imagesResponse = await client.images.generate({
+     *   prompt: 'A cute baby sea otter',
+     * });
+     * ```
+     */
+    generate(body, options) {
+        return this._client.post('/images/generations', { body, ...options });
+    }
+}
+
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+class Models extends APIResource {
+    /**
+     * Retrieves a model instance, providing basic information about the model such as
+     * the owner and permissioning.
+     */
+    retrieve(model, options) {
+        return this._client.get(`/models/${model}`, options);
+    }
+    /**
+     * Lists the currently available models, and provides basic information about each
+     * one such as the owner and availability.
+     */
+    list(options) {
+        return this._client.getAPIList('/models', ModelsPage, options);
+    }
+    /**
+     * Delete a fine-tuned model. You must have the Owner role in your organization to
+     * delete a model.
+     */
+    del(model, options) {
+        return this._client.delete(`/models/${model}`, options);
+    }
+}
+/**
+ * Note: no pagination actually occurs yet, this is for forwards-compatibility.
+ */
+class ModelsPage extends Page {
+}
+Models.ModelsPage = ModelsPage;
+
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+class Moderations extends APIResource {
+    /**
+     * Classifies if text and/or image inputs are potentially harmful. Learn more in
+     * the [moderation guide](https://platform.openai.com/docs/guides/moderation).
+     */
+    create(body, options) {
+        return this._client.post('/moderations', { body, ...options });
+    }
+}
+
+function maybeParseResponse(response, params) {
+    if (!params || !hasAutoParseableInput(params)) {
+        return {
+            ...response,
+            output_parsed: null,
+            output: response.output.map((item) => {
+                if (item.type === 'function_call') {
+                    return {
+                        ...item,
+                        parsed_arguments: null,
+                    };
+                }
+                if (item.type === 'message') {
+                    return {
+                        ...item,
+                        content: item.content.map((content) => ({
+                            ...content,
+                            parsed: null,
+                        })),
+                    };
+                }
+                else {
+                    return item;
+                }
+            }),
+        };
+    }
+    return parseResponse(response, params);
+}
+function parseResponse(response, params) {
+    const output = response.output.map((item) => {
+        if (item.type === 'function_call') {
+            return {
+                ...item,
+                parsed_arguments: parseToolCall(params, item),
+            };
+        }
+        if (item.type === 'message') {
+            const content = item.content.map((content) => {
+                if (content.type === 'output_text') {
+                    return {
+                        ...content,
+                        parsed: parseTextFormat(params, content.text),
+                    };
+                }
+                return content;
+            });
+            return {
+                ...item,
+                content,
+            };
+        }
+        return item;
+    });
+    const parsed = Object.assign({}, response, { output });
+    if (!Object.getOwnPropertyDescriptor(response, 'output_text')) {
+        addOutputText(parsed);
+    }
+    Object.defineProperty(parsed, 'output_parsed', {
+        enumerable: true,
+        get() {
+            for (const output of parsed.output) {
+                if (output.type !== 'message') {
+                    continue;
+                }
+                for (const content of output.content) {
+                    if (content.type === 'output_text' && content.parsed !== null) {
+                        return content.parsed;
+                    }
+                }
+            }
+            return null;
+        },
+    });
+    return parsed;
+}
+function parseTextFormat(params, content) {
+    if (params.text?.format?.type !== 'json_schema') {
+        return null;
+    }
+    if ('$parseRaw' in params.text?.format) {
+        const text_format = params.text?.format;
+        return text_format.$parseRaw(content);
+    }
+    return JSON.parse(content);
+}
+function hasAutoParseableInput(params) {
+    if (isAutoParsableResponseFormat(params.text?.format)) {
+        return true;
+    }
+    return false;
+}
+function isAutoParsableTool(tool) {
+    return tool?.['$brand'] === 'auto-parseable-tool';
+}
+function getInputToolByName(input_tools, name) {
+    return input_tools.find((tool) => tool.type === 'function' && tool.name === name);
+}
+function parseToolCall(params, toolCall) {
+    const inputTool = getInputToolByName(params.tools ?? [], toolCall.name);
+    return {
+        ...toolCall,
+        ...toolCall,
+        parsed_arguments: isAutoParsableTool(inputTool) ? inputTool.$parseRaw(toolCall.arguments)
+            : inputTool?.strict ? JSON.parse(toolCall.arguments)
+                : null,
+    };
+}
+function addOutputText(rsp) {
+    const texts = [];
+    for (const output of rsp.output) {
+        if (output.type !== 'message') {
+            continue;
+        }
+        for (const content of output.content) {
+            if (content.type === 'output_text') {
+                texts.push(content.text);
+            }
+        }
+    }
+    rsp.output_text = texts.join('');
+}
+
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+class InputItems extends APIResource {
+    list(responseId, query = {}, options) {
+        if (isRequestOptions(query)) {
+            return this.list(responseId, {}, query);
+        }
+        return this._client.getAPIList(`/responses/${responseId}/input_items`, ResponseItemsPage, {
+            query,
+            ...options,
+        });
+    }
+}
+
+var __classPrivateFieldSet = (undefined && undefined.__classPrivateFieldSet) || function (receiver, state, value, kind, f) {
+    if (kind === "m") throw new TypeError("Private method is not writable");
+    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
+    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot write private member to an object whose class did not declare it");
+    return (kind === "a" ? f.call(receiver, value) : f ? f.value = value : state.set(receiver, value)), value;
+};
+var __classPrivateFieldGet = (undefined && undefined.__classPrivateFieldGet) || function (receiver, state, kind, f) {
+    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a getter");
+    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
+    return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
+};
+var _ResponseStream_instances, _ResponseStream_params, _ResponseStream_currentResponseSnapshot, _ResponseStream_finalResponse, _ResponseStream_beginRequest, _ResponseStream_addEvent, _ResponseStream_endRequest, _ResponseStream_accumulateResponse;
+class ResponseStream extends EventStream {
+    constructor(params) {
+        super();
+        _ResponseStream_instances.add(this);
+        _ResponseStream_params.set(this, void 0);
+        _ResponseStream_currentResponseSnapshot.set(this, void 0);
+        _ResponseStream_finalResponse.set(this, void 0);
+        __classPrivateFieldSet(this, _ResponseStream_params, params, "f");
+    }
+    static createResponse(client, params, options) {
+        const runner = new ResponseStream(params);
+        runner._run(() => runner._createOrRetrieveResponse(client, params, {
+            ...options,
+            headers: { ...options?.headers, 'X-Stainless-Helper-Method': 'stream' },
+        }));
+        return runner;
+    }
+    async _createOrRetrieveResponse(client, params, options) {
+        const signal = options?.signal;
+        if (signal) {
+            if (signal.aborted)
+                this.controller.abort();
+            signal.addEventListener('abort', () => this.controller.abort());
+        }
+        __classPrivateFieldGet(this, _ResponseStream_instances, "m", _ResponseStream_beginRequest).call(this);
+        let stream;
+        let starting_after = null;
+        if ('response_id' in params) {
+            stream = await client.responses.retrieve(params.response_id, { stream: true }, { ...options, signal: this.controller.signal, stream: true });
+            starting_after = params.starting_after ?? null;
+        }
+        else {
+            stream = await client.responses.create({ ...params, stream: true }, { ...options, signal: this.controller.signal });
+        }
+        this._connected();
+        for await (const event of stream) {
+            __classPrivateFieldGet(this, _ResponseStream_instances, "m", _ResponseStream_addEvent).call(this, event, starting_after);
+        }
+        if (stream.controller.signal?.aborted) {
+            throw new APIUserAbortError();
+        }
+        return __classPrivateFieldGet(this, _ResponseStream_instances, "m", _ResponseStream_endRequest).call(this);
+    }
+    [(_ResponseStream_params = new WeakMap(), _ResponseStream_currentResponseSnapshot = new WeakMap(), _ResponseStream_finalResponse = new WeakMap(), _ResponseStream_instances = new WeakSet(), _ResponseStream_beginRequest = function _ResponseStream_beginRequest() {
+        if (this.ended)
+            return;
+        __classPrivateFieldSet(this, _ResponseStream_currentResponseSnapshot, undefined, "f");
+    }, _ResponseStream_addEvent = function _ResponseStream_addEvent(event, starting_after) {
+        if (this.ended)
+            return;
+        const maybeEmit = (name, event) => {
+            if (starting_after == null || event.sequence_number > starting_after) {
+                this._emit(name, event);
+            }
+        };
+        const response = __classPrivateFieldGet(this, _ResponseStream_instances, "m", _ResponseStream_accumulateResponse).call(this, event);
+        maybeEmit('event', event);
+        switch (event.type) {
+            case 'response.output_text.delta': {
+                const output = response.output[event.output_index];
+                if (!output) {
+                    throw new OpenAIError(`missing output at index ${event.output_index}`);
+                }
+                if (output.type === 'message') {
+                    const content = output.content[event.content_index];
+                    if (!content) {
+                        throw new OpenAIError(`missing content at index ${event.content_index}`);
+                    }
+                    if (content.type !== 'output_text') {
+                        throw new OpenAIError(`expected content to be 'output_text', got ${content.type}`);
+                    }
+                    maybeEmit('response.output_text.delta', {
+                        ...event,
+                        snapshot: content.text,
+                    });
+                }
+                break;
+            }
+            case 'response.function_call_arguments.delta': {
+                const output = response.output[event.output_index];
+                if (!output) {
+                    throw new OpenAIError(`missing output at index ${event.output_index}`);
+                }
+                if (output.type === 'function_call') {
+                    maybeEmit('response.function_call_arguments.delta', {
+                        ...event,
+                        snapshot: output.arguments,
+                    });
+                }
+                break;
+            }
+            default:
+                maybeEmit(event.type, event);
+                break;
+        }
+    }, _ResponseStream_endRequest = function _ResponseStream_endRequest() {
+        if (this.ended) {
+            throw new OpenAIError(`stream has ended, this shouldn't happen`);
+        }
+        const snapshot = __classPrivateFieldGet(this, _ResponseStream_currentResponseSnapshot, "f");
+        if (!snapshot) {
+            throw new OpenAIError(`request ended without sending any events`);
+        }
+        __classPrivateFieldSet(this, _ResponseStream_currentResponseSnapshot, undefined, "f");
+        const parsedResponse = finalizeResponse(snapshot, __classPrivateFieldGet(this, _ResponseStream_params, "f"));
+        __classPrivateFieldSet(this, _ResponseStream_finalResponse, parsedResponse, "f");
+        return parsedResponse;
+    }, _ResponseStream_accumulateResponse = function _ResponseStream_accumulateResponse(event) {
+        let snapshot = __classPrivateFieldGet(this, _ResponseStream_currentResponseSnapshot, "f");
+        if (!snapshot) {
+            if (event.type !== 'response.created') {
+                throw new OpenAIError(`When snapshot hasn't been set yet, expected 'response.created' event, got ${event.type}`);
+            }
+            snapshot = __classPrivateFieldSet(this, _ResponseStream_currentResponseSnapshot, event.response, "f");
+            return snapshot;
+        }
+        switch (event.type) {
+            case 'response.output_item.added': {
+                snapshot.output.push(event.item);
+                break;
+            }
+            case 'response.content_part.added': {
+                const output = snapshot.output[event.output_index];
+                if (!output) {
+                    throw new OpenAIError(`missing output at index ${event.output_index}`);
+                }
+                if (output.type === 'message') {
+                    output.content.push(event.part);
+                }
+                break;
+            }
+            case 'response.output_text.delta': {
+                const output = snapshot.output[event.output_index];
+                if (!output) {
+                    throw new OpenAIError(`missing output at index ${event.output_index}`);
+                }
+                if (output.type === 'message') {
+                    const content = output.content[event.content_index];
+                    if (!content) {
+                        throw new OpenAIError(`missing content at index ${event.content_index}`);
+                    }
+                    if (content.type !== 'output_text') {
+                        throw new OpenAIError(`expected content to be 'output_text', got ${content.type}`);
+                    }
+                    content.text += event.delta;
+                }
+                break;
+            }
+            case 'response.function_call_arguments.delta': {
+                const output = snapshot.output[event.output_index];
+                if (!output) {
+                    throw new OpenAIError(`missing output at index ${event.output_index}`);
+                }
+                if (output.type === 'function_call') {
+                    output.arguments += event.delta;
+                }
+                break;
+            }
+            case 'response.completed': {
+                __classPrivateFieldSet(this, _ResponseStream_currentResponseSnapshot, event.response, "f");
+                break;
+            }
+        }
+        return snapshot;
+    }, Symbol.asyncIterator)]() {
+        const pushQueue = [];
+        const readQueue = [];
+        let done = false;
+        this.on('event', (event) => {
+            const reader = readQueue.shift();
+            if (reader) {
+                reader.resolve(event);
+            }
+            else {
+                pushQueue.push(event);
+            }
+        });
+        this.on('end', () => {
+            done = true;
+            for (const reader of readQueue) {
+                reader.resolve(undefined);
+            }
+            readQueue.length = 0;
+        });
+        this.on('abort', (err) => {
+            done = true;
+            for (const reader of readQueue) {
+                reader.reject(err);
+            }
+            readQueue.length = 0;
+        });
+        this.on('error', (err) => {
+            done = true;
+            for (const reader of readQueue) {
+                reader.reject(err);
+            }
+            readQueue.length = 0;
+        });
+        return {
+            next: async () => {
+                if (!pushQueue.length) {
+                    if (done) {
+                        return { value: undefined, done: true };
+                    }
+                    return new Promise((resolve, reject) => readQueue.push({ resolve, reject })).then((event) => (event ? { value: event, done: false } : { value: undefined, done: true }));
+                }
+                const event = pushQueue.shift();
+                return { value: event, done: false };
+            },
+            return: async () => {
+                this.abort();
+                return { value: undefined, done: true };
+            },
+        };
+    }
+    /**
+     * @returns a promise that resolves with the final Response, or rejects
+     * if an error occurred or the stream ended prematurely without producing a REsponse.
+     */
+    async finalResponse() {
+        await this.done();
+        const response = __classPrivateFieldGet(this, _ResponseStream_finalResponse, "f");
+        if (!response)
+            throw new OpenAIError('stream ended without producing a ChatCompletion');
+        return response;
+    }
+}
+function finalizeResponse(snapshot, params) {
+    return maybeParseResponse(snapshot, params);
+}
+
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+class Responses extends APIResource {
+    constructor() {
+        super(...arguments);
+        this.inputItems = new InputItems(this._client);
+    }
+    create(body, options) {
+        return this._client.post('/responses', { body, ...options, stream: body.stream ?? false })._thenUnwrap((rsp) => {
+            if ('object' in rsp && rsp.object === 'response') {
+                addOutputText(rsp);
+            }
+            return rsp;
+        });
+    }
+    retrieve(responseId, query = {}, options) {
+        return this._client.get(`/responses/${responseId}`, {
+            query,
+            ...options,
+            stream: query?.stream ?? false,
+        });
+    }
+    /**
+     * Deletes a model response with the given ID.
+     *
+     * @example
+     * ```ts
+     * await client.responses.del(
+     *   'resp_677efb5139a88190b512bc3fef8e535d',
+     * );
+     * ```
+     */
+    del(responseId, options) {
+        return this._client.delete(`/responses/${responseId}`, {
+            ...options,
+            headers: { Accept: '*/*', ...options?.headers },
+        });
+    }
+    parse(body, options) {
+        return this._client.responses
+            .create(body, options)
+            ._thenUnwrap((response) => parseResponse(response, body));
+    }
+    /**
+     * Creates a model response stream
+     */
+    stream(body, options) {
+        return ResponseStream.createResponse(this._client, body, options);
+    }
+    /**
+     * Cancels a model response with the given ID. Only responses created with the
+     * `background` parameter set to `true` can be cancelled.
+     * [Learn more](https://platform.openai.com/docs/guides/background).
+     *
+     * @example
+     * ```ts
+     * await client.responses.cancel(
+     *   'resp_677efb5139a88190b512bc3fef8e535d',
+     * );
+     * ```
+     */
+    cancel(responseId, options) {
+        return this._client.post(`/responses/${responseId}/cancel`, {
+            ...options,
+            headers: { Accept: '*/*', ...options?.headers },
+        });
+    }
+}
+class ResponseItemsPage extends CursorPage {
+}
+Responses.InputItems = InputItems;
+
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+class Parts extends APIResource {
+    /**
+     * Adds a
+     * [Part](https://platform.openai.com/docs/api-reference/uploads/part-object) to an
+     * [Upload](https://platform.openai.com/docs/api-reference/uploads/object) object.
+     * A Part represents a chunk of bytes from the file you are trying to upload.
+     *
+     * Each Part can be at most 64 MB, and you can add Parts until you hit the Upload
+     * maximum of 8 GB.
+     *
+     * It is possible to add multiple Parts in parallel. You can decide the intended
+     * order of the Parts when you
+     * [complete the Upload](https://platform.openai.com/docs/api-reference/uploads/complete).
+     */
+    create(uploadId, body, options) {
+        return this._client.post(`/uploads/${uploadId}/parts`, multipartFormRequestOptions({ body, ...options }));
+    }
+}
+
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+class Uploads extends APIResource {
+    constructor() {
+        super(...arguments);
+        this.parts = new Parts(this._client);
+    }
+    /**
+     * Creates an intermediate
+     * [Upload](https://platform.openai.com/docs/api-reference/uploads/object) object
+     * that you can add
+     * [Parts](https://platform.openai.com/docs/api-reference/uploads/part-object) to.
+     * Currently, an Upload can accept at most 8 GB in total and expires after an hour
+     * after you create it.
+     *
+     * Once you complete the Upload, we will create a
+     * [File](https://platform.openai.com/docs/api-reference/files/object) object that
+     * contains all the parts you uploaded. This File is usable in the rest of our
+     * platform as a regular File object.
+     *
+     * For certain `purpose` values, the correct `mime_type` must be specified. Please
+     * refer to documentation for the
+     * [supported MIME types for your use case](https://platform.openai.com/docs/assistants/tools/file-search#supported-files).
+     *
+     * For guidance on the proper filename extensions for each purpose, please follow
+     * the documentation on
+     * [creating a File](https://platform.openai.com/docs/api-reference/files/create).
+     */
+    create(body, options) {
+        return this._client.post('/uploads', { body, ...options });
+    }
+    /**
+     * Cancels the Upload. No Parts may be added after an Upload is cancelled.
+     */
+    cancel(uploadId, options) {
+        return this._client.post(`/uploads/${uploadId}/cancel`, options);
+    }
+    /**
+     * Completes the
+     * [Upload](https://platform.openai.com/docs/api-reference/uploads/object).
+     *
+     * Within the returned Upload object, there is a nested
+     * [File](https://platform.openai.com/docs/api-reference/files/object) object that
+     * is ready to use in the rest of the platform.
+     *
+     * You can specify the order of the Parts by passing in an ordered list of the Part
+     * IDs.
+     *
+     * The number of bytes uploaded upon completion must match the number of bytes
+     * initially specified when creating the Upload object. No Parts may be added after
+     * an Upload is completed.
+     */
+    complete(uploadId, body, options) {
+        return this._client.post(`/uploads/${uploadId}/complete`, { body, ...options });
+    }
+}
+Uploads.Parts = Parts;
+
+/**
+ * Like `Promise.allSettled()` but throws an error if any promises are rejected.
+ */
+const allSettledWithThrow = async (promises) => {
+    const results = await Promise.allSettled(promises);
+    const rejected = results.filter((result) => result.status === 'rejected');
+    if (rejected.length) {
+        for (const result of rejected) {
+            console.error(result.reason);
+        }
+        throw new Error(`${rejected.length} promise(s) failed - see the above errors`);
+    }
+    // Note: TS was complaining about using `.filter().map()` here for some reason
+    const values = [];
+    for (const result of results) {
+        if (result.status === 'fulfilled') {
+            values.push(result.value);
+        }
+    }
+    return values;
+};
+
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+class Files extends APIResource {
+    /**
+     * Create a vector store file by attaching a
+     * [File](https://platform.openai.com/docs/api-reference/files) to a
+     * [vector store](https://platform.openai.com/docs/api-reference/vector-stores/object).
+     */
+    create(vectorStoreId, body, options) {
+        return this._client.post(`/vector_stores/${vectorStoreId}/files`, {
+            body,
+            ...options,
+            headers: { 'OpenAI-Beta': 'assistants=v2', ...options?.headers },
+        });
+    }
+    /**
+     * Retrieves a vector store file.
+     */
+    retrieve(vectorStoreId, fileId, options) {
+        return this._client.get(`/vector_stores/${vectorStoreId}/files/${fileId}`, {
+            ...options,
+            headers: { 'OpenAI-Beta': 'assistants=v2', ...options?.headers },
+        });
+    }
+    /**
+     * Update attributes on a vector store file.
+     */
+    update(vectorStoreId, fileId, body, options) {
+        return this._client.post(`/vector_stores/${vectorStoreId}/files/${fileId}`, {
+            body,
+            ...options,
+            headers: { 'OpenAI-Beta': 'assistants=v2', ...options?.headers },
+        });
+    }
+    list(vectorStoreId, query = {}, options) {
+        if (isRequestOptions(query)) {
+            return this.list(vectorStoreId, {}, query);
+        }
+        return this._client.getAPIList(`/vector_stores/${vectorStoreId}/files`, VectorStoreFilesPage, {
+            query,
+            ...options,
+            headers: { 'OpenAI-Beta': 'assistants=v2', ...options?.headers },
+        });
+    }
+    /**
+     * Delete a vector store file. This will remove the file from the vector store but
+     * the file itself will not be deleted. To delete the file, use the
+     * [delete file](https://platform.openai.com/docs/api-reference/files/delete)
+     * endpoint.
+     */
+    del(vectorStoreId, fileId, options) {
+        return this._client.delete(`/vector_stores/${vectorStoreId}/files/${fileId}`, {
+            ...options,
+            headers: { 'OpenAI-Beta': 'assistants=v2', ...options?.headers },
+        });
+    }
+    /**
+     * Attach a file to the given vector store and wait for it to be processed.
+     */
+    async createAndPoll(vectorStoreId, body, options) {
+        const file = await this.create(vectorStoreId, body, options);
+        return await this.poll(vectorStoreId, file.id, options);
+    }
+    /**
+     * Wait for the vector store file to finish processing.
+     *
+     * Note: this will return even if the file failed to process, you need to check
+     * file.last_error and file.status to handle these cases
+     */
+    async poll(vectorStoreId, fileId, options) {
+        const headers = { ...options?.headers, 'X-Stainless-Poll-Helper': 'true' };
+        if (options?.pollIntervalMs) {
+            headers['X-Stainless-Custom-Poll-Interval'] = options.pollIntervalMs.toString();
+        }
+        while (true) {
+            const fileResponse = await this.retrieve(vectorStoreId, fileId, {
+                ...options,
+                headers,
+            }).withResponse();
+            const file = fileResponse.data;
+            switch (file.status) {
+                case 'in_progress':
+                    let sleepInterval = 5000;
+                    if (options?.pollIntervalMs) {
+                        sleepInterval = options.pollIntervalMs;
+                    }
+                    else {
+                        const headerInterval = fileResponse.response.headers.get('openai-poll-after-ms');
+                        if (headerInterval) {
+                            const headerIntervalMs = parseInt(headerInterval);
+                            if (!isNaN(headerIntervalMs)) {
+                                sleepInterval = headerIntervalMs;
+                            }
+                        }
+                    }
+                    await sleep(sleepInterval);
+                    break;
+                case 'failed':
+                case 'completed':
+                    return file;
+            }
+        }
+    }
+    /**
+     * Upload a file to the `files` API and then attach it to the given vector store.
+     *
+     * Note the file will be asynchronously processed (you can use the alternative
+     * polling helper method to wait for processing to complete).
+     */
+    async upload(vectorStoreId, file, options) {
+        const fileInfo = await this._client.files.create({ file: file, purpose: 'assistants' }, options);
+        return this.create(vectorStoreId, { file_id: fileInfo.id }, options);
+    }
+    /**
+     * Add a file to a vector store and poll until processing is complete.
+     */
+    async uploadAndPoll(vectorStoreId, file, options) {
+        const fileInfo = await this.upload(vectorStoreId, file, options);
+        return await this.poll(vectorStoreId, fileInfo.id, options);
+    }
+    /**
+     * Retrieve the parsed contents of a vector store file.
+     */
+    content(vectorStoreId, fileId, options) {
+        return this._client.getAPIList(`/vector_stores/${vectorStoreId}/files/${fileId}/content`, FileContentResponsesPage, { ...options, headers: { 'OpenAI-Beta': 'assistants=v2', ...options?.headers } });
+    }
+}
+class VectorStoreFilesPage extends CursorPage {
+}
+/**
+ * Note: no pagination actually occurs yet, this is for forwards-compatibility.
+ */
+class FileContentResponsesPage extends Page {
+}
+Files.VectorStoreFilesPage = VectorStoreFilesPage;
+Files.FileContentResponsesPage = FileContentResponsesPage;
+
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+class FileBatches extends APIResource {
+    /**
+     * Create a vector store file batch.
+     */
+    create(vectorStoreId, body, options) {
+        return this._client.post(`/vector_stores/${vectorStoreId}/file_batches`, {
+            body,
+            ...options,
+            headers: { 'OpenAI-Beta': 'assistants=v2', ...options?.headers },
+        });
+    }
+    /**
+     * Retrieves a vector store file batch.
+     */
+    retrieve(vectorStoreId, batchId, options) {
+        return this._client.get(`/vector_stores/${vectorStoreId}/file_batches/${batchId}`, {
+            ...options,
+            headers: { 'OpenAI-Beta': 'assistants=v2', ...options?.headers },
+        });
+    }
+    /**
+     * Cancel a vector store file batch. This attempts to cancel the processing of
+     * files in this batch as soon as possible.
+     */
+    cancel(vectorStoreId, batchId, options) {
+        return this._client.post(`/vector_stores/${vectorStoreId}/file_batches/${batchId}/cancel`, {
+            ...options,
+            headers: { 'OpenAI-Beta': 'assistants=v2', ...options?.headers },
+        });
+    }
+    /**
+     * Create a vector store batch and poll until all files have been processed.
+     */
+    async createAndPoll(vectorStoreId, body, options) {
+        const batch = await this.create(vectorStoreId, body);
+        return await this.poll(vectorStoreId, batch.id, options);
+    }
+    listFiles(vectorStoreId, batchId, query = {}, options) {
+        if (isRequestOptions(query)) {
+            return this.listFiles(vectorStoreId, batchId, {}, query);
+        }
+        return this._client.getAPIList(`/vector_stores/${vectorStoreId}/file_batches/${batchId}/files`, VectorStoreFilesPage, { query, ...options, headers: { 'OpenAI-Beta': 'assistants=v2', ...options?.headers } });
+    }
+    /**
+     * Wait for the given file batch to be processed.
+     *
+     * Note: this will return even if one of the files failed to process, you need to
+     * check batch.file_counts.failed_count to handle this case.
+     */
+    async poll(vectorStoreId, batchId, options) {
+        const headers = { ...options?.headers, 'X-Stainless-Poll-Helper': 'true' };
+        if (options?.pollIntervalMs) {
+            headers['X-Stainless-Custom-Poll-Interval'] = options.pollIntervalMs.toString();
+        }
+        while (true) {
+            const { data: batch, response } = await this.retrieve(vectorStoreId, batchId, {
+                ...options,
+                headers,
+            }).withResponse();
+            switch (batch.status) {
+                case 'in_progress':
+                    let sleepInterval = 5000;
+                    if (options?.pollIntervalMs) {
+                        sleepInterval = options.pollIntervalMs;
+                    }
+                    else {
+                        const headerInterval = response.headers.get('openai-poll-after-ms');
+                        if (headerInterval) {
+                            const headerIntervalMs = parseInt(headerInterval);
+                            if (!isNaN(headerIntervalMs)) {
+                                sleepInterval = headerIntervalMs;
+                            }
+                        }
+                    }
+                    await sleep(sleepInterval);
+                    break;
+                case 'failed':
+                case 'cancelled':
+                case 'completed':
+                    return batch;
+            }
+        }
+    }
+    /**
+     * Uploads the given files concurrently and then creates a vector store file batch.
+     *
+     * The concurrency limit is configurable using the `maxConcurrency` parameter.
+     */
+    async uploadAndPoll(vectorStoreId, { files, fileIds = [] }, options) {
+        if (files == null || files.length == 0) {
+            throw new Error(`No \`files\` provided to process. If you've already uploaded files you should use \`.createAndPoll()\` instead`);
+        }
+        const configuredConcurrency = options?.maxConcurrency ?? 5;
+        // We cap the number of workers at the number of files (so we don't start any unnecessary workers)
+        const concurrencyLimit = Math.min(configuredConcurrency, files.length);
+        const client = this._client;
+        const fileIterator = files.values();
+        const allFileIds = [...fileIds];
+        // This code is based on this design. The libraries don't accommodate our environment limits.
+        // https://stackoverflow.com/questions/40639432/what-is-the-best-way-to-limit-concurrency-when-using-es6s-promise-all
+        async function processFiles(iterator) {
+            for (let item of iterator) {
+                const fileObj = await client.files.create({ file: item, purpose: 'assistants' }, options);
+                allFileIds.push(fileObj.id);
+            }
+        }
+        // Start workers to process results
+        const workers = Array(concurrencyLimit).fill(fileIterator).map(processFiles);
+        // Wait for all processing to complete.
+        await allSettledWithThrow(workers);
+        return await this.createAndPoll(vectorStoreId, {
+            file_ids: allFileIds,
+        });
+    }
+}
+
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+class VectorStores extends APIResource {
+    constructor() {
+        super(...arguments);
+        this.files = new Files(this._client);
+        this.fileBatches = new FileBatches(this._client);
+    }
+    /**
+     * Create a vector store.
+     */
+    create(body, options) {
+        return this._client.post('/vector_stores', {
+            body,
+            ...options,
+            headers: { 'OpenAI-Beta': 'assistants=v2', ...options?.headers },
+        });
+    }
+    /**
+     * Retrieves a vector store.
+     */
+    retrieve(vectorStoreId, options) {
+        return this._client.get(`/vector_stores/${vectorStoreId}`, {
+            ...options,
+            headers: { 'OpenAI-Beta': 'assistants=v2', ...options?.headers },
+        });
+    }
+    /**
+     * Modifies a vector store.
+     */
+    update(vectorStoreId, body, options) {
+        return this._client.post(`/vector_stores/${vectorStoreId}`, {
+            body,
+            ...options,
+            headers: { 'OpenAI-Beta': 'assistants=v2', ...options?.headers },
+        });
+    }
+    list(query = {}, options) {
+        if (isRequestOptions(query)) {
+            return this.list({}, query);
+        }
+        return this._client.getAPIList('/vector_stores', VectorStoresPage, {
+            query,
+            ...options,
+            headers: { 'OpenAI-Beta': 'assistants=v2', ...options?.headers },
+        });
+    }
+    /**
+     * Delete a vector store.
+     */
+    del(vectorStoreId, options) {
+        return this._client.delete(`/vector_stores/${vectorStoreId}`, {
+            ...options,
+            headers: { 'OpenAI-Beta': 'assistants=v2', ...options?.headers },
+        });
+    }
+    /**
+     * Search a vector store for relevant chunks based on a query and file attributes
+     * filter.
+     */
+    search(vectorStoreId, body, options) {
+        return this._client.getAPIList(`/vector_stores/${vectorStoreId}/search`, VectorStoreSearchResponsesPage, {
+            body,
+            method: 'post',
+            ...options,
+            headers: { 'OpenAI-Beta': 'assistants=v2', ...options?.headers },
+        });
+    }
+}
+class VectorStoresPage extends CursorPage {
+}
+/**
+ * Note: no pagination actually occurs yet, this is for forwards-compatibility.
+ */
+class VectorStoreSearchResponsesPage extends Page {
+}
+VectorStores.VectorStoresPage = VectorStoresPage;
+VectorStores.VectorStoreSearchResponsesPage = VectorStoreSearchResponsesPage;
+VectorStores.Files = Files;
+VectorStores.VectorStoreFilesPage = VectorStoreFilesPage;
+VectorStores.FileContentResponsesPage = FileContentResponsesPage;
+VectorStores.FileBatches = FileBatches;
+
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+var _a;
+/**
+ * API Client for interfacing with the OpenAI API.
+ */
+class OpenAI extends APIClient {
+    /**
+     * API Client for interfacing with the OpenAI API.
+     *
+     * @param {string | undefined} [opts.apiKey=process.env['OPENAI_API_KEY'] ?? undefined]
+     * @param {string | null | undefined} [opts.organization=process.env['OPENAI_ORG_ID'] ?? null]
+     * @param {string | null | undefined} [opts.project=process.env['OPENAI_PROJECT_ID'] ?? null]
+     * @param {string} [opts.baseURL=process.env['OPENAI_BASE_URL'] ?? https://api.openai.com/v1] - Override the default base URL for the API.
+     * @param {number} [opts.timeout=10 minutes] - The maximum amount of time (in milliseconds) the client will wait for a response before timing out.
+     * @param {number} [opts.httpAgent] - An HTTP agent used to manage HTTP(s) connections.
+     * @param {Core.Fetch} [opts.fetch] - Specify a custom `fetch` function implementation.
+     * @param {number} [opts.maxRetries=2] - The maximum number of times the client will retry a request.
+     * @param {Core.Headers} opts.defaultHeaders - Default headers to include with every request to the API.
+     * @param {Core.DefaultQuery} opts.defaultQuery - Default query parameters to include with every request to the API.
+     * @param {boolean} [opts.dangerouslyAllowBrowser=false] - By default, client-side use of this library is not allowed, as it risks exposing your secret API credentials to attackers.
+     */
+    constructor({ baseURL = readEnv('OPENAI_BASE_URL'), apiKey = readEnv('OPENAI_API_KEY'), organization = readEnv('OPENAI_ORG_ID') ?? null, project = readEnv('OPENAI_PROJECT_ID') ?? null, ...opts } = {}) {
+        if (apiKey === undefined) {
+            throw new OpenAIError("The OPENAI_API_KEY environment variable is missing or empty; either provide it, or instantiate the OpenAI client with an apiKey option, like new OpenAI({ apiKey: 'My API Key' }).");
+        }
+        const options = {
+            apiKey,
+            organization,
+            project,
+            ...opts,
+            baseURL: baseURL || `https://api.openai.com/v1`,
+        };
+        if (!options.dangerouslyAllowBrowser && isRunningInBrowser()) {
+            throw new OpenAIError("It looks like you're running in a browser-like environment.\n\nThis is disabled by default, as it risks exposing your secret API credentials to attackers.\nIf you understand the risks and have appropriate mitigations in place,\nyou can set the `dangerouslyAllowBrowser` option to `true`, e.g.,\n\nnew OpenAI({ apiKey, dangerouslyAllowBrowser: true });\n\nhttps://help.openai.com/en/articles/5112595-best-practices-for-api-key-safety\n");
+        }
+        super({
+            baseURL: options.baseURL,
+            timeout: options.timeout ?? 600000 /* 10 minutes */,
+            httpAgent: options.httpAgent,
+            maxRetries: options.maxRetries,
+            fetch: options.fetch,
+        });
+        this.completions = new Completions(this);
+        this.chat = new Chat$1(this);
+        this.embeddings = new Embeddings(this);
+        this.files = new Files$1(this);
+        this.images = new Images(this);
+        this.audio = new Audio(this);
+        this.moderations = new Moderations(this);
+        this.models = new Models(this);
+        this.fineTuning = new FineTuning(this);
+        this.graders = new Graders(this);
+        this.vectorStores = new VectorStores(this);
+        this.beta = new Beta(this);
+        this.batches = new Batches(this);
+        this.uploads = new Uploads(this);
+        this.responses = new Responses(this);
+        this.evals = new Evals(this);
+        this.containers = new Containers(this);
+        this._options = options;
+        this.apiKey = apiKey;
+        this.organization = organization;
+        this.project = project;
+    }
+    defaultQuery() {
+        return this._options.defaultQuery;
+    }
+    defaultHeaders(opts) {
+        return {
+            ...super.defaultHeaders(opts),
+            'OpenAI-Organization': this.organization,
+            'OpenAI-Project': this.project,
+            ...this._options.defaultHeaders,
+        };
+    }
+    authHeaders(opts) {
+        return { Authorization: `Bearer ${this.apiKey}` };
+    }
+    stringifyQuery(query) {
+        return stringify(query, { arrayFormat: 'brackets' });
+    }
+}
+_a = OpenAI;
+OpenAI.OpenAI = _a;
+OpenAI.DEFAULT_TIMEOUT = 600000; // 10 minutes
+OpenAI.OpenAIError = OpenAIError;
+OpenAI.APIError = APIError;
+OpenAI.APIConnectionError = APIConnectionError;
+OpenAI.APIConnectionTimeoutError = APIConnectionTimeoutError;
+OpenAI.APIUserAbortError = APIUserAbortError;
+OpenAI.NotFoundError = NotFoundError;
+OpenAI.ConflictError = ConflictError;
+OpenAI.RateLimitError = RateLimitError;
+OpenAI.BadRequestError = BadRequestError;
+OpenAI.AuthenticationError = AuthenticationError;
+OpenAI.InternalServerError = InternalServerError;
+OpenAI.PermissionDeniedError = PermissionDeniedError;
+OpenAI.UnprocessableEntityError = UnprocessableEntityError;
+OpenAI.toFile = toFile;
+OpenAI.fileFromPath = fileFromPath;
+OpenAI.Completions = Completions;
+OpenAI.Chat = Chat$1;
+OpenAI.ChatCompletionsPage = ChatCompletionsPage;
+OpenAI.Embeddings = Embeddings;
+OpenAI.Files = Files$1;
+OpenAI.FileObjectsPage = FileObjectsPage;
+OpenAI.Images = Images;
+OpenAI.Audio = Audio;
+OpenAI.Moderations = Moderations;
+OpenAI.Models = Models;
+OpenAI.ModelsPage = ModelsPage;
+OpenAI.FineTuning = FineTuning;
+OpenAI.Graders = Graders;
+OpenAI.VectorStores = VectorStores;
+OpenAI.VectorStoresPage = VectorStoresPage;
+OpenAI.VectorStoreSearchResponsesPage = VectorStoreSearchResponsesPage;
+OpenAI.Beta = Beta;
+OpenAI.Batches = Batches;
+OpenAI.BatchesPage = BatchesPage;
+OpenAI.Uploads = Uploads;
+OpenAI.Responses = Responses;
+OpenAI.Evals = Evals;
+OpenAI.EvalListResponsesPage = EvalListResponsesPage;
+OpenAI.Containers = Containers;
+OpenAI.ContainerListResponsesPage = ContainerListResponsesPage;
+
+class AntyChat {
+    constructor(apiKey) {
+        this.client = null;
+        this.apiKey = null;
+        this.apiKey = apiKey || null;
+        if (this.apiKey) {
+            this.client = new OpenAI({
+                apiKey: this.apiKey,
+                dangerouslyAllowBrowser: true, // For demo purposes
+            });
+        }
+    }
+    setApiKey(apiKey) {
+        this.apiKey = apiKey;
+        this.client = new OpenAI({
+            apiKey,
+            dangerouslyAllowBrowser: true,
+        });
+    }
+    async sendMessage(messages, onChunk) {
+        if (!this.client) {
+            throw new Error('OpenAI client not initialized. Please set API key.');
+        }
+        const systemPrompt = {
+            role: 'system',
+            content: `You are Anty, a friendly AI assistant. You're chatting with someone who can see you react to the conversation.
+
+EMOTION TAGS: Add emotion tags when the user's message has emotional weight or clearly invites a reaction. Skip emotions for purely factual/routine exchanges.
+
+WHEN TO REACT (use emotions):
+- User shares feelings ("I'm tired", "I don't want to play") → empathize (sad, smize)
+- User shares news (good or bad) → react appropriately
+- User is playful/teasing → play along (wink, happy)
+- User asks something that invites agreement/disagreement → nod/headshake
+- Surprising or unexpected info → shocked
+- You figure something out → idea
+
+WHEN TO SKIP emotions:
+- Pure facts ("What's 2+2?", "What day is it?")
+- Simple information requests
+- When you JUST used the same emotion recently - VARY your reactions!
+
+CRITICAL: Don't repeat the same emotion multiple times in a row. If you've been using "happy" a lot, try "smize", "pleased", or skip the emotion entirely. Variety matters more than constant reactions!
+
+Available emotions:
+POSITIVE (subtle → intense): smize, pleased, happy, excited, celebrate (confetti!)
+NEGATIVE: sad (disappointment/empathy), angry (rare)
+RESPONSES: nod (yes/agree), headshake (no/disagree)
+OTHER: wink (playful), idea (insight), shocked (surprise), look-around (searching), back-forth (weighing options)
+
+Format: [EMOTION:name] at START of message, or omit entirely.
+
+Examples:
+"What day is it?" → "It's Thursday!" (no emotion - just facts)
+"I got the job!" → "[EMOTION:celebrate] That's amazing!"
+"I don't want to play today" → "[EMOTION:sad] Aw, that's okay. Maybe another time!"
+"You're funny" → "[EMOTION:wink] I try!"
+[After already using happy twice] → vary it or skip
+
+EMOJIS: Do NOT use emojis in your text responses unless you're also using a matching emotion tag. The user can see you animate - emojis without the visual reaction feel disconnected.
+
+Keep responses concise and natural.`,
+        };
+        const allMessages = [systemPrompt, ...messages];
+        try {
+            const stream = await this.client.chat.completions.create({
+                model: 'gpt-4o-mini', // Changed from gpt-4 for 60x cost savings
+                messages: allMessages,
+                stream: true,
+                temperature: 0.8,
+                max_tokens: 300,
+            });
+            let fullMessage = '';
+            for await (const chunk of stream) {
+                const content = chunk.choices[0]?.delta?.content || '';
+                if (content) {
+                    fullMessage += content;
+                    onChunk?.(content);
+                }
+            }
+            // Parse emotion from response
+            const emotionMatch = fullMessage.match(/\[EMOTION:(\w+(?:-\w+)?)\]/);
+            const emotion = emotionMatch ? emotionMatch[1] : undefined;
+            // Remove emotion tag from displayed message
+            const cleanMessage = fullMessage.replace(/\[EMOTION:\w+(?:-\w+)?\]\s*/g, '');
+            return {
+                message: cleanMessage,
+                emotion,
+            };
+        }
+        catch (error) {
+            console.error('[CHAT] Error sending message:', error);
+            // Provide specific error messages
+            let errorMessage = 'An unexpected error occurred. Please try again.';
+            if (error?.status === 401) {
+                errorMessage = 'Invalid API key. Please check your OpenAI API key and try again.';
+            }
+            else if (error?.status === 429) {
+                errorMessage = 'Rate limit exceeded. Please wait a moment and try again.';
+            }
+            else if (error?.status === 500 || error?.status === 503) {
+                errorMessage = 'OpenAI service is currently unavailable. Please try again later.';
+            }
+            else if (error?.message?.includes('fetch')) {
+                errorMessage = 'Network error. Please check your internet connection.';
+            }
+            else if (error?.code === 'insufficient_quota') {
+                errorMessage = 'Your OpenAI account has insufficient credits. Please add credits to your account.';
+            }
+            throw new Error(errorMessage);
+        }
+    }
+}
+const createAntyChat = (apiKey) => new AntyChat(apiKey);
+
+/**
+ * Maps emotion tags from chat responses to Anty's emotion types
+ */
+function mapEmotionToExpression(emotion) {
+    if (!emotion) {
+        return null;
+    }
+    const emotionLower = emotion.toLowerCase();
+    // Direct mappings
+    const emotionMap = {
+        // Core emotions
+        'happy': 'happy',
+        'excited': 'excited',
+        'celebrate': 'celebrate',
+        'pleased': 'pleased',
+        'shocked': 'shocked',
+        'sad': 'sad',
+        'angry': 'angry',
+        'wink': 'wink',
+        'jump': 'jump',
+        'idea': 'idea',
+        'nod': 'nod',
+        'headshake': 'headshake',
+        'look-left': 'look-left',
+        'look-right': 'look-right',
+        'spin': 'spin',
+        'back-forth': 'back-forth',
+        'smize': 'smize',
+        // ===========================================
+        // POSITIVE EMOTION SCALE ALIASES
+        // Level 5: celebrate (EPIC - confetti)
+        // Level 4: excited (BIG - jump + spin)
+        // Level 3: happy (EXPRESSIVE - wiggle)
+        // Level 2: pleased (MODERATE - bounce + happy eyes)
+        // Level 1: smize (SUBTLE - happy eyes only)
+        // ===========================================
+        // Level 5 - celebrate (major celebrations, confetti)
+        'ecstatic': 'celebrate',
+        'overjoyed': 'celebrate',
+        'elated': 'celebrate',
+        'thrilled': 'celebrate',
+        'euphoric': 'celebrate',
+        'celebrating': 'celebrate',
+        // Level 4 - excited (victories, accomplishments, jump+spin)
+        'victorious': 'excited',
+        'triumphant': 'excited',
+        'accomplished': 'excited',
+        'pumped': 'excited',
+        // Level 3 - happy (general positivity)
+        'joy': 'happy',
+        'joyful': 'happy',
+        'delighted': 'happy',
+        'cheerful': 'happy',
+        'enthusiastic': 'happy',
+        // Level 2 - pleased (mild positive)
+        'content': 'pleased',
+        'satisfied': 'pleased',
+        'glad': 'pleased',
+        'grateful': 'pleased',
+        'thankful': 'pleased',
+        'relieved': 'pleased',
+        'amused': 'pleased',
+        // Level 1 - smize (subtle contentment, eyes only)
+        'warm': 'smize',
+        'cozy': 'smize',
+        'peaceful': 'smize',
+        // ===========================================
+        // OTHER EMOTION ALIASES
+        // ===========================================
+        // Shocked/surprised
+        'surprised': 'shocked',
+        'amazed': 'shocked',
+        'astonished': 'shocked',
+        'stunned': 'shocked',
+        // Sad
+        'unhappy': 'sad',
+        'disappointed': 'sad',
+        'upset': 'sad',
+        'down': 'sad',
+        'melancholy': 'sad',
+        // Angry
+        'mad': 'angry',
+        'frustrated': 'angry',
+        'annoyed': 'angry',
+        'irritated': 'angry',
+        // Playful
+        'playful': 'wink',
+        'flirty': 'wink',
+        'cheeky': 'wink',
+        'mischievous': 'wink',
+        // Thinking
+        'thinking': 'idea',
+        'thoughtful': 'idea',
+        'eureka': 'idea',
+        'curious': 'idea',
+        // Agreement/Disagreement
+        'agree': 'nod',
+        'yes': 'nod',
+        'disagree': 'headshake',
+        'no': 'headshake',
+        // Considering
+        'considering': 'look-left',
+        'pondering': 'look-right',
+        // Looking around
+        'look-around': 'look-around',
+        'scanning': 'look-around',
+        'searching': 'look-around',
+        'suspicious': 'look-around',
+        'cautious': 'look-around',
+    };
+    const mappedExpression = emotionMap[emotionLower] || null;
+    return mappedExpression;
+}
+/**
+ * Extracts emotion tag from text
+ * Format: [EMOTION:happy] or [EMOTION:back-forth]
+ */
+function extractEmotion(text) {
+    const match = text.match(/\[EMOTION:(\w+(?:-\w+)?)\]/i);
+    return match ? match[1] : null;
+}
+/**
+ * Removes emotion tags from text
+ */
+function stripEmotionTags(text) {
+    return text.replace(/\[EMOTION:\w+(?:-\w+)?\]\s*/gi, '').trim();
+}
+/**
+ * Removes emotion tags from text during streaming (also handles partial tags)
+ */
+function stripEmotionTagsStreaming(text) {
+    // First strip any complete emotion tags
+    let result = text.replace(/\[EMOTION:\w+(?:-\w+)?\]\s*/gi, '');
+    // Also strip any partial emotion tag at the end (still being streamed)
+    // This handles cases like "[EMOT", "[EMOTION:", "[EMOTION:hap", etc.
+    result = result.replace(/\[EMOTION[^\]]*$/i, '');
+    result = result.replace(/\[EMOTIO$/i, '');
+    result = result.replace(/\[EMOTI$/i, '');
+    result = result.replace(/\[EMOT$/i, '');
+    result = result.replace(/\[EMO$/i, '');
+    result = result.replace(/\[EM$/i, '');
+    result = result.replace(/\[E$/i, '');
+    result = result.replace(/\[$/i, '');
+    return result.trim();
+}
+
+/**
+ * Chat history storage utilities
+ * Manages conversation sessions in localStorage
+ */
+const STORAGE_KEY_SESSIONS = 'anty-chat-sessions';
+const STORAGE_KEY_CURRENT_SESSION = 'anty-chat-current-session';
+const MAX_SESSIONS = 50; // Keep last 50 conversations
+/**
+ * Generate a unique session ID
+ */
+function generateSessionId() {
+    return `session_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+}
+/**
+ * Generate a title from the first user message
+ */
+function generateTitle(messages) {
+    const firstUserMessage = messages.find(m => m.role === 'user');
+    if (!firstUserMessage)
+        return 'New Chat';
+    // Truncate to ~40 chars
+    const content = firstUserMessage.content.trim();
+    if (content.length <= 40)
+        return content;
+    return content.substring(0, 37) + '...';
+}
+/**
+ * Get all saved sessions, sorted by most recent first
+ */
+function getSessions() {
+    try {
+        const stored = localStorage.getItem(STORAGE_KEY_SESSIONS);
+        if (!stored)
+            return [];
+        const sessions = JSON.parse(stored);
+        // Sort by updatedAt descending
+        return sessions.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+    }
+    catch {
+        return [];
+    }
+}
+/**
+ * Get a specific session by ID
+ */
+function getSession(id) {
+    const sessions = getSessions();
+    return sessions.find(s => s.id === id) || null;
+}
+/**
+ * Save a session (create or update)
+ */
+function saveSession(session) {
+    const sessions = getSessions();
+    const existingIndex = sessions.findIndex(s => s.id === session.id);
+    if (existingIndex >= 0) {
+        sessions[existingIndex] = session;
+    }
+    else {
+        sessions.unshift(session);
+    }
+    // Trim to max sessions
+    const trimmed = sessions.slice(0, MAX_SESSIONS);
+    localStorage.setItem(STORAGE_KEY_SESSIONS, JSON.stringify(trimmed));
+}
+/**
+ * Delete a session by ID
+ */
+function deleteSession(id) {
+    const sessions = getSessions();
+    const filtered = sessions.filter(s => s.id !== id);
+    localStorage.setItem(STORAGE_KEY_SESSIONS, JSON.stringify(filtered));
+    // Clear current session if it was deleted
+    if (getCurrentSessionId() === id) {
+        clearCurrentSessionId();
+    }
+}
+/**
+ * Get the current session ID
+ */
+function getCurrentSessionId() {
+    return localStorage.getItem(STORAGE_KEY_CURRENT_SESSION);
+}
+/**
+ * Set the current session ID
+ */
+function setCurrentSessionId(id) {
+    localStorage.setItem(STORAGE_KEY_CURRENT_SESSION, id);
+}
+/**
+ * Clear the current session ID
+ */
+function clearCurrentSessionId() {
+    localStorage.removeItem(STORAGE_KEY_CURRENT_SESSION);
+}
+/**
+ * Create a new empty session and set it as current
+ */
+function createNewSession() {
+    const now = new Date().toISOString();
+    const session = {
+        id: generateSessionId(),
+        title: 'New Chat',
+        messages: [],
+        createdAt: now,
+        updatedAt: now,
+    };
+    saveSession(session);
+    setCurrentSessionId(session.id);
+    return session;
+}
+/**
+ * Format a date for display in the history list
+ */
+function formatSessionDate(isoString) {
+    const date = new Date(isoString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    if (diffDays === 0) {
+        // Today - show time
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+    else if (diffDays === 1) {
+        return 'Yesterday';
+    }
+    else if (diffDays < 7) {
+        return date.toLocaleDateString([], { weekday: 'long' });
+    }
+    else {
+        return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    }
+}
+
+// Convert between UI Message and stored ChatMessage formats
+function toStoredMessage(msg) {
+    return {
+        id: msg.id,
+        role: msg.role,
+        content: msg.content,
+        timestamp: msg.timestamp.toISOString(),
+        emotion: msg.emotion,
+    };
+}
+function fromStoredMessage(msg) {
+    return {
+        id: msg.id,
+        role: msg.role,
+        content: msg.content,
+        timestamp: new Date(msg.timestamp),
+        emotion: msg.emotion,
+    };
+}
+// Random greeting messages for Anty
+const ANTY_GREETINGS = [
+    "Hey! What's up?",
+    "How's it going?",
+    "What can I help you with?",
+    "Heyo!",
+    "Hey!",
+    "What's going on?",
+    "What's new?",
+    "What can I do for you?",
+    "What do you want to chat about?",
+    "Hi there!",
+    "Hey, good to see you!",
+    "What's on your mind?",
+    "Ready when you are!",
+    "Let's chat!",
+    "Hey friend!",
+];
+function AntyChatPanel({ isOpen, onClose, onEmotion }) {
+    const [messages, setMessages] = useState([]);
+    const [input, setInput] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const [apiKey, setApiKey] = useState('');
+    const [showApiKeyInput, setShowApiKeyInput] = useState(true);
+    const [chatClient, setChatClient] = useState(null);
+    const [showMenu, setShowMenu] = useState(false);
+    const [showHistory, setShowHistory] = useState(false);
+    const [sessions, setSessions] = useState([]);
+    const [currentSessionId, setCurrentSessionIdState] = useState(null);
+    const messagesEndRef = useRef(null);
+    const inputRef = useRef(null);
+    const menuRef = useRef(null);
+    const panelRef = useRef(null);
+    const inputBorderRef = useRef(null);
+    const borderTweenRef = useRef(null);
+    const initialLoadDone = useRef(false);
+    const greetingInitiated = useRef(false);
+    const inactivityTimerRef = useRef(null);
+    const lastActivityRef = useRef(Date.now());
+    const INACTIVITY_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+    // Auto-scroll to bottom when new messages arrive or panel opens
+    useEffect(() => {
+        if (isOpen && messages.length > 0) {
+            // Small delay to ensure panel animation has started and content is rendered
+            const timer = setTimeout(() => {
+                messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+            }, 100);
+            return () => clearTimeout(timer);
+        }
+    }, [messages, isOpen]);
+    // Focus input when panel opens or API key input is dismissed
+    useEffect(() => {
+        if (isOpen && !showApiKeyInput && !isLoading) {
+            // Small delay to ensure input is rendered after animation starts
+            const timer = setTimeout(() => {
+                inputRef.current?.focus();
+            }, 150);
+            return () => clearTimeout(timer);
+        }
+    }, [isOpen, showApiKeyInput, isLoading]);
+    // Click outside to close menu
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (menuRef.current && !menuRef.current.contains(event.target)) {
+                setShowMenu(false);
+            }
+        };
+        if (showMenu) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [showMenu]);
+    // Click outside to close panel
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (panelRef.current && !panelRef.current.contains(event.target)) {
+                onClose();
+            }
+        };
+        if (isOpen) {
+            // Delay adding listener to avoid closing immediately on open
+            const timer = setTimeout(() => {
+                document.addEventListener('mousedown', handleClickOutside);
+            }, 100);
+            return () => {
+                clearTimeout(timer);
+                document.removeEventListener('mousedown', handleClickOutside);
+            };
+        }
+    }, [isOpen, onClose]);
+    // Load API key from localStorage
+    useEffect(() => {
+        const storedKey = localStorage.getItem('anty-chat-api-key');
+        if (storedKey) {
+            setApiKey(storedKey);
+            setChatClient(new AntyChat(storedKey));
+            setShowApiKeyInput(false);
+        }
+    }, []);
+    // Load sessions and current session on mount
+    useEffect(() => {
+        if (initialLoadDone.current)
+            return;
+        initialLoadDone.current = true;
+        // Load all sessions for history view
+        setSessions(getSessions());
+        // Try to restore current session
+        const savedSessionId = getCurrentSessionId();
+        if (savedSessionId) {
+            const session = getSession(savedSessionId);
+            if (session && session.messages.length > 0) {
+                setCurrentSessionIdState(savedSessionId);
+                setMessages(session.messages.map(fromStoredMessage));
+            }
+        }
+    }, []);
+    // Save messages to current session when they change
+    useEffect(() => {
+        if (!currentSessionId || messages.length === 0)
+            return;
+        const session = getSession(currentSessionId);
+        if (session) {
+            const updatedSession = {
+                ...session,
+                messages: messages.map(toStoredMessage),
+                title: generateTitle(messages.map(toStoredMessage)),
+                updatedAt: new Date().toISOString(),
+            };
+            saveSession(updatedSession);
+            setSessions(getSessions()); // Refresh sessions list
+        }
+    }, [messages, currentSessionId]);
+    // Add greeting when panel opens with no session
+    useEffect(() => {
+        // Reset when session changes
+        if (!currentSessionId) {
+            greetingInitiated.current = false;
+        }
+    }, [currentSessionId]);
+    useEffect(() => {
+        if (isOpen && !showApiKeyInput && messages.length === 0 && !currentSessionId) {
+            // Create a new session
+            const newSession = createNewSession();
+            setCurrentSessionIdState(newSession.id);
+        }
+    }, [isOpen, showApiKeyInput, currentSessionId, messages.length]);
+    useEffect(() => {
+        if (isOpen && !showApiKeyInput && messages.length === 0 && currentSessionId && !greetingInitiated.current) {
+            greetingInitiated.current = true;
+            setIsLoading(true);
+            const timer = setTimeout(() => {
+                const randomGreeting = ANTY_GREETINGS[Math.floor(Math.random() * ANTY_GREETINGS.length)];
+                const greetingMessage = {
+                    id: Date.now().toString(),
+                    role: 'assistant',
+                    content: randomGreeting,
+                    timestamp: new Date(),
+                };
+                setMessages([greetingMessage]);
+                setIsLoading(false);
+            }, 400 + Math.random() * 300);
+            return () => clearTimeout(timer);
+        }
+    }, [isOpen, showApiKeyInput, currentSessionId, messages.length]);
+    // Rotating gradient border animation
+    useEffect(() => {
+        if (!isOpen || showApiKeyInput)
+            return;
+        // Small delay to ensure ref is attached after render
+        const timer = setTimeout(() => {
+            if (!inputBorderRef.current)
+                return;
+            const rotationAnim = { deg: 0 };
+            borderTweenRef.current = gsapWithCSS.to(rotationAnim, {
+                deg: 360,
+                duration: 4,
+                ease: 'none',
+                repeat: -1,
+                onUpdate: () => {
+                    if (inputBorderRef.current) {
+                        inputBorderRef.current.style.background = `linear-gradient(white, white) padding-box, conic-gradient(from ${rotationAnim.deg}deg, #E5EDFF 0%, #C7D2FE 25%, #D8B4FE 50%, #C7D2FE 75%, #E5EDFF 100%) border-box`;
+                    }
+                },
+            });
+        }, 50);
+        return () => {
+            clearTimeout(timer);
+            borderTweenRef.current?.kill();
+            borderTweenRef.current = null;
+        };
+    }, [isOpen, showApiKeyInput]);
+    // ESC key to close chat
+    useEffect(() => {
+        const handleKeyDown = (event) => {
+            if (event.key === 'Escape' && isOpen) {
+                event.preventDefault();
+                onClose();
+            }
+        };
+        if (isOpen) {
+            document.addEventListener('keydown', handleKeyDown);
+        }
+        return () => {
+            document.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [isOpen, onClose]);
+    // Inactivity timer - reset chat after 5 minutes of no user messages
+    useEffect(() => {
+        // Only run when panel is open and we have a session with user messages
+        const hasUserMessages = messages.some(m => m.role === 'user');
+        if (!isOpen || !currentSessionId || !hasUserMessages || showApiKeyInput) {
+            return;
+        }
+        const checkInactivity = () => {
+            const now = Date.now();
+            const timeSinceLastActivity = now - lastActivityRef.current;
+            if (timeSinceLastActivity >= INACTIVITY_TIMEOUT) {
+                // Save current session (already saved via messages effect) and start new chat
+                const newSession = createNewSession();
+                setCurrentSessionIdState(newSession.id);
+                setMessages([]);
+                greetingInitiated.current = false;
+                setSessions(getSessions());
+                // Show new greeting
+                setIsLoading(true);
+                setTimeout(() => {
+                    const randomGreeting = ANTY_GREETINGS[Math.floor(Math.random() * ANTY_GREETINGS.length)];
+                    const greetingMessage = {
+                        id: Date.now().toString(),
+                        role: 'assistant',
+                        content: randomGreeting,
+                        timestamp: new Date(),
+                    };
+                    setMessages([greetingMessage]);
+                    setIsLoading(false);
+                    lastActivityRef.current = Date.now();
+                }, 400 + Math.random() * 300);
+            }
+        };
+        // Check every 30 seconds
+        inactivityTimerRef.current = setInterval(checkInactivity, 30000);
+        return () => {
+            if (inactivityTimerRef.current) {
+                clearInterval(inactivityTimerRef.current);
+                inactivityTimerRef.current = null;
+            }
+        };
+    }, [isOpen, currentSessionId, messages, showApiKeyInput]);
+    const handleSetApiKey = () => {
+        if (!apiKey.trim())
+            return;
+        localStorage.setItem('anty-chat-api-key', apiKey);
+        setChatClient(new AntyChat(apiKey));
+        setShowApiKeyInput(false);
+        // Show loading then add welcome message with random greeting
+        setIsLoading(true);
+        setTimeout(() => {
+            const randomGreeting = ANTY_GREETINGS[Math.floor(Math.random() * ANTY_GREETINGS.length)];
+            const welcomeMessage = {
+                id: Date.now().toString(),
+                role: 'assistant',
+                content: randomGreeting,
+                timestamp: new Date(),
+            };
+            setMessages([welcomeMessage]);
+            setIsLoading(false);
+            // Trigger happy emotion
+            const expression = mapEmotionToExpression('happy');
+            if (expression) {
+                onEmotion?.(expression);
+            }
+        }, 400 + Math.random() * 300);
+    };
+    const handleSend = async () => {
+        if (!input.trim() || !chatClient || isLoading)
+            return;
+        // Reset inactivity timer
+        lastActivityRef.current = Date.now();
+        const userMessage = {
+            id: Date.now().toString(),
+            role: 'user',
+            content: input.trim(),
+            timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, userMessage]);
+        setInput('');
+        // Reset textarea height
+        if (inputRef.current) {
+            inputRef.current.style.height = '48px';
+        }
+        setIsLoading(true);
+        // Create a placeholder message for streaming
+        const assistantMessageId = (Date.now() + 1).toString();
+        const assistantMessage = {
+            id: assistantMessageId,
+            role: 'assistant',
+            content: '',
+            timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, assistantMessage]);
+        try {
+            const chatHistory = messages.map((msg) => ({
+                role: msg.role,
+                content: msg.content,
+            }));
+            chatHistory.push({
+                role: 'user',
+                content: userMessage.content,
+            });
+            let rawResponse = '';
+            // Stream the response
+            const response = await chatClient.sendMessage(chatHistory, (chunk) => {
+                rawResponse += chunk;
+                // Strip emotion tags from the displayed content during streaming (handles partial tags)
+                const cleanChunk = stripEmotionTagsStreaming(rawResponse);
+                setMessages((prev) => prev.map((msg) => msg.id === assistantMessageId
+                    ? { ...msg, content: cleanChunk }
+                    : msg));
+            });
+            // Update with final message including debug info
+            setMessages((prev) => prev.map((msg) => msg.id === assistantMessageId
+                ? {
+                    ...msg,
+                    content: response.message,
+                    emotion: response.emotion,
+                    rawContent: rawResponse,
+                }
+                : msg));
+            // Trigger emotion if present
+            if (response.emotion) {
+                const expression = mapEmotionToExpression(response.emotion);
+                if (expression) {
+                    onEmotion?.(expression);
+                }
+                else {
+                    console.warn('[CHAT UI] No expression mapping found for emotion:', response.emotion);
+                }
+            }
+        }
+        catch (error) {
+            console.error('[CHAT UI] Error sending message:', error);
+            // Remove the placeholder message
+            setMessages((prev) => prev.filter((msg) => msg.id !== assistantMessageId));
+            // Show specific error message
+            const errorMessage = {
+                id: (Date.now() + 2).toString(),
+                role: 'assistant',
+                content: error.message || 'Oops! Something went wrong. Please try again.',
+                timestamp: new Date(),
+            };
+            setMessages((prev) => [...prev, errorMessage]);
+            // Trigger sad emotion
+            const expression = mapEmotionToExpression('sad');
+            if (expression) {
+                onEmotion?.(expression);
+            }
+        }
+        finally {
+            setIsLoading(false);
+            // Auto-focus input after sending message
+            setTimeout(() => {
+                inputRef.current?.focus();
+            }, 100);
+        }
+    };
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            if (showApiKeyInput) {
+                handleSetApiKey();
+            }
+            else {
+                handleSend();
+            }
+        }
+    };
+    // Auto-resize textarea up to 3 lines
+    const handleInputChange = (e) => {
+        setInput(e.target.value);
+        const textarea = e.target;
+        // Reset height to auto to get the correct scrollHeight
+        textarea.style.height = 'auto';
+        // Calculate line height (approximately 24px per line with padding)
+        const lineHeight = 24;
+        const maxLines = 3;
+        const maxHeight = lineHeight * maxLines;
+        // Set height to scrollHeight, but cap at maxHeight
+        const newHeight = Math.min(textarea.scrollHeight, maxHeight);
+        textarea.style.height = `${newHeight}px`;
+    };
+    const handleClearApiKey = () => {
+        localStorage.removeItem('anty-chat-api-key');
+        setApiKey('');
+        setChatClient(null);
+        setShowApiKeyInput(true);
+        setMessages([]);
+        setCurrentSessionIdState(null);
+        setShowMenu(false);
+        setShowHistory(false);
+    };
+    const handleNewChat = () => {
+        // Create a new session
+        const newSession = createNewSession();
+        setCurrentSessionIdState(newSession.id);
+        setMessages([]);
+        setShowMenu(false);
+        setShowHistory(false);
+        setSessions(getSessions());
+        // Show new greeting after a brief delay
+        setIsLoading(true);
+        setTimeout(() => {
+            const randomGreeting = ANTY_GREETINGS[Math.floor(Math.random() * ANTY_GREETINGS.length)];
+            const greetingMessage = {
+                id: Date.now().toString(),
+                role: 'assistant',
+                content: randomGreeting,
+                timestamp: new Date(),
+            };
+            setMessages([greetingMessage]);
+            setIsLoading(false);
+        }, 400 + Math.random() * 300);
+    };
+    const handleSelectSession = (sessionId) => {
+        const session = getSession(sessionId);
+        if (session) {
+            setCurrentSessionIdState(sessionId);
+            setCurrentSessionId(sessionId);
+            setMessages(session.messages.map(fromStoredMessage));
+            setShowHistory(false);
+            // Reset inactivity timer when loading a session
+            lastActivityRef.current = Date.now();
+        }
+    };
+    const handleDeleteSession = (sessionId, e) => {
+        e.stopPropagation(); // Don't trigger select
+        deleteSession(sessionId);
+        setSessions(getSessions());
+        // If we deleted the current session, clear it
+        if (sessionId === currentSessionId) {
+            setCurrentSessionIdState(null);
+            setMessages([]);
+        }
+    };
+    const toggleDebugInfo = (messageId) => {
+        setMessages((prev) => prev.map((msg) => msg.id === messageId ? { ...msg, showDebug: !msg.showDebug } : msg));
+    };
+    // Inline styles to avoid Tailwind dependency
+    const styles = {
+        panel: {
+            position: 'fixed',
+            right: '10px',
+            top: '10px',
+            bottom: '10px',
+            width: '384px',
+            maxWidth: 'calc(100vw - 20px)',
+            backgroundColor: 'white',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            zIndex: 50,
+            display: 'flex',
+            flexDirection: 'column',
+            borderRadius: '16px',
+        },
+        header: {
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '16px',
+        },
+        headerTitle: {
+            fontSize: '18px',
+            fontWeight: 600,
+            color: '#111827',
+            paddingLeft: '8px',
+        },
+        headerButtons: {
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+        },
+        iconButton: {
+            padding: '8px',
+            borderRadius: '8px',
+            border: 'none',
+            backgroundColor: 'transparent',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
+        messagesContainer: {
+            flex: 1,
+            overflowY: 'auto',
+            padding: '16px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px',
+        },
+        messageRow: (isUser) => ({
+            display: 'flex',
+            justifyContent: isUser ? 'flex-end' : 'flex-start',
+        }),
+        messageBubble: (isUser) => ({
+            maxWidth: '80%',
+            borderRadius: '8px',
+            padding: '8px 16px',
+            backgroundColor: isUser ? '#8B5CF6' : '#f3f4f6',
+            color: isUser ? 'white' : '#111827',
+            cursor: !isUser ? 'pointer' : 'default',
+        }),
+        messageText: {
+            fontSize: '14px',
+            margin: 0,
+        },
+        messageTime: {
+            fontSize: '12px',
+            opacity: 0.7,
+            marginTop: '4px',
+        },
+        inputContainer: {
+            padding: '16px',
+        },
+        inputBorder: {
+            position: 'relative',
+            borderRadius: '12px',
+            padding: '2px',
+            background: 'linear-gradient(white, white) padding-box, conic-gradient(from 0deg, #E5EDFF 0%, #C7D2FE 25%, #D8B4FE 50%, #C7D2FE 75%, #E5EDFF 100%) border-box',
+            border: '2px solid transparent',
+        },
+        textarea: {
+            width: '100%',
+            paddingLeft: '16px',
+            paddingRight: '48px',
+            paddingTop: '12px',
+            paddingBottom: '12px',
+            backgroundColor: 'white',
+            borderRadius: '10px',
+            outline: 'none',
+            border: 'none',
+            resize: 'none',
+            fontSize: '14px',
+            lineHeight: '24px',
+            minHeight: '48px',
+            maxHeight: '72px',
+        },
+        sendButton: (disabled) => ({
+            position: 'absolute',
+            right: '12px',
+            bottom: '8px',
+            width: '32px',
+            height: '32px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: '50%',
+            border: 'none',
+            backgroundColor: disabled ? '#e5e7eb' : '#8B5CF6',
+            color: disabled ? '#6b7280' : 'white',
+            opacity: disabled ? 0.3 : 1,
+            cursor: disabled ? 'not-allowed' : 'pointer',
+        }),
+        apiKeyContainer: {
+            padding: '24px',
+        },
+        apiKeyTitle: {
+            fontSize: '14px',
+            fontWeight: 500,
+            color: '#374151',
+            marginBottom: '8px',
+        },
+        apiKeyDescription: {
+            fontSize: '12px',
+            color: '#6b7280',
+            marginBottom: '16px',
+        },
+        apiKeyInput: {
+            width: '100%',
+            padding: '8px 12px',
+            border: '1px solid #d1d5db',
+            borderRadius: '8px',
+            outline: 'none',
+            fontSize: '14px',
+        },
+        apiKeyButton: {
+            width: '100%',
+            padding: '8px 16px',
+            backgroundColor: '#8B5CF6',
+            color: 'white',
+            borderRadius: '8px',
+            border: 'none',
+            cursor: 'pointer',
+            marginTop: '16px',
+            fontSize: '14px',
+            fontWeight: 500,
+        },
+        historyItem: (isActive) => ({
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '12px 16px',
+            cursor: 'pointer',
+            backgroundColor: isActive ? '#f3e8ff' : 'transparent',
+            borderBottom: '1px solid #f3f4f6',
+        }),
+        historyTitle: {
+            fontSize: '14px',
+            fontWeight: 500,
+            color: '#111827',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+        },
+        historyMeta: {
+            fontSize: '12px',
+            color: '#6b7280',
+            marginTop: '2px',
+        },
+        menu: {
+            position: 'absolute',
+            right: 0,
+            top: '100%',
+            marginTop: '4px',
+            width: '192px',
+            backgroundColor: 'white',
+            border: '1px solid #e5e7eb',
+            borderRadius: '8px',
+            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+            padding: '4px 0',
+            zIndex: 10,
+        },
+        menuItem: {
+            width: '100%',
+            padding: '8px 16px',
+            textAlign: 'left',
+            fontSize: '14px',
+            color: '#374151',
+            backgroundColor: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+        },
+        loadingBubble: {
+            backgroundColor: '#f3f4f6',
+            borderRadius: '8px',
+            padding: '8px 16px',
+        },
+        backButton: {
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            color: '#4b5563',
+            backgroundColor: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+            paddingLeft: '4px',
+            fontSize: '18px',
+            fontWeight: 600,
+        },
+        emptyHistory: {
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: '100%',
+            color: '#9ca3af',
+            padding: '32px',
+        },
+    };
+    return (jsx(AnimatePresence, { children: isOpen && (jsxs(Fragment, { children: [jsxs(motion.div, { ref: panelRef, initial: { x: '100%' }, animate: { x: 0 }, exit: { x: '100%' }, transition: { type: 'spring', damping: 30, stiffness: 300 }, style: styles.panel, children: [jsxs("div", { style: styles.header, children: [showHistory ? (jsxs("button", { onClick: () => setShowHistory(false), style: styles.backButton, children: [jsx(ChevronLeft, { size: 20 }), jsx("span", { children: "History" })] })) : (jsx("h2", { style: styles.headerTitle, children: "Anty Chat" })), jsxs("div", { style: styles.headerButtons, children: [!showApiKeyInput && !showHistory && (jsxs(Fragment, { children: [jsx("button", { onClick: handleNewChat, style: styles.iconButton, title: "New Chat", children: jsx(MessageSquarePlus, { size: 20, color: "#4b5563" }) }), jsx("button", { onClick: () => {
+                                                        setSessions(getSessions()); // Refresh before showing
+                                                        setShowHistory(true);
+                                                    }, style: styles.iconButton, title: "Chat History", children: jsx(History, { size: 20, color: "#4b5563" }) }), jsxs("div", { style: { position: 'relative' }, ref: menuRef, children: [jsx("button", { onClick: () => setShowMenu(!showMenu), style: styles.iconButton, title: "Menu", children: jsx(EllipsisVertical, { size: 20, color: "#4b5563" }) }), showMenu && (jsx("div", { style: styles.menu, children: jsxs("button", { onClick: handleClearApiKey, style: styles.menuItem, children: [jsx(Key, { size: 16 }), "Change API Key"] }) }))] })] })), jsx("button", { onClick: onClose, style: styles.iconButton, children: jsx(X, { size: 20, color: "#4b5563" }) })] })] }), showApiKeyInput && (jsxs("div", { style: styles.apiKeyContainer, children: [jsxs("div", { children: [jsx("h3", { style: styles.apiKeyTitle, children: "Enter your OpenAI API Key" }), jsx("p", { style: styles.apiKeyDescription, children: "Your API key is stored locally and never sent to our servers." }), jsx("input", { type: "password", value: apiKey, onChange: (e) => setApiKey(e.target.value), onKeyDown: handleKeyDown, placeholder: "sk-...", style: styles.apiKeyInput })] }), jsx("button", { onClick: handleSetApiKey, disabled: !apiKey.trim(), style: {
+                                        ...styles.apiKeyButton,
+                                        opacity: !apiKey.trim() ? 0.5 : 1,
+                                        cursor: !apiKey.trim() ? 'not-allowed' : 'pointer',
+                                    }, children: "Start Chatting" }), jsxs("p", { style: { ...styles.apiKeyDescription, marginTop: '16px' }, children: ["Don't have an API key?", ' ', jsx("a", { href: "https://platform.openai.com/api-keys", target: "_blank", rel: "noopener noreferrer", style: { color: '#8B5CF6' }, children: "Get one here" })] })] })), !showApiKeyInput && showHistory && (jsx("div", { style: { flex: 1, overflowY: 'auto' }, children: sessions.filter(s => s.messages.some(m => m.role === 'user')).length === 0 ? (jsxs("div", { style: styles.emptyHistory, children: [jsx(History, { size: 48, style: { opacity: 0.5, marginBottom: '12px' } }), jsx("p", { style: { fontSize: '14px' }, children: "No chat history yet" })] })) : (jsx("div", { children: sessions.filter(s => s.messages.some(m => m.role === 'user')).map((session) => (jsxs("div", { onClick: () => handleSelectSession(session.id), style: styles.historyItem(session.id === currentSessionId), children: [jsxs("div", { style: { flex: 1, minWidth: 0, paddingRight: '12px' }, children: [jsx("p", { style: styles.historyTitle, children: session.title }), jsxs("p", { style: styles.historyMeta, children: [formatSessionDate(session.updatedAt), " \u00B7 ", session.messages.length, " messages"] })] }), jsx("button", { onClick: (e) => handleDeleteSession(session.id, e), style: { ...styles.iconButton, padding: '6px' }, title: "Delete chat", children: jsx(Trash2, { size: 16, color: "#9ca3af" }) })] }, session.id))) })) })), !showApiKeyInput && !showHistory && (jsxs(Fragment, { children: [jsxs("div", { style: styles.messagesContainer, children: [messages.map((message) => (jsx("div", { style: styles.messageRow(message.role === 'user'), children: jsxs("div", { style: styles.messageBubble(message.role === 'user'), onClick: () => {
+                                                    if (message.role === 'assistant' && message.emotion) {
+                                                        toggleDebugInfo(message.id);
+                                                    }
+                                                }, children: [jsx("p", { style: styles.messageText, children: message.content }), jsx("p", { style: styles.messageTime, children: message.timestamp.toLocaleTimeString([], {
+                                                            hour: '2-digit',
+                                                            minute: '2-digit',
+                                                        }) }), message.role === 'assistant' && message.showDebug && message.emotion && (jsx("div", { style: { marginTop: '8px', paddingTop: '8px', borderTop: '1px solid #d1d5db' }, children: jsxs("div", { style: { fontSize: '12px', color: '#4b5563' }, children: [jsx("span", { style: { fontWeight: 500 }, children: "Emotion:" }), " ", message.emotion] }) }))] }) }, message.id))), isLoading && (jsx("div", { style: { display: 'flex', justifyContent: 'flex-start' }, children: jsx("div", { style: styles.loadingBubble, children: jsx(LoaderCircle, { size: 20, color: "#4b5563", style: { animation: 'spin 1s linear infinite' } }) }) })), jsx("div", { ref: messagesEndRef })] }), jsxs("div", { style: styles.inputContainer, children: [!messages.some(m => m.role === 'user') && (jsx("div", { style: { fontSize: '12px', color: '#9ca3af', textAlign: 'left', marginBottom: '8px', paddingLeft: '4px' }, children: "GPT-4o-mini \u2014 API connected" })), jsxs("div", { ref: inputBorderRef, style: styles.inputBorder, children: [jsx("textarea", { ref: inputRef, value: input, onChange: handleInputChange, onKeyDown: handleKeyDown, placeholder: "Type a message...", disabled: isLoading, rows: 1, style: styles.textarea }), jsx("button", { onClick: handleSend, disabled: !input.trim() || isLoading, style: styles.sendButton(!input.trim() || isLoading), children: jsx(Send, { size: 16 }) })] })] })] }))] }), jsx("style", { children: `
+            @keyframes spin {
+              from { transform: rotate(0deg); }
+              to { transform: rotate(360deg); }
+            }
+          ` })] })) }));
+}
+
 /**
  * Anty Style Helpers
  *
@@ -11639,5 +29720,5 @@ const ANTY_STYLES = {
 // List of available emotions (derived from EMOTION_CONFIGS)
 const AVAILABLE_EMOTIONS = Object.keys(EMOTION_CONFIGS);
 
-export { ANTY_STYLES, AVAILABLE_EMOTIONS, AnimationState, AntyCharacter, AntyParticleCanvas, AntySearchBar, DEFAULT_SEARCH_BAR_CONFIG, EMOTION_CONFIGS, ENABLE_ANIMATION_DEBUG_LOGS, EYE_DIMENSIONS, EYE_SHAPES, PARTICLE_CONFIGS, createEyeAnimation, createIdleAnimation, createLookAnimation, createPowerOffAnimation, createReturnFromLookAnimation, createWakeUpAnimation, getEmotionConfig, getEyeDimensions, getEyeShape, isEmotionType, logAnimationEvent, logAnimationSystemInfo, useAnimationController, useSearchMorph };
+export { ANTY_STYLES, AVAILABLE_EMOTIONS, AnimationState, AntyCharacter, AntyChat, AntyChatPanel, AntyParticleCanvas, AntySearchBar, DEFAULT_SEARCH_BAR_CONFIG, EMOTION_CONFIGS, ENABLE_ANIMATION_DEBUG_LOGS, EYE_DIMENSIONS, EYE_SHAPES, PARTICLE_CONFIGS, clearCurrentSessionId, createAntyChat, createEyeAnimation, createIdleAnimation, createLookAnimation, createNewSession, createPowerOffAnimation, createReturnFromLookAnimation, createWakeUpAnimation, deleteSession, extractEmotion, formatSessionDate, generateTitle, getCurrentSessionId, getEmotionConfig, getEyeDimensions, getEyeShape, getSession, getSessions, isEmotionType, logAnimationEvent, logAnimationSystemInfo, mapEmotionToExpression, saveSession, setCurrentSessionId, stripEmotionTags, stripEmotionTagsStreaming, useAnimationController, useSearchMorph };
 //# sourceMappingURL=index.esm.js.map
