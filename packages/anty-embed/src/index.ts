@@ -40,6 +40,7 @@ export {
 
 // Hooks
 export { useAnimationController } from './hooks/use-animation-controller';
+export { useSearchMorph, type UseSearchMorphOptions, type UseSearchMorphReturn, type SearchBarRefs } from './hooks/use-search-morph';
 
 // Types
 export {
