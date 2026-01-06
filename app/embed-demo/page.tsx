@@ -35,6 +35,7 @@ export default function EmbedDemoPage() {
   const [size, setSize] = useState(160);
   const [showShadow, setShowShadow] = useState(true);
   const [showGlow, setShowGlow] = useState(true);
+  const [frozen, setFrozen] = useState(false);
   const [isSuperMode, setIsSuperMode] = useState(false);
   const [searchEnabled, setSearchEnabled] = useState(false);
   const [isSearchMode, setIsSearchMode] = useState(false);
@@ -93,12 +94,13 @@ export default function EmbedDemoPage() {
             }}
           >
             <AntyCharacter
-              key={`anty-${size}-${searchEnabled}`}
+              key={`anty-${size}-${searchEnabled}-${frozen}`}
               ref={antyRef}
               size={size}
               expression="idle"
               showShadow={showShadow}
               showGlow={showGlow}
+              frozen={frozen}
               isSuperMode={isSuperMode}
               searchEnabled={searchEnabled}
               searchPlaceholder="Ask about SearchAF..."
@@ -138,7 +140,7 @@ export default function EmbedDemoPage() {
               <label style={{ fontSize: '14px', color: '#64748b', marginBottom: '8px', display: 'block' }}>
                 Size: {size}px
               </label>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
                 {SIZES.map((s) => (
                   <button
                     key={s}
@@ -158,6 +160,20 @@ export default function EmbedDemoPage() {
                   </button>
                 ))}
               </div>
+              <input
+                type="number"
+                value={size}
+                onChange={(e) => setSize(Math.max(20, Math.min(500, parseInt(e.target.value) || 80)))}
+                placeholder="Custom size"
+                style={{
+                  width: '100%',
+                  padding: '8px 12px',
+                  borderRadius: '8px',
+                  border: '1px solid #e2e8f0',
+                  fontSize: '14px',
+                  outline: 'none',
+                }}
+              />
             </div>
 
             {/* Toggle Controls */}
@@ -183,6 +199,15 @@ export default function EmbedDemoPage() {
                     style={{ width: '18px', height: '18px', accentColor: '#8B5CF6' }}
                   />
                   <span style={{ fontSize: '14px', color: '#334155' }}>Show Glow</span>
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={frozen}
+                    onChange={(e) => setFrozen(e.target.checked)}
+                    style={{ width: '18px', height: '18px', accentColor: '#8B5CF6' }}
+                  />
+                  <span style={{ fontSize: '14px', color: '#334155' }}>Frozen (no idle)</span>
                 </label>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
                   <input

@@ -29,6 +29,8 @@ export interface CharacterElements {
 export interface InitializeOptions {
     /** Whether character starts in OFF state */
     isOff?: boolean;
+    /** Scale factor for the character (size / 160) */
+    sizeScale?: number;
 }
 /**
  * Initialize all animatable properties on the character
@@ -52,4 +54,4 @@ export declare function initializeCharacter(elements: CharacterElements, options
  * @param elements - Eye elements to reset
  * @param duration - Animation duration (0 for instant)
  */
-export declare function resetEyesToIdle(elements: Pick<CharacterElements, 'eyeLeft' | 'eyeRight' | 'eyeLeftPath' | 'eyeRightPath' | 'eyeLeftSvg' | 'eyeRightSvg'>, duration?: number): gsap.core.Timeline | void;
+export declare function resetEyesToIdle(elements: Pick<CharacterElements, 'eyeLeft' | 'eyeRight' | 'eyeLeftPath' | 'eyeRightPath' | 'eyeLeftSvg' | 'eyeRightSvg'>, duration?: number, sizeScale?: number): gsap.core.Timeline | void;

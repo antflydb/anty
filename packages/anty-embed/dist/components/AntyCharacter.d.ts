@@ -7,6 +7,8 @@ export interface AntyCharacterProps {
     size?: number;
     /** Whether super mode is active */
     isSuperMode?: boolean;
+    /** Freeze all animations (idle, breathing, etc.) for static display */
+    frozen?: boolean;
     /** Whether search mode is active (external control - deprecated, use searchEnabled instead) */
     searchMode?: boolean;
     /** Whether to show debug overlays */

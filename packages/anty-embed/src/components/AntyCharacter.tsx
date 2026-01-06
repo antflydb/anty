@@ -30,6 +30,8 @@ export interface AntyCharacterProps {
   size?: number;
   /** Whether super mode is active */
   isSuperMode?: boolean;
+  /** Freeze all animations (idle, breathing, etc.) for static display */
+  frozen?: boolean;
   /** Whether search mode is active (external control - deprecated, use searchEnabled instead) */
   searchMode?: boolean;
   /** Whether to show debug overlays */
@@ -241,7 +243,6 @@ const styles = {
     position: 'relative',
     width: `${width * scale}px`,
     height: `${height * scale}px`,
-    transformOrigin: 'center center',
   }),
 
   // Inner glow (behind character)
@@ -334,6 +335,7 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
   expression = 'idle',
   size = 160,
   isSuperMode = false,
+  frozen = false,
   searchMode = false,
   debugMode = false,
   showShadow = true,
@@ -464,7 +466,8 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
       defaultPriority: 2,
       isOff,
       searchMode: searchMode || isSearchActive, // Include internal search state
-      autoStartIdle: true,
+      autoStartIdle: !frozen, // Disable idle animation when frozen
+      sizeScale, // Pass scale factor for proper eye sizing
       onStateChange: (from, to) => {
         if (ENABLE_ANIMATION_DEBUG_LOGS) {
           logAnimationEvent('State Change', { from, to });

@@ -33,6 +33,7 @@ export interface EmotionElements {
  *
  * @param config - Declarative emotion configuration
  * @param elements - DOM elements to animate
+ * @param sizeScale - Scale factor for the character (size / 160)
  * @returns GSAP timeline ready to play
  */
-export declare function interpretEmotionConfig(config: EmotionConfig, elements: EmotionElements): gsap.core.Timeline;
+export declare function interpretEmotionConfig(config: EmotionConfig, elements: EmotionElements, sizeScale?: number): gsap.core.Timeline;

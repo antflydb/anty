@@ -61,6 +61,8 @@ export interface UseAnimationControllerOptions extends ControllerConfig {
     searchMode?: boolean;
     /** Auto-start idle on mount */
     autoStartIdle?: boolean;
+    /** Scale factor for the character (size / 160) */
+    sizeScale?: number;
 }
 /**
  * Return type of the hook

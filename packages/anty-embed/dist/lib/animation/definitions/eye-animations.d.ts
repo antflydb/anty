@@ -40,6 +40,8 @@ export interface EyeAnimationConfig {
     delay?: number;
     /** Callback when animation completes */
     onComplete?: () => void;
+    /** Scale factor for the character (size / 160) - affects eye dimensions */
+    sizeScale?: number;
 }
 /**
  * Configuration for blink animations

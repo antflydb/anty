@@ -23,9 +23,10 @@ export interface TransitionAnimationElements {
  * 3. Eyes morph from CLOSED → IDLE (opening like waking up)
  *
  * @param elements - Character, shadow, and optional glow elements
+ * @param sizeScale - Scale factor for the character (size / 160)
  * @returns GSAP timeline for wake-up animation
  */
-export declare function createWakeUpAnimation(elements: TransitionAnimationElements): gsap.core.Timeline;
+export declare function createWakeUpAnimation(elements: TransitionAnimationElements, sizeScale?: number): gsap.core.Timeline;
 /**
  * Creates power-off animation (ON → OFF transition)
  *
@@ -42,4 +43,4 @@ export declare function createWakeUpAnimation(elements: TransitionAnimationEleme
  * @param elements - Character, shadow, and optional glow elements
  * @returns GSAP timeline for power-off animation
  */
-export declare function createPowerOffAnimation(elements: TransitionAnimationElements): gsap.core.Timeline;
+export declare function createPowerOffAnimation(elements: TransitionAnimationElements, sizeScale?: number): gsap.core.Timeline;

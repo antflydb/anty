@@ -37,10 +37,12 @@ const GLOW_LAG_SECONDS = 0.05;
  * 3. Eyes morph from CLOSED → IDLE (opening like waking up)
  *
  * @param elements - Character, shadow, and optional glow elements
+ * @param sizeScale - Scale factor for the character (size / 160)
  * @returns GSAP timeline for wake-up animation
  */
 export function createWakeUpAnimation(
-  elements: TransitionAnimationElements
+  elements: TransitionAnimationElements,
+  sizeScale: number = 1
 ): gsap.core.Timeline {
   const { character, shadow, eyeLeft, eyeRight, eyeLeftPath, eyeRightPath, eyeLeftSvg, eyeRightSvg } = elements;
   // NOTE: Glow animations removed - GlowSystem handles fade in via animation controller
@@ -147,10 +149,10 @@ export function createWakeUpAnimation(
     timeline.set(eyeRightPath, { attr: { d: getEyeShape('HALF', 'right') } }, 0);
     timeline.set([eyeLeftSvg, eyeRightSvg], { attr: { viewBox: halfDimensions.viewBox } }, 0);
     timeline.set([eyeLeft, eyeRight], {
-      width: halfDimensions.width,
-      height: halfDimensions.height,
+      width: halfDimensions.width * sizeScale,
+      height: halfDimensions.height * sizeScale,
       x: 0,
-      y: -10, // Higher up
+      y: -10 * sizeScale, // Higher up (scaled)
       rotation: 0,
       scaleX: 1,
       scaleY: 1,
@@ -163,8 +165,8 @@ export function createWakeUpAnimation(
     timeline.to(eyeRightPath, { attr: { d: getEyeShape('IDLE', 'right') }, duration: 0.25, ease: 'power2.inOut' }, 0.75);
     timeline.to([eyeLeftSvg, eyeRightSvg], { attr: { viewBox: idleDimensions.viewBox }, duration: 0.25, ease: 'power2.inOut' }, 0.75);
     timeline.to([eyeLeft, eyeRight], {
-      width: idleDimensions.width,
-      height: idleDimensions.height,
+      width: idleDimensions.width * sizeScale,
+      height: idleDimensions.height * sizeScale,
       y: 0,
       duration: 0.35,
       ease: 'power2.inOut',
@@ -191,7 +193,8 @@ export function createWakeUpAnimation(
  * @returns GSAP timeline for power-off animation
  */
 export function createPowerOffAnimation(
-  elements: TransitionAnimationElements
+  elements: TransitionAnimationElements,
+  sizeScale: number = 1
 ): gsap.core.Timeline {
   const { character, shadow, eyeLeft, eyeRight, eyeLeftPath, eyeRightPath, eyeLeftSvg, eyeRightSvg } = elements;
   // NOTE: Glow animations removed - GlowSystem handles fade out via animation controller
@@ -277,23 +280,23 @@ export function createPowerOffAnimation(
     const eyeOffsetY = 3; // px down
 
     timeline.set(eyeLeft, {
-      width: offDimensions.width,
-      height: offDimensions.height,
+      width: offDimensions.width * sizeScale,
+      height: offDimensions.height * sizeScale,
       rotation: 0,
       scaleX: 1,
       scaleY: 1,
-      x: eyeOffsetX,  // Move right toward center
-      y: eyeOffsetY,
+      x: eyeOffsetX * sizeScale,  // Move right toward center
+      y: eyeOffsetY * sizeScale,
     }, '<');
 
     timeline.set(eyeRight, {
-      width: offDimensions.width,
-      height: offDimensions.height,
+      width: offDimensions.width * sizeScale,
+      height: offDimensions.height * sizeScale,
       rotation: 0,
       scaleX: 1,
       scaleY: 1,
-      x: -eyeOffsetX, // Move left toward center
-      y: eyeOffsetY,
+      x: -eyeOffsetX * sizeScale, // Move left toward center
+      y: eyeOffsetY * sizeScale,
     }, '<');
   }
 

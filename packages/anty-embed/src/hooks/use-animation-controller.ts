@@ -81,6 +81,8 @@ export interface UseAnimationControllerOptions extends ControllerConfig {
   searchMode?: boolean;
   /** Auto-start idle on mount */
   autoStartIdle?: boolean;
+  /** Scale factor for the character (size / 160) */
+  sizeScale?: number;
 }
 
 /**
@@ -173,6 +175,7 @@ export function useAnimationController(
     isOff = false,
     searchMode = false,
     autoStartIdle = true,
+    sizeScale = 1,
   } = options;
 
   // Controller instance (persistent across renders)
@@ -327,7 +330,7 @@ export function useAnimationController(
           leftBody: elements.leftBody,
           rightBody: elements.rightBody,
         },
-        { isOff }
+        { isOff, sizeScale }
       );
 
       // Create shadow tracker - dynamically updates shadow based on character Y position
@@ -410,7 +413,7 @@ export function useAnimationController(
           eyeRightPath: elements.eyeRightPath || undefined,
           eyeLeftSvg: elements.eyeLeftSvg || undefined,
           eyeRightSvg: elements.eyeRightSvg || undefined,
-        });
+        }, sizeScale);
 
         // Start glow immediately WITH the pop (not after)
         if (glowSystemRef.current) {
@@ -527,7 +530,7 @@ export function useAnimationController(
           eyeRightPath: elements.eyeRightPath || undefined,
           eyeLeftSvg: elements.eyeLeftSvg || undefined,
           eyeRightSvg: elements.eyeRightSvg || undefined,
-        });
+        }, sizeScale);
 
         powerOffTl.play();
 
@@ -595,7 +598,7 @@ export function useAnimationController(
             rightEyeSvg: elements.eyeRightSvg,
           },
           'IDLE',
-          { duration: 0.3 }
+          { duration: 0.3, sizeScale }
         );
 
         // NOTE: Glow show is now triggered from page.tsx via showGlows() for earlier timing
@@ -748,7 +751,7 @@ export function useAnimationController(
         outerGlow: elements.outerGlow,
         leftBody: elements.leftBody,
         rightBody: elements.rightBody,
-      });
+      }, sizeScale);
 
       // Collect elements for this emotion (deduplicate to avoid double acquisition)
       const emotionElements = Array.from(new Set([

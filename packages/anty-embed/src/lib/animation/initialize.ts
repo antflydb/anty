@@ -34,6 +34,8 @@ export interface CharacterElements {
 export interface InitializeOptions {
   /** Whether character starts in OFF state */
   isOff?: boolean;
+  /** Scale factor for the character (size / 160) */
+  sizeScale?: number;
 }
 
 /**
@@ -52,7 +54,7 @@ export function initializeCharacter(
   elements: CharacterElements,
   options: InitializeOptions = {}
 ): void {
-  const { isOff = false } = options;
+  const { isOff = false, sizeScale = 1 } = options;
   const {
     character,
     shadow,
@@ -85,8 +87,9 @@ export function initializeCharacter(
   // Eye containers - position and transforms
   // ===========================
   // OFF state: eyes move closer together (logo position)
-  const eyeOffsetX = isOff ? 3 : 0; // px toward center
-  const eyeOffsetY = isOff ? 3 : 0; // px down
+  // Pixel values scaled by sizeScale (designed for 160px base)
+  const eyeOffsetX = isOff ? 3 * sizeScale : 0; // px toward center (scaled)
+  const eyeOffsetY = isOff ? 3 * sizeScale : 0; // px down (scaled)
 
   if (eyeLeft) {
     gsap.set(eyeLeft, {
@@ -136,13 +139,13 @@ export function initializeCharacter(
   }
 
   // ===========================
-  // Eye container dimensions - match the shape
+  // Eye container dimensions - match the shape, scaled appropriately
   // ===========================
   if (eyeLeft && eyeRight) {
     const dimensions = isOff ? getEyeDimensions('OFF_LEFT') : getEyeDimensions('IDLE');
     gsap.set([eyeLeft, eyeRight], {
-      width: dimensions.width,
-      height: dimensions.height,
+      width: dimensions.width * sizeScale,
+      height: dimensions.height * sizeScale,
     });
   }
 
@@ -196,7 +199,8 @@ export function initializeCharacter(
  */
 export function resetEyesToIdle(
   elements: Pick<CharacterElements, 'eyeLeft' | 'eyeRight' | 'eyeLeftPath' | 'eyeRightPath' | 'eyeLeftSvg' | 'eyeRightSvg'>,
-  duration = 0
+  duration = 0,
+  sizeScale = 1
 ): gsap.core.Timeline | void {
   const { eyeLeft, eyeRight, eyeLeftPath, eyeRightPath, eyeLeftSvg, eyeRightSvg } = elements;
 
@@ -217,10 +221,10 @@ export function resetEyesToIdle(
     gsap.set([eyeLeftSvg, eyeRightSvg], {
       attr: { viewBox: idleDimensions.viewBox },
     });
-    // Reset container dimensions to IDLE size
+    // Reset container dimensions to IDLE size (scaled)
     gsap.set([eyeLeft, eyeRight], {
-      width: idleDimensions.width,
-      height: idleDimensions.height,
+      width: idleDimensions.width * sizeScale,
+      height: idleDimensions.height * sizeScale,
     });
     gsap.set([eyeLeft, eyeRight], {
       scaleX: 1,
@@ -254,8 +258,8 @@ export function resetEyesToIdle(
   }, 0);
 
   timeline.to([eyeLeft, eyeRight], {
-    width: idleDimensions.width,
-    height: idleDimensions.height,
+    width: idleDimensions.width * sizeScale,
+    height: idleDimensions.height * sizeScale,
     scaleX: 1,
     scaleY: 1,
     rotation: 0,

@@ -7638,7 +7638,7 @@ const DEFAULTS = {
  * createEyeAnimation(elements, { left: 'WINK_LEFT', right: 'IDLE' }, { duration: 0.2 });
  */
 function createEyeAnimation(elements, shapeSpec, config = {}) {
-    const { duration = DEFAULTS.MORPH_DURATION, ease = DEFAULTS.MORPH_EASE, delay = 0, onComplete, } = config;
+    const { duration = DEFAULTS.MORPH_DURATION, ease = DEFAULTS.MORPH_EASE, delay = 0, onComplete, sizeScale = 1, } = config;
     const timeline = gsapWithCSS.timeline({
         delay,
         onComplete,
@@ -7666,11 +7666,11 @@ function createEyeAnimation(elements, shapeSpec, config = {}) {
             duration,
             ease,
         }, 0);
-        // Animate container dimensions to match shape's actual size
+        // Animate container dimensions to match shape's actual size (scaled)
         if (elements.leftEye) {
             timeline.to(elements.leftEye, {
-                width: leftDimensions.width,
-                height: leftDimensions.height,
+                width: leftDimensions.width * sizeScale,
+                height: leftDimensions.height * sizeScale,
                 duration,
                 ease,
             }, 0);
@@ -7695,11 +7695,11 @@ function createEyeAnimation(elements, shapeSpec, config = {}) {
             duration,
             ease,
         }, 0);
-        // Animate container dimensions to match shape's actual size
+        // Animate container dimensions to match shape's actual size (scaled)
         if (elements.rightEye) {
             timeline.to(elements.rightEye, {
-                width: rightDimensions.width,
-                height: rightDimensions.height,
+                width: rightDimensions.width * sizeScale,
+                height: rightDimensions.height * sizeScale,
                 duration,
                 ease,
             }, 0);
@@ -7839,7 +7839,7 @@ function createDoubleBlinkAnimation(elements, config = {}) {
  * });
  */
 function createLookAnimation(elements, config) {
-    const { direction, duration = DEFAULTS.LOOK_DURATION, ease = DEFAULTS.MORPH_EASE, xOffset = DEFAULTS.LOOK_X_OFFSET, bunch = DEFAULTS.LOOK_BUNCH, delay = 0, onComplete, } = config;
+    const { direction, duration = DEFAULTS.LOOK_DURATION, ease = DEFAULTS.MORPH_EASE, xOffset = DEFAULTS.LOOK_X_OFFSET, bunch = DEFAULTS.LOOK_BUNCH, delay = 0, onComplete, sizeScale = 1, } = config;
     const timeline = gsapWithCSS.timeline({
         delay,
         onComplete,
@@ -7847,19 +7847,22 @@ function createLookAnimation(elements, config) {
     // Calculate direction multiplier
     const directionMultiplier = direction === 'left' ? -1 : 1;
     // Morph eyes to LOOK shape
-    const morphTimeline = createEyeAnimation(elements, 'LOOK', { duration, ease });
+    const morphTimeline = createEyeAnimation(elements, 'LOOK', { duration, ease, sizeScale });
     timeline.add(morphTimeline, 0);
     // Move eyes horizontally with bunching
+    // Scale pixel values by sizeScale (designed for 160px base)
+    const scaledXOffset = xOffset * sizeScale;
+    const scaledBunch = bunch * sizeScale;
     if (elements.leftEye) {
         timeline.to(elements.leftEye, {
-            x: directionMultiplier * xOffset + bunch, // Move in direction + bunch towards center
+            x: directionMultiplier * scaledXOffset + scaledBunch, // Move in direction + bunch towards center
             duration,
             ease,
         }, 0);
     }
     if (elements.rightEye) {
         timeline.to(elements.rightEye, {
-            x: directionMultiplier * xOffset - bunch, // Move in direction - bunch towards center
+            x: directionMultiplier * scaledXOffset - scaledBunch, // Move in direction - bunch towards center
             duration,
             ease,
         }, 0);
@@ -7879,13 +7882,13 @@ function createLookAnimation(elements, config) {
  * const returnTl = createReturnFromLookAnimation(elements);
  */
 function createReturnFromLookAnimation(elements, config = {}) {
-    const { duration = DEFAULTS.LOOK_DURATION, ease = DEFAULTS.MORPH_EASE, delay = 0, onComplete, } = config;
+    const { duration = DEFAULTS.LOOK_DURATION, ease = DEFAULTS.MORPH_EASE, delay = 0, onComplete, sizeScale = 1, } = config;
     const timeline = gsapWithCSS.timeline({
         delay,
         onComplete,
     });
     // Morph eyes back to IDLE shape
-    const morphTimeline = createEyeAnimation(elements, 'IDLE', { duration, ease });
+    const morphTimeline = createEyeAnimation(elements, 'IDLE', { duration, ease, sizeScale });
     timeline.add(morphTimeline, 0);
     // Reset horizontal position
     const eyeElements = [elements.leftEye, elements.rightEye].filter(Boolean);
@@ -8075,7 +8078,7 @@ function createIdleAnimation(elements, options = {}) {
  * @param options - Initial state configuration
  */
 function initializeCharacter(elements, options = {}) {
-    const { isOff = false } = options;
+    const { isOff = false, sizeScale = 1 } = options;
     const { character, shadow, eyeLeft, eyeRight, eyeLeftPath, eyeRightPath, eyeLeftSvg, eyeRightSvg, innerGlow, outerGlow, leftBody, rightBody, } = elements;
     // ===========================
     // Character transforms
@@ -8093,8 +8096,9 @@ function initializeCharacter(elements, options = {}) {
     // Eye containers - position and transforms
     // ===========================
     // OFF state: eyes move closer together (logo position)
-    const eyeOffsetX = isOff ? 3 : 0; // px toward center
-    const eyeOffsetY = isOff ? 3 : 0; // px down
+    // Pixel values scaled by sizeScale (designed for 160px base)
+    const eyeOffsetX = isOff ? 3 * sizeScale : 0; // px toward center (scaled)
+    const eyeOffsetY = isOff ? 3 * sizeScale : 0; // px down (scaled)
     if (eyeLeft) {
         gsapWithCSS.set(eyeLeft, {
             x: eyeOffsetX, // Move right toward center when OFF
@@ -8140,13 +8144,13 @@ function initializeCharacter(elements, options = {}) {
         });
     }
     // ===========================
-    // Eye container dimensions - match the shape
+    // Eye container dimensions - match the shape, scaled appropriately
     // ===========================
     if (eyeLeft && eyeRight) {
         const dimensions = isOff ? getEyeDimensions('OFF_LEFT') : getEyeDimensions('IDLE');
         gsapWithCSS.set([eyeLeft, eyeRight], {
-            width: dimensions.width,
-            height: dimensions.height,
+            width: dimensions.width * sizeScale,
+            height: dimensions.height * sizeScale,
         });
     }
     // ===========================
@@ -8194,7 +8198,7 @@ function initializeCharacter(elements, options = {}) {
  * @param elements - Eye elements to reset
  * @param duration - Animation duration (0 for instant)
  */
-function resetEyesToIdle(elements, duration = 0) {
+function resetEyesToIdle(elements, duration = 0, sizeScale = 1) {
     const { eyeLeft, eyeRight, eyeLeftPath, eyeRightPath, eyeLeftSvg, eyeRightSvg } = elements;
     if (!eyeLeft || !eyeRight || !eyeLeftPath || !eyeRightPath || !eyeLeftSvg || !eyeRightSvg) {
         return;
@@ -8211,10 +8215,10 @@ function resetEyesToIdle(elements, duration = 0) {
         gsapWithCSS.set([eyeLeftSvg, eyeRightSvg], {
             attr: { viewBox: idleDimensions.viewBox },
         });
-        // Reset container dimensions to IDLE size
+        // Reset container dimensions to IDLE size (scaled)
         gsapWithCSS.set([eyeLeft, eyeRight], {
-            width: idleDimensions.width,
-            height: idleDimensions.height,
+            width: idleDimensions.width * sizeScale,
+            height: idleDimensions.height * sizeScale,
         });
         gsapWithCSS.set([eyeLeft, eyeRight], {
             scaleX: 1,
@@ -8243,8 +8247,8 @@ function resetEyesToIdle(elements, duration = 0) {
         ease: 'power2.inOut',
     }, 0);
     timeline.to([eyeLeft, eyeRight], {
-        width: idleDimensions.width,
-        height: idleDimensions.height,
+        width: idleDimensions.width * sizeScale,
+        height: idleDimensions.height * sizeScale,
         scaleX: 1,
         scaleY: 1,
         rotation: 0,
@@ -8283,9 +8287,10 @@ function killPendingEyeReset() {
  *
  * @param config - Declarative emotion configuration
  * @param elements - DOM elements to animate
+ * @param sizeScale - Scale factor for the character (size / 160)
  * @returns GSAP timeline ready to play
  */
-function interpretEmotionConfig(config, elements) {
+function interpretEmotionConfig(config, elements, sizeScale = 1) {
     const { character, eyeLeft, eyeRight, eyeLeftPath, eyeRightPath, eyeLeftSvg, eyeRightSvg, innerGlow, outerGlow, leftBody, rightBody } = elements;
     const glowElements = [innerGlow, outerGlow].filter(Boolean);
     // Kill any pending reset from previous emotion BEFORE setting up new one
@@ -8301,7 +8306,7 @@ function interpretEmotionConfig(config, elements) {
             gsapWithCSS.set(character, { rotationY: 0 });
         }
         // Reset eyes to IDLE (duration configurable per emotion)
-        resetEyesToIdle(elements, config.eyeResetDuration ?? 0);
+        resetEyesToIdle(elements, config.eyeResetDuration ?? 0, sizeScale);
         // Reset body brackets if they were animated
         if (config.body && leftBody && rightBody) {
             gsapWithCSS.set([leftBody, rightBody], { x: 0, y: 0 });
@@ -8336,31 +8341,31 @@ function interpretEmotionConfig(config, elements) {
     // Eye Animation (static, applied once at start)
     // ===========================
     if (config.eyes && eyeLeft && eyeRight && eyeLeftPath && eyeRightPath && eyeLeftSvg && eyeRightSvg) {
-        addEyeAnimation(timeline, config.eyes, elements);
+        addEyeAnimation(timeline, config.eyes, elements, sizeScale);
     }
     // ===========================
     // Body Bracket Animation (shocked)
     // ===========================
     if (config.body && leftBody && rightBody) {
-        addBodyAnimation(timeline, config.body, leftBody, rightBody);
+        addBodyAnimation(timeline, config.body, leftBody, rightBody, sizeScale);
     }
     // ===========================
     // Character Movement Phases
     // ===========================
-    addCharacterPhases(timeline, config.character, character, glowElements, config.glow);
+    addCharacterPhases(timeline, config.character, character, glowElements, config.glow, sizeScale);
     // ===========================
     // Eye Phases (dynamic, per-keyframe)
     // Must be added AFTER character phases so timeline has correct duration
     // ===========================
     if (config.eyePhases && eyeLeft && eyeRight && eyeLeftPath && eyeRightPath && eyeLeftSvg && eyeRightSvg) {
-        addEyePhases(timeline, config.eyePhases, elements);
+        addEyePhases(timeline, config.eyePhases, elements, sizeScale);
     }
     return timeline;
 }
 /**
  * Add eye animation to timeline
  */
-function addEyeAnimation(timeline, eyeConfig, elements) {
+function addEyeAnimation(timeline, eyeConfig, elements, sizeScale) {
     const { eyeLeft, eyeRight, eyeLeftPath, eyeRightPath, eyeLeftSvg, eyeRightSvg } = elements;
     if (!eyeLeft || !eyeRight || !eyeLeftPath || !eyeRightPath || !eyeLeftSvg || !eyeRightSvg) {
         return;
@@ -8373,17 +8378,18 @@ function addEyeAnimation(timeline, eyeConfig, elements) {
         rightEyePath: eyeRightPath,
         leftEyeSvg: eyeLeftSvg,
         rightEyeSvg: eyeRightSvg,
-    }, eyeConfig.shape, { duration: eyeConfig.duration });
+    }, eyeConfig.shape, { duration: eyeConfig.duration, sizeScale });
     const eyePosition = eyeConfig.delay ?? 0;
     timeline.add(eyeTl, eyePosition);
     // Eye position/transform animations
+    // All pixel values are scaled by sizeScale (designed for 160px base)
     if (eyeConfig.yOffset !== undefined || eyeConfig.xOffset !== undefined || eyeConfig.scale !== undefined || eyeConfig.bunch !== undefined) {
-        const bunch = eyeConfig.bunch ?? 0;
-        // Handle per-eye or shared offsets
-        const leftYOffset = typeof eyeConfig.yOffset === 'object' ? eyeConfig.yOffset.left : (eyeConfig.yOffset ?? 0);
-        const rightYOffset = typeof eyeConfig.yOffset === 'object' ? eyeConfig.yOffset.right : (eyeConfig.yOffset ?? 0);
-        const leftXOffset = typeof eyeConfig.xOffset === 'object' ? eyeConfig.xOffset.left : (eyeConfig.xOffset ?? 0);
-        const rightXOffset = typeof eyeConfig.xOffset === 'object' ? eyeConfig.xOffset.right : (eyeConfig.xOffset ?? 0);
+        const bunch = (eyeConfig.bunch ?? 0) * sizeScale;
+        // Handle per-eye or shared offsets (scaled)
+        const leftYOffset = (typeof eyeConfig.yOffset === 'object' ? eyeConfig.yOffset.left : (eyeConfig.yOffset ?? 0)) * sizeScale;
+        const rightYOffset = (typeof eyeConfig.yOffset === 'object' ? eyeConfig.yOffset.right : (eyeConfig.yOffset ?? 0)) * sizeScale;
+        const leftXOffset = (typeof eyeConfig.xOffset === 'object' ? eyeConfig.xOffset.left : (eyeConfig.xOffset ?? 0)) * sizeScale;
+        const rightXOffset = (typeof eyeConfig.xOffset === 'object' ? eyeConfig.xOffset.right : (eyeConfig.xOffset ?? 0)) * sizeScale;
         // Left eye: moves in direction + bunches towards center
         timeline.to(eyeLeft, {
             y: leftYOffset,
@@ -8436,7 +8442,7 @@ function addEyeAnimation(timeline, eyeConfig, elements) {
 /**
  * Add per-phase eye animations (for dynamic eye changes during animation)
  */
-function addEyePhases(timeline, eyePhases, elements) {
+function addEyePhases(timeline, eyePhases, elements, sizeScale) {
     const { eyeLeft, eyeRight, eyeLeftPath, eyeRightPath, eyeLeftSvg, eyeRightSvg } = elements;
     if (!eyeLeft || !eyeRight || !eyeLeftPath || !eyeRightPath || !eyeLeftSvg || !eyeRightSvg) {
         return;
@@ -8449,12 +8455,13 @@ function addEyePhases(timeline, eyePhases, elements) {
             rightEyePath: eyeRightPath,
             leftEyeSvg: eyeLeftSvg,
             rightEyeSvg: eyeRightSvg,
-        }, phase.shape, { duration: phase.duration });
+        }, phase.shape, { duration: phase.duration, sizeScale });
         timeline.add(eyeTl, phase.position);
         // Handle eye position changes (xOffset, bunch)
+        // All pixel values are scaled by sizeScale (designed for 160px base)
         if (phase.xOffset !== undefined || phase.bunch !== undefined) {
-            const bunch = phase.bunch ?? 0;
-            const xOffset = phase.xOffset ?? 0;
+            const bunch = (phase.bunch ?? 0) * sizeScale;
+            const xOffset = (phase.xOffset ?? 0) * sizeScale;
             // Left eye: xOffset + bunch towards center
             timeline.to(eyeLeft, {
                 x: xOffset + bunch,
@@ -8473,22 +8480,22 @@ function addEyePhases(timeline, eyePhases, elements) {
 /**
  * Add body bracket animation (shocked)
  */
-function addBodyAnimation(timeline, bodyConfig, leftBody, rightBody) {
+function addBodyAnimation(timeline, bodyConfig, leftBody, rightBody, sizeScale = 1) {
     const duration = bodyConfig.duration ?? 0.2;
     const ease = bodyConfig.ease ?? 'back.out(2)';
     const returnPosition = bodyConfig.returnPosition ?? '+=1.15';
     const returnDuration = bodyConfig.returnDuration ?? 0.25;
     const returnEase = bodyConfig.returnEase ?? 'elastic.out(1, 0.5)';
-    // Separate brackets
+    // Separate brackets - scale pixel values by sizeScale (designed for 160px base)
     timeline.to(leftBody, {
-        x: bodyConfig.leftX ?? 0,
-        y: bodyConfig.leftY ?? 0,
+        x: (bodyConfig.leftX ?? 0) * sizeScale,
+        y: (bodyConfig.leftY ?? 0) * sizeScale,
         duration,
         ease,
     }, 0);
     timeline.to(rightBody, {
-        x: bodyConfig.rightX ?? 0,
-        y: bodyConfig.rightY ?? 0,
+        x: (bodyConfig.rightX ?? 0) * sizeScale,
+        y: (bodyConfig.rightY ?? 0) * sizeScale,
         duration,
         ease,
     }, 0);
@@ -8504,15 +8511,24 @@ function addBodyAnimation(timeline, bodyConfig, leftBody, rightBody) {
  * Add character movement phases
  * NOTE: Glow following is now handled by GlowSystem via physics-based tracking
  */
-function addCharacterPhases(timeline, phases, character, _glowElements, _glowConfig) {
+function addCharacterPhases(timeline, phases, character, _glowElements, _glowConfig, sizeScale = 1) {
     let isFirstPhase = true;
     for (const phase of phases) {
         // First phase starts at 0, others sequence naturally or use explicit position
         const position = phase.position ?? (isFirstPhase ? 0 : undefined);
         isFirstPhase = false;
+        // Scale x and y pixel values by sizeScale (designed for 160px base)
+        // Other props like rotation, scale, opacity remain unchanged
+        const scaledProps = { ...phase.props };
+        if (typeof scaledProps.x === 'number') {
+            scaledProps.x = scaledProps.x * sizeScale;
+        }
+        if (typeof scaledProps.y === 'number') {
+            scaledProps.y = scaledProps.y * sizeScale;
+        }
         // Animate character
         timeline.to(character, {
-            ...phase.props,
+            ...scaledProps,
             duration: phase.duration,
             ease: phase.ease,
         }, position);
@@ -9001,9 +9017,10 @@ function getEmotionConfig(emotion) {
  * 3. Eyes morph from CLOSED → IDLE (opening like waking up)
  *
  * @param elements - Character, shadow, and optional glow elements
+ * @param sizeScale - Scale factor for the character (size / 160)
  * @returns GSAP timeline for wake-up animation
  */
-function createWakeUpAnimation(elements) {
+function createWakeUpAnimation(elements, sizeScale = 1) {
     const { character, shadow, eyeLeft, eyeRight, eyeLeftPath, eyeRightPath, eyeLeftSvg, eyeRightSvg } = elements;
     // NOTE: Glow animations removed - GlowSystem handles fade in via animation controller
     const timeline = gsapWithCSS.timeline();
@@ -9081,10 +9098,10 @@ function createWakeUpAnimation(elements) {
         timeline.set(eyeRightPath, { attr: { d: getEyeShape('HALF', 'right') } }, 0);
         timeline.set([eyeLeftSvg, eyeRightSvg], { attr: { viewBox: halfDimensions.viewBox } }, 0);
         timeline.set([eyeLeft, eyeRight], {
-            width: halfDimensions.width,
-            height: halfDimensions.height,
+            width: halfDimensions.width * sizeScale,
+            height: halfDimensions.height * sizeScale,
             x: 0,
-            y: -10, // Higher up
+            y: -10 * sizeScale, // Higher up (scaled)
             rotation: 0,
             scaleX: 1,
             scaleY: 1,
@@ -9094,8 +9111,8 @@ function createWakeUpAnimation(elements) {
         timeline.to(eyeRightPath, { attr: { d: getEyeShape('IDLE', 'right') }, duration: 0.25, ease: 'power2.inOut' }, 0.75);
         timeline.to([eyeLeftSvg, eyeRightSvg], { attr: { viewBox: idleDimensions.viewBox }, duration: 0.25, ease: 'power2.inOut' }, 0.75);
         timeline.to([eyeLeft, eyeRight], {
-            width: idleDimensions.width,
-            height: idleDimensions.height,
+            width: idleDimensions.width * sizeScale,
+            height: idleDimensions.height * sizeScale,
             y: 0,
             duration: 0.35,
             ease: 'power2.inOut',
@@ -9119,7 +9136,7 @@ function createWakeUpAnimation(elements) {
  * @param elements - Character, shadow, and optional glow elements
  * @returns GSAP timeline for power-off animation
  */
-function createPowerOffAnimation(elements) {
+function createPowerOffAnimation(elements, sizeScale = 1) {
     const { character, shadow, eyeLeft, eyeRight, eyeLeftPath, eyeRightPath, eyeLeftSvg, eyeRightSvg } = elements;
     // NOTE: Glow animations removed - GlowSystem handles fade out via animation controller
     const timeline = gsapWithCSS.timeline();
@@ -9182,22 +9199,22 @@ function createPowerOffAnimation(elements) {
         const eyeOffsetX = 3; // px toward center
         const eyeOffsetY = 3; // px down
         timeline.set(eyeLeft, {
-            width: offDimensions.width,
-            height: offDimensions.height,
+            width: offDimensions.width * sizeScale,
+            height: offDimensions.height * sizeScale,
             rotation: 0,
             scaleX: 1,
             scaleY: 1,
-            x: eyeOffsetX, // Move right toward center
-            y: eyeOffsetY,
+            x: eyeOffsetX * sizeScale, // Move right toward center
+            y: eyeOffsetY * sizeScale,
         }, '<');
         timeline.set(eyeRight, {
-            width: offDimensions.width,
-            height: offDimensions.height,
+            width: offDimensions.width * sizeScale,
+            height: offDimensions.height * sizeScale,
             rotation: 0,
             scaleX: 1,
             scaleY: 1,
-            x: -eyeOffsetX, // Move left toward center
-            y: eyeOffsetY,
+            x: -eyeOffsetX * sizeScale, // Move left toward center
+            y: eyeOffsetY * sizeScale,
         }, '<');
     }
     return timeline;
@@ -9538,7 +9555,7 @@ function createGlowSystem(character, outerGlow, innerGlow, config = {}) {
  * ```
  */
 function useAnimationController(elements, options = {}) {
-    const { enableLogging = false, enableQueue = true, maxQueueSize = 10, defaultPriority = 2, callbacks = {}, onStateChange, onAnimationSequenceChange, isOff = false, searchMode = false, autoStartIdle = true, } = options;
+    const { enableLogging = false, enableQueue = true, maxQueueSize = 10, defaultPriority = 2, callbacks = {}, onStateChange, onAnimationSequenceChange, isOff = false, searchMode = false, autoStartIdle = true, sizeScale = 1, } = options;
     // Controller instance (persistent across renders)
     const controllerRef = useRef(null);
     // Track initialization state
@@ -9667,7 +9684,7 @@ function useAnimationController(elements, options = {}) {
                 outerGlow: elements.outerGlow || null,
                 leftBody: elements.leftBody,
                 rightBody: elements.rightBody,
-            }, { isOff });
+            }, { isOff, sizeScale });
             // Create shadow tracker - dynamically updates shadow based on character Y position
             // This replaces all the disjointed shadow animations in idle, emotions, etc.
             if (elements.shadow && !shadowTrackerRef.current) {
@@ -9735,7 +9752,7 @@ function useAnimationController(elements, options = {}) {
                     eyeRightPath: elements.eyeRightPath || undefined,
                     eyeLeftSvg: elements.eyeLeftSvg || undefined,
                     eyeRightSvg: elements.eyeRightSvg || undefined,
-                });
+                }, sizeScale);
                 // Start glow immediately WITH the pop (not after)
                 if (glowSystemRef.current) {
                     glowSystemRef.current.snapToCharacter(); // Reset spring positions
@@ -9836,7 +9853,7 @@ function useAnimationController(elements, options = {}) {
                     eyeRightPath: elements.eyeRightPath || undefined,
                     eyeLeftSvg: elements.eyeLeftSvg || undefined,
                     eyeRightSvg: elements.eyeRightSvg || undefined,
-                });
+                }, sizeScale);
                 powerOffTl.play();
                 if (enableLogging) {
                     console.log('[useAnimationController] Power-off animation started');
@@ -9893,7 +9910,7 @@ function useAnimationController(elements, options = {}) {
                     rightEyePath: elements.eyeRightPath,
                     leftEyeSvg: elements.eyeLeftSvg,
                     rightEyeSvg: elements.eyeRightSvg,
-                }, 'IDLE', { duration: 0.3 });
+                }, 'IDLE', { duration: 0.3, sizeScale });
                 // NOTE: Glow show is now triggered from page.tsx via showGlows() for earlier timing
                 restoreTl.eventCallback('onComplete', () => {
                     controllerRef.current?.resumeIdle();
@@ -10030,7 +10047,7 @@ function useAnimationController(elements, options = {}) {
             outerGlow: elements.outerGlow,
             leftBody: elements.leftBody,
             rightBody: elements.rightBody,
-        });
+        }, sizeScale);
         // Collect elements for this emotion (deduplicate to avoid double acquisition)
         const emotionElements = Array.from(new Set([
             elements.character,
@@ -10768,7 +10785,6 @@ const styles = {
         position: 'relative',
         width: `${width * scale}px`,
         height: `${height * scale}px`,
-        transformOrigin: 'center center',
     }),
     // Inner glow (behind character)
     innerGlow: (scale = 1) => ({
@@ -10850,7 +10866,7 @@ const styles = {
  * - Self-contained shadow and glow effects
  * - Power on/off animations
  */
-const AntyCharacter = forwardRef(({ expression = 'idle', size = 160, isSuperMode = false, searchMode = false, debugMode = false, showShadow = true, showGlow = true, onSpontaneousExpression, onEmotionComplete, onAnimationSequenceChange, onRandomAction, className = '', style, 
+const AntyCharacter = forwardRef(({ expression = 'idle', size = 160, isSuperMode = false, frozen = false, searchMode = false, debugMode = false, showShadow = true, showGlow = true, onSpontaneousExpression, onEmotionComplete, onAnimationSequenceChange, onRandomAction, className = '', style, 
 // Optional external refs (for playground where shadow/glow are rendered externally)
 shadowRef: externalShadowRef, innerGlowRef: externalInnerGlowRef, outerGlowRef: externalOuterGlowRef, 
 // Search bar integration
@@ -10946,7 +10962,8 @@ searchEnabled = false, searchValue: externalSearchValue, onSearchChange, onSearc
         defaultPriority: 2,
         isOff,
         searchMode: searchMode || isSearchActive, // Include internal search state
-        autoStartIdle: true,
+        autoStartIdle: !frozen, // Disable idle animation when frozen
+        sizeScale, // Pass scale factor for proper eye sizing
         onStateChange: (from, to) => {
             if (ENABLE_ANIMATION_DEBUG_LOGS) {
                 logAnimationEvent('State Change', { from, to });

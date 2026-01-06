@@ -48,6 +48,8 @@ export interface EyeAnimationConfig {
   delay?: number;
   /** Callback when animation completes */
   onComplete?: () => void;
+  /** Scale factor for the character (size / 160) - affects eye dimensions */
+  sizeScale?: number;
 }
 
 /**
@@ -153,6 +155,7 @@ export function createEyeAnimation(
     ease = DEFAULTS.MORPH_EASE,
     delay = 0,
     onComplete,
+    sizeScale = 1,
   } = config;
 
   const timeline = gsap.timeline({
@@ -195,13 +198,13 @@ export function createEyeAnimation(
       0
     );
 
-    // Animate container dimensions to match shape's actual size
+    // Animate container dimensions to match shape's actual size (scaled)
     if (elements.leftEye) {
       timeline.to(
         elements.leftEye,
         {
-          width: leftDimensions.width,
-          height: leftDimensions.height,
+          width: leftDimensions.width * sizeScale,
+          height: leftDimensions.height * sizeScale,
           duration,
           ease,
         },
@@ -240,13 +243,13 @@ export function createEyeAnimation(
       0
     );
 
-    // Animate container dimensions to match shape's actual size
+    // Animate container dimensions to match shape's actual size (scaled)
     if (elements.rightEye) {
       timeline.to(
         elements.rightEye,
         {
-          width: rightDimensions.width,
-          height: rightDimensions.height,
+          width: rightDimensions.width * sizeScale,
+          height: rightDimensions.height * sizeScale,
           duration,
           ease,
         },
@@ -436,6 +439,7 @@ export function createLookAnimation(
     bunch = DEFAULTS.LOOK_BUNCH,
     delay = 0,
     onComplete,
+    sizeScale = 1,
   } = config;
 
   const timeline = gsap.timeline({
@@ -450,16 +454,20 @@ export function createLookAnimation(
   const morphTimeline = createEyeAnimation(
     elements,
     'LOOK',
-    { duration, ease }
+    { duration, ease, sizeScale }
   );
   timeline.add(morphTimeline, 0);
 
   // Move eyes horizontally with bunching
+  // Scale pixel values by sizeScale (designed for 160px base)
+  const scaledXOffset = xOffset * sizeScale;
+  const scaledBunch = bunch * sizeScale;
+
   if (elements.leftEye) {
     timeline.to(
       elements.leftEye,
       {
-        x: directionMultiplier * xOffset + bunch, // Move in direction + bunch towards center
+        x: directionMultiplier * scaledXOffset + scaledBunch, // Move in direction + bunch towards center
         duration,
         ease,
       },
@@ -471,7 +479,7 @@ export function createLookAnimation(
     timeline.to(
       elements.rightEye,
       {
-        x: directionMultiplier * xOffset - bunch, // Move in direction - bunch towards center
+        x: directionMultiplier * scaledXOffset - scaledBunch, // Move in direction - bunch towards center
         duration,
         ease,
       },
@@ -503,6 +511,7 @@ export function createReturnFromLookAnimation(
     ease = DEFAULTS.MORPH_EASE,
     delay = 0,
     onComplete,
+    sizeScale = 1,
   } = config;
 
   const timeline = gsap.timeline({
@@ -514,7 +523,7 @@ export function createReturnFromLookAnimation(
   const morphTimeline = createEyeAnimation(
     elements,
     'IDLE',
-    { duration, ease }
+    { duration, ease, sizeScale }
   );
   timeline.add(morphTimeline, 0);
 

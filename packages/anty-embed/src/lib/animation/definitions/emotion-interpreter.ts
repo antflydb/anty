@@ -50,11 +50,13 @@ export interface EmotionElements {
  *
  * @param config - Declarative emotion configuration
  * @param elements - DOM elements to animate
+ * @param sizeScale - Scale factor for the character (size / 160)
  * @returns GSAP timeline ready to play
  */
 export function interpretEmotionConfig(
   config: EmotionConfig,
-  elements: EmotionElements
+  elements: EmotionElements,
+  sizeScale: number = 1
 ): gsap.core.Timeline {
   const { character, eyeLeft, eyeRight, eyeLeftPath, eyeRightPath, eyeLeftSvg, eyeRightSvg, innerGlow, outerGlow, leftBody, rightBody } = elements;
   const glowElements = [innerGlow, outerGlow].filter(Boolean) as HTMLElement[];
@@ -75,7 +77,7 @@ export function interpretEmotionConfig(
     }
 
     // Reset eyes to IDLE (duration configurable per emotion)
-    resetEyesToIdle(elements, config.eyeResetDuration ?? 0);
+    resetEyesToIdle(elements, config.eyeResetDuration ?? 0, sizeScale);
 
     // Reset body brackets if they were animated
     if (config.body && leftBody && rightBody) {
@@ -112,27 +114,27 @@ export function interpretEmotionConfig(
   // Eye Animation (static, applied once at start)
   // ===========================
   if (config.eyes && eyeLeft && eyeRight && eyeLeftPath && eyeRightPath && eyeLeftSvg && eyeRightSvg) {
-    addEyeAnimation(timeline, config.eyes, elements);
+    addEyeAnimation(timeline, config.eyes, elements, sizeScale);
   }
 
   // ===========================
   // Body Bracket Animation (shocked)
   // ===========================
   if (config.body && leftBody && rightBody) {
-    addBodyAnimation(timeline, config.body, leftBody, rightBody);
+    addBodyAnimation(timeline, config.body, leftBody, rightBody, sizeScale);
   }
 
   // ===========================
   // Character Movement Phases
   // ===========================
-  addCharacterPhases(timeline, config.character, character, glowElements, config.glow);
+  addCharacterPhases(timeline, config.character, character, glowElements, config.glow, sizeScale);
 
   // ===========================
   // Eye Phases (dynamic, per-keyframe)
   // Must be added AFTER character phases so timeline has correct duration
   // ===========================
   if (config.eyePhases && eyeLeft && eyeRight && eyeLeftPath && eyeRightPath && eyeLeftSvg && eyeRightSvg) {
-    addEyePhases(timeline, config.eyePhases, elements);
+    addEyePhases(timeline, config.eyePhases, elements, sizeScale);
   }
 
   return timeline;
@@ -144,7 +146,8 @@ export function interpretEmotionConfig(
 function addEyeAnimation(
   timeline: gsap.core.Timeline,
   eyeConfig: EyeConfig,
-  elements: EmotionElements
+  elements: EmotionElements,
+  sizeScale: number
 ): void {
   const { eyeLeft, eyeRight, eyeLeftPath, eyeRightPath, eyeLeftSvg, eyeRightSvg } = elements;
 
@@ -163,21 +166,22 @@ function addEyeAnimation(
       rightEyeSvg: eyeRightSvg,
     },
     eyeConfig.shape,
-    { duration: eyeConfig.duration }
+    { duration: eyeConfig.duration, sizeScale }
   );
 
   const eyePosition = eyeConfig.delay ?? 0;
   timeline.add(eyeTl, eyePosition);
 
   // Eye position/transform animations
+  // All pixel values are scaled by sizeScale (designed for 160px base)
   if (eyeConfig.yOffset !== undefined || eyeConfig.xOffset !== undefined || eyeConfig.scale !== undefined || eyeConfig.bunch !== undefined) {
-    const bunch = eyeConfig.bunch ?? 0;
+    const bunch = (eyeConfig.bunch ?? 0) * sizeScale;
 
-    // Handle per-eye or shared offsets
-    const leftYOffset = typeof eyeConfig.yOffset === 'object' ? eyeConfig.yOffset.left : (eyeConfig.yOffset ?? 0);
-    const rightYOffset = typeof eyeConfig.yOffset === 'object' ? eyeConfig.yOffset.right : (eyeConfig.yOffset ?? 0);
-    const leftXOffset = typeof eyeConfig.xOffset === 'object' ? eyeConfig.xOffset.left : (eyeConfig.xOffset ?? 0);
-    const rightXOffset = typeof eyeConfig.xOffset === 'object' ? eyeConfig.xOffset.right : (eyeConfig.xOffset ?? 0);
+    // Handle per-eye or shared offsets (scaled)
+    const leftYOffset = (typeof eyeConfig.yOffset === 'object' ? eyeConfig.yOffset.left : (eyeConfig.yOffset ?? 0)) * sizeScale;
+    const rightYOffset = (typeof eyeConfig.yOffset === 'object' ? eyeConfig.yOffset.right : (eyeConfig.yOffset ?? 0)) * sizeScale;
+    const leftXOffset = (typeof eyeConfig.xOffset === 'object' ? eyeConfig.xOffset.left : (eyeConfig.xOffset ?? 0)) * sizeScale;
+    const rightXOffset = (typeof eyeConfig.xOffset === 'object' ? eyeConfig.xOffset.right : (eyeConfig.xOffset ?? 0)) * sizeScale;
 
     // Left eye: moves in direction + bunches towards center
     timeline.to(eyeLeft, {
@@ -239,7 +243,8 @@ function addEyeAnimation(
 function addEyePhases(
   timeline: gsap.core.Timeline,
   eyePhases: EyePhase[],
-  elements: EmotionElements
+  elements: EmotionElements,
+  sizeScale: number
 ): void {
   const { eyeLeft, eyeRight, eyeLeftPath, eyeRightPath, eyeLeftSvg, eyeRightSvg } = elements;
 
@@ -258,15 +263,16 @@ function addEyePhases(
         rightEyeSvg: eyeRightSvg,
       },
       phase.shape,
-      { duration: phase.duration }
+      { duration: phase.duration, sizeScale }
     );
 
     timeline.add(eyeTl, phase.position);
 
     // Handle eye position changes (xOffset, bunch)
+    // All pixel values are scaled by sizeScale (designed for 160px base)
     if (phase.xOffset !== undefined || phase.bunch !== undefined) {
-      const bunch = phase.bunch ?? 0;
-      const xOffset = phase.xOffset ?? 0;
+      const bunch = (phase.bunch ?? 0) * sizeScale;
+      const xOffset = (phase.xOffset ?? 0) * sizeScale;
 
       // Left eye: xOffset + bunch towards center
       timeline.to(eyeLeft, {
@@ -292,7 +298,8 @@ function addBodyAnimation(
   timeline: gsap.core.Timeline,
   bodyConfig: BodyConfig,
   leftBody: HTMLElement,
-  rightBody: HTMLElement
+  rightBody: HTMLElement,
+  sizeScale: number = 1
 ): void {
   const duration = bodyConfig.duration ?? 0.2;
   const ease = bodyConfig.ease ?? 'back.out(2)';
@@ -300,17 +307,17 @@ function addBodyAnimation(
   const returnDuration = bodyConfig.returnDuration ?? 0.25;
   const returnEase = bodyConfig.returnEase ?? 'elastic.out(1, 0.5)';
 
-  // Separate brackets
+  // Separate brackets - scale pixel values by sizeScale (designed for 160px base)
   timeline.to(leftBody, {
-    x: bodyConfig.leftX ?? 0,
-    y: bodyConfig.leftY ?? 0,
+    x: (bodyConfig.leftX ?? 0) * sizeScale,
+    y: (bodyConfig.leftY ?? 0) * sizeScale,
     duration,
     ease,
   }, 0);
 
   timeline.to(rightBody, {
-    x: bodyConfig.rightX ?? 0,
-    y: bodyConfig.rightY ?? 0,
+    x: (bodyConfig.rightX ?? 0) * sizeScale,
+    y: (bodyConfig.rightY ?? 0) * sizeScale,
     duration,
     ease,
   }, 0);
@@ -333,7 +340,8 @@ function addCharacterPhases(
   phases: CharacterPhase[],
   character: HTMLElement,
   _glowElements: HTMLElement[],
-  _glowConfig?: GlowConfig
+  _glowConfig?: GlowConfig,
+  sizeScale: number = 1
 ): void {
   let isFirstPhase = true;
   for (const phase of phases) {
@@ -341,9 +349,19 @@ function addCharacterPhases(
     const position = phase.position ?? (isFirstPhase ? 0 : undefined);
     isFirstPhase = false;
 
+    // Scale x and y pixel values by sizeScale (designed for 160px base)
+    // Other props like rotation, scale, opacity remain unchanged
+    const scaledProps = { ...phase.props };
+    if (typeof scaledProps.x === 'number') {
+      scaledProps.x = scaledProps.x * sizeScale;
+    }
+    if (typeof scaledProps.y === 'number') {
+      scaledProps.y = scaledProps.y * sizeScale;
+    }
+
     // Animate character
     timeline.to(character, {
-      ...phase.props,
+      ...scaledProps,
       duration: phase.duration,
       ease: phase.ease,
     }, position);
