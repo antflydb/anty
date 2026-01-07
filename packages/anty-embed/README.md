@@ -26,6 +26,45 @@ function App() {
 }
 ```
 
+## Dependencies
+
+**Required peer dependencies:**
+- `react` ^18.0.0 || ^19.0.0
+- `react-dom` ^18.0.0 || ^19.0.0
+
+**Optional peer dependency:**
+- `openai` ^4.0.0 - Only needed if using `AntyChat` for chat integration
+
+If you don't need chat functionality, you don't need to install openai. The package works fine without it. If you try to use `AntyChat` without openai installed, you'll get a clear error telling you to install it.
+
+```bash
+# For animations only (most users)
+npm install @antflydb/anty-embed
+
+# For animations + chat integration
+npm install @antflydb/anty-embed openai
+```
+
+## Architecture
+
+This package is built with maintainability and performance in mind:
+
+- **Declarative emotion system** - Emotions are defined as data configs, not imperative code. An interpreter converts them to GSAP timelines at runtime. Easy to add new emotions without touching animation logic.
+
+- **Priority-based state machine** - Clean state transitions with priority levels that determine which animations can interrupt others. Thoroughly tested with 41 unit tests.
+
+- **GSAP-powered animations** - All animations use GSAP for smooth, performant motion. No other animation libraries.
+
+- **Well-documented constants** - Animation timings are centralized with clear documentation. Values marked CRITICAL indicate coordinated timings that work together.
+
+- **Dual format output** - Ships both ESM and CommonJS with source maps for debugging.
+
+## Bundle Size
+
+~520KB raw / ~128KB gzipped (excluding peer dependencies)
+
+The bundle includes GSAP and lucide-react. OpenAI is external and only loaded if you use chat features.
+
 ## Documentation
 
 For full documentation, available emotions, props reference, and examples, see the [main repository](https://github.com/antflydb/anty).

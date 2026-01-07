@@ -1,4 +1,14 @@
-import OpenAI from 'openai';
+import type OpenAI from 'openai';
+
+let OpenAIClient: typeof OpenAI | null = null;
+
+try {
+  // Dynamic require for optional peer dependency
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  OpenAIClient = require('openai').default;
+} catch {
+  // openai not installed - will error when AntyChat is used
+}
 
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
@@ -17,16 +27,27 @@ export class AntyChat {
   constructor(apiKey?: string) {
     this.apiKey = apiKey || null;
     if (this.apiKey) {
-      this.client = new OpenAI({
+      this.ensureOpenAI();
+      this.client = new OpenAIClient!({
         apiKey: this.apiKey,
         dangerouslyAllowBrowser: true, // For demo purposes
       });
     }
   }
 
+  private ensureOpenAI() {
+    if (!OpenAIClient) {
+      throw new Error(
+        'The "openai" package is required for chat functionality. ' +
+        'Install it with: npm install openai'
+      );
+    }
+  }
+
   setApiKey(apiKey: string) {
+    this.ensureOpenAI();
     this.apiKey = apiKey;
-    this.client = new OpenAI({
+    this.client = new OpenAIClient!({
       apiKey,
       dangerouslyAllowBrowser: true,
     });

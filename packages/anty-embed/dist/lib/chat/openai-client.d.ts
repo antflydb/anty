@@ -10,6 +10,7 @@ export declare class AntyChat {
     private client;
     private apiKey;
     constructor(apiKey?: string);
+    private ensureOpenAI;
     setApiKey(apiKey: string): void;
     sendMessage(messages: ChatMessage[], onChunk?: (chunk: string) => void): Promise<ChatResponse>;
 }

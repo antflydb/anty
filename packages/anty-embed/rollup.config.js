@@ -18,7 +18,7 @@ export default {
       sourcemap: true,
     },
   ],
-  external: ['react', 'react-dom', 'react/jsx-runtime'],
+  external: ['react', 'react-dom', 'react/jsx-runtime', 'openai'],
   plugins: [
     resolve(),
     commonjs(),
