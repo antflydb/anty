@@ -729,7 +729,7 @@ antyRef.current?.playEmotion('celebrate');`}
               marginBottom: '16px',
             }}
           >
-{`// Logo mode (static, no animations)
+{`// Logo mode (static, no idle animation, no glows/shadow -- can get sent emotions still)
 <AntyCharacter logoMode={true} />`}
           </pre>
           <pre

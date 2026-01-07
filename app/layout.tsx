@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Anty v0.9",
+  title: "Anty v0.92",
   description: "Anty is an interactive AI companion built with Next.js and GSAP animations.",
 };
 
