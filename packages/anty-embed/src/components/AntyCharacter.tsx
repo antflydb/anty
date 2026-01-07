@@ -1153,9 +1153,9 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
     { scope: containerRef, dependencies: [] }
   );
 
-  // SVG paths for body
-  const bodyRightSvg = "/anty/body-right.svg";
-  const bodyLeftSvg = "/anty/body-left.svg";
+  // Inlined SVG data URLs for body (no external assets needed)
+  const bodyRightSvg = "data:image/svg+xml,%3Csvg%20preserveAspectRatio%3D%22none%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20overflow%3D%22visible%22%20style%3D%22display%3A%20block%3B%22%20viewBox%3D%220%200%20173.082%20173.082%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%3Cpath%20id%3D%22RIGHT%22%20d%3D%22M173.082%20115.977C173.082%20147.515%20147.515%20173.082%20115.976%20173.082H4.18192C0.463682%20173.082%20-1.39842%20168.586%201.23077%20165.957L29.5407%20137.647H115.976C127.945%20137.647%20137.647%20127.945%20137.647%20115.977V29.5407L165.957%201.23077C168.586%20-1.39842%20173.082%200.463679%20173.082%204.18192V115.977Z%22%20fill%3D%22var%28--fill-0%2C%20%23052333%29%22%2F%3E%0A%3C%2Fsvg%3E";
+  const bodyLeftSvg = "data:image/svg+xml,%3Csvg%20preserveAspectRatio%3D%22none%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20overflow%3D%22visible%22%20style%3D%22display%3A%20block%3B%22%20viewBox%3D%220%200%20173.694%20173.694%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%3Cpath%20id%3D%22LEFT%22%20d%3D%22M144.153%2035.4344H57.1051C45.1368%2035.4345%2035.4344%2045.1368%2035.4344%2057.1051V144.153L7.12469%20172.463C4.4955%20175.092%200%20173.23%200%20169.512V57.1051C2.28235e-05%2025.5668%2025.5668%204.78163e-05%2057.1051%200H169.512C173.23%200%20175.092%204.49551%20172.463%207.1247L144.153%2035.4344Z%22%20fill%3D%22var%28--fill-0%2C%20%23052333%29%22%2F%3E%0A%3C%2Fsvg%3E";
 
   // Use fullContainer (1.5x height) when rendering internal shadow/glow
   // Use regular container when using external refs (main page manages its own container size)

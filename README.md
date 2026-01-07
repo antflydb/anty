@@ -1,6 +1,6 @@
 # Anty
 
-Embeddable animation system with 18 emotions, chat integration, particle effects, and search bar morphing.
+Embeddable Anty animation system with 18 emotions, chat integration, particle effects, and anty->search bar morphing. Integrated (replaceable) chat bar element. WIP FlappyAF game
 
 ## Features
 
@@ -10,7 +10,7 @@ Embeddable animation system with 18 emotions, chat integration, particle effects
 - **Particle Effects** - Sparkles, confetti, love hearts, and feeding particles
 - **Search Bar Morph** - Seamlessly morph from character into a fully functional search bar
 - **Super Mode** - Power-up transformation with golden glow effects
-- **Logo Mode** - Static logo state for branding use (no animations, full color eyes)
+- **Logo Mode** - Static logo state for branding use (no animations, no glows, can still receive animations)
 - **Customizable Size** - Scales from tiny icons to large displays (24px to 320px+)
 - **Shadow and Glow Effects** - Configurable ambient lighting effects
 - **Power On/Off Transitions** - Animated state changes
