@@ -30,8 +30,10 @@
 // Main components
 export {
   AntyCharacter,
+  PRESETS,
   type AntyCharacterProps,
   type AntyCharacterHandle,
+  type AntyCharacterPreset,
   AntyParticleCanvas,
   type ParticleCanvasHandle,
   AntySearchBar,

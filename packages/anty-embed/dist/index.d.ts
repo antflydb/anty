@@ -26,7 +26,7 @@
  * }
  * ```
  */
-export { AntyCharacter, type AntyCharacterProps, type AntyCharacterHandle, AntyParticleCanvas, type ParticleCanvasHandle, AntySearchBar, type AntySearchBarProps, } from './components';
+export { AntyCharacter, PRESETS, type AntyCharacterProps, type AntyCharacterHandle, type AntyCharacterPreset, AntyParticleCanvas, type ParticleCanvasHandle, AntySearchBar, type AntySearchBarProps, } from './components';
 export { AntyChatPanel, type AntyChatPanelProps } from './components/AntyChatPanel';
 export { AntyChat, createAntyChat, type ChatMessage, type ChatResponse } from './lib/chat/openai-client';
 export { mapEmotionToExpression, extractEmotion, stripEmotionTags, stripEmotionTagsStreaming, } from './lib/chat/emotion-mapper';

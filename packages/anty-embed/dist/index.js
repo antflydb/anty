@@ -10941,6 +10941,34 @@ function useSearchMorph({ characterRef, searchBarRefs, config = DEFAULT_SEARCH_B
 }
 
 gsapWithCSS.registerPlugin(useGSAP);
+/** Preset configurations for common use cases */
+const PRESETS = {
+    /** Large, centered display for landing pages */
+    hero: {
+        size: 240,
+        showShadow: true,
+        showGlow: true,
+    },
+    /** Small chat assistant (for floating in corner) */
+    assistant: {
+        size: 80,
+        showShadow: true,
+        showGlow: false,
+    },
+    /** Tiny icon for navbars/buttons */
+    icon: {
+        size: 32,
+        showShadow: false,
+        showGlow: false,
+        frozen: false,
+    },
+    /** Static logo for branding */
+    logo: {
+        logoMode: true,
+        showShadow: false,
+        showGlow: false,
+    },
+};
 // ============================================================================
 // Inline Style Helpers (replacing Tailwind)
 // ============================================================================
@@ -11131,11 +11159,16 @@ const styles = {
  * - Self-contained shadow and glow effects
  * - Power on/off animations
  */
-const AntyCharacter = React.forwardRef(({ expression = 'idle', size = 160, isSuperMode = false, frozen = false, logoMode = false, searchMode = false, debugMode = false, showShadow = true, showGlow = true, onSpontaneousExpression, onEmotionComplete, onAnimationSequenceChange, onRandomAction, className = '', style, 
-// Optional external refs (for playground where shadow/glow are rendered externally)
-shadowRef: externalShadowRef, innerGlowRef: externalInnerGlowRef, outerGlowRef: externalOuterGlowRef, 
-// Search bar integration
-searchEnabled = false, searchValue: externalSearchValue, onSearchChange, onSearchSubmit, searchPlaceholder = 'Search...', searchShortcut, searchConfig = DEFAULT_SEARCH_BAR_CONFIG, onSearchOpen, onSearchOpenComplete, onSearchClose, onSearchCloseComplete, }, ref) => {
+const AntyCharacter = React.forwardRef((props, ref) => {
+    // Get preset defaults if preset is specified
+    const presetDefaults = props.preset ? PRESETS[props.preset] : {};
+    // Merge preset defaults with explicit props (explicit props override preset)
+    const { preset: _preset, // Extract and discard (already used above)
+    expression = 'idle', size = presetDefaults.size ?? 160, isSuperMode = presetDefaults.isSuperMode ?? false, frozen = presetDefaults.frozen ?? false, logoMode = presetDefaults.logoMode ?? false, searchMode = presetDefaults.searchMode ?? false, debugMode = presetDefaults.debugMode ?? false, showShadow = presetDefaults.showShadow ?? true, showGlow = presetDefaults.showGlow ?? true, onSpontaneousExpression, onEmotionComplete, onAnimationSequenceChange, onRandomAction, className = '', style, 
+    // Optional external refs (for playground where shadow/glow are rendered externally)
+    shadowRef: externalShadowRef, innerGlowRef: externalInnerGlowRef, outerGlowRef: externalOuterGlowRef, 
+    // Search bar integration
+    searchEnabled = presetDefaults.searchEnabled ?? false, searchValue: externalSearchValue, onSearchChange, onSearchSubmit, searchPlaceholder = 'Search...', searchShortcut, searchConfig = DEFAULT_SEARCH_BAR_CONFIG, onSearchOpen, onSearchOpenComplete, onSearchClose, onSearchCloseComplete, } = props;
     // Refs for DOM elements
     const containerRef = React.useRef(null);
     const characterRef = React.useRef(null);
@@ -30032,6 +30065,7 @@ exports.ENABLE_ANIMATION_DEBUG_LOGS = ENABLE_ANIMATION_DEBUG_LOGS;
 exports.EYE_DIMENSIONS = EYE_DIMENSIONS;
 exports.EYE_SHAPES = EYE_SHAPES;
 exports.PARTICLE_CONFIGS = PARTICLE_CONFIGS;
+exports.PRESETS = PRESETS;
 exports.clearCurrentSessionId = clearCurrentSessionId;
 exports.createAntyChat = createAntyChat;
 exports.createEyeAnimation = createEyeAnimation;

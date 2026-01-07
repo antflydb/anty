@@ -1,6 +1,12 @@
 import { type ExpressionName } from '../lib/animation/types';
 import { type SearchBarConfig } from '../types';
+/** Preset configuration type for common use cases */
+export type AntyCharacterPreset = 'hero' | 'assistant' | 'icon' | 'logo';
+/** Preset configurations for common use cases */
+export declare const PRESETS: Record<AntyCharacterPreset, Partial<AntyCharacterProps>>;
 export interface AntyCharacterProps {
+    /** Preset configuration for common use cases. Explicit props override preset values. */
+    preset?: AntyCharacterPreset;
     /** Current expression/emotion to display */
     expression?: ExpressionName;
     /** Character size in pixels (default: 160) */

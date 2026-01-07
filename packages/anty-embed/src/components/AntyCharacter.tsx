@@ -23,7 +23,41 @@ gsap.registerPlugin(useGSAP);
 // Types
 // ============================================================================
 
+/** Preset configuration type for common use cases */
+export type AntyCharacterPreset = 'hero' | 'assistant' | 'icon' | 'logo';
+
+/** Preset configurations for common use cases */
+export const PRESETS: Record<AntyCharacterPreset, Partial<AntyCharacterProps>> = {
+  /** Large, centered display for landing pages */
+  hero: {
+    size: 240,
+    showShadow: true,
+    showGlow: true,
+  },
+  /** Small chat assistant (for floating in corner) */
+  assistant: {
+    size: 80,
+    showShadow: true,
+    showGlow: false,
+  },
+  /** Tiny icon for navbars/buttons */
+  icon: {
+    size: 32,
+    showShadow: false,
+    showGlow: false,
+    frozen: false,
+  },
+  /** Static logo for branding */
+  logo: {
+    logoMode: true,
+    showShadow: false,
+    showGlow: false,
+  },
+};
+
 export interface AntyCharacterProps {
+  /** Preset configuration for common use cases. Explicit props override preset values. */
+  preset?: AntyCharacterPreset;
   /** Current expression/emotion to display */
   expression?: ExpressionName;
   /** Character size in pixels (default: 160) */
@@ -346,39 +380,45 @@ const styles = {
  * - Self-contained shadow and glow effects
  * - Power on/off animations
  */
-export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>(({
-  expression = 'idle',
-  size = 160,
-  isSuperMode = false,
-  frozen = false,
-  logoMode = false,
-  searchMode = false,
-  debugMode = false,
-  showShadow = true,
-  showGlow = true,
-  onSpontaneousExpression,
-  onEmotionComplete,
-  onAnimationSequenceChange,
-  onRandomAction,
-  className = '',
-  style,
-  // Optional external refs (for playground where shadow/glow are rendered externally)
-  shadowRef: externalShadowRef,
-  innerGlowRef: externalInnerGlowRef,
-  outerGlowRef: externalOuterGlowRef,
-  // Search bar integration
-  searchEnabled = false,
-  searchValue: externalSearchValue,
-  onSearchChange,
-  onSearchSubmit,
-  searchPlaceholder = 'Search...',
-  searchShortcut,
-  searchConfig = DEFAULT_SEARCH_BAR_CONFIG,
-  onSearchOpen,
-  onSearchOpenComplete,
-  onSearchClose,
-  onSearchCloseComplete,
-}, ref) => {
+export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>((props, ref) => {
+  // Get preset defaults if preset is specified
+  const presetDefaults = props.preset ? PRESETS[props.preset] : {};
+
+  // Merge preset defaults with explicit props (explicit props override preset)
+  const {
+    preset: _preset, // Extract and discard (already used above)
+    expression = 'idle',
+    size = presetDefaults.size ?? 160,
+    isSuperMode = presetDefaults.isSuperMode ?? false,
+    frozen = presetDefaults.frozen ?? false,
+    logoMode = presetDefaults.logoMode ?? false,
+    searchMode = presetDefaults.searchMode ?? false,
+    debugMode = presetDefaults.debugMode ?? false,
+    showShadow = presetDefaults.showShadow ?? true,
+    showGlow = presetDefaults.showGlow ?? true,
+    onSpontaneousExpression,
+    onEmotionComplete,
+    onAnimationSequenceChange,
+    onRandomAction,
+    className = '',
+    style,
+    // Optional external refs (for playground where shadow/glow are rendered externally)
+    shadowRef: externalShadowRef,
+    innerGlowRef: externalInnerGlowRef,
+    outerGlowRef: externalOuterGlowRef,
+    // Search bar integration
+    searchEnabled = presetDefaults.searchEnabled ?? false,
+    searchValue: externalSearchValue,
+    onSearchChange,
+    onSearchSubmit,
+    searchPlaceholder = 'Search...',
+    searchShortcut,
+    searchConfig = DEFAULT_SEARCH_BAR_CONFIG,
+    onSearchOpen,
+    onSearchOpenComplete,
+    onSearchClose,
+    onSearchCloseComplete,
+  } = props;
   // Refs for DOM elements
   const containerRef = useRef<HTMLDivElement>(null);
   const characterRef = useRef<HTMLDivElement>(null);

@@ -10921,6 +10921,34 @@ function useSearchMorph({ characterRef, searchBarRefs, config = DEFAULT_SEARCH_B
 }
 
 gsapWithCSS.registerPlugin(useGSAP);
+/** Preset configurations for common use cases */
+const PRESETS = {
+    /** Large, centered display for landing pages */
+    hero: {
+        size: 240,
+        showShadow: true,
+        showGlow: true,
+    },
+    /** Small chat assistant (for floating in corner) */
+    assistant: {
+        size: 80,
+        showShadow: true,
+        showGlow: false,
+    },
+    /** Tiny icon for navbars/buttons */
+    icon: {
+        size: 32,
+        showShadow: false,
+        showGlow: false,
+        frozen: false,
+    },
+    /** Static logo for branding */
+    logo: {
+        logoMode: true,
+        showShadow: false,
+        showGlow: false,
+    },
+};
 // ============================================================================
 // Inline Style Helpers (replacing Tailwind)
 // ============================================================================
@@ -11111,11 +11139,16 @@ const styles = {
  * - Self-contained shadow and glow effects
  * - Power on/off animations
  */
-const AntyCharacter = forwardRef(({ expression = 'idle', size = 160, isSuperMode = false, frozen = false, logoMode = false, searchMode = false, debugMode = false, showShadow = true, showGlow = true, onSpontaneousExpression, onEmotionComplete, onAnimationSequenceChange, onRandomAction, className = '', style, 
-// Optional external refs (for playground where shadow/glow are rendered externally)
-shadowRef: externalShadowRef, innerGlowRef: externalInnerGlowRef, outerGlowRef: externalOuterGlowRef, 
-// Search bar integration
-searchEnabled = false, searchValue: externalSearchValue, onSearchChange, onSearchSubmit, searchPlaceholder = 'Search...', searchShortcut, searchConfig = DEFAULT_SEARCH_BAR_CONFIG, onSearchOpen, onSearchOpenComplete, onSearchClose, onSearchCloseComplete, }, ref) => {
+const AntyCharacter = forwardRef((props, ref) => {
+    // Get preset defaults if preset is specified
+    const presetDefaults = props.preset ? PRESETS[props.preset] : {};
+    // Merge preset defaults with explicit props (explicit props override preset)
+    const { preset: _preset, // Extract and discard (already used above)
+    expression = 'idle', size = presetDefaults.size ?? 160, isSuperMode = presetDefaults.isSuperMode ?? false, frozen = presetDefaults.frozen ?? false, logoMode = presetDefaults.logoMode ?? false, searchMode = presetDefaults.searchMode ?? false, debugMode = presetDefaults.debugMode ?? false, showShadow = presetDefaults.showShadow ?? true, showGlow = presetDefaults.showGlow ?? true, onSpontaneousExpression, onEmotionComplete, onAnimationSequenceChange, onRandomAction, className = '', style, 
+    // Optional external refs (for playground where shadow/glow are rendered externally)
+    shadowRef: externalShadowRef, innerGlowRef: externalInnerGlowRef, outerGlowRef: externalOuterGlowRef, 
+    // Search bar integration
+    searchEnabled = presetDefaults.searchEnabled ?? false, searchValue: externalSearchValue, onSearchChange, onSearchSubmit, searchPlaceholder = 'Search...', searchShortcut, searchConfig = DEFAULT_SEARCH_BAR_CONFIG, onSearchOpen, onSearchOpenComplete, onSearchClose, onSearchCloseComplete, } = props;
     // Refs for DOM elements
     const containerRef = useRef(null);
     const characterRef = useRef(null);
@@ -29999,5 +30032,5 @@ const ANTY_STYLES = {
 // List of available emotions (derived from EMOTION_CONFIGS)
 const AVAILABLE_EMOTIONS = Object.keys(EMOTION_CONFIGS);
 
-export { ANTY_STYLES, AVAILABLE_EMOTIONS, AnimationState, AntyCharacter, AntyChat, AntyChatPanel, AntyParticleCanvas, AntySearchBar, DEFAULT_SEARCH_BAR_CONFIG, EMOTION_CONFIGS, ENABLE_ANIMATION_DEBUG_LOGS, EYE_DIMENSIONS, EYE_SHAPES, PARTICLE_CONFIGS, clearCurrentSessionId, createAntyChat, createEyeAnimation, createIdleAnimation, createLookAnimation, createNewSession, createPowerOffAnimation, createReturnFromLookAnimation, createWakeUpAnimation, deleteSession, extractEmotion, formatSessionDate, generateTitle, getCurrentSessionId, getEmotionConfig, getEyeDimensions, getEyeShape, getSession, getSessions, isEmotionType, logAnimationEvent, logAnimationSystemInfo, mapEmotionToExpression, saveSession, setCurrentSessionId, stripEmotionTags, stripEmotionTagsStreaming, useAnimationController, useSearchMorph };
+export { ANTY_STYLES, AVAILABLE_EMOTIONS, AnimationState, AntyCharacter, AntyChat, AntyChatPanel, AntyParticleCanvas, AntySearchBar, DEFAULT_SEARCH_BAR_CONFIG, EMOTION_CONFIGS, ENABLE_ANIMATION_DEBUG_LOGS, EYE_DIMENSIONS, EYE_SHAPES, PARTICLE_CONFIGS, PRESETS, clearCurrentSessionId, createAntyChat, createEyeAnimation, createIdleAnimation, createLookAnimation, createNewSession, createPowerOffAnimation, createReturnFromLookAnimation, createWakeUpAnimation, deleteSession, extractEmotion, formatSessionDate, generateTitle, getCurrentSessionId, getEmotionConfig, getEyeDimensions, getEyeShape, getSession, getSessions, isEmotionType, logAnimationEvent, logAnimationSystemInfo, mapEmotionToExpression, saveSession, setCurrentSessionId, stripEmotionTags, stripEmotionTagsStreaming, useAnimationController, useSearchMorph };
 //# sourceMappingURL=index.esm.js.map
