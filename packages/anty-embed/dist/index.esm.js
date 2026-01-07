@@ -11441,7 +11441,11 @@ const AntyCharacter = forwardRef((props, ref) => {
             onSearchOpen?.();
         },
         onMorphComplete: onSearchOpenComplete,
-        onReturnStart: onSearchClose,
+        onReturnStart: () => {
+            // Clear search input when closing
+            handleSearchChange('');
+            onSearchClose?.();
+        },
         onReturnComplete: () => {
             setIsSearchActive(false);
             onSearchCloseComplete?.();
