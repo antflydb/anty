@@ -15,6 +15,10 @@ import type { AntyStats } from '@/lib/anty/stat-system';
 const CHAT_PANEL_WIDTH = 384;
 const CHAT_OFFSET = CHAT_PANEL_WIDTH / 2; // Character shifts left by half panel width when chat opens
 
+// Animation timing constants
+const HEART_DISPLAY_TIMEOUT_MS = 3 * 60 * 1000; // 3 minutes
+const SUPER_MODE_SCALE = 1.45;
+
 export default function Anty() {
   // Game mode state
   const [gameMode, setGameMode] = useState<'idle' | 'game'>('idle');
@@ -440,7 +444,7 @@ export default function Anty() {
     heartsHideTimerRef.current = setTimeout(() => {
       setShowHearts(false);
       heartsHideTimerRef.current = null;
-    }, 3 * 60 * 1000); // 3 minutes
+    }, HEART_DISPLAY_TIMEOUT_MS);
   }, []);
 
   // Cleanup heart timers on unmount
@@ -480,21 +484,11 @@ export default function Anty() {
       setIsSuperMode(true);
       superModeCooldownRef.current = true; // Set cooldown to prevent re-triggering
 
-      // Confetti celebration for super mode (disabled, but capability preserved)
-      // if (antyRef.current?.spawnConfetti) {
-      //   const centerX = window.innerWidth / 2;
-      //   const centerY = window.innerHeight / 2;
-      //   console.log('[SUPER MODE] Triggering confetti:', { centerX, centerY });
-      //   antyRef.current.spawnConfetti(centerX, centerY, 60); // Big celebration
-      // } else {
-      //   console.warn('[SUPER MODE] No spawnConfetti method available');
-      // }
-
       // Use AnimationController for super mode transformation
       if (antyRef.current?.playEmotion) {
         antyRef.current.playEmotion('super');
         // Track super mode scale in controller (preserves scale during other emotions)
-        antyRef.current.setSuperMode?.(1.45);
+        antyRef.current.setSuperMode?.(SUPER_MODE_SCALE);
       }
 
       // Spawn celebration sparkles during transformation
@@ -1064,7 +1058,7 @@ export default function Anty() {
                   shadowRef={shadowRef}
                   // Search mode - now internal to AntyCharacter
                   searchEnabled={true}
-                  searchPlaceholder="Ask about SearchAF"
+                  searchPlaceholder="Ask Anty anything..."
                   searchShortcut="⌘K"
                   searchConfig={searchBarConfig}
                   onSearchOpen={() => setSearchActive(true)}

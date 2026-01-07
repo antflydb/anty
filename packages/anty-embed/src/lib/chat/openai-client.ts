@@ -113,22 +113,30 @@ Keep responses concise and natural.`,
         message: cleanMessage,
         emotion,
       };
-    } catch (error: any) {
-      console.error('[CHAT] Error sending message:', error);
+    } catch (error: unknown) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error('[CHAT] Error sending message:', error);
+      }
 
       // Provide specific error messages
       let errorMessage = 'An unexpected error occurred. Please try again.';
 
-      if (error?.status === 401) {
-        errorMessage = 'Invalid API key. Please check your OpenAI API key and try again.';
-      } else if (error?.status === 429) {
-        errorMessage = 'Rate limit exceeded. Please wait a moment and try again.';
-      } else if (error?.status === 500 || error?.status === 503) {
-        errorMessage = 'OpenAI service is currently unavailable. Please try again later.';
-      } else if (error?.message?.includes('fetch')) {
-        errorMessage = 'Network error. Please check your internet connection.';
-      } else if (error?.code === 'insufficient_quota') {
-        errorMessage = 'Your OpenAI account has insufficient credits. Please add credits to your account.';
+      // Type guard for error with status/code/message properties
+      const isApiError = (err: unknown): err is { status?: number; code?: string; message?: string } =>
+        typeof err === 'object' && err !== null;
+
+      if (isApiError(error)) {
+        if (error.status === 401) {
+          errorMessage = 'Invalid API key. Please check your OpenAI API key and try again.';
+        } else if (error.status === 429) {
+          errorMessage = 'Rate limit exceeded. Please wait a moment and try again.';
+        } else if (error.status === 500 || error.status === 503) {
+          errorMessage = 'OpenAI service is currently unavailable. Please try again later.';
+        } else if (error.message?.includes('fetch')) {
+          errorMessage = 'Network error. Please check your internet connection.';
+        } else if (error.code === 'insufficient_quota') {
+          errorMessage = 'Your OpenAI account has insufficient credits. Please add credits to your account.';
+        }
       }
 
       throw new Error(errorMessage);

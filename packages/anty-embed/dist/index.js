@@ -6644,6 +6644,40 @@ function AntySearchBar({ active, value, onChange, inputRef, barRef, borderRef, b
 }
 
 /**
+ * Feature Flags for Animation System
+ *
+ * This module controls debug logging and other animation features.
+ */
+/**
+ * Enable verbose logging for animation system transitions.
+ */
+const ENABLE_ANIMATION_DEBUG_LOGS = process.env.NODE_ENV === 'development';
+/**
+ * Log animation system startup information.
+ */
+function logAnimationSystemInfo() {
+    if (!ENABLE_ANIMATION_DEBUG_LOGS)
+        return;
+    console.log(`
+╔═══════════════════════════════════════════════════════════════╗
+║ 🎬 Animation System Status                                    ║
+╠═══════════════════════════════════════════════════════════════╣
+║ Active System: AnimationController                            ║
+║ Debug Logs:    ${ENABLE_ANIMATION_DEBUG_LOGS ? 'ENABLED'.padEnd(43) : 'DISABLED'.padEnd(43)} ║
+╚═══════════════════════════════════════════════════════════════╝
+  `);
+}
+/**
+ * Log an animation system event (respects debug flag).
+ */
+function logAnimationEvent(event, details) {
+    if (!ENABLE_ANIMATION_DEBUG_LOGS)
+        return;
+    const detailsStr = details ? ` ${JSON.stringify(details)}` : '';
+    console.log(`🎬 [AnimationController] ${event}${detailsStr}`);
+}
+
+/**
  * Animation State Machine
  *
  * Validates state transitions and enforces state transition rules.
@@ -6761,14 +6795,14 @@ class StateMachine {
         const from = this.currentState;
         // Check if transition is allowed
         if (!this.canTransition(from, to)) {
-            if (this.enableLogging) {
+            if (this.enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
                 console.warn(`[StateMachine] Invalid transition: ${from} → ${to}`);
             }
             return false;
         }
         // Check priority
         if (!this.canInterrupt(to, force)) {
-            if (this.enableLogging) {
+            if (this.enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
                 console.warn(`[StateMachine] Cannot interrupt: ${from} (priority ${this.getPriority(from)}) with ${to} (priority ${this.getPriority(to)})`);
             }
             return false;
@@ -6777,7 +6811,7 @@ class StateMachine {
         this.previousState = from;
         this.currentState = to;
         this.recordStateChange(to);
-        if (this.enableLogging) {
+        if (this.enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
             console.log(`[StateMachine] Transition: ${from} → ${to}`);
         }
         return true;
@@ -6814,7 +6848,7 @@ class StateMachine {
         this.previousState = this.currentState;
         this.currentState = exports.AnimationState.IDLE;
         this.recordStateChange(exports.AnimationState.IDLE);
-        if (this.enableLogging) {
+        if (this.enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
             console.log('[StateMachine] Reset to idle');
         }
     }
@@ -6888,7 +6922,7 @@ class AnimationController {
             defaultPriority: config.defaultPriority ?? 2,
         };
         this.stateMachine = new StateMachine(this.config.enableLogging);
-        if (this.config.enableLogging) {
+        if (this.config.enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
             console.log('[AnimationController] Initialized', this.config);
         }
     }
@@ -6920,12 +6954,12 @@ class AnimationController {
      * Start idle animation
      */
     startIdle(timeline, _elements, blinkControls) {
-        if (this.config.enableLogging) {
+        if (this.config.enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
             console.log('[AnimationController] Starting idle animation');
         }
         // Transition to idle state
         if (!this.stateMachine.transition(exports.AnimationState.IDLE)) {
-            if (this.config.enableLogging) {
+            if (this.config.enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
                 console.warn('[AnimationController] Failed to transition to idle');
             }
             return;
@@ -6944,7 +6978,7 @@ class AnimationController {
         this.currentEmotion = null;
         // Setup callbacks
         timeline.eventCallback('onComplete', () => {
-            if (this.config.enableLogging) {
+            if (this.config.enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
                 console.log('[AnimationController] Idle animation completed, restarting');
             }
             // Idle should always restart
@@ -6966,7 +7000,7 @@ class AnimationController {
         if (this.blinkControls) {
             this.blinkControls.pauseBlinks();
         }
-        if (this.config.enableLogging) {
+        if (this.config.enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
             console.log('[AnimationController] Paused idle animation and blink scheduler (auto-restart prevented)');
         }
     }
@@ -6983,7 +7017,7 @@ class AnimationController {
         if (this.blinkControls) {
             this.blinkControls.resumeBlinks();
         }
-        if (this.config.enableLogging) {
+        if (this.config.enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
             console.log('[AnimationController] Resumed idle animation and blink scheduler');
         }
     }
@@ -7012,7 +7046,7 @@ class AnimationController {
         if (this.blinkControls) {
             this.blinkControls.resumeBlinks();
         }
-        if (this.config.enableLogging) {
+        if (this.config.enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
             console.log('[AnimationController] Restarted idle animation from origin');
         }
     }
@@ -7022,7 +7056,7 @@ class AnimationController {
      */
     setSuperMode(scale) {
         this.superModeScale = scale;
-        if (this.config.enableLogging) {
+        if (this.config.enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
             console.log(`[AnimationController] Super mode scale: ${scale}`);
         }
     }
@@ -7045,7 +7079,7 @@ class AnimationController {
             this.blinkControls = null;
         }
         this.isIdleActive = false;
-        if (this.config.enableLogging) {
+        if (this.config.enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
             console.log('[AnimationController] Killed idle animation and blink scheduler');
         }
     }
@@ -7055,7 +7089,7 @@ class AnimationController {
     playEmotion(emotion, timeline, elements, options = {}) {
         const priority = options.priority ?? this.config.defaultPriority;
         const force = options.force ?? false;
-        if (this.config.enableLogging) {
+        if (this.config.enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
             console.log(`[AnimationController] Play emotion: ${emotion} (priority: ${priority})`);
         }
         // Check if we can transition
@@ -7071,7 +7105,7 @@ class AnimationController {
         // Kill any existing emotion timelines before starting new one
         for (const [id, ref] of this.activeTimelines.entries()) {
             if (id.startsWith('emotion-')) {
-                if (this.config.enableLogging) {
+                if (this.config.enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
                     console.log(`[AnimationController] Killing previous emotion: ${id}`);
                 }
                 // CRITICAL: Manually trigger onInterrupt before killing
@@ -7086,7 +7120,7 @@ class AnimationController {
         }
         // Transition to emotion state
         if (!this.stateMachine.transition(exports.AnimationState.EMOTION, force)) {
-            if (this.config.enableLogging) {
+            if (this.config.enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
                 console.warn(`[AnimationController] Failed to transition to emotion: ${emotion}`);
             }
             return false;
@@ -7125,7 +7159,7 @@ class AnimationController {
         // Setup callbacks BEFORE playing timeline
         const animationStartTime = Date.now();
         timeline.eventCallback('onStart', () => {
-            if (this.config.enableLogging) {
+            if (this.config.enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
                 console.log(`[AnimationController] Emotion ${emotion} motion START`);
             }
             // Call original onStart callback if it exists
@@ -7137,7 +7171,7 @@ class AnimationController {
         });
         timeline.eventCallback('onComplete', () => {
             const duration = Date.now() - animationStartTime;
-            if (this.config.enableLogging) {
+            if (this.config.enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
                 console.log(`[AnimationController] Emotion ${emotion} completed (${duration}ms)`);
             }
             // Call original onComplete callback FIRST (eye reset, rotation cleanup)
@@ -7173,7 +7207,7 @@ class AnimationController {
             if (interruptHandled)
                 return;
             interruptHandled = true;
-            if (this.config.enableLogging) {
+            if (this.config.enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
                 console.log(`[AnimationController] Emotion ${emotion} interrupted`);
             }
             // Call original onInterrupt callback - this does immediate eye reset
@@ -7196,7 +7230,7 @@ class AnimationController {
     transitionTo(state, emotion, timeline, elements, options = {}) {
         const priority = options.priority ?? this.config.defaultPriority;
         const force = options.force ?? false;
-        if (this.config.enableLogging) {
+        if (this.config.enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
             console.log(`[AnimationController] Transition to: ${state}${emotion ? ` / ${emotion}` : ''} (priority: ${priority})`);
         }
         // Check if we can interrupt
@@ -7210,7 +7244,7 @@ class AnimationController {
         }
         // Perform transition
         if (!this.stateMachine.transition(state, force)) {
-            if (this.config.enableLogging) {
+            if (this.config.enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
                 console.warn(`[AnimationController] Failed to transition to ${state}`);
             }
             return false;
@@ -7233,7 +7267,7 @@ class AnimationController {
         this.currentEmotion = emotion;
         // Setup callbacks
         timeline.eventCallback('onComplete', () => {
-            if (this.config.enableLogging) {
+            if (this.config.enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
                 console.log(`[AnimationController] ${state}${emotion ? ` / ${emotion}` : ''} completed`);
             }
             // Cleanup
@@ -7255,7 +7289,7 @@ class AnimationController {
      * Kill all active animations
      */
     killAll() {
-        if (this.config.enableLogging) {
+        if (this.config.enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
             console.log('[AnimationController] Killing all animations');
         }
         // Kill all active timelines
@@ -7277,7 +7311,7 @@ class AnimationController {
      */
     enqueue(state, emotion, callback, priority) {
         if (this.queue.length >= this.config.maxQueueSize) {
-            if (this.config.enableLogging) {
+            if (this.config.enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
                 console.warn('[AnimationController] Queue full, dropping oldest item');
             }
             this.queue.shift();
@@ -7293,7 +7327,7 @@ class AnimationController {
         this.queue.push(animation);
         // Sort by priority (highest first)
         this.queue.sort((a, b) => b.priority - a.priority);
-        if (this.config.enableLogging) {
+        if (this.config.enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
             console.log(`[AnimationController] Queued ${state}${emotion ? `/${emotion}` : ''} (${this.queue.length} in queue)`);
         }
         this.callbacks.onQueueAdd?.(animation);
@@ -7311,7 +7345,7 @@ class AnimationController {
             this.isProcessingQueue = false;
             return;
         }
-        if (this.config.enableLogging) {
+        if (this.config.enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
             console.log(`[AnimationController] Processing queued ${animation.state}${animation.emotion ? `/${animation.emotion}` : ''}`);
         }
         this.callbacks.onQueueProcess?.(animation);
@@ -7335,7 +7369,7 @@ class AnimationController {
      * Cleanup on destroy
      */
     destroy() {
-        if (this.config.enableLogging) {
+        if (this.config.enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
             console.log('[AnimationController] Destroying controller');
         }
         this.killAll();
@@ -8048,12 +8082,16 @@ function createIdleAnimation(elements, options = {}) {
             const roll = Math.random();
             if (roll < 0.20) {
                 // Double blink
-                console.log('[Spontaneous] Double blink');
+                if (ENABLE_ANIMATION_DEBUG_LOGS) {
+                    console.log('[Spontaneous] Double blink');
+                }
                 createDoubleBlinkAnimation(eyeElements).play();
             }
             else {
                 // Single blink
-                console.log('[Spontaneous] Single blink');
+                if (ENABLE_ANIMATION_DEBUG_LOGS) {
+                    console.log('[Spontaneous] Single blink');
+                }
                 createBlinkAnimation(eyeElements).play();
             }
             // Schedule next action
@@ -9598,7 +9636,7 @@ function createGlowSystem(character, outerGlow, innerGlow, sizeScale = 1, config
         const innerX = innerSpring.x + innerOscillationX;
         const innerY = innerSpring.y + innerOscillationY;
         // Debug: log if values are unexpectedly large
-        if (Math.abs(outerX) > 100 || Math.abs(outerY) > 100) {
+        if (ENABLE_ANIMATION_DEBUG_LOGS && (Math.abs(outerX) > 100 || Math.abs(outerY) > 100)) {
             console.warn('[GlowSystem] Large values detected:', { outerX, outerY, innerX, innerY, characterX, characterY });
         }
         gsapWithCSS.set(outerGlow, { x: outerX, y: outerY });
@@ -9685,7 +9723,7 @@ function createGlowSystem(character, outerGlow, innerGlow, sizeScale = 1, config
         const characterX = typeof rawX === 'number' && isFinite(rawX) ? rawX : 0;
         const characterY = typeof rawY === 'number' && isFinite(rawY) ? rawY : 0;
         // Debug: Log if we got unexpected values
-        if (rawX !== characterX || rawY !== characterY) {
+        if (ENABLE_ANIMATION_DEBUG_LOGS && (rawX !== characterX || rawY !== characterY)) {
             console.warn('[GlowSystem] snapToCharacter got invalid values, using 0:', { rawX, rawY });
         }
         // Reset outer spring
@@ -9799,7 +9837,7 @@ function useAnimationController(elements, options = {}) {
     React.useEffect(() => {
         if (isInitialized.current)
             return;
-        if (enableLogging) {
+        if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
             console.log('[useAnimationController] Initializing controller');
         }
         // Merge callbacks with state change handler
@@ -9813,7 +9851,7 @@ function useAnimationController(elements, options = {}) {
                 // Eye-only actions (look-left, look-right) are secondary animations like blinks
                 // They shouldn't trigger position tracking or verbose logging
                 const isEyeOnlyAction = emotion === 'look-left' || emotion === 'look-right';
-                if (enableLogging && !isEyeOnlyAction) {
+                if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS && !isEyeOnlyAction) {
                     console.log(`[useAnimationController] Emotion motion START: ${emotion}`);
                 }
                 // Only notify position tracker for body-moving animations
@@ -9826,7 +9864,7 @@ function useAnimationController(elements, options = {}) {
                 // Eye-only actions (look-left, look-right) are secondary animations like blinks
                 // They shouldn't trigger position tracking or verbose logging
                 const isEyeOnlyAction = emotion === 'look-left' || emotion === 'look-right';
-                if (enableLogging && !isEyeOnlyAction) {
+                if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS && !isEyeOnlyAction) {
                     console.log(`[useAnimationController] Emotion motion COMPLETE: ${emotion} (${duration}ms)`);
                 }
                 // Only notify position tracker for body-moving animations
@@ -9852,12 +9890,12 @@ function useAnimationController(elements, options = {}) {
             defaultPriority,
         });
         isInitialized.current = true;
-        if (enableLogging) {
+        if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
             console.log('[useAnimationController] Controller initialized');
         }
         // Cleanup on unmount
         return () => {
-            if (enableLogging) {
+            if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
                 console.log('[useAnimationController] Cleaning up controller');
             }
             // Stop shadow tracker
@@ -9884,12 +9922,12 @@ function useAnimationController(elements, options = {}) {
             elements.character !== undefined;
         const wasReady = isReady.current;
         isReady.current = hasRequiredElements;
-        if (enableLogging && wasReady !== isReady.current) {
+        if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS && wasReady !== isReady.current) {
             console.log('[useAnimationController] Ready state changed:', isReady.current);
         }
         // Initialize character when elements become ready
         if (hasRequiredElements && !wasReady && elements.character) {
-            if (enableLogging) {
+            if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
                 console.log('[useAnimationController] Calling initializeCharacter()');
             }
             initializeCharacter({
@@ -9915,7 +9953,7 @@ function useAnimationController(elements, options = {}) {
                 if (!isOff && !logoMode) {
                     shadowTrackerRef.current.start();
                 }
-                if (enableLogging) {
+                if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
                     console.log('[useAnimationController] Shadow tracker created and started');
                 }
             }
@@ -9935,7 +9973,7 @@ function useAnimationController(elements, options = {}) {
                 else {
                     glowSystemRef.current.hide();
                 }
-                if (enableLogging) {
+                if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
                     console.log('[useAnimationController] Glow system created and started');
                 }
             }
@@ -9963,7 +10001,7 @@ function useAnimationController(elements, options = {}) {
         previousIsOffRef.current = isOff;
         // Wake-up sequence (OFF → ON)
         if (wasOff && !isNowOff) {
-            if (enableLogging) {
+            if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
                 console.log('[useAnimationController] Wake-up sequence: OFF → ON - CALLING WAKE-UP ANIMATION');
             }
             // Set flag to prevent auto-start idle race condition
@@ -9993,7 +10031,7 @@ function useAnimationController(elements, options = {}) {
                     glowSystemRef.current.snapToCharacter(); // Reset spring positions
                     glowSystemRef.current.start();
                     glowSystemRef.current.fadeIn(0.3); // Fade in with the pop
-                    if (enableLogging) {
+                    if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
                         console.log('[useAnimationController] Glow system started with wake-up');
                     }
                 }
@@ -10001,7 +10039,7 @@ function useAnimationController(elements, options = {}) {
                 wakeUpTl.eventCallback('onComplete', () => {
                     // Clear wake-up flag
                     isWakingUpRef.current = false;
-                    if (enableLogging) {
+                    if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
                         console.log('[useAnimationController] Wake-up complete, starting idle via controller');
                     }
                     // Create idle timeline and register with controller
@@ -10030,7 +10068,7 @@ function useAnimationController(elements, options = {}) {
                     // Start shadow tracker after wake-up (shadow fade-in is handled by wake-up animation)
                     if (shadowTrackerRef.current) {
                         shadowTrackerRef.current.start();
-                        if (enableLogging) {
+                        if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
                             console.log('[useAnimationController] Shadow tracker started after wake-up');
                         }
                     }
@@ -10040,21 +10078,23 @@ function useAnimationController(elements, options = {}) {
             else {
                 // Clear flag on failure so idle can still start
                 isWakingUpRef.current = false;
-                console.error('[useAnimationController] Wake-up failed - missing elements', {
-                    hasCharacter: !!elements.character,
-                    hasShadow: !!elements.shadow
-                });
+                if (ENABLE_ANIMATION_DEBUG_LOGS) {
+                    console.error('[useAnimationController] Wake-up failed - missing elements', {
+                        hasCharacter: !!elements.character,
+                        hasShadow: !!elements.shadow
+                    });
+                }
             }
         }
         // Power-off sequence (ON → OFF)
         if (!wasOff && isNowOff) {
-            if (enableLogging) {
+            if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
                 console.log('[useAnimationController] Power-off sequence: ON → OFF - CALLING POWER-OFF ANIMATION');
             }
             // Stop shadow tracker - power-off animation handles its own shadow fade
             if (shadowTrackerRef.current) {
                 shadowTrackerRef.current.stop();
-                if (enableLogging) {
+                if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
                     console.log('[useAnimationController] Shadow tracker stopped for power-off');
                 }
             }
@@ -10065,7 +10105,7 @@ function useAnimationController(elements, options = {}) {
                 setTimeout(() => {
                     glowSystemRef.current?.stop();
                 }, 700);
-                if (enableLogging) {
+                if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
                     console.log('[useAnimationController] Glow system fading out for power-off');
                 }
             }
@@ -10090,15 +10130,17 @@ function useAnimationController(elements, options = {}) {
                     eyeRightSvg: elements.eyeRightSvg || undefined,
                 }, sizeScale);
                 powerOffTl.play();
-                if (enableLogging) {
+                if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
                     console.log('[useAnimationController] Power-off animation started');
                 }
             }
             else {
-                console.error('[useAnimationController] Power-off failed - missing elements', {
-                    hasCharacter: !!elements.character,
-                    hasShadow: !!elements.shadow
-                });
+                if (ENABLE_ANIMATION_DEBUG_LOGS) {
+                    console.error('[useAnimationController] Power-off failed - missing elements', {
+                        hasCharacter: !!elements.character,
+                        hasShadow: !!elements.shadow
+                    });
+                }
             }
         }
         // Only re-run when isOff changes - other deps are stable or captured in refs
@@ -10115,7 +10157,7 @@ function useAnimationController(elements, options = {}) {
         previousSearchModeRef.current = searchMode;
         // Entering search mode
         if (!wasSearching && isNowSearching) {
-            if (enableLogging) {
+            if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
                 console.log('[useAnimationController] Entering search mode - pausing idle');
             }
             // Pause idle animation
@@ -10132,7 +10174,7 @@ function useAnimationController(elements, options = {}) {
         }
         // Exiting search mode
         if (wasSearching && !isNowSearching) {
-            if (enableLogging) {
+            if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
                 console.log('[useAnimationController] Exiting search mode - restoring eyes and resuming idle');
             }
             // Restore eyes to IDLE before resuming idle
@@ -10186,7 +10228,7 @@ function useAnimationController(elements, options = {}) {
         // Check controller's idle state, not a local ref
         if (controllerRef.current.isIdle())
             return; // Already running
-        if (enableLogging) {
+        if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
             console.log('[useAnimationController] Auto-starting idle animation');
         }
         // Create idle timeline using createIdleAnimation with eye elements
@@ -10218,32 +10260,36 @@ function useAnimationController(elements, options = {}) {
      */
     const playEmotion = React.useCallback((emotion, animationOptions = {}) => {
         if (!controllerRef.current) {
-            if (enableLogging) {
+            if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
                 console.warn('[useAnimationController] Controller not initialized');
             }
             return false;
         }
         if (!isReady.current) {
-            if (enableLogging) {
+            if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
                 console.warn('[useAnimationController] Elements not ready');
             }
             return false;
         }
         // Validate emotion
         if (!isEmotionType(emotion)) {
-            console.error(`[useAnimationController] Invalid emotion: ${emotion}`);
+            if (ENABLE_ANIMATION_DEBUG_LOGS) {
+                console.error(`[useAnimationController] Invalid emotion: ${emotion}`);
+            }
             return false;
         }
-        if (enableLogging) {
+        if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
             console.log(`[useAnimationController] Playing emotion: ${emotion}`);
         }
         // Get emotion config from declarative system
         const emotionConfig = EMOTION_CONFIGS[emotion];
         if (!emotionConfig) {
-            console.error(`[useAnimationController] Unknown emotion: ${emotion}`);
+            if (ENABLE_ANIMATION_DEBUG_LOGS) {
+                console.error(`[useAnimationController] Unknown emotion: ${emotion}`);
+            }
             return false;
         }
-        if (enableLogging) {
+        if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
             console.log(`[useAnimationController] Playing emotion: ${emotion}`);
         }
         // CLEANUP: Kill any existing eye tweens for clean handoff on interruption
@@ -10302,18 +10348,18 @@ function useAnimationController(elements, options = {}) {
      */
     const transitionTo = React.useCallback((state, animationOptions = {}) => {
         if (!controllerRef.current) {
-            if (enableLogging) {
+            if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
                 console.warn('[useAnimationController] Controller not initialized');
             }
             return false;
         }
         if (!isReady.current) {
-            if (enableLogging) {
+            if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
                 console.warn('[useAnimationController] Elements not ready');
             }
             return false;
         }
-        if (enableLogging) {
+        if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
             console.log(`[useAnimationController] Transitioning to: ${state}`);
         }
         // Create timeline for transition
@@ -10330,18 +10376,18 @@ function useAnimationController(elements, options = {}) {
      */
     const startIdle = React.useCallback(() => {
         if (!controllerRef.current) {
-            if (enableLogging) {
+            if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
                 console.warn('[useAnimationController] Controller not initialized');
             }
             return;
         }
         if (!isReady.current) {
-            if (enableLogging) {
+            if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
                 console.warn('[useAnimationController] Elements not ready');
             }
             return;
         }
-        if (enableLogging) {
+        if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
             console.log('[useAnimationController] Starting idle animation');
         }
         // Controller's startIdle already kills existing idle first
@@ -10375,7 +10421,7 @@ function useAnimationController(elements, options = {}) {
     const pause = React.useCallback(() => {
         if (!controllerRef.current)
             return;
-        if (enableLogging) {
+        if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
             console.log('[useAnimationController] Pausing animations');
         }
         controllerRef.current.pauseIdle();
@@ -10386,7 +10432,7 @@ function useAnimationController(elements, options = {}) {
     const resume = React.useCallback(() => {
         if (!controllerRef.current)
             return;
-        if (enableLogging) {
+        if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
             console.log('[useAnimationController] Resuming animations');
         }
         controllerRef.current.resumeIdle();
@@ -10397,7 +10443,7 @@ function useAnimationController(elements, options = {}) {
     const killAll = React.useCallback(() => {
         if (!controllerRef.current)
             return;
-        if (enableLogging) {
+        if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
             console.log('[useAnimationController] Killing all animations');
         }
         // Controller.killAll() handles killing idle (single source of truth)
@@ -10455,7 +10501,7 @@ function useAnimationController(elements, options = {}) {
     const setSuperMode = React.useCallback((scale) => {
         if (!controllerRef.current)
             return;
-        if (enableLogging) {
+        if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
             console.log(`[useAnimationController] Setting super mode scale: ${scale}`);
         }
         controllerRef.current.setSuperMode(scale);
@@ -10526,40 +10572,6 @@ function useAnimationController(elements, options = {}) {
         showShadow,
         isReady: isReady.current,
     }), [playEmotion, transitionTo, startIdle, pause, resume, killAll, getState, getEmotion, isIdleActive, isIdlePlaying, getDebugInfo, setSuperMode, showGlows, hideGlows, hideShadow, showShadow]);
-}
-
-/**
- * Feature Flags for Animation System
- *
- * This module controls debug logging and other animation features.
- */
-/**
- * Enable verbose logging for animation system transitions.
- */
-const ENABLE_ANIMATION_DEBUG_LOGS = process.env.NODE_ENV === 'development';
-/**
- * Log animation system startup information.
- */
-function logAnimationSystemInfo() {
-    if (!ENABLE_ANIMATION_DEBUG_LOGS)
-        return;
-    console.log(`
-╔═══════════════════════════════════════════════════════════════╗
-║ 🎬 Animation System Status                                    ║
-╠═══════════════════════════════════════════════════════════════╣
-║ Active System: AnimationController                            ║
-║ Debug Logs:    ${ENABLE_ANIMATION_DEBUG_LOGS ? 'ENABLED'.padEnd(43) : 'DISABLED'.padEnd(43)} ║
-╚═══════════════════════════════════════════════════════════════╝
-  `);
-}
-/**
- * Log an animation system event (respects debug flag).
- */
-function logAnimationEvent(event, details) {
-    if (!ENABLE_ANIMATION_DEBUG_LOGS)
-        return;
-    const detailsStr = details ? ` ${JSON.stringify(details)}` : '';
-    console.log(`🎬 [AnimationController] ${event}${detailsStr}`);
 }
 
 // Reference size at which bracketScale produces the desired visual size
@@ -11773,7 +11785,6 @@ searchEnabled = false, searchValue: externalSearchValue, onSearchChange, onSearc
                     scheduleRandomBehavior();
                     return;
                 }
-                // TODO: Add bored emotions here
                 scheduleRandomBehavior();
             });
         };
@@ -28858,23 +28869,29 @@ Keep responses concise and natural.`,
             };
         }
         catch (error) {
-            console.error('[CHAT] Error sending message:', error);
+            if (process.env.NODE_ENV === 'development') {
+                console.error('[CHAT] Error sending message:', error);
+            }
             // Provide specific error messages
             let errorMessage = 'An unexpected error occurred. Please try again.';
-            if (error?.status === 401) {
-                errorMessage = 'Invalid API key. Please check your OpenAI API key and try again.';
-            }
-            else if (error?.status === 429) {
-                errorMessage = 'Rate limit exceeded. Please wait a moment and try again.';
-            }
-            else if (error?.status === 500 || error?.status === 503) {
-                errorMessage = 'OpenAI service is currently unavailable. Please try again later.';
-            }
-            else if (error?.message?.includes('fetch')) {
-                errorMessage = 'Network error. Please check your internet connection.';
-            }
-            else if (error?.code === 'insufficient_quota') {
-                errorMessage = 'Your OpenAI account has insufficient credits. Please add credits to your account.';
+            // Type guard for error with status/code/message properties
+            const isApiError = (err) => typeof err === 'object' && err !== null;
+            if (isApiError(error)) {
+                if (error.status === 401) {
+                    errorMessage = 'Invalid API key. Please check your OpenAI API key and try again.';
+                }
+                else if (error.status === 429) {
+                    errorMessage = 'Rate limit exceeded. Please wait a moment and try again.';
+                }
+                else if (error.status === 500 || error.status === 503) {
+                    errorMessage = 'OpenAI service is currently unavailable. Please try again later.';
+                }
+                else if (error.message?.includes('fetch')) {
+                    errorMessage = 'Network error. Please check your internet connection.';
+                }
+                else if (error.code === 'insufficient_quota') {
+                    errorMessage = 'Your OpenAI account has insufficient credits. Please add credits to your account.';
+                }
             }
             throw new Error(errorMessage);
         }
@@ -29066,7 +29083,10 @@ function getSessions() {
         // Sort by updatedAt descending
         return sessions.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
     }
-    catch {
+    catch (error) {
+        if (process.env.NODE_ENV === 'development') {
+            console.warn('[CHAT HISTORY] Failed to parse stored sessions:', error);
+        }
         return [];
     }
 }
@@ -29517,20 +29537,20 @@ function AntyChatPanel({ isOpen, onClose, onEmotion }) {
                 if (expression) {
                     onEmotion?.(expression);
                 }
-                else {
-                    console.warn('[CHAT UI] No expression mapping found for emotion:', response.emotion);
-                }
             }
         }
         catch (error) {
-            console.error('[CHAT UI] Error sending message:', error);
+            if (process.env.NODE_ENV === 'development') {
+                console.error('[CHAT UI] Error sending message:', error);
+            }
             // Remove the placeholder message
             setMessages((prev) => prev.filter((msg) => msg.id !== assistantMessageId));
             // Show specific error message
+            const errorContent = error instanceof Error ? error.message : 'Oops! Something went wrong. Please try again.';
             const errorMessage = {
                 id: (Date.now() + 2).toString(),
                 role: 'assistant',
-                content: error.message || 'Oops! Something went wrong. Please try again.',
+                content: errorContent,
                 timestamp: new Date(),
             };
             setMessages((prev) => [...prev, errorMessage]);

@@ -13,6 +13,7 @@ import {
   type EyeAnimationElements,
 } from './eye-animations';
 import { getEyeShape, getEyeDimensions } from './eye-shapes';
+import { ENABLE_ANIMATION_DEBUG_LOGS } from '../feature-flags';
 
 export interface IdleAnimationElements {
   character: HTMLElement;
@@ -176,11 +177,15 @@ export function createIdleAnimation(
 
       if (roll < 0.20) {
         // Double blink
-        console.log('[Spontaneous] Double blink');
+        if (ENABLE_ANIMATION_DEBUG_LOGS) {
+          console.log('[Spontaneous] Double blink');
+        }
         createDoubleBlinkAnimation(eyeElements).play();
       } else {
         // Single blink
-        console.log('[Spontaneous] Single blink');
+        if (ENABLE_ANIMATION_DEBUG_LOGS) {
+          console.log('[Spontaneous] Single blink');
+        }
         createBlinkAnimation(eyeElements).play();
       }
 

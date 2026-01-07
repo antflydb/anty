@@ -146,7 +146,7 @@ export default function EmbedDemoPage() {
   // Search bar options
   const [barWidth, setBarWidth] = useState(DEFAULT_SEARCH_BAR_CONFIG.width);
   const [barHeight, setBarHeight] = useState(DEFAULT_SEARCH_BAR_CONFIG.height);
-  const [placeholder, setPlaceholder] = useState('Ask about SearchAF...');
+  const [placeholder, setPlaceholder] = useState('Ask Anty anything...');
   const [showHotkey, setShowHotkey] = useState(true);
   const [hotkey, setHotkey] = useState('⌘K');
 

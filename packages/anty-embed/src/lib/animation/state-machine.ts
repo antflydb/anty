@@ -6,6 +6,7 @@
  */
 
 import { AnimationState, type StateTransition } from './types';
+import { ENABLE_ANIMATION_DEBUG_LOGS } from './feature-flags';
 
 /**
  * Priority levels for different animation states
@@ -136,7 +137,7 @@ export class StateMachine {
 
     // Check if transition is allowed
     if (!this.canTransition(from, to)) {
-      if (this.enableLogging) {
+      if (this.enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
         console.warn(`[StateMachine] Invalid transition: ${from} → ${to}`);
       }
       return false;
@@ -144,7 +145,7 @@ export class StateMachine {
 
     // Check priority
     if (!this.canInterrupt(to, force)) {
-      if (this.enableLogging) {
+      if (this.enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
         console.warn(
           `[StateMachine] Cannot interrupt: ${from} (priority ${this.getPriority(from)}) with ${to} (priority ${this.getPriority(to)})`
         );
@@ -157,7 +158,7 @@ export class StateMachine {
     this.currentState = to;
     this.recordStateChange(to);
 
-    if (this.enableLogging) {
+    if (this.enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
       console.log(`[StateMachine] Transition: ${from} → ${to}`);
     }
 
@@ -201,7 +202,7 @@ export class StateMachine {
     this.currentState = AnimationState.IDLE;
     this.recordStateChange(AnimationState.IDLE);
 
-    if (this.enableLogging) {
+    if (this.enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
       console.log('[StateMachine] Reset to idle');
     }
   }

@@ -1103,7 +1103,6 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
             return;
           }
 
-          // TODO: Add bored emotions here
           scheduleRandomBehavior();
         });
       };

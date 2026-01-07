@@ -445,21 +445,22 @@ export function AntyChatPanel({ isOpen, onClose, onEmotion }: AntyChatPanelProps
         const expression = mapEmotionToExpression(response.emotion);
         if (expression) {
           onEmotion?.(expression);
-        } else {
-          console.warn('[CHAT UI] No expression mapping found for emotion:', response.emotion);
         }
       }
-    } catch (error: any) {
-      console.error('[CHAT UI] Error sending message:', error);
+    } catch (error) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error('[CHAT UI] Error sending message:', error);
+      }
 
       // Remove the placeholder message
       setMessages((prev) => prev.filter((msg) => msg.id !== assistantMessageId));
 
       // Show specific error message
+      const errorContent = error instanceof Error ? error.message : 'Oops! Something went wrong. Please try again.';
       const errorMessage: Message = {
         id: (Date.now() + 2).toString(),
         role: 'assistant',
-        content: error.message || 'Oops! Something went wrong. Please try again.',
+        content: errorContent,
         timestamp: new Date(),
       };
 

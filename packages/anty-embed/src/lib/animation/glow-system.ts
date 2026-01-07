@@ -11,6 +11,7 @@
  */
 
 import gsap from 'gsap';
+import { ENABLE_ANIMATION_DEBUG_LOGS } from './feature-flags';
 
 // =============================================================================
 // TYPES
@@ -190,7 +191,7 @@ export function createGlowSystem(
     const innerY = innerSpring.y + innerOscillationY;
 
     // Debug: log if values are unexpectedly large
-    if (Math.abs(outerX) > 100 || Math.abs(outerY) > 100) {
+    if (ENABLE_ANIMATION_DEBUG_LOGS && (Math.abs(outerX) > 100 || Math.abs(outerY) > 100)) {
       console.warn('[GlowSystem] Large values detected:', { outerX, outerY, innerX, innerY, characterX, characterY });
     }
 
@@ -301,7 +302,7 @@ export function createGlowSystem(
     const characterY = typeof rawY === 'number' && isFinite(rawY) ? rawY : 0;
 
     // Debug: Log if we got unexpected values
-    if (rawX !== characterX || rawY !== characterY) {
+    if (ENABLE_ANIMATION_DEBUG_LOGS && (rawX !== characterX || rawY !== characterY)) {
       console.warn('[GlowSystem] snapToCharacter got invalid values, using 0:', { rawX, rawY });
     }
 

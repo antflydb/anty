@@ -20,6 +20,7 @@ import {
   type AnimationOptions,
 } from './types';
 import { StateMachine } from './state-machine';
+import { ENABLE_ANIMATION_DEBUG_LOGS } from './feature-flags';
 
 /**
  * Blink scheduler controls returned from createIdleAnimation
@@ -66,7 +67,7 @@ export class AnimationController {
 
     this.stateMachine = new StateMachine(this.config.enableLogging);
 
-    if (this.config.enableLogging) {
+    if (this.config.enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
       console.log('[AnimationController] Initialized', this.config);
     }
   }
@@ -107,13 +108,13 @@ export class AnimationController {
     _elements: (Element | string)[],
     blinkControls?: BlinkControls
   ): void {
-    if (this.config.enableLogging) {
+    if (this.config.enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
       console.log('[AnimationController] Starting idle animation');
     }
 
     // Transition to idle state
     if (!this.stateMachine.transition(AnimationState.IDLE)) {
-      if (this.config.enableLogging) {
+      if (this.config.enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
         console.warn('[AnimationController] Failed to transition to idle');
       }
       return;
@@ -135,7 +136,7 @@ export class AnimationController {
 
     // Setup callbacks
     timeline.eventCallback('onComplete', () => {
-      if (this.config.enableLogging) {
+      if (this.config.enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
         console.log('[AnimationController] Idle animation completed, restarting');
       }
       // Idle should always restart
@@ -159,7 +160,7 @@ export class AnimationController {
     if (this.blinkControls) {
       this.blinkControls.pauseBlinks();
     }
-    if (this.config.enableLogging) {
+    if (this.config.enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
       console.log('[AnimationController] Paused idle animation and blink scheduler (auto-restart prevented)');
     }
   }
@@ -177,7 +178,7 @@ export class AnimationController {
     if (this.blinkControls) {
       this.blinkControls.resumeBlinks();
     }
-    if (this.config.enableLogging) {
+    if (this.config.enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
       console.log('[AnimationController] Resumed idle animation and blink scheduler');
     }
   }
@@ -208,7 +209,7 @@ export class AnimationController {
     if (this.blinkControls) {
       this.blinkControls.resumeBlinks();
     }
-    if (this.config.enableLogging) {
+    if (this.config.enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
       console.log('[AnimationController] Restarted idle animation from origin');
     }
   }
@@ -219,7 +220,7 @@ export class AnimationController {
    */
   setSuperMode(scale: number | null): void {
     this.superModeScale = scale;
-    if (this.config.enableLogging) {
+    if (this.config.enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
       console.log(`[AnimationController] Super mode scale: ${scale}`);
     }
   }
@@ -244,7 +245,7 @@ export class AnimationController {
       this.blinkControls = null;
     }
     this.isIdleActive = false;
-    if (this.config.enableLogging) {
+    if (this.config.enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
       console.log('[AnimationController] Killed idle animation and blink scheduler');
     }
   }
@@ -261,7 +262,7 @@ export class AnimationController {
     const priority = options.priority ?? this.config.defaultPriority;
     const force = options.force ?? false;
 
-    if (this.config.enableLogging) {
+    if (this.config.enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
       console.log(`[AnimationController] Play emotion: ${emotion} (priority: ${priority})`);
     }
 
@@ -279,7 +280,7 @@ export class AnimationController {
     // Kill any existing emotion timelines before starting new one
     for (const [id, ref] of this.activeTimelines.entries()) {
       if (id.startsWith('emotion-')) {
-        if (this.config.enableLogging) {
+        if (this.config.enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
           console.log(`[AnimationController] Killing previous emotion: ${id}`);
         }
         // CRITICAL: Manually trigger onInterrupt before killing
@@ -295,7 +296,7 @@ export class AnimationController {
 
     // Transition to emotion state
     if (!this.stateMachine.transition(AnimationState.EMOTION, force)) {
-      if (this.config.enableLogging) {
+      if (this.config.enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
         console.warn(`[AnimationController] Failed to transition to emotion: ${emotion}`);
       }
       return false;
@@ -344,7 +345,7 @@ export class AnimationController {
     const animationStartTime = Date.now();
 
     timeline.eventCallback('onStart', () => {
-      if (this.config.enableLogging) {
+      if (this.config.enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
         console.log(`[AnimationController] Emotion ${emotion} motion START`);
       }
 
@@ -360,7 +361,7 @@ export class AnimationController {
     timeline.eventCallback('onComplete', () => {
       const duration = Date.now() - animationStartTime;
 
-      if (this.config.enableLogging) {
+      if (this.config.enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
         console.log(`[AnimationController] Emotion ${emotion} completed (${duration}ms)`);
       }
 
@@ -402,7 +403,7 @@ export class AnimationController {
       if (interruptHandled) return;
       interruptHandled = true;
 
-      if (this.config.enableLogging) {
+      if (this.config.enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
         console.log(`[AnimationController] Emotion ${emotion} interrupted`);
       }
 
@@ -439,7 +440,7 @@ export class AnimationController {
     const priority = options.priority ?? this.config.defaultPriority;
     const force = options.force ?? false;
 
-    if (this.config.enableLogging) {
+    if (this.config.enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
       console.log(`[AnimationController] Transition to: ${state}${emotion ? ` / ${emotion}` : ''} (priority: ${priority})`);
     }
 
@@ -455,7 +456,7 @@ export class AnimationController {
 
     // Perform transition
     if (!this.stateMachine.transition(state, force)) {
-      if (this.config.enableLogging) {
+      if (this.config.enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
         console.warn(`[AnimationController] Failed to transition to ${state}`);
       }
       return false;
@@ -483,7 +484,7 @@ export class AnimationController {
 
     // Setup callbacks
     timeline.eventCallback('onComplete', () => {
-      if (this.config.enableLogging) {
+      if (this.config.enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
         console.log(`[AnimationController] ${state}${emotion ? ` / ${emotion}` : ''} completed`);
       }
 
@@ -512,7 +513,7 @@ export class AnimationController {
    * Kill all active animations
    */
   killAll(): void {
-    if (this.config.enableLogging) {
+    if (this.config.enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
       console.log('[AnimationController] Killing all animations');
     }
 
@@ -544,7 +545,7 @@ export class AnimationController {
     priority: number
   ): void {
     if (this.queue.length >= this.config.maxQueueSize) {
-      if (this.config.enableLogging) {
+      if (this.config.enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
         console.warn('[AnimationController] Queue full, dropping oldest item');
       }
       this.queue.shift();
@@ -564,7 +565,7 @@ export class AnimationController {
     // Sort by priority (highest first)
     this.queue.sort((a, b) => b.priority - a.priority);
 
-    if (this.config.enableLogging) {
+    if (this.config.enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
       console.log(`[AnimationController] Queued ${state}${emotion ? `/${emotion}` : ''} (${this.queue.length} in queue)`);
     }
 
@@ -587,7 +588,7 @@ export class AnimationController {
       return;
     }
 
-    if (this.config.enableLogging) {
+    if (this.config.enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
       console.log(`[AnimationController] Processing queued ${animation.state}${animation.emotion ? `/${animation.emotion}` : ''}`);
     }
 
@@ -622,7 +623,7 @@ export class AnimationController {
    * Cleanup on destroy
    */
   destroy(): void {
-    if (this.config.enableLogging) {
+    if (this.config.enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
       console.log('[AnimationController] Destroying controller');
     }
 

@@ -36,7 +36,7 @@
   - Better as supplementary context
 
   Example:
-  Here's the Figma file: https://www.figma.com/file/abc123/SearchAF-Design-System
+  Here's the Figma file: https://www.figma.com/file/abc123/Anty-Design-System
 
   3. Figma Dev Mode Specs (Best for Precision) 🎯
 

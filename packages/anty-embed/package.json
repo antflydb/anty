@@ -1,6 +1,6 @@
 {
-  "name": "@antfly/anty-embed",
-  "version": "0.2.0",
+  "name": "@antflydb/anty-embed",
+  "version": "1.0.0",
   "type": "module",
   "description": "Embeddable Anty character animation for web applications",
   "main": "dist/index.js",
@@ -48,7 +48,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/searchaf/anty"
+    "url": "https://github.com/antflydb/anty.git"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
   },
   "keywords": [
     "anty",
@@ -61,6 +64,6 @@
     "widget",
     "openai"
   ],
-  "author": "SearchAF",
+  "author": "Antfly",
   "license": "MIT"
 }

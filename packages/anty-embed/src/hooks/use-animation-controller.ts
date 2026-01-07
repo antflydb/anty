@@ -8,6 +8,7 @@
 import { useRef, useEffect, useCallback, useMemo } from 'react';
 import gsap from 'gsap';
 import { AnimationController } from '../lib/animation/controller';
+import { ENABLE_ANIMATION_DEBUG_LOGS } from '../lib/animation/feature-flags';
 import {
   AnimationState,
   type EmotionType,
@@ -214,7 +215,7 @@ export function useAnimationController(
   useEffect(() => {
     if (isInitialized.current) return;
 
-    if (enableLogging) {
+    if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
       console.log('[useAnimationController] Initializing controller');
     }
 
@@ -230,7 +231,7 @@ export function useAnimationController(
         // They shouldn't trigger position tracking or verbose logging
         const isEyeOnlyAction = emotion === 'look-left' || emotion === 'look-right';
 
-        if (enableLogging && !isEyeOnlyAction) {
+        if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS && !isEyeOnlyAction) {
           console.log(`[useAnimationController] Emotion motion START: ${emotion}`);
         }
         // Only notify position tracker for body-moving animations
@@ -244,7 +245,7 @@ export function useAnimationController(
         // They shouldn't trigger position tracking or verbose logging
         const isEyeOnlyAction = emotion === 'look-left' || emotion === 'look-right';
 
-        if (enableLogging && !isEyeOnlyAction) {
+        if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS && !isEyeOnlyAction) {
           console.log(`[useAnimationController] Emotion motion COMPLETE: ${emotion} (${duration}ms)`);
         }
         // Only notify position tracker for body-moving animations
@@ -275,13 +276,13 @@ export function useAnimationController(
 
     isInitialized.current = true;
 
-    if (enableLogging) {
+    if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
       console.log('[useAnimationController] Controller initialized');
     }
 
     // Cleanup on unmount
     return () => {
-      if (enableLogging) {
+      if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
         console.log('[useAnimationController] Cleaning up controller');
       }
       // Stop shadow tracker
@@ -312,13 +313,13 @@ export function useAnimationController(
     const wasReady = isReady.current;
     isReady.current = hasRequiredElements;
 
-    if (enableLogging && wasReady !== isReady.current) {
+    if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS && wasReady !== isReady.current) {
       console.log('[useAnimationController] Ready state changed:', isReady.current);
     }
 
     // Initialize character when elements become ready
     if (hasRequiredElements && !wasReady && elements.character) {
-      if (enableLogging) {
+      if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
         console.log('[useAnimationController] Calling initializeCharacter()');
       }
 
@@ -352,7 +353,7 @@ export function useAnimationController(
         if (!isOff && !logoMode) {
           shadowTrackerRef.current.start();
         }
-        if (enableLogging) {
+        if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
           console.log('[useAnimationController] Shadow tracker created and started');
         }
       }
@@ -377,7 +378,7 @@ export function useAnimationController(
         } else {
           glowSystemRef.current.hide();
         }
-        if (enableLogging) {
+        if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
           console.log('[useAnimationController] Glow system created and started');
         }
       }
@@ -408,7 +409,7 @@ export function useAnimationController(
 
     // Wake-up sequence (OFF → ON)
     if (wasOff && !isNowOff) {
-      if (enableLogging) {
+      if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
         console.log('[useAnimationController] Wake-up sequence: OFF → ON - CALLING WAKE-UP ANIMATION');
       }
 
@@ -443,7 +444,7 @@ export function useAnimationController(
           glowSystemRef.current.snapToCharacter(); // Reset spring positions
           glowSystemRef.current.start();
           glowSystemRef.current.fadeIn(0.3); // Fade in with the pop
-          if (enableLogging) {
+          if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
             console.log('[useAnimationController] Glow system started with wake-up');
           }
         }
@@ -453,7 +454,7 @@ export function useAnimationController(
           // Clear wake-up flag
           isWakingUpRef.current = false;
 
-          if (enableLogging) {
+          if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
             console.log('[useAnimationController] Wake-up complete, starting idle via controller');
           }
 
@@ -489,7 +490,7 @@ export function useAnimationController(
           // Start shadow tracker after wake-up (shadow fade-in is handled by wake-up animation)
           if (shadowTrackerRef.current) {
             shadowTrackerRef.current.start();
-            if (enableLogging) {
+            if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
               console.log('[useAnimationController] Shadow tracker started after wake-up');
             }
           }
@@ -499,23 +500,25 @@ export function useAnimationController(
       } else {
         // Clear flag on failure so idle can still start
         isWakingUpRef.current = false;
-        console.error('[useAnimationController] Wake-up failed - missing elements', {
-          hasCharacter: !!elements.character,
-          hasShadow: !!elements.shadow
-        });
+        if (ENABLE_ANIMATION_DEBUG_LOGS) {
+          console.error('[useAnimationController] Wake-up failed - missing elements', {
+            hasCharacter: !!elements.character,
+            hasShadow: !!elements.shadow
+          });
+        }
       }
     }
 
     // Power-off sequence (ON → OFF)
     if (!wasOff && isNowOff) {
-      if (enableLogging) {
+      if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
         console.log('[useAnimationController] Power-off sequence: ON → OFF - CALLING POWER-OFF ANIMATION');
       }
 
       // Stop shadow tracker - power-off animation handles its own shadow fade
       if (shadowTrackerRef.current) {
         shadowTrackerRef.current.stop();
-        if (enableLogging) {
+        if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
           console.log('[useAnimationController] Shadow tracker stopped for power-off');
         }
       }
@@ -527,7 +530,7 @@ export function useAnimationController(
         setTimeout(() => {
           glowSystemRef.current?.stop();
         }, 700);
-        if (enableLogging) {
+        if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
           console.log('[useAnimationController] Glow system fading out for power-off');
         }
       }
@@ -557,14 +560,16 @@ export function useAnimationController(
 
         powerOffTl.play();
 
-        if (enableLogging) {
+        if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
           console.log('[useAnimationController] Power-off animation started');
         }
       } else {
-        console.error('[useAnimationController] Power-off failed - missing elements', {
-          hasCharacter: !!elements.character,
-          hasShadow: !!elements.shadow
-        });
+        if (ENABLE_ANIMATION_DEBUG_LOGS) {
+          console.error('[useAnimationController] Power-off failed - missing elements', {
+            hasCharacter: !!elements.character,
+            hasShadow: !!elements.shadow
+          });
+        }
       }
     }
     // Only re-run when isOff changes - other deps are stable or captured in refs
@@ -583,7 +588,7 @@ export function useAnimationController(
 
     // Entering search mode
     if (!wasSearching && isNowSearching) {
-      if (enableLogging) {
+      if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
         console.log('[useAnimationController] Entering search mode - pausing idle');
       }
 
@@ -604,7 +609,7 @@ export function useAnimationController(
 
     // Exiting search mode
     if (wasSearching && !isNowSearching) {
-      if (enableLogging) {
+      if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
         console.log('[useAnimationController] Exiting search mode - restoring eyes and resuming idle');
       }
 
@@ -662,7 +667,7 @@ export function useAnimationController(
     // Check controller's idle state, not a local ref
     if (controllerRef.current.isIdle()) return; // Already running
 
-    if (enableLogging) {
+    if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
       console.log('[useAnimationController] Auto-starting idle animation');
     }
 
@@ -702,14 +707,14 @@ export function useAnimationController(
   const playEmotion = useCallback(
     (emotion: EmotionType, animationOptions: AnimationOptions = {}): boolean => {
       if (!controllerRef.current) {
-        if (enableLogging) {
+        if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
           console.warn('[useAnimationController] Controller not initialized');
         }
         return false;
       }
 
       if (!isReady.current) {
-        if (enableLogging) {
+        if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
           console.warn('[useAnimationController] Elements not ready');
         }
         return false;
@@ -717,22 +722,26 @@ export function useAnimationController(
 
       // Validate emotion
       if (!isEmotionType(emotion)) {
-        console.error(`[useAnimationController] Invalid emotion: ${emotion}`);
+        if (ENABLE_ANIMATION_DEBUG_LOGS) {
+          console.error(`[useAnimationController] Invalid emotion: ${emotion}`);
+        }
         return false;
       }
 
-      if (enableLogging) {
+      if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
         console.log(`[useAnimationController] Playing emotion: ${emotion}`);
       }
 
       // Get emotion config from declarative system
       const emotionConfig = EMOTION_CONFIGS[emotion];
       if (!emotionConfig) {
-        console.error(`[useAnimationController] Unknown emotion: ${emotion}`);
+        if (ENABLE_ANIMATION_DEBUG_LOGS) {
+          console.error(`[useAnimationController] Unknown emotion: ${emotion}`);
+        }
         return false;
       }
 
-      if (enableLogging) {
+      if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
         console.log(`[useAnimationController] Playing emotion: ${emotion}`);
       }
 
@@ -801,20 +810,20 @@ export function useAnimationController(
   const transitionTo = useCallback(
     (state: AnimationState, animationOptions: AnimationOptions = {}): boolean => {
       if (!controllerRef.current) {
-        if (enableLogging) {
+        if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
           console.warn('[useAnimationController] Controller not initialized');
         }
         return false;
       }
 
       if (!isReady.current) {
-        if (enableLogging) {
+        if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
           console.warn('[useAnimationController] Elements not ready');
         }
         return false;
       }
 
-      if (enableLogging) {
+      if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
         console.log(`[useAnimationController] Transitioning to: ${state}`);
       }
 
@@ -837,20 +846,20 @@ export function useAnimationController(
    */
   const startIdle = useCallback(() => {
     if (!controllerRef.current) {
-      if (enableLogging) {
+      if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
         console.warn('[useAnimationController] Controller not initialized');
       }
       return;
     }
 
     if (!isReady.current) {
-      if (enableLogging) {
+      if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
         console.warn('[useAnimationController] Elements not ready');
       }
       return;
     }
 
-    if (enableLogging) {
+    if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
       console.log('[useAnimationController] Starting idle animation');
     }
 
@@ -891,7 +900,7 @@ export function useAnimationController(
   const pause = useCallback(() => {
     if (!controllerRef.current) return;
 
-    if (enableLogging) {
+    if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
       console.log('[useAnimationController] Pausing animations');
     }
 
@@ -904,7 +913,7 @@ export function useAnimationController(
   const resume = useCallback(() => {
     if (!controllerRef.current) return;
 
-    if (enableLogging) {
+    if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
       console.log('[useAnimationController] Resuming animations');
     }
 
@@ -917,7 +926,7 @@ export function useAnimationController(
   const killAll = useCallback(() => {
     if (!controllerRef.current) return;
 
-    if (enableLogging) {
+    if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
       console.log('[useAnimationController] Killing all animations');
     }
 
@@ -982,7 +991,7 @@ export function useAnimationController(
   const setSuperMode = useCallback((scale: number | null) => {
     if (!controllerRef.current) return;
 
-    if (enableLogging) {
+    if (enableLogging && ENABLE_ANIMATION_DEBUG_LOGS) {
       console.log(`[useAnimationController] Setting super mode scale: ${scale}`);
     }
 

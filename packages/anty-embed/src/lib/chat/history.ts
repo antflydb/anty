@@ -55,7 +55,10 @@ export function getSessions(): ChatSession[] {
     return sessions.sort((a, b) =>
       new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
     );
-  } catch {
+  } catch (error) {
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('[CHAT HISTORY] Failed to parse stored sessions:', error);
+    }
     return [];
   }
 }
