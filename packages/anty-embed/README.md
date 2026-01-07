@@ -59,6 +59,27 @@ This package is built with maintainability and performance in mind:
 
 - **Dual format output** - Ships both ESM and CommonJS with source maps for debugging.
 
+## Imperative Handle
+
+Use a ref to control the character programmatically:
+
+```tsx
+const antyRef = useRef<AntyCharacterHandle>(null);
+
+// Play an emotion
+antyRef.current?.playEmotion('happy');
+
+// Power off (eyes close, goes dark)
+antyRef.current?.powerOff();
+
+// Wake up (eyes open, returns to idle)
+antyRef.current?.wakeUp();
+
+// Search bar (requires searchEnabled prop)
+antyRef.current?.morphToSearchBar();
+antyRef.current?.morphToCharacter();  // Also triggered by ESC or click outside
+```
+
 ## Bundle Size
 
 ~520KB raw / ~128KB gzipped (excluding peer dependencies)
