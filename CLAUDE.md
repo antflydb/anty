@@ -34,7 +34,7 @@ packages/anty-embed/
     types/index.ts        # SearchBarConfig exports
 ```
 
-Root level hosts a Next.js demo app and playground.
+Root level hosts a Next.js demo app, playground, and test consumer app at `examples/test-consumer/`.
 
 ## Animation System Architecture
 
@@ -119,6 +119,19 @@ Example minimal emotion:
 | `packages/anty-embed/src/components/AntyCharacter.tsx` | Main component |
 | `packages/anty-embed/src/hooks/use-animation-controller.ts` | Animation hook |
 
+## Presets
+
+The `AntyCharacter` component supports presets for common use cases:
+
+```tsx
+<AntyCharacter preset="hero" />        // 240px, shadow, glow - landing pages
+<AntyCharacter preset="assistant" />   // 80px, shadow - chat corners
+<AntyCharacter preset="icon" />        // 32px, no effects - navbars
+<AntyCharacter preset="logo" />        // logoMode enabled - branding
+```
+
+Presets are defined in `AntyCharacter.tsx` as the `PRESETS` constant. Explicit props override preset values.
+
 ## Development
 
 ```bash
@@ -130,7 +143,16 @@ cd packages/anty-embed && npm run build
 
 # Watch mode for package development
 cd packages/anty-embed && npm run dev
+
+# Run unit tests
+cd packages/anty-embed && npm test
 ```
+
+## Testing
+
+Unit tests use Vitest and are located in `packages/anty-embed/src/lib/animation/__tests__/`.
+
+The test consumer app at `examples/test-consumer/` verifies that imports work correctly when using the package via git subtree.
 
 ## Technologies
 
@@ -139,6 +161,7 @@ cd packages/anty-embed && npm run dev
 - **TypeScript** strict mode
 - **Rollup** for package bundling
 - **Next.js 15** for demo/playground
+- **Vitest** for unit testing
 
 ## Important Notes
 

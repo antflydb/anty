@@ -4,6 +4,7 @@ Embeddable animation system with 18 emotions, chat integration, particle effects
 
 ## Features
 
+- **Presets** - Quick setup with `hero`, `assistant`, `icon`, `logo` presets
 - **18 Expressive Emotions** - Happy, sad, angry, excited, celebrate, pleased, shocked, spin, wink, idea, jump, nod, headshake, look-around, look-left, look-right, back-forth, and smize
 - **Chat Integration with OpenAI** - Built-in chat panel with emotion mapping for AI-driven responses
 - **Particle Effects** - Sparkles, confetti, love hearts, and feeding particles
@@ -74,6 +75,30 @@ function App() {
 }
 ```
 
+## Presets
+
+Use presets for quick setup with sensible defaults:
+
+```tsx
+<AntyCharacter preset="hero" />        // Large (240px), with shadow & glow - for landing pages
+<AntyCharacter preset="assistant" />   // Small (80px), with shadow - for chat corners
+<AntyCharacter preset="icon" />        // Tiny (32px), no effects - for navbars
+<AntyCharacter preset="logo" />        // Static logo mode - for branding
+```
+
+Presets can be overridden with explicit props:
+
+```tsx
+<AntyCharacter preset="assistant" size={100} />  // Uses assistant preset but with size=100
+```
+
+| Preset | Size | Shadow | Glow | Notes |
+|--------|------|--------|------|-------|
+| `hero` | 240 | ✓ | ✓ | Large centered display |
+| `assistant` | 80 | ✓ | - | Small chat assistant |
+| `icon` | 32 | - | - | Tiny, still animated |
+| `logo` | - | - | - | Static, logoMode enabled |
+
 ## Available Emotions
 
 | Emotion | Description |
@@ -103,6 +128,7 @@ function App() {
 
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
+| `preset` | `'hero' \| 'assistant' \| 'icon' \| 'logo'` | - | Preset configuration (see Presets section) |
 | `expression` | `ExpressionName` | `'idle'` | Current expression/emotion to display |
 | `size` | `number` | `160` | Character size in pixels |
 | `showShadow` | `boolean` | `true` | Whether to show shadow |
@@ -189,15 +215,31 @@ For static branding use without animations:
 <AntyCharacter logoMode={true} />
 ```
 
-## Demo
+## Development
 
-Run the development server to see the playground:
+### Run the playground
 
 ```bash
 npm run dev
 ```
 
-Then open [http://localhost:3000](http://localhost:3000) to see the main playground, or [http://localhost:3000/embed](http://localhost:3000/embed) for the embed demo page.
+Open [http://localhost:3000](http://localhost:3000) for the main playground, or [http://localhost:3000/embed](http://localhost:3000/embed) for the embed demo.
+
+### Run tests
+
+```bash
+cd packages/anty-embed && npm test
+```
+
+### Test consumer app
+
+A minimal test app exists at `examples/test-consumer/` to verify imports work correctly:
+
+```bash
+cd examples/test-consumer
+npm install
+npm run dev
+```
 
 ## Technologies
 
@@ -206,6 +248,7 @@ Then open [http://localhost:3000](http://localhost:3000) to see the main playgro
 - **Framer Motion** - Declarative animations and gestures
 - **TypeScript** - Type-safe development
 - **OpenAI** - Chat integration with emotion mapping
+- **Vitest** - Unit testing
 
 ## License
 

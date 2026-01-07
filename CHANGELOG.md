@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - **AntyCharacter Component** - Main embeddable character component with ref-based API
+- **Presets** - Quick setup with `hero`, `assistant`, `icon`, `logo` presets
 - **18 Emotion Animations** - Full suite of expressive animations:
   - Positive emotions: happy, excited, celebrate, pleased, smize
   - Negative emotions: sad, angry, shocked
@@ -41,3 +42,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Eye shape morphing with SVG path interpolation
 - React 18/19 compatibility
 - Tree-shakeable exports
+- Unit tests for state machine (Vitest)
+- Test consumer app for import verification
