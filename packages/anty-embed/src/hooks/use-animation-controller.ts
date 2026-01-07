@@ -20,7 +20,7 @@ import { createIdleAnimation } from '../lib/animation/definitions/idle';
 import { createEyeAnimation } from '../lib/animation/definitions/eye-animations';
 import { interpretEmotionConfig } from '../lib/animation/definitions/emotion-interpreter';
 import { EMOTION_CONFIGS } from '../lib/animation/definitions/emotions';
-import { initializeCharacter } from '../lib/animation/initialize';
+import { initializeCharacter, resetEyesToLogo } from '../lib/animation/initialize';
 import { createWakeUpAnimation, createPowerOffAnimation } from '../lib/animation/definitions/transitions';
 import { createShadowTracker, type ShadowTrackerControls } from '../lib/animation/shadow';
 import { createGlowSystem, type GlowSystemControls } from '../lib/animation/glow-system';
@@ -77,6 +77,8 @@ export interface UseAnimationControllerOptions extends ControllerConfig {
   onAnimationSequenceChange?: (sequence: string) => void;
   /** Whether character is powered off */
   isOff?: boolean;
+  /** Logo mode: OFF eyes at full color, no shadow/glow, no blinks */
+  logoMode?: boolean;
   /** Whether in search mode */
   searchMode?: boolean;
   /** Auto-start idle on mount */
@@ -173,6 +175,7 @@ export function useAnimationController(
     onStateChange,
     onAnimationSequenceChange,
     isOff = false,
+    logoMode = false,
     searchMode = false,
     autoStartIdle = true,
     sizeScale = 1,
@@ -188,6 +191,10 @@ export function useAnimationController(
   // Track previous states for change detection
   const previousIsOffRef = useRef(isOff);
   const previousSearchModeRef = useRef(searchMode);
+
+  // Track logoMode for use in callbacks (emotion completion)
+  const logoModeRef = useRef(logoMode);
+  logoModeRef.current = logoMode;
 
   // Track if we're in a wake-up transition (prevents auto-start idle race)
   const isWakingUpRef = useRef(false);
@@ -330,7 +337,7 @@ export function useAnimationController(
           leftBody: elements.leftBody,
           rightBody: elements.rightBody,
         },
-        { isOff, sizeScale }
+        { isOff, logoMode, sizeScale }
       );
 
       // Create shadow tracker - dynamically updates shadow based on character Y position
@@ -341,8 +348,8 @@ export function useAnimationController(
           elements.shadow
         );
         // Start immediately (will track character Y at 60fps)
-        // Don't start if in OFF mode - wake-up transition handles shadow
-        if (!isOff) {
+        // Don't start if in OFF mode or logo mode - wake-up transition handles shadow, logo mode hides it
+        if (!isOff && !logoMode) {
           shadowTrackerRef.current.start();
         }
         if (enableLogging) {
@@ -359,9 +366,12 @@ export function useAnimationController(
           elements.innerGlow,
           sizeScale
         );
+        // CRITICAL: Snap to character position immediately after creation
+        // Springs start at (0,0) but character may already have non-zero position
+        glowSystemRef.current.snapToCharacter();
         // Start immediately (will track character position at 60fps)
-        // Don't start if in OFF mode - wake-up transition handles glow fade-in
-        if (!isOff) {
+        // Don't start if in OFF mode or logo mode - wake-up handles glow fade-in, logo mode hides it
+        if (!isOff && !logoMode) {
           glowSystemRef.current.start();
           glowSystemRef.current.show();
         } else {
@@ -372,7 +382,7 @@ export function useAnimationController(
         }
       }
     }
-  }, [elements, enableLogging, isOff]);
+  }, [elements, enableLogging, isOff, logoMode]);
 
   /**
    * Update glow system when sizeScale changes
@@ -764,7 +774,7 @@ export function useAnimationController(
         outerGlow: elements.outerGlow,
         leftBody: elements.leftBody,
         rightBody: elements.rightBody,
-      }, sizeScale);
+      }, sizeScale, logoModeRef.current);
 
       // Collect elements for this emotion (deduplicate to avoid double acquisition)
       const emotionElements = Array.from(new Set([
@@ -984,6 +994,10 @@ export function useAnimationController(
    */
   const showGlows = useCallback((fadeIn = true) => {
     if (!glowSystemRef.current) return;
+    // CRITICAL: Snap to character position before resuming
+    // This ensures glows are correctly positioned after any layout changes
+    // that occurred while they were hidden (e.g., search morph, window resize)
+    glowSystemRef.current.snapToCharacter();
     glowSystemRef.current.resume();
     if (fadeIn) {
       glowSystemRef.current.fadeIn(0.3);

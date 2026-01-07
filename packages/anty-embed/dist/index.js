@@ -8119,27 +8119,29 @@ function createIdleAnimation(elements, options = {}) {
  * @param options - Initial state configuration
  */
 function initializeCharacter(elements, options = {}) {
-    const { isOff = false, sizeScale = 1 } = options;
+    const { isOff = false, logoMode = false, sizeScale = 1 } = options;
     const { character, shadow, eyeLeft, eyeRight, eyeLeftPath, eyeRightPath, eyeLeftSvg, eyeRightSvg, innerGlow, outerGlow, leftBody, rightBody, } = elements;
+    // Use OFF eyes for both isOff and logoMode, but only dim character for isOff
+    const useOffEyes = isOff || logoMode;
     // ===========================
     // Character transforms
     // ===========================
     gsapWithCSS.set(character, {
         x: 0,
         y: 0,
-        scale: isOff ? 0.65 : 1,
+        scale: isOff ? 0.65 : 1, // Only shrink for OFF, not logoMode
         rotation: 0,
         rotationY: 0,
-        opacity: isOff ? 0.25 : 1,
+        opacity: isOff ? 0.25 : 1, // Only dim for OFF, not logoMode
         transformOrigin: 'center center',
     });
     // ===========================
     // Eye containers - position and transforms
     // ===========================
-    // OFF state: eyes move closer together (logo position)
+    // OFF/logo state: eyes move closer together (logo position)
     // Pixel values scaled by sizeScale (designed for 160px base)
-    const eyeOffsetX = isOff ? 3 * sizeScale : 0; // px toward center (scaled)
-    const eyeOffsetY = isOff ? 3 * sizeScale : 0; // px down (scaled)
+    const eyeOffsetX = useOffEyes ? 3 * sizeScale : 0; // px toward center (scaled)
+    const eyeOffsetY = useOffEyes ? 3 * sizeScale : 0; // px down (scaled)
     if (eyeLeft) {
         gsapWithCSS.set(eyeLeft, {
             x: eyeOffsetX, // Move right toward center when OFF
@@ -8164,13 +8166,13 @@ function initializeCharacter(elements, options = {}) {
     // Eye SVG paths - IDLE or OFF shape based on state
     // ===========================
     if (eyeLeftPath) {
-        const leftShape = isOff ? 'OFF_LEFT' : 'IDLE';
+        const leftShape = useOffEyes ? 'OFF_LEFT' : 'IDLE';
         gsapWithCSS.set(eyeLeftPath, {
             attr: { d: getEyeShape(leftShape, 'left') },
         });
     }
     if (eyeRightPath) {
-        const rightShape = isOff ? 'OFF_RIGHT' : 'IDLE';
+        const rightShape = useOffEyes ? 'OFF_RIGHT' : 'IDLE';
         gsapWithCSS.set(eyeRightPath, {
             attr: { d: getEyeShape(rightShape, 'right') },
         });
@@ -8179,7 +8181,7 @@ function initializeCharacter(elements, options = {}) {
     // Eye SVG viewBox - IDLE or OFF dimensions
     // ===========================
     if (eyeLeftSvg && eyeRightSvg) {
-        const dimensions = isOff ? getEyeDimensions('OFF_LEFT') : getEyeDimensions('IDLE');
+        const dimensions = useOffEyes ? getEyeDimensions('OFF_LEFT') : getEyeDimensions('IDLE');
         gsapWithCSS.set([eyeLeftSvg, eyeRightSvg], {
             attr: { viewBox: dimensions.viewBox },
         });
@@ -8188,7 +8190,7 @@ function initializeCharacter(elements, options = {}) {
     // Eye container dimensions - match the shape, scaled appropriately
     // ===========================
     if (eyeLeft && eyeRight) {
-        const dimensions = isOff ? getEyeDimensions('OFF_LEFT') : getEyeDimensions('IDLE');
+        const dimensions = useOffEyes ? getEyeDimensions('OFF_LEFT') : getEyeDimensions('IDLE');
         gsapWithCSS.set([eyeLeft, eyeRight], {
             width: dimensions.width * sizeScale,
             height: dimensions.height * sizeScale,
@@ -8198,6 +8200,7 @@ function initializeCharacter(elements, options = {}) {
     // Shadow - initial state before ShadowTracker takes over
     // When ON: grounded state (full size, visible)
     // When OFF: shrunk state (wake-up will fade it in)
+    // When logoMode: hidden (no shadow for logo state)
     // After init, ShadowTracker dynamically updates based on character Y
     // ===========================
     if (shadow) {
@@ -8205,7 +8208,7 @@ function initializeCharacter(elements, options = {}) {
             xPercent: -50,
             scaleX: isOff ? 0.7 : 1,
             scaleY: isOff ? 0.55 : 1,
-            opacity: isOff ? 0.2 : 0.7,
+            opacity: logoMode ? 0 : (isOff ? 0.2 : 0.7), // Hidden in logoMode
         });
     }
     // ===========================
@@ -8217,7 +8220,7 @@ function initializeCharacter(elements, options = {}) {
             x: 0,
             y: 0,
             scale: isOff ? 0.65 : 1,
-            opacity: isOff ? 0 : 1,
+            opacity: (isOff || logoMode) ? 0 : 1, // Hidden in both OFF and logoMode
         });
     }
     // ===========================
@@ -8300,6 +8303,95 @@ function resetEyesToIdle(elements, duration = 0, sizeScale = 1) {
     }, 0);
     return timeline;
 }
+/**
+ * Reset eyes to LOGO/OFF state
+ *
+ * Used after emotion animations in logo mode to return eyes to logo state.
+ * Similar to resetEyesToIdle but uses OFF eye shapes.
+ *
+ * @param elements - Eye elements to reset
+ * @param duration - Animation duration (0 for instant)
+ * @param sizeScale - Scale factor for the character
+ */
+function resetEyesToLogo(elements, duration = 0, sizeScale = 1) {
+    const { eyeLeft, eyeRight, eyeLeftPath, eyeRightPath, eyeLeftSvg, eyeRightSvg } = elements;
+    if (!eyeLeft || !eyeRight || !eyeLeftPath || !eyeRightPath || !eyeLeftSvg || !eyeRightSvg) {
+        return;
+    }
+    const offDimensions = getEyeDimensions('OFF_LEFT');
+    const eyeOffsetX = 3 * sizeScale; // Logo position offset
+    const eyeOffsetY = 3 * sizeScale;
+    if (duration === 0) {
+        // Instant reset to logo eyes
+        gsapWithCSS.set(eyeLeftPath, {
+            attr: { d: getEyeShape('OFF_LEFT', 'left') },
+        });
+        gsapWithCSS.set(eyeRightPath, {
+            attr: { d: getEyeShape('OFF_RIGHT', 'right') },
+        });
+        gsapWithCSS.set([eyeLeftSvg, eyeRightSvg], {
+            attr: { viewBox: offDimensions.viewBox },
+        });
+        gsapWithCSS.set([eyeLeft, eyeRight], {
+            width: offDimensions.width * sizeScale,
+            height: offDimensions.height * sizeScale,
+        });
+        gsapWithCSS.set(eyeLeft, {
+            scaleX: 1,
+            scaleY: 1,
+            rotation: 0,
+            x: eyeOffsetX,
+            y: eyeOffsetY,
+        });
+        gsapWithCSS.set(eyeRight, {
+            scaleX: 1,
+            scaleY: 1,
+            rotation: 0,
+            x: -eyeOffsetX,
+            y: eyeOffsetY,
+        });
+        return;
+    }
+    // Animated reset to logo eyes
+    const timeline = gsapWithCSS.timeline();
+    timeline.to(eyeLeftPath, {
+        attr: { d: getEyeShape('OFF_LEFT', 'left') },
+        duration,
+        ease: 'power2.inOut',
+    }, 0);
+    timeline.to(eyeRightPath, {
+        attr: { d: getEyeShape('OFF_RIGHT', 'right') },
+        duration,
+        ease: 'power2.inOut',
+    }, 0);
+    timeline.to([eyeLeftSvg, eyeRightSvg], {
+        attr: { viewBox: offDimensions.viewBox },
+        duration,
+        ease: 'power2.inOut',
+    }, 0);
+    timeline.to([eyeLeft, eyeRight], {
+        width: offDimensions.width * sizeScale,
+        height: offDimensions.height * sizeScale,
+        scaleX: 1,
+        scaleY: 1,
+        rotation: 0,
+        duration,
+        ease: 'power2.inOut',
+    }, 0);
+    timeline.to(eyeLeft, {
+        x: eyeOffsetX,
+        y: eyeOffsetY,
+        duration,
+        ease: 'power2.inOut',
+    }, 0);
+    timeline.to(eyeRight, {
+        x: -eyeOffsetX,
+        y: eyeOffsetY,
+        duration,
+        ease: 'power2.inOut',
+    }, 0);
+    return timeline;
+}
 
 /**
  * Emotion Animation Interpreter
@@ -8345,9 +8437,10 @@ function killPendingEyeReset() {
  * @param config - Declarative emotion configuration
  * @param elements - DOM elements to animate
  * @param sizeScale - Scale factor for the character (size / 160)
+ * @param logoMode - If true, reset to logo eyes instead of idle after emotion
  * @returns GSAP timeline ready to play
  */
-function interpretEmotionConfig(config, elements, sizeScale = 1) {
+function interpretEmotionConfig(config, elements, sizeScale = 1, logoMode = false) {
     const { character, eyeLeft, eyeRight, eyeLeftPath, eyeRightPath, eyeLeftSvg, eyeRightSvg, innerGlow, outerGlow, leftBody, rightBody } = elements;
     const glowElements = [innerGlow, outerGlow].filter(Boolean);
     // Kill any pending reset from previous emotion BEFORE setting up new one
@@ -8362,8 +8455,17 @@ function interpretEmotionConfig(config, elements, sizeScale = 1) {
         if (config.resetRotationY) {
             gsapWithCSS.set(character, { rotationY: 0 });
         }
-        // Reset eyes to IDLE (duration NOT scaled - same timing at all sizes)
-        resetEyesToIdle(elements, config.eyeResetDuration ?? 0, sizeScale);
+        // Defensive: ensure character x is reset to 0 after emotion completes
+        // This ensures glow tracking stays aligned even if emotion animation
+        // didn't fully return to x=0 due to timing edge cases
+        gsapWithCSS.set(character, { x: 0 });
+        // Reset eyes to IDLE or LOGO based on mode (duration NOT scaled - same timing at all sizes)
+        if (logoMode) {
+            resetEyesToLogo(elements, config.eyeResetDuration ?? 0, sizeScale);
+        }
+        else {
+            resetEyesToIdle(elements, config.eyeResetDuration ?? 0, sizeScale);
+        }
         // Reset body brackets if they were animated
         if (config.body && leftBody && rightBody) {
             gsapWithCSS.set([leftBody, rightBody], { x: 0, y: 0 });
@@ -8393,6 +8495,9 @@ function interpretEmotionConfig(config, elements, sizeScale = 1) {
             if (leftBody && rightBody) {
                 gsapWithCSS.set([leftBody, rightBody], { x: 0, y: 0 });
             }
+            // Reset character x position (critical for sad/angry interrupted mid-shake)
+            // Note: Don't reset y as idle handles that, but x must be 0 for glow tracking
+            gsapWithCSS.set(character, { x: 0 });
         },
     });
     // ===========================
@@ -9466,8 +9571,11 @@ function createGlowSystem(character, outerGlow, innerGlow, sizeScale = 1, config
         const deltaTime = gsapWithCSS.ticker.deltaRatio() / 60;
         time += deltaTime;
         // Get character's current position
-        const characterX = gsapWithCSS.getProperty(character, 'x');
-        const characterY = gsapWithCSS.getProperty(character, 'y');
+        const rawX = gsapWithCSS.getProperty(character, 'x');
+        const rawY = gsapWithCSS.getProperty(character, 'y');
+        // DEFENSIVE: Ensure we get valid numbers, default to 0
+        const characterX = typeof rawX === 'number' && isFinite(rawX) ? rawX : 0;
+        const characterY = typeof rawY === 'number' && isFinite(rawY) ? rawY : 0;
         // --- OUTER GLOW: follows character ---
         updateSpring(outerSpring, characterX, characterY, cfg.outerStiffness, cfg.damping);
         // --- INNER GLOW: follows outer glow (chained) ---
@@ -9481,14 +9589,16 @@ function createGlowSystem(character, outerGlow, innerGlow, sizeScale = 1, config
         const outerOscillationY = (1 - Math.cos(phase)) * cfg.outerOscillationAmplitudeY * 0.5;
         const innerOscillationY = (1 - Math.cos(phase + cfg.innerPhaseOffset)) * cfg.innerOscillationAmplitudeY * 0.5;
         // --- APPLY POSITIONS ---
-        gsapWithCSS.set(outerGlow, {
-            x: outerSpring.x + outerOscillationX,
-            y: outerSpring.y + outerOscillationY,
-        });
-        gsapWithCSS.set(innerGlow, {
-            x: innerSpring.x + innerOscillationX,
-            y: innerSpring.y + innerOscillationY,
-        });
+        const outerX = outerSpring.x + outerOscillationX;
+        const outerY = outerSpring.y + outerOscillationY;
+        const innerX = innerSpring.x + innerOscillationX;
+        const innerY = innerSpring.y + innerOscillationY;
+        // Debug: log if values are unexpectedly large
+        if (Math.abs(outerX) > 100 || Math.abs(outerY) > 100) {
+            console.warn('[GlowSystem] Large values detected:', { outerX, outerY, innerX, innerY, characterX, characterY });
+        }
+        gsapWithCSS.set(outerGlow, { x: outerX, y: outerY });
+        gsapWithCSS.set(innerGlow, { x: innerX, y: innerY });
     }
     /**
      * Update a single spring towards target
@@ -9564,8 +9674,16 @@ function createGlowSystem(character, outerGlow, innerGlow, sizeScale = 1, config
      * Useful after teleporting character or on initialization
      */
     function snapToCharacter() {
-        const characterX = gsapWithCSS.getProperty(character, 'x');
-        const characterY = gsapWithCSS.getProperty(character, 'y');
+        const rawX = gsapWithCSS.getProperty(character, 'x');
+        const rawY = gsapWithCSS.getProperty(character, 'y');
+        // DEFENSIVE: Ensure we get valid numbers, default to 0
+        // gsap.getProperty can return unexpected values before element is fully initialized
+        const characterX = typeof rawX === 'number' && isFinite(rawX) ? rawX : 0;
+        const characterY = typeof rawY === 'number' && isFinite(rawY) ? rawY : 0;
+        // Debug: Log if we got unexpected values
+        if (rawX !== characterX || rawY !== characterY) {
+            console.warn('[GlowSystem] snapToCharacter got invalid values, using 0:', { rawX, rawY });
+        }
         // Reset outer spring
         outerSpring.x = characterX;
         outerSpring.y = characterY;
@@ -9651,7 +9769,7 @@ function createGlowSystem(character, outerGlow, innerGlow, sizeScale = 1, config
  * ```
  */
 function useAnimationController(elements, options = {}) {
-    const { enableLogging = false, enableQueue = true, maxQueueSize = 10, defaultPriority = 2, callbacks = {}, onStateChange, onAnimationSequenceChange, isOff = false, searchMode = false, autoStartIdle = true, sizeScale = 1, } = options;
+    const { enableLogging = false, enableQueue = true, maxQueueSize = 10, defaultPriority = 2, callbacks = {}, onStateChange, onAnimationSequenceChange, isOff = false, logoMode = false, searchMode = false, autoStartIdle = true, sizeScale = 1, } = options;
     // Controller instance (persistent across renders)
     const controllerRef = React.useRef(null);
     // Track initialization state
@@ -9660,6 +9778,9 @@ function useAnimationController(elements, options = {}) {
     // Track previous states for change detection
     const previousIsOffRef = React.useRef(isOff);
     const previousSearchModeRef = React.useRef(searchMode);
+    // Track logoMode for use in callbacks (emotion completion)
+    const logoModeRef = React.useRef(logoMode);
+    logoModeRef.current = logoMode;
     // Track if we're in a wake-up transition (prevents auto-start idle race)
     const isWakingUpRef = React.useRef(false);
     // Shadow tracker - dynamically updates shadow based on character Y position
@@ -9780,14 +9901,14 @@ function useAnimationController(elements, options = {}) {
                 outerGlow: elements.outerGlow || null,
                 leftBody: elements.leftBody,
                 rightBody: elements.rightBody,
-            }, { isOff, sizeScale });
+            }, { isOff, logoMode, sizeScale });
             // Create shadow tracker - dynamically updates shadow based on character Y position
             // This replaces all the disjointed shadow animations in idle, emotions, etc.
             if (elements.shadow && !shadowTrackerRef.current) {
                 shadowTrackerRef.current = createShadowTracker(elements.character, elements.shadow);
                 // Start immediately (will track character Y at 60fps)
-                // Don't start if in OFF mode - wake-up transition handles shadow
-                if (!isOff) {
+                // Don't start if in OFF mode or logo mode - wake-up transition handles shadow, logo mode hides it
+                if (!isOff && !logoMode) {
                     shadowTrackerRef.current.start();
                 }
                 if (enableLogging) {
@@ -9798,9 +9919,12 @@ function useAnimationController(elements, options = {}) {
             // This replaces all the disjointed glow animations scattered throughout
             if (elements.innerGlow && elements.outerGlow && !glowSystemRef.current) {
                 glowSystemRef.current = createGlowSystem(elements.character, elements.outerGlow, elements.innerGlow, sizeScale);
+                // CRITICAL: Snap to character position immediately after creation
+                // Springs start at (0,0) but character may already have non-zero position
+                glowSystemRef.current.snapToCharacter();
                 // Start immediately (will track character position at 60fps)
-                // Don't start if in OFF mode - wake-up transition handles glow fade-in
-                if (!isOff) {
+                // Don't start if in OFF mode or logo mode - wake-up handles glow fade-in, logo mode hides it
+                if (!isOff && !logoMode) {
                     glowSystemRef.current.start();
                     glowSystemRef.current.show();
                 }
@@ -9812,7 +9936,7 @@ function useAnimationController(elements, options = {}) {
                 }
             }
         }
-    }, [elements, enableLogging, isOff]);
+    }, [elements, enableLogging, isOff, logoMode]);
     /**
      * Update glow system when sizeScale changes
      * This ensures oscillation amplitudes stay proportional to character size
@@ -10154,7 +10278,7 @@ function useAnimationController(elements, options = {}) {
             outerGlow: elements.outerGlow,
             leftBody: elements.leftBody,
             rightBody: elements.rightBody,
-        }, sizeScale);
+        }, sizeScale, logoModeRef.current);
         // Collect elements for this emotion (deduplicate to avoid double acquisition)
         const emotionElements = Array.from(new Set([
             elements.character,
@@ -10338,6 +10462,10 @@ function useAnimationController(elements, options = {}) {
     const showGlows = React.useCallback((fadeIn = true) => {
         if (!glowSystemRef.current)
             return;
+        // CRITICAL: Snap to character position before resuming
+        // This ensures glows are correctly positioned after any layout changes
+        // that occurred while they were hidden (e.g., search morph, window resize)
+        glowSystemRef.current.snapToCharacter();
         glowSystemRef.current.resume();
         if (fadeIn) {
             glowSystemRef.current.fadeIn(0.3);
@@ -10987,7 +11115,7 @@ const styles = {
  * - Self-contained shadow and glow effects
  * - Power on/off animations
  */
-const AntyCharacter = React.forwardRef(({ expression = 'idle', size = 160, isSuperMode = false, frozen = false, searchMode = false, debugMode = false, showShadow = true, showGlow = true, onSpontaneousExpression, onEmotionComplete, onAnimationSequenceChange, onRandomAction, className = '', style, 
+const AntyCharacter = React.forwardRef(({ expression = 'idle', size = 160, isSuperMode = false, frozen = false, logoMode = false, searchMode = false, debugMode = false, showShadow = true, showGlow = true, onSpontaneousExpression, onEmotionComplete, onAnimationSequenceChange, onRandomAction, className = '', style, 
 // Optional external refs (for playground where shadow/glow are rendered externally)
 shadowRef: externalShadowRef, innerGlowRef: externalInnerGlowRef, outerGlowRef: externalOuterGlowRef, 
 // Search bar integration
@@ -11082,8 +11210,9 @@ searchEnabled = false, searchValue: externalSearchValue, onSearchChange, onSearc
         maxQueueSize: 10,
         defaultPriority: 2,
         isOff,
+        logoMode,
         searchMode: searchMode || isSearchActive, // Include internal search state
-        autoStartIdle: !frozen, // Disable idle animation when frozen
+        autoStartIdle: !frozen && !logoMode, // Disable idle animation when frozen or in logo mode
         sizeScale, // Pass scale factor for proper eye sizing
         onStateChange: (from, to) => {
             if (ENABLE_ANIMATION_DEBUG_LOGS) {
@@ -11530,6 +11659,13 @@ searchEnabled = false, searchValue: externalSearchValue, onSearchChange, onSearc
         },
         hideGlows: () => {
             animationController.hideGlows();
+        },
+        // Power off/on transitions
+        powerOff: () => {
+            animationController.transitionTo(exports.AnimationState.OFF);
+        },
+        wakeUp: () => {
+            animationController.transitionTo(exports.AnimationState.IDLE);
         },
         // Search bar morph (when searchEnabled)
         morphToSearchBar: searchEnabled ? internalMorphToSearchBar : undefined,

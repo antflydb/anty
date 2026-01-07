@@ -10,7 +10,7 @@
 import gsap from 'gsap';
 import type { EmotionConfig, EyeConfig, EyePhase, CharacterPhase, GlowConfig, BodyConfig } from '../types';
 import { createEyeAnimation } from './eye-animations';
-import { resetEyesToIdle } from '../initialize';
+import { resetEyesToIdle, resetEyesToLogo } from '../initialize';
 // NOTE: GLOW_CONSTANTS removed - glow following now handled by GlowSystem
 
 /**
@@ -69,12 +69,14 @@ export interface EmotionElements {
  * @param config - Declarative emotion configuration
  * @param elements - DOM elements to animate
  * @param sizeScale - Scale factor for the character (size / 160)
+ * @param logoMode - If true, reset to logo eyes instead of idle after emotion
  * @returns GSAP timeline ready to play
  */
 export function interpretEmotionConfig(
   config: EmotionConfig,
   elements: EmotionElements,
-  sizeScale: number = 1
+  sizeScale: number = 1,
+  logoMode: boolean = false
 ): gsap.core.Timeline {
   const { character, eyeLeft, eyeRight, eyeLeftPath, eyeRightPath, eyeLeftSvg, eyeRightSvg, innerGlow, outerGlow, leftBody, rightBody } = elements;
   const glowElements = [innerGlow, outerGlow].filter(Boolean) as HTMLElement[];
@@ -94,8 +96,17 @@ export function interpretEmotionConfig(
       gsap.set(character, { rotationY: 0 });
     }
 
-    // Reset eyes to IDLE (duration NOT scaled - same timing at all sizes)
-    resetEyesToIdle(elements, config.eyeResetDuration ?? 0, sizeScale);
+    // Defensive: ensure character x is reset to 0 after emotion completes
+    // This ensures glow tracking stays aligned even if emotion animation
+    // didn't fully return to x=0 due to timing edge cases
+    gsap.set(character, { x: 0 });
+
+    // Reset eyes to IDLE or LOGO based on mode (duration NOT scaled - same timing at all sizes)
+    if (logoMode) {
+      resetEyesToLogo(elements, config.eyeResetDuration ?? 0, sizeScale);
+    } else {
+      resetEyesToIdle(elements, config.eyeResetDuration ?? 0, sizeScale);
+    }
 
     // Reset body brackets if they were animated
     if (config.body && leftBody && rightBody) {
@@ -126,6 +137,9 @@ export function interpretEmotionConfig(
       if (leftBody && rightBody) {
         gsap.set([leftBody, rightBody], { x: 0, y: 0 });
       }
+      // Reset character x position (critical for sad/angry interrupted mid-shake)
+      // Note: Don't reset y as idle handles that, but x must be 0 for glow tracking
+      gsap.set(character, { x: 0 });
     },
   });
 

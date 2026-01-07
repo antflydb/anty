@@ -3,6 +3,9 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import gsap from 'gsap';
 
+// Limit position history to prevent memory leak (1800 = 15 sec at 120fps, 30 sec at 60fps)
+const MAX_POSITION_HISTORY = 1800;
+
 interface AnimationDebugData {
   rotation: number;
   scale: number;
@@ -824,8 +827,14 @@ export function AnimationDebugOverlay({
             }
           : { x: 0, y: 0, shadow: shadowRect.width, innerGlowX: 0, innerGlowY: 0, outerGlowX: 0, outerGlowY: 0 };
 
-        // Always accumulate data to position history
-        setPositionHistory(prev => [...prev, deviation]);
+        // Always accumulate data to position history (with limit to prevent memory leak)
+        setPositionHistory(prev => {
+          const updated = [...prev, deviation];
+          // Keep only the most recent entries
+          return updated.length > MAX_POSITION_HISTORY
+            ? updated.slice(-MAX_POSITION_HISTORY)
+            : updated;
+        });
 
         // Maintain circular pre-motion buffer (rolling window of recent frames)
         if (positionHistory.length > 0) {
@@ -1230,59 +1239,13 @@ export function AnimationDebugOverlay({
           </div>
         </div>
 
-        <div className="mt-3 pt-3 border-t border-green-400/30 flex gap-2">
-          <button
-            onClick={toggleLogging}
-            className={`flex-1 px-2 py-1 text-[10px] font-bold rounded ${
-              isLogging
-                ? 'bg-red-600 text-white'
-                : 'bg-green-600 text-white'
-            } hover:opacity-80 transition-opacity`}
-          >
-            {isLogging ? '⏹ STOP LOG' : '⏺ START LOG'}
-          </button>
-          <button
-            onClick={downloadLog}
-            disabled={!localStorage.getItem('anty-animation-log') || localStorage.getItem('anty-animation-log') === '[]'}
-            className={`flex-1 px-2 py-1 text-[10px] font-bold rounded ${
-              !localStorage.getItem('anty-animation-log') || localStorage.getItem('anty-animation-log') === '[]'
-                ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                : 'bg-blue-600 text-white hover:opacity-80'
-            } transition-opacity`}
-          >
-            📥 DOWNLOAD
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowPositionTracker(!showPositionTracker);
-              if (showPositionTracker) {
-                // Reset on close
-                setPositionHistory([]);
-                setSnapshotCards([]);
-                cardIdCounter.current = 0;
-                setTrackerWasDragged(false); // Reset to default position next time
-                setBaselinePosition(null); // Reset baseline
-              }
-            }}
-            className={`px-2 py-1 text-[10px] font-bold rounded ${
-              showPositionTracker
-                ? 'bg-cyan-600 text-white'
-                : 'bg-gray-600 text-white'
-            } hover:opacity-80 transition-opacity`}
-            title="Position Tracker"
-          >
-            📊
-          </button>
-        </div>
       </div>
       </div>
 
-      {/* Position Tracker Panel */}
-      {showPositionTracker && (
-        <div
+      {/* Position Tracker Panel - always visible with debug overlay */}
+      <div
           ref={trackerRef}
-          className="fixed bg-black/70 text-white rounded-lg font-mono text-xs z-50 w-[280px] border-2 border-cyan-500/50 flex flex-col"
+          className="fixed bg-black/70 text-white rounded-lg font-mono text-xs z-50 w-[280px] border-2 border-cyan-500/50 flex flex-col overflow-hidden"
           style={{
             left: trackerWasDragged ? `${trackerPosition.x}px` : undefined,
             top: trackerWasDragged ? `${trackerPosition.y}px` : '80px', // Align with debug panel top
@@ -1296,37 +1259,25 @@ export function AnimationDebugOverlay({
             className="p-3 pb-2 border-b border-cyan-400/30 cursor-grab"
             onMouseDown={handleTrackerMouseDown}
           >
-            <div className="flex items-center justify-between mb-1">
+            <div className="mb-1">
               <span className="text-cyan-400 font-bold text-[10px]">POSITION TRACKER</span>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setBaselinePosition({ x: debugData.x, y: debugData.y });
-                  setPositionHistory([]);
-                  setSnapshotCards([]);
-                  cardIdCounter.current = 0;
-                  currentBaseSequenceRef.current = getBaseSequence(currentSequence);
-                }}
-                className="px-1.5 py-0.5 text-[9px] font-bold rounded bg-purple-600 text-white hover:opacity-80 transition-opacity"
-                title="Reset baseline to current position"
-              >
-                🎯 RESET
-              </button>
             </div>
             <div className="text-[9px] text-gray-400">
               Deviation from baseline (Δx, Δy)
             </div>
           </div>
 
-          {/* Scrollable content area - stack from bottom upward */}
+          {/* Scrollable content area */}
           <div
             ref={scrollContainerRef}
-            className="overflow-y-auto flex-1 p-3 pt-2 scroll-smooth flex flex-col justify-end"
+            className="overflow-y-auto overflow-x-hidden flex-1 p-3 pt-2 scroll-smooth flex flex-col"
             style={{
               scrollbarWidth: 'thin',
               scrollbarColor: '#0891b2 rgba(0,0,0,0.5)',
+              minHeight: 0, // Required for flex child to scroll properly
             }}
             onMouseDown={(e) => e.stopPropagation()}
+            onWheel={(e) => e.stopPropagation()} // Allow scroll wheel to work
             onMouseEnter={() => setIsHoveringSnapshots(true)}
             onMouseLeave={() => setIsHoveringSnapshots(false)}
           >
@@ -1376,8 +1327,10 @@ export function AnimationDebugOverlay({
                 </div>
               );
             })}
+          </div>
 
-            {/* Current live plot - always at bottom */}
+          {/* Current live plot - pinned at bottom, outside scroll area */}
+          <div className="p-3 pt-2 border-t border-cyan-400/30">
             <div className="bg-black/50 p-2 rounded border border-cyan-400">
               <div className="flex justify-between items-center mb-1">
                 <span className="text-cyan-300 text-[9px] font-bold">{currentMotionLabel}</span>
@@ -1412,7 +1365,6 @@ export function AnimationDebugOverlay({
             </div>
           </div>
         </div>
-      )}
     </>
   );
 }

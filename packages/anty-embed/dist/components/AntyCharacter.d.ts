@@ -9,6 +9,8 @@ export interface AntyCharacterProps {
     isSuperMode?: boolean;
     /** Freeze all animations (idle, breathing, etc.) for static display */
     frozen?: boolean;
+    /** Logo mode: OFF eyes at full color, no shadow/glow, no blinks. Emotions can play but return to logo eyes. */
+    logoMode?: boolean;
     /** Whether search mode is active (external control - deprecated, use searchEnabled instead) */
     searchMode?: boolean;
     /** Whether to show debug overlays */
@@ -76,6 +78,8 @@ export interface AntyCharacterHandle {
     startLook?: (direction: 'left' | 'right') => void;
     endLook?: () => void;
     setSuperMode?: (scale: number | null) => void;
+    powerOff?: () => void;
+    wakeUp?: () => void;
     showGlows?: (fadeIn?: boolean) => void;
     hideGlows?: () => void;
     hideShadow?: () => void;

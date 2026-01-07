@@ -34,6 +34,7 @@ export interface EmotionElements {
  * @param config - Declarative emotion configuration
  * @param elements - DOM elements to animate
  * @param sizeScale - Scale factor for the character (size / 160)
+ * @param logoMode - If true, reset to logo eyes instead of idle after emotion
  * @returns GSAP timeline ready to play
  */
-export declare function interpretEmotionConfig(config: EmotionConfig, elements: EmotionElements, sizeScale?: number): gsap.core.Timeline;
+export declare function interpretEmotionConfig(config: EmotionConfig, elements: EmotionElements, sizeScale?: number, logoMode?: boolean): gsap.core.Timeline;

@@ -57,6 +57,8 @@ export interface UseAnimationControllerOptions extends ControllerConfig {
     onAnimationSequenceChange?: (sequence: string) => void;
     /** Whether character is powered off */
     isOff?: boolean;
+    /** Logo mode: OFF eyes at full color, no shadow/glow, no blinks */
+    logoMode?: boolean;
     /** Whether in search mode */
     searchMode?: boolean;
     /** Auto-start idle on mount */

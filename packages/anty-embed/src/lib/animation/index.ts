@@ -62,7 +62,7 @@ export * from './constants';
 export { ENABLE_ANIMATION_DEBUG_LOGS, logAnimationEvent } from './feature-flags';
 
 // Initialize
-export { initializeCharacter, resetEyesToIdle } from './initialize';
+export { initializeCharacter, resetEyesToIdle, resetEyesToLogo } from './initialize';
 
 // Definitions
 export { EMOTION_CONFIGS, getEmotionConfig, GLOW_CONSTANTS } from './definitions/emotions';

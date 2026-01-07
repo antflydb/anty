@@ -34,6 +34,8 @@ export interface CharacterElements {
 export interface InitializeOptions {
   /** Whether character starts in OFF state */
   isOff?: boolean;
+  /** Logo mode: OFF eyes at full color, no shadow/glow */
+  logoMode?: boolean;
   /** Scale factor for the character (size / 160) */
   sizeScale?: number;
 }
@@ -54,7 +56,7 @@ export function initializeCharacter(
   elements: CharacterElements,
   options: InitializeOptions = {}
 ): void {
-  const { isOff = false, sizeScale = 1 } = options;
+  const { isOff = false, logoMode = false, sizeScale = 1 } = options;
   const {
     character,
     shadow,
@@ -70,26 +72,29 @@ export function initializeCharacter(
     rightBody,
   } = elements;
 
+  // Use OFF eyes for both isOff and logoMode, but only dim character for isOff
+  const useOffEyes = isOff || logoMode;
+
   // ===========================
   // Character transforms
   // ===========================
   gsap.set(character, {
     x: 0,
     y: 0,
-    scale: isOff ? 0.65 : 1,
+    scale: isOff ? 0.65 : 1, // Only shrink for OFF, not logoMode
     rotation: 0,
     rotationY: 0,
-    opacity: isOff ? 0.25 : 1,
+    opacity: isOff ? 0.25 : 1, // Only dim for OFF, not logoMode
     transformOrigin: 'center center',
   });
 
   // ===========================
   // Eye containers - position and transforms
   // ===========================
-  // OFF state: eyes move closer together (logo position)
+  // OFF/logo state: eyes move closer together (logo position)
   // Pixel values scaled by sizeScale (designed for 160px base)
-  const eyeOffsetX = isOff ? 3 * sizeScale : 0; // px toward center (scaled)
-  const eyeOffsetY = isOff ? 3 * sizeScale : 0; // px down (scaled)
+  const eyeOffsetX = useOffEyes ? 3 * sizeScale : 0; // px toward center (scaled)
+  const eyeOffsetY = useOffEyes ? 3 * sizeScale : 0; // px down (scaled)
 
   if (eyeLeft) {
     gsap.set(eyeLeft, {
@@ -116,13 +121,13 @@ export function initializeCharacter(
   // Eye SVG paths - IDLE or OFF shape based on state
   // ===========================
   if (eyeLeftPath) {
-    const leftShape: EyeShapeName = isOff ? 'OFF_LEFT' : 'IDLE';
+    const leftShape: EyeShapeName = useOffEyes ? 'OFF_LEFT' : 'IDLE';
     gsap.set(eyeLeftPath, {
       attr: { d: getEyeShape(leftShape, 'left') },
     });
   }
   if (eyeRightPath) {
-    const rightShape: EyeShapeName = isOff ? 'OFF_RIGHT' : 'IDLE';
+    const rightShape: EyeShapeName = useOffEyes ? 'OFF_RIGHT' : 'IDLE';
     gsap.set(eyeRightPath, {
       attr: { d: getEyeShape(rightShape, 'right') },
     });
@@ -132,7 +137,7 @@ export function initializeCharacter(
   // Eye SVG viewBox - IDLE or OFF dimensions
   // ===========================
   if (eyeLeftSvg && eyeRightSvg) {
-    const dimensions = isOff ? getEyeDimensions('OFF_LEFT') : getEyeDimensions('IDLE');
+    const dimensions = useOffEyes ? getEyeDimensions('OFF_LEFT') : getEyeDimensions('IDLE');
     gsap.set([eyeLeftSvg, eyeRightSvg], {
       attr: { viewBox: dimensions.viewBox },
     });
@@ -142,7 +147,7 @@ export function initializeCharacter(
   // Eye container dimensions - match the shape, scaled appropriately
   // ===========================
   if (eyeLeft && eyeRight) {
-    const dimensions = isOff ? getEyeDimensions('OFF_LEFT') : getEyeDimensions('IDLE');
+    const dimensions = useOffEyes ? getEyeDimensions('OFF_LEFT') : getEyeDimensions('IDLE');
     gsap.set([eyeLeft, eyeRight], {
       width: dimensions.width * sizeScale,
       height: dimensions.height * sizeScale,
@@ -153,6 +158,7 @@ export function initializeCharacter(
   // Shadow - initial state before ShadowTracker takes over
   // When ON: grounded state (full size, visible)
   // When OFF: shrunk state (wake-up will fade it in)
+  // When logoMode: hidden (no shadow for logo state)
   // After init, ShadowTracker dynamically updates based on character Y
   // ===========================
   if (shadow) {
@@ -160,7 +166,7 @@ export function initializeCharacter(
       xPercent: -50,
       scaleX: isOff ? 0.7 : 1,
       scaleY: isOff ? 0.55 : 1,
-      opacity: isOff ? 0.2 : 0.7,
+      opacity: logoMode ? 0 : (isOff ? 0.2 : 0.7), // Hidden in logoMode
     });
   }
 
@@ -173,7 +179,7 @@ export function initializeCharacter(
       x: 0,
       y: 0,
       scale: isOff ? 0.65 : 1,
-      opacity: isOff ? 0 : 1,
+      opacity: (isOff || logoMode) ? 0 : 1, // Hidden in both OFF and logoMode
     });
   }
 
@@ -265,6 +271,111 @@ export function resetEyesToIdle(
     rotation: 0,
     x: 0,
     y: 0,
+    duration,
+    ease: 'power2.inOut',
+  }, 0);
+
+  return timeline;
+}
+
+/**
+ * Reset eyes to LOGO/OFF state
+ *
+ * Used after emotion animations in logo mode to return eyes to logo state.
+ * Similar to resetEyesToIdle but uses OFF eye shapes.
+ *
+ * @param elements - Eye elements to reset
+ * @param duration - Animation duration (0 for instant)
+ * @param sizeScale - Scale factor for the character
+ */
+export function resetEyesToLogo(
+  elements: Pick<CharacterElements, 'eyeLeft' | 'eyeRight' | 'eyeLeftPath' | 'eyeRightPath' | 'eyeLeftSvg' | 'eyeRightSvg'>,
+  duration = 0,
+  sizeScale = 1
+): gsap.core.Timeline | void {
+  const { eyeLeft, eyeRight, eyeLeftPath, eyeRightPath, eyeLeftSvg, eyeRightSvg } = elements;
+
+  if (!eyeLeft || !eyeRight || !eyeLeftPath || !eyeRightPath || !eyeLeftSvg || !eyeRightSvg) {
+    return;
+  }
+
+  const offDimensions = getEyeDimensions('OFF_LEFT');
+  const eyeOffsetX = 3 * sizeScale; // Logo position offset
+  const eyeOffsetY = 3 * sizeScale;
+
+  if (duration === 0) {
+    // Instant reset to logo eyes
+    gsap.set(eyeLeftPath, {
+      attr: { d: getEyeShape('OFF_LEFT', 'left') },
+    });
+    gsap.set(eyeRightPath, {
+      attr: { d: getEyeShape('OFF_RIGHT', 'right') },
+    });
+    gsap.set([eyeLeftSvg, eyeRightSvg], {
+      attr: { viewBox: offDimensions.viewBox },
+    });
+    gsap.set([eyeLeft, eyeRight], {
+      width: offDimensions.width * sizeScale,
+      height: offDimensions.height * sizeScale,
+    });
+    gsap.set(eyeLeft, {
+      scaleX: 1,
+      scaleY: 1,
+      rotation: 0,
+      x: eyeOffsetX,
+      y: eyeOffsetY,
+    });
+    gsap.set(eyeRight, {
+      scaleX: 1,
+      scaleY: 1,
+      rotation: 0,
+      x: -eyeOffsetX,
+      y: eyeOffsetY,
+    });
+    return;
+  }
+
+  // Animated reset to logo eyes
+  const timeline = gsap.timeline();
+
+  timeline.to(eyeLeftPath, {
+    attr: { d: getEyeShape('OFF_LEFT', 'left') },
+    duration,
+    ease: 'power2.inOut',
+  }, 0);
+
+  timeline.to(eyeRightPath, {
+    attr: { d: getEyeShape('OFF_RIGHT', 'right') },
+    duration,
+    ease: 'power2.inOut',
+  }, 0);
+
+  timeline.to([eyeLeftSvg, eyeRightSvg], {
+    attr: { viewBox: offDimensions.viewBox },
+    duration,
+    ease: 'power2.inOut',
+  }, 0);
+
+  timeline.to([eyeLeft, eyeRight], {
+    width: offDimensions.width * sizeScale,
+    height: offDimensions.height * sizeScale,
+    scaleX: 1,
+    scaleY: 1,
+    rotation: 0,
+    duration,
+    ease: 'power2.inOut',
+  }, 0);
+
+  timeline.to(eyeLeft, {
+    x: eyeOffsetX,
+    y: eyeOffsetY,
+    duration,
+    ease: 'power2.inOut',
+  }, 0);
+
+  timeline.to(eyeRight, {
+    x: -eyeOffsetX,
+    y: eyeOffsetY,
     duration,
     ease: 'power2.inOut',
   }, 0);

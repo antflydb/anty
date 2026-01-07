@@ -29,6 +29,8 @@ export interface CharacterElements {
 export interface InitializeOptions {
     /** Whether character starts in OFF state */
     isOff?: boolean;
+    /** Logo mode: OFF eyes at full color, no shadow/glow */
+    logoMode?: boolean;
     /** Scale factor for the character (size / 160) */
     sizeScale?: number;
 }
@@ -55,3 +57,14 @@ export declare function initializeCharacter(elements: CharacterElements, options
  * @param duration - Animation duration (0 for instant)
  */
 export declare function resetEyesToIdle(elements: Pick<CharacterElements, 'eyeLeft' | 'eyeRight' | 'eyeLeftPath' | 'eyeRightPath' | 'eyeLeftSvg' | 'eyeRightSvg'>, duration?: number, sizeScale?: number): gsap.core.Timeline | void;
+/**
+ * Reset eyes to LOGO/OFF state
+ *
+ * Used after emotion animations in logo mode to return eyes to logo state.
+ * Similar to resetEyesToIdle but uses OFF eye shapes.
+ *
+ * @param elements - Eye elements to reset
+ * @param duration - Animation duration (0 for instant)
+ * @param sizeScale - Scale factor for the character
+ */
+export declare function resetEyesToLogo(elements: Pick<CharacterElements, 'eyeLeft' | 'eyeRight' | 'eyeLeftPath' | 'eyeRightPath' | 'eyeLeftSvg' | 'eyeRightSvg'>, duration?: number, sizeScale?: number): gsap.core.Timeline | void;

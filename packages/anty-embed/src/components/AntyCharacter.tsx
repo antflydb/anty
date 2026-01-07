@@ -7,7 +7,7 @@ import { AntyParticleCanvas, type ParticleCanvasHandle } from './AntyParticleCan
 import { AntySearchBar } from './AntySearchBar';
 import { useAnimationController } from '../hooks/use-animation-controller';
 import { useSearchMorph, type SearchBarRefs } from '../hooks/use-search-morph';
-import { type EmotionType, type ExpressionName } from '../lib/animation/types';
+import { type EmotionType, type ExpressionName, AnimationState } from '../lib/animation/types';
 import { type SearchBarConfig, DEFAULT_SEARCH_BAR_CONFIG } from '../types';
 import { type Particle } from '../lib/particles';
 import {
@@ -32,6 +32,8 @@ export interface AntyCharacterProps {
   isSuperMode?: boolean;
   /** Freeze all animations (idle, breathing, etc.) for static display */
   frozen?: boolean;
+  /** Logo mode: OFF eyes at full color, no shadow/glow, no blinks. Emotions can play but return to logo eyes. */
+  logoMode?: boolean;
   /** Whether search mode is active (external control - deprecated, use searchEnabled instead) */
   searchMode?: boolean;
   /** Whether to show debug overlays */
@@ -104,6 +106,9 @@ export interface AntyCharacterHandle {
   endLook?: () => void;
   // Super mode
   setSuperMode?: (scale: number | null) => void;
+  // Power off/on transitions
+  powerOff?: () => void;
+  wakeUp?: () => void;
   // Glow control
   showGlows?: (fadeIn?: boolean) => void;
   hideGlows?: () => void;
@@ -346,6 +351,7 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
   size = 160,
   isSuperMode = false,
   frozen = false,
+  logoMode = false,
   searchMode = false,
   debugMode = false,
   showShadow = true,
@@ -475,8 +481,9 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
       maxQueueSize: 10,
       defaultPriority: 2,
       isOff,
+      logoMode,
       searchMode: searchMode || isSearchActive, // Include internal search state
-      autoStartIdle: !frozen, // Disable idle animation when frozen
+      autoStartIdle: !frozen && !logoMode, // Disable idle animation when frozen or in logo mode
       sizeScale, // Pass scale factor for proper eye sizing
       onStateChange: (from, to) => {
         if (ENABLE_ANIMATION_DEBUG_LOGS) {
@@ -974,6 +981,13 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
     },
     hideGlows: () => {
       animationController.hideGlows();
+    },
+    // Power off/on transitions
+    powerOff: () => {
+      animationController.transitionTo(AnimationState.OFF);
+    },
+    wakeUp: () => {
+      animationController.transitionTo(AnimationState.IDLE);
     },
     // Search bar morph (when searchEnabled)
     morphToSearchBar: searchEnabled ? internalMorphToSearchBar : undefined,

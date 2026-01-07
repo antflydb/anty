@@ -150,10 +150,21 @@ export default function EmbedDemoPage() {
   const [showHotkey, setShowHotkey] = useState(true);
   const [hotkey, setHotkey] = useState('⌘K');
 
+  // Logo mode - static logo state (OFF eyes, no shadow/glow, no animations)
+  const [logoMode, setLogoMode] = useState(false);
+
+  // Emotions enabled - triggers power off/on animation
+  const [emotionsEnabled, setEmotionsEnabled] = useState(true);
+
   // Reset search mode when component will remount due to key change
   useEffect(() => {
     setIsSearchMode(false);
-  }, [size, searchEnabled, frozen, barWidth, barHeight, showHotkey]);
+  }, [size, searchEnabled, frozen, barWidth, barHeight, showHotkey, logoMode]);
+
+  const toggleEmotions = (enabled: boolean) => {
+    setEmotionsEnabled(enabled);
+    // The expression prop change will trigger power-off/wake-up animation
+  };
 
   const playEmotion = (emotion: EmotionType) => {
     antyRef.current?.playEmotion?.(emotion);
@@ -162,7 +173,24 @@ export default function EmbedDemoPage() {
 
   const toggleSuperMode = (enabled: boolean) => {
     setIsSuperMode(enabled);
-    antyRef.current?.setSuperMode?.(enabled ? 1.45 : null);
+    if (enabled) {
+      // Play super mode grow animation (like main page)
+      antyRef.current?.playEmotion?.('super');
+      antyRef.current?.setSuperMode?.(1.45);
+    } else {
+      // Exit super mode with shrink animation
+      antyRef.current?.setSuperMode?.(null);
+      const characterElement = antyRef.current?.characterRef?.current;
+      if (characterElement) {
+        import('gsap').then(({ default: gsap }) => {
+          gsap.to(characterElement, {
+            scale: 1,
+            duration: 0.3,
+            ease: 'power2.out',
+          });
+        });
+      }
+    }
   };
 
   const toggleSearchMode = () => {
@@ -197,26 +225,24 @@ export default function EmbedDemoPage() {
           <div
             style={{
               position: 'relative',
-              backgroundColor: '#f8fafc',
-              borderRadius: '16px',
               padding: '48px',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
               minHeight: '400px',
-              border: '1px solid #e2e8f0',
             }}
           >
             <AntyCharacter
-              key={`anty-${size}-${searchEnabled}-${frozen}-${barWidth}-${barHeight}-${showHotkey}`}
+              key={`anty-${size}-${searchEnabled}-${frozen}-${barWidth}-${barHeight}-${showHotkey}-${logoMode}`}
               ref={antyRef}
               size={size}
-              expression="idle"
-              showShadow={showShadow}
-              showGlow={showGlow}
+              expression={emotionsEnabled ? 'idle' : 'off'}
+              showShadow={showShadow && !logoMode}
+              showGlow={showGlow && !logoMode}
               frozen={frozen}
               isSuperMode={isSuperMode}
+              logoMode={logoMode}
               searchEnabled={searchEnabled}
               searchPlaceholder={placeholder}
               searchShortcut={showHotkey ? hotkey : undefined}
@@ -249,10 +275,7 @@ export default function EmbedDemoPage() {
           {/* Controls */}
           <div
             style={{
-              backgroundColor: '#f8fafc',
-              borderRadius: '16px',
               padding: '24px',
-              border: '1px solid #e2e8f0',
             }}
           >
             <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '20px' }}>
@@ -327,23 +350,34 @@ export default function EmbedDemoPage() {
                 Options
               </label>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: logoMode ? 'not-allowed' : 'pointer', opacity: logoMode ? 0.5 : 1 }}>
                   <input
                     type="checkbox"
                     checked={showShadow}
                     onChange={(e) => setShowShadow(e.target.checked)}
+                    disabled={logoMode}
                     style={{ width: '18px', height: '18px', accentColor: '#8B5CF6' }}
                   />
                   <span style={{ fontSize: '14px', color: '#334155' }}>Show Shadow</span>
                 </label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: logoMode ? 'not-allowed' : 'pointer', opacity: logoMode ? 0.5 : 1 }}>
                   <input
                     type="checkbox"
                     checked={showGlow}
                     onChange={(e) => setShowGlow(e.target.checked)}
+                    disabled={logoMode}
                     style={{ width: '18px', height: '18px', accentColor: '#8B5CF6' }}
                   />
                   <span style={{ fontSize: '14px', color: '#334155' }}>Show Glow</span>
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={logoMode}
+                    onChange={(e) => setLogoMode(e.target.checked)}
+                    style={{ width: '18px', height: '18px', accentColor: '#8B5CF6' }}
+                  />
+                  <span style={{ fontSize: '14px', color: '#334155' }}>Logo Mode</span>
                 </label>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
                   <input
@@ -523,7 +557,7 @@ export default function EmbedDemoPage() {
                     fontWeight: 500,
                   }}
                 >
-                  {isSuperMode ? 'Exit Super Mode' : 'Super Mode (1.45x)'}
+                  {isSuperMode ? 'Exit Super Mode' : 'Super Mode'}
                 </button>
                 {searchEnabled && (
                   <button
@@ -552,46 +586,88 @@ export default function EmbedDemoPage() {
         {/* Emotions Grid */}
         <div
           style={{
-            backgroundColor: '#f8fafc',
-            borderRadius: '16px',
             padding: '32px',
-            border: '1px solid #e2e8f0',
             marginBottom: '48px',
           }}
         >
-          <h3 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '20px' }}>
-            Emotions
-          </h3>
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
-              gap: '12px',
-            }}
-          >
-            {EMOTIONS.map((emotion) => (
-              <button
-                key={emotion}
-                onClick={() => playEmotion(emotion)}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: emotionsEnabled ? '20px' : '0' }}>
+            <h3 style={{ fontSize: '18px', fontWeight: 600, margin: 0 }}>
+              Emotions
+            </h3>
+            {/* Toggle switch */}
+            <button
+              onClick={() => toggleEmotions(!emotionsEnabled)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '4px',
+                border: 'none',
+                background: 'transparent',
+                cursor: 'pointer',
+              }}
+            >
+              <span style={{ fontSize: '13px', color: emotionsEnabled ? '#334155' : '#94a3b8' }}>
+                {emotionsEnabled ? 'On' : 'Off'}
+              </span>
+              <div
                 style={{
-                  padding: '12px 16px',
+                  width: '44px',
+                  height: '24px',
                   borderRadius: '12px',
-                  border: '1px solid #e2e8f0',
-                  background: lastEmotion === emotion
-                    ? 'linear-gradient(to right, rgba(139, 92, 246, 0.15), rgba(236, 72, 153, 0.15))'
-                    : '#ffffff',
-                  color: lastEmotion === emotion ? '#7c3aed' : '#334155',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  fontWeight: 500,
-                  textTransform: 'capitalize',
-                  transition: 'all 0.2s',
+                  background: emotionsEnabled ? '#8B5CF6' : '#e2e8f0',
+                  position: 'relative',
+                  transition: 'background 0.2s',
                 }}
               >
-                {emotion}
-              </button>
-            ))}
+                <div
+                  style={{
+                    width: '20px',
+                    height: '20px',
+                    borderRadius: '10px',
+                    background: '#ffffff',
+                    position: 'absolute',
+                    top: '2px',
+                    left: emotionsEnabled ? '22px' : '2px',
+                    transition: 'left 0.2s',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                  }}
+                />
+              </div>
+            </button>
           </div>
+          {emotionsEnabled && (
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
+                gap: '12px',
+              }}
+            >
+              {EMOTIONS.map((emotion) => (
+                <button
+                  key={emotion}
+                  onClick={() => playEmotion(emotion)}
+                  style={{
+                    padding: '12px 16px',
+                    borderRadius: '12px',
+                    border: '1px solid #e2e8f0',
+                    background: lastEmotion === emotion
+                      ? 'linear-gradient(to right, rgba(139, 92, 246, 0.15), rgba(236, 72, 153, 0.15))'
+                      : '#ffffff',
+                    color: lastEmotion === emotion ? '#7c3aed' : '#334155',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: 500,
+                    textTransform: 'capitalize',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  {emotion}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Code Example */}

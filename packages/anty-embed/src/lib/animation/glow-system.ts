@@ -159,8 +159,12 @@ export function createGlowSystem(
     time += deltaTime;
 
     // Get character's current position
-    const characterX = gsap.getProperty(character, 'x') as number;
-    const characterY = gsap.getProperty(character, 'y') as number;
+    const rawX = gsap.getProperty(character, 'x');
+    const rawY = gsap.getProperty(character, 'y');
+
+    // DEFENSIVE: Ensure we get valid numbers, default to 0
+    const characterX = typeof rawX === 'number' && isFinite(rawX) ? rawX : 0;
+    const characterY = typeof rawY === 'number' && isFinite(rawY) ? rawY : 0;
 
     // --- OUTER GLOW: follows character ---
     updateSpring(outerSpring, characterX, characterY, cfg.outerStiffness, cfg.damping);
@@ -180,15 +184,18 @@ export function createGlowSystem(
     const innerOscillationY = (1 - Math.cos(phase + cfg.innerPhaseOffset)) * cfg.innerOscillationAmplitudeY * 0.5;
 
     // --- APPLY POSITIONS ---
-    gsap.set(outerGlow, {
-      x: outerSpring.x + outerOscillationX,
-      y: outerSpring.y + outerOscillationY,
-    });
+    const outerX = outerSpring.x + outerOscillationX;
+    const outerY = outerSpring.y + outerOscillationY;
+    const innerX = innerSpring.x + innerOscillationX;
+    const innerY = innerSpring.y + innerOscillationY;
 
-    gsap.set(innerGlow, {
-      x: innerSpring.x + innerOscillationX,
-      y: innerSpring.y + innerOscillationY,
-    });
+    // Debug: log if values are unexpectedly large
+    if (Math.abs(outerX) > 100 || Math.abs(outerY) > 100) {
+      console.warn('[GlowSystem] Large values detected:', { outerX, outerY, innerX, innerY, characterX, characterY });
+    }
+
+    gsap.set(outerGlow, { x: outerX, y: outerY });
+    gsap.set(innerGlow, { x: innerX, y: innerY });
   }
 
   /**
@@ -285,8 +292,18 @@ export function createGlowSystem(
    * Useful after teleporting character or on initialization
    */
   function snapToCharacter(): void {
-    const characterX = gsap.getProperty(character, 'x') as number;
-    const characterY = gsap.getProperty(character, 'y') as number;
+    const rawX = gsap.getProperty(character, 'x');
+    const rawY = gsap.getProperty(character, 'y');
+
+    // DEFENSIVE: Ensure we get valid numbers, default to 0
+    // gsap.getProperty can return unexpected values before element is fully initialized
+    const characterX = typeof rawX === 'number' && isFinite(rawX) ? rawX : 0;
+    const characterY = typeof rawY === 'number' && isFinite(rawY) ? rawY : 0;
+
+    // Debug: Log if we got unexpected values
+    if (rawX !== characterX || rawY !== characterY) {
+      console.warn('[GlowSystem] snapToCharacter got invalid values, using 0:', { rawX, rawY });
+    }
 
     // Reset outer spring
     outerSpring.x = characterX;

@@ -10,7 +10,7 @@ export { createGlowSystem, type GlowSystemControls } from './glow-system';
 export { createShadowTracker, type ShadowTrackerControls } from './shadow';
 export * from './constants';
 export { ENABLE_ANIMATION_DEBUG_LOGS, logAnimationEvent } from './feature-flags';
-export { initializeCharacter, resetEyesToIdle } from './initialize';
+export { initializeCharacter, resetEyesToIdle, resetEyesToLogo } from './initialize';
 export { EMOTION_CONFIGS, getEmotionConfig, GLOW_CONSTANTS } from './definitions/emotions';
 export { createIdleAnimation } from './definitions/idle';
 export { createEyeAnimation, createLookAnimation, createReturnFromLookAnimation } from './definitions/eye-animations';

@@ -1132,33 +1132,34 @@ export default function Anty() {
                 />
               )}
 
-              {/* Debug overlays for glows - track internal AntyCharacter glow elements */}
-              {debugMode && (
-                <>
-                  <div
-                    id="debug-inner-glow"
-                    className="fixed pointer-events-none z-[10000]"
-                    style={{
-                      width: '120px',
-                      height: '90px',
-                      border: '2px dashed #a855f7',
-                      borderRadius: '50%',
-                    }}
-                  />
-                  <div
-                    id="debug-outer-glow"
-                    className="fixed pointer-events-none z-[10000]"
-                    style={{
-                      width: '200px',
-                      height: '150px',
-                      border: '2px dashed #ec4899',
-                      borderRadius: '50%',
-                    }}
-                  />
-                </>
-              )}
             </div>
           </div>
+
+          {/* Debug overlays for glows - MUST be outside transformed parents for fixed positioning to work */}
+          {debugMode && (
+            <>
+              <div
+                id="debug-inner-glow"
+                className="fixed pointer-events-none z-[10000]"
+                style={{
+                  width: '120px',
+                  height: '90px',
+                  border: '2px dashed #00ffff',
+                  borderRadius: '50%',
+                }}
+              />
+              <div
+                id="debug-outer-glow"
+                className="fixed pointer-events-none z-[10000]"
+                style={{
+                  width: '200px',
+                  height: '150px',
+                  border: '2px dashed #ff00ff',
+                  borderRadius: '50%',
+                }}
+              />
+            </>
+          )}
 
           <div
             className="action-buttons"
