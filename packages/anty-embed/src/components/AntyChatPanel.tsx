@@ -1,7 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { X, Send, Loader2, Key, MoreVertical, MessageSquarePlus, History, Trash2, ChevronLeft } from 'lucide-react';
 import gsap from 'gsap';
 import { AntyChat, type ChatMessage } from '../lib/chat/openai-client';
@@ -88,6 +87,7 @@ export function AntyChatPanel({ isOpen, onClose, onEmotion }: AntyChatPanelProps
   const [showHistory, setShowHistory] = useState(false);
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [currentSessionId, setCurrentSessionIdState] = useState<string | null>(null);
+  const [isVisible, setIsVisible] = useState(false); // For GSAP exit animation
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -98,8 +98,40 @@ export function AntyChatPanel({ isOpen, onClose, onEmotion }: AntyChatPanelProps
   const greetingInitiated = useRef(false);
   const inactivityTimerRef = useRef<NodeJS.Timeout | null>(null);
   const lastActivityRef = useRef<number>(Date.now());
+  const isAnimatingRef = useRef(false);
 
   const INACTIVITY_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+
+  // Handle panel enter/exit animations with GSAP (replaces Framer Motion)
+  useEffect(() => {
+    if (isOpen && !isVisible) {
+      // Opening: show immediately, then animate in
+      setIsVisible(true);
+    } else if (!isOpen && isVisible && panelRef.current && !isAnimatingRef.current) {
+      // Closing: animate out, then hide
+      isAnimatingRef.current = true;
+      gsap.to(panelRef.current, {
+        x: '100%',
+        duration: 0.3,
+        ease: 'power2.in',
+        onComplete: () => {
+          setIsVisible(false);
+          isAnimatingRef.current = false;
+        },
+      });
+    }
+  }, [isOpen, isVisible]);
+
+  // Animate panel in when it becomes visible
+  useEffect(() => {
+    if (isVisible && panelRef.current) {
+      gsap.fromTo(
+        panelRef.current,
+        { x: '100%' },
+        { x: 0, duration: 0.4, ease: 'power3.out' }
+      );
+    }
+  }, [isVisible]);
 
   // Auto-scroll to bottom when new messages arrive or panel opens
   useEffect(() => {
@@ -801,17 +833,13 @@ export function AntyChatPanel({ isOpen, onClose, onEmotion }: AntyChatPanelProps
   };
 
   return (
-    <AnimatePresence>
-      {isOpen && (
+    <>
+      {isVisible && (
         <>
           {/* Panel */}
-          <motion.div
+          <div
             ref={panelRef}
-            initial={{ x: '100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '100%' }}
-            transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            style={styles.panel}
+            style={{ ...styles.panel, transform: 'translateX(100%)' }}
           >
             {/* Header */}
             <div style={styles.header}>
@@ -1037,7 +1065,7 @@ export function AntyChatPanel({ isOpen, onClose, onEmotion }: AntyChatPanelProps
                 </div>
               </>
             )}
-          </motion.div>
+          </div>
 
           {/* CSS for spinner animation */}
           <style>{`
@@ -1048,6 +1076,6 @@ export function AntyChatPanel({ isOpen, onClose, onEmotion }: AntyChatPanelProps
           `}</style>
         </>
       )}
-    </AnimatePresence>
+    </>
   );
 }

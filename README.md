@@ -245,7 +245,6 @@ npm run dev
 
 - **React** - UI component library
 - **GSAP** - Animation engine for smooth, performant animations
-- **Framer Motion** - Declarative animations and gestures
 - **TypeScript** - Type-safe development
 - **OpenAI** - Chat integration with emotion mapping
 - **Vitest** - Unit testing
