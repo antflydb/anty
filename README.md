@@ -1,6 +1,6 @@
 # Anty
 
-An embeddable animated AI character for web applications. Anty is a friendly, expressive character that can display emotions, integrate with chat interfaces, and morph into a search bar.
+Embeddable animation system with 18 emotions, chat integration, particle effects, and search bar morphing.
 
 ## Features
 
@@ -18,17 +18,39 @@ An embeddable animated AI character for web applications. Anty is a friendly, ex
 
 ## Installation
 
+Add as a git subtree to your project:
+
 ```bash
-npm install @antflydb/anty-embed
+# Add anty to your project (one-time setup)
+git subtree add --prefix=packages/anty https://github.com/antflydb/anty.git main --squash
+
+# Pull updates when available
+git subtree pull --prefix=packages/anty https://github.com/antflydb/anty.git main --squash
 ```
 
-> **Note:** This package is hosted on GitHub Packages. You'll need to configure npm to authenticate with GitHub Packages. See [GitHub Packages documentation](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-npm-registry) for setup instructions.
+Then import from the local path:
+
+```tsx
+import { AntyCharacter } from './packages/anty/packages/anty-embed';
+```
+
+Or add a path alias in your `tsconfig.json`:
+
+```json
+{
+  "compilerOptions": {
+    "paths": {
+      "@anty/*": ["./packages/anty/packages/anty-embed/src/*"]
+    }
+  }
+}
+```
 
 ## Basic Usage
 
 ```tsx
 import { useRef } from 'react';
-import { AntyCharacter, type AntyCharacterHandle } from '@antflydb/anty-embed';
+import { AntyCharacter, type AntyCharacterHandle } from '@anty/components';
 
 function App() {
   const antyRef = useRef<AntyCharacterHandle>(null);

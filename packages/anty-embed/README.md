@@ -1,48 +1,26 @@
 # @antflydb/anty-embed
 
-Embeddable Anty character animation for web applications. Add an interactive search assistant to your website with minimal configuration.
+Core animation package for Anty. Provides the `AntyCharacter` component with 18 emotions, particle effects, chat integration, and search bar morphing.
 
 ## Installation
 
-This package is published to GitHub Packages. Configure npm to use GitHub Packages for the `@antflydb` scope:
+This package is typically installed via git subtree as part of the main anty repo. See the [main repository](https://github.com/antflydb/anty) for installation instructions.
 
-**1. Create or update `.npmrc` in your project root:**
-
-```
-@antflydb:registry=https://npm.pkg.github.com
-```
-
-**2. Authenticate with GitHub Packages:**
-
-You need a GitHub personal access token with `read:packages` scope. Set it in your environment:
-
-```bash
-npm login --scope=@antflydb --registry=https://npm.pkg.github.com
-```
-
-Or add to your `.npmrc`:
-
-```
-//npm.pkg.github.com/:_authToken=YOUR_GITHUB_TOKEN
-```
-
-**3. Install the package:**
-
-```bash
-npm install @antflydb/anty-embed
-```
-
-## Usage
+## Quick Start
 
 ```tsx
-import { AntyEmbed } from '@antflydb/anty-embed';
-import '@antflydb/anty-embed/styles.css';
+import { AntyCharacter, type AntyCharacterHandle } from '@anty/components';
+import { useRef } from 'react';
 
 function App() {
+  const antyRef = useRef<AntyCharacterHandle>(null);
+
   return (
-    <AntyEmbed
-      apiKey="your-openai-api-key"
-      assistantId="your-assistant-id"
+    <AntyCharacter
+      ref={antyRef}
+      size={160}
+      expression="idle"
+      showShadow={true}
     />
   );
 }
@@ -50,7 +28,7 @@ function App() {
 
 ## Documentation
 
-For full documentation, configuration options, and examples, see the [main repository](https://github.com/antflydb/anty).
+For full documentation, available emotions, props reference, and examples, see the [main repository](https://github.com/antflydb/anty).
 
 ## License
 
