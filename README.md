@@ -209,7 +209,7 @@ antyRef.current?.setSuperMode(null);
 
 ## Logo Mode
 
-For static branding use without animations:
+For static branding use without idle animations or shadow or glows- can still be sent emotion animations:
 
 ```tsx
 <AntyCharacter logoMode={true} />
