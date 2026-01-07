@@ -11723,8 +11723,13 @@ const AntyCharacter = react.forwardRef((props, ref) => {
             }
         };
         const handleClickOutside = (e) => {
+            const target = e.target;
+            // Ignore clicks on interactive elements (buttons, inputs, links)
+            if (target.closest('button, input, a, [role="button"]')) {
+                return;
+            }
             // Check if click is outside the container
-            if (containerRef.current && !containerRef.current.contains(e.target)) {
+            if (containerRef.current && !containerRef.current.contains(target)) {
                 internalMorphToCharacter();
             }
         };

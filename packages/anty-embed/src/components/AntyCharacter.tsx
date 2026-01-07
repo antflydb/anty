@@ -1058,8 +1058,13 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
     };
 
     const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      // Ignore clicks on interactive elements (buttons, inputs, links)
+      if (target.closest('button, input, a, [role="button"]')) {
+        return;
+      }
       // Check if click is outside the container
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      if (containerRef.current && !containerRef.current.contains(target)) {
         internalMorphToCharacter();
       }
     };
