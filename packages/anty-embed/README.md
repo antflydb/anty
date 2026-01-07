@@ -9,7 +9,7 @@ This package is typically installed via git subtree as part of the main anty rep
 ## Quick Start
 
 ```tsx
-import { AntyCharacter, type AntyCharacterHandle } from '@anty/components';
+import { AntyCharacter, type AntyCharacterHandle } from '@anty';
 import { useRef } from 'react';
 
 function App() {

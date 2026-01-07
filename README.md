@@ -18,39 +18,39 @@ Embeddable animation system with 18 emotions, chat integration, particle effects
 
 ## Installation
 
-Add as a git subtree to your project:
+**1. Add as a git subtree:**
 
 ```bash
 # Add anty to your project (one-time setup)
 git subtree add --prefix=packages/anty https://github.com/antflydb/anty.git main --squash
 
-# Pull updates when available
+# Pull updates later
 git subtree pull --prefix=packages/anty https://github.com/antflydb/anty.git main --squash
 ```
 
-Then import from the local path:
-
-```tsx
-import { AntyCharacter } from './packages/anty/packages/anty-embed';
-```
-
-Or add a path alias in your `tsconfig.json`:
+**2. Add path alias to your `tsconfig.json`:**
 
 ```json
 {
   "compilerOptions": {
     "paths": {
-      "@anty/*": ["./packages/anty/packages/anty-embed/src/*"]
+      "@anty": ["./packages/anty/packages/anty-embed/src/index.ts"]
     }
   }
 }
+```
+
+**3. Import and use:**
+
+```tsx
+import { AntyCharacter } from '@anty';
 ```
 
 ## Basic Usage
 
 ```tsx
 import { useRef } from 'react';
-import { AntyCharacter, type AntyCharacterHandle } from '@anty/components';
+import { AntyCharacter, type AntyCharacterHandle } from '@anty';
 
 function App() {
   const antyRef = useRef<AntyCharacterHandle>(null);
