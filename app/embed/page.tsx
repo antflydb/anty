@@ -172,14 +172,19 @@ export default function EmbedDemoPage() {
   };
 
   const toggleSuperMode = (enabled: boolean) => {
-    setIsSuperMode(enabled);
     if (enabled) {
+      setIsSuperMode(true);
       // Play super mode grow animation (like main page)
       antyRef.current?.playEmotion?.('super');
       antyRef.current?.setSuperMode?.(1.45);
     } else {
       // Exit super mode with shrink animation
+      // Clear super mode scale FIRST so any idle recreation uses baseScale = 1
       antyRef.current?.setSuperMode?.(null);
+      // Kill all animations to ensure idle is recreated fresh with scale 1
+      // This prevents the old idle (which captured scale 1.45) from interfering
+      antyRef.current?.killAll?.();
+
       const characterElement = antyRef.current?.characterRef?.current;
       if (characterElement) {
         import('gsap').then(({ default: gsap }) => {
@@ -187,8 +192,11 @@ export default function EmbedDemoPage() {
             scale: 1,
             duration: 0.3,
             ease: 'power2.out',
+            onComplete: () => setIsSuperMode(false), // Update state AFTER animation completes
           });
         });
+      } else {
+        setIsSuperMode(false);
       }
     }
   };
@@ -278,32 +286,27 @@ export default function EmbedDemoPage() {
               padding: '24px',
             }}
           >
-            <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '20px' }}>
-              Configuration
-            </h3>
-
             {/* Size Control */}
             <div style={{ marginBottom: '24px' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-                <label style={{ fontSize: '14px', color: '#64748b' }}>
-                  Size: <span style={{ fontWeight: 600, color: '#334155' }}>{size}px</span>
+                <label style={{ fontSize: '16px', fontWeight: 700, color: '#1e293b' }}>
+                  {size}px
                 </label>
-                {size !== 160 && (
-                  <button
-                    onClick={() => setSize(160)}
-                    style={{
-                      padding: '4px 8px',
-                      borderRadius: '4px',
-                      border: '1px solid #e2e8f0',
-                      background: '#ffffff',
-                      color: '#64748b',
-                      cursor: 'pointer',
-                      fontSize: '11px',
-                    }}
-                  >
-                    Reset
-                  </button>
-                )}
+                <button
+                  onClick={() => setSize(160)}
+                  style={{
+                    padding: '4px 8px',
+                    borderRadius: '4px',
+                    border: '1px solid #e2e8f0',
+                    background: '#ffffff',
+                    color: '#64748b',
+                    cursor: size !== 160 ? 'pointer' : 'default',
+                    fontSize: '11px',
+                    visibility: size !== 160 ? 'visible' : 'hidden',
+                  }}
+                >
+                  Reset
+                </button>
               </div>
               <input
                 type="range"
@@ -691,6 +694,7 @@ export default function EmbedDemoPage() {
               fontSize: '14px',
               lineHeight: '1.6',
               color: '#a5b4fc',
+              marginBottom: '16px',
             }}
           >
 {`import { AntyCharacter, type AntyCharacterHandle } from '@antfly/anty-embed';
@@ -711,9 +715,77 @@ function App() {
 
 // Trigger emotions programmatically
 antyRef.current?.playEmotion('happy');
-antyRef.current?.playEmotion('celebrate');
+antyRef.current?.playEmotion('celebrate');`}
+          </pre>
+          <pre
+            style={{
+              background: '#0f172a',
+              borderRadius: '12px',
+              padding: '24px',
+              overflow: 'auto',
+              fontSize: '14px',
+              lineHeight: '1.6',
+              color: '#a5b4fc',
+              marginBottom: '16px',
+            }}
+          >
+{`// Logo mode (static, no animations)
+<AntyCharacter logoMode={true} />`}
+          </pre>
+          <pre
+            style={{
+              background: '#0f172a',
+              borderRadius: '12px',
+              padding: '24px',
+              overflow: 'auto',
+              fontSize: '14px',
+              lineHeight: '1.6',
+              color: '#a5b4fc',
+              marginBottom: '16px',
+            }}
+          >
+{`// Power on/off
+<AntyCharacter expression="off" />  // powered off
+<AntyCharacter expression="idle" /> // powered on`}
+          </pre>
+          <pre
+            style={{
+              background: '#0f172a',
+              borderRadius: '12px',
+              padding: '24px',
+              overflow: 'auto',
+              fontSize: '14px',
+              lineHeight: '1.6',
+              color: '#a5b4fc',
+              marginBottom: '16px',
+            }}
+          >
+{`// Search bar mode
+<AntyCharacter
+  searchEnabled={true}
+  searchPlaceholder="Ask anything..."
+  searchShortcut="⌘K"
+  searchConfig={{ width: 642, height: 70 }}
+  onSearchOpen={() => console.log('opened')}
+  onSearchCloseComplete={() => console.log('closed')}
+/>
 
-// Super mode
+// Trigger search programmatically
+antyRef.current?.morphToSearchBar();
+antyRef.current?.morphToCharacter();`}
+          </pre>
+          <pre
+            style={{
+              background: '#0f172a',
+              borderRadius: '12px',
+              padding: '24px',
+              overflow: 'auto',
+              fontSize: '14px',
+              lineHeight: '1.6',
+              color: '#a5b4fc',
+            }}
+          >
+{`// Super mode
 antyRef.current?.setSuperMode(1.45);
 antyRef.current?.setSuperMode(null); // exit`}
           </pre>

@@ -19,6 +19,8 @@ export interface IdleAnimationOptions {
     delay?: number;
     /** Base scale for character (default: 1, use 1.45 for super mode) */
     baseScale?: number;
+    /** Size scale factor (size / 160) for proportional animations */
+    sizeScale?: number;
 }
 /**
  * Return type for createIdleAnimation

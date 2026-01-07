@@ -471,7 +471,7 @@ export function useAnimationController(
                 eyeLeftSvg: elements.eyeLeftSvg || undefined,
                 eyeRightSvg: elements.eyeRightSvg || undefined,
               },
-              { delay: 0, baseScale }
+              { delay: 0, baseScale, sizeScale }
             );
 
             // Register with controller - controller owns idle and blink scheduler
@@ -680,7 +680,7 @@ export function useAnimationController(
         eyeLeftSvg: elements.eyeLeftSvg || undefined,
         eyeRightSvg: elements.eyeRightSvg || undefined,
       },
-      { delay: 0, baseScale }
+      { delay: 0, baseScale, sizeScale }
     );
 
     // Register idle with controller - controller owns idle and blink scheduler
@@ -869,7 +869,7 @@ export function useAnimationController(
         eyeLeftSvg: elements.eyeLeftSvg || undefined,
         eyeRightSvg: elements.eyeRightSvg || undefined,
       },
-      { delay: 0, baseScale }
+      { delay: 0, baseScale, sizeScale }
     );
 
     // Register with controller - controller owns idle and blink scheduler
@@ -883,7 +883,7 @@ export function useAnimationController(
       resumeBlinks: idleResult.resumeBlinks,
       killBlinks: idleResult.killBlinks,
     });
-  }, [elements, enableLogging]);
+  }, [elements, enableLogging, sizeScale]);
 
   /**
    * Pause all animations

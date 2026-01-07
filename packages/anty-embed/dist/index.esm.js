@@ -7343,6 +7343,8 @@ class AnimationController {
  * DO NOT change without updating rotation.duration to match.
  */
 const IDLE_FLOAT = {
+    /** Vertical floating distance in pixels */
+    amplitude: 12,
     /** Animation duration in seconds - MUST match rotation duration */
     duration: 2.5,
     /** GSAP easing function for smooth sine wave motion */
@@ -7946,7 +7948,9 @@ function createReturnFromLookAnimation(elements, config = {}) {
  */
 function createIdleAnimation(elements, options = {}) {
     const { character, shadow: _shadow, eyeLeft, eyeRight, eyeLeftPath, eyeRightPath, eyeLeftSvg, eyeRightSvg } = elements;
-    const { delay = 0.2, baseScale = 1 } = options;
+    const { delay = 0.2, baseScale = 1, sizeScale = 1 } = options;
+    // Scale float amplitude by sizeScale so smaller characters have proportionally smaller bounce
+    const scaledAmplitude = IDLE_FLOAT.amplitude * sizeScale;
     // Create coordinated timeline with infinite repeat
     const timeline = gsapWithCSS.timeline({
         repeat: -1,
@@ -7990,7 +7994,7 @@ function createIdleAnimation(elements, options = {}) {
     // The timeline captures values at creation time, so absolute scale (baseScale * 1.02)
     // would target the wrong value if super mode was set after idle was created.
     timeline.to(character, {
-        y: -12, // Float up by amplitude (12px)
+        y: -scaledAmplitude, // Float up by scaled amplitude (proportional to size)
         rotation: IDLE_ROTATION.degrees, // Gentle rotation (2.5°)
         scale: `*=${IDLE_BREATHE.scaleMax}`, // Relative breathing (multiply by 1.02)
         duration: IDLE_FLOAT.duration, // Smooth timing (2.5s)
@@ -9992,7 +9996,7 @@ function useAnimationController(elements, options = {}) {
                             eyeRightPath: elements.eyeRightPath || undefined,
                             eyeLeftSvg: elements.eyeLeftSvg || undefined,
                             eyeRightSvg: elements.eyeRightSvg || undefined,
-                        }, { delay: 0, baseScale });
+                        }, { delay: 0, baseScale, sizeScale });
                         // Register with controller - controller owns idle and blink scheduler
                         const idleElements = [elements.character, elements.shadow].filter(Boolean);
                         controllerRef.current.startIdle(idleResult.timeline, idleElements, {
@@ -10177,7 +10181,7 @@ function useAnimationController(elements, options = {}) {
             eyeRightPath: elements.eyeRightPath || undefined,
             eyeLeftSvg: elements.eyeLeftSvg || undefined,
             eyeRightSvg: elements.eyeRightSvg || undefined,
-        }, { delay: 0, baseScale });
+        }, { delay: 0, baseScale, sizeScale });
         // Register idle with controller - controller owns idle and blink scheduler
         const idleElements = Array.from(new Set([
             elements.character,
@@ -10333,7 +10337,7 @@ function useAnimationController(elements, options = {}) {
             eyeRightPath: elements.eyeRightPath || undefined,
             eyeLeftSvg: elements.eyeLeftSvg || undefined,
             eyeRightSvg: elements.eyeRightSvg || undefined,
-        }, { delay: 0, baseScale });
+        }, { delay: 0, baseScale, sizeScale });
         // Register with controller - controller owns idle and blink scheduler
         const idleElements = [
             elements.character,
@@ -10344,7 +10348,7 @@ function useAnimationController(elements, options = {}) {
             resumeBlinks: idleResult.resumeBlinks,
             killBlinks: idleResult.killBlinks,
         });
-    }, [elements, enableLogging]);
+    }, [elements, enableLogging, sizeScale]);
     /**
      * Pause all animations
      */

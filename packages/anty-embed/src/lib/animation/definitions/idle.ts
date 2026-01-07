@@ -31,6 +31,8 @@ export interface IdleAnimationOptions {
   delay?: number;
   /** Base scale for character (default: 1, use 1.45 for super mode) */
   baseScale?: number;
+  /** Size scale factor (size / 160) for proportional animations */
+  sizeScale?: number;
 }
 
 /**
@@ -70,7 +72,10 @@ export function createIdleAnimation(
   const { character, shadow: _shadow, eyeLeft, eyeRight, eyeLeftPath, eyeRightPath, eyeLeftSvg, eyeRightSvg } = elements;
   // Note: shadow is handled by ShadowTracker, not the idle timeline
   void _shadow; // Mark as intentionally unused
-  const { delay = 0.2, baseScale = 1 } = options;
+  const { delay = 0.2, baseScale = 1, sizeScale = 1 } = options;
+
+  // Scale float amplitude by sizeScale so smaller characters have proportionally smaller bounce
+  const scaledAmplitude = IDLE_FLOAT.amplitude * sizeScale;
 
   // Create coordinated timeline with infinite repeat
   const timeline = gsap.timeline({
@@ -124,7 +129,7 @@ export function createIdleAnimation(
   timeline.to(
     character,
     {
-      y: -IDLE_FLOAT.amplitude, // Float up by amplitude (12px)
+      y: -scaledAmplitude, // Float up by scaled amplitude (proportional to size)
       rotation: IDLE_ROTATION.degrees, // Gentle rotation (2.5°)
       scale: `*=${IDLE_BREATHE.scaleMax}`, // Relative breathing (multiply by 1.02)
       duration: IDLE_FLOAT.duration, // Smooth timing (2.5s)
