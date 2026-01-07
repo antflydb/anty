@@ -10924,6 +10924,12 @@ function useSearchMorph({ characterRef, searchBarRefs, config = DEFAULT_SEARCH_B
 gsapWithCSS.registerPlugin(useGSAP);
 /** Preset configurations for common use cases */
 const PRESETS = {
+    /** Standard display with shadow and glow */
+    default: {
+        size: 160,
+        showShadow: true,
+        showGlow: true,
+    },
     /** Large, centered display for landing pages */
     hero: {
         size: 240,

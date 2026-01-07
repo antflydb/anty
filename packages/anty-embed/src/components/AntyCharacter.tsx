@@ -24,10 +24,16 @@ gsap.registerPlugin(useGSAP);
 // ============================================================================
 
 /** Preset configuration type for common use cases */
-export type AntyCharacterPreset = 'hero' | 'assistant' | 'icon' | 'logo';
+export type AntyCharacterPreset = 'default' | 'hero' | 'assistant' | 'icon' | 'logo';
 
 /** Preset configurations for common use cases */
 export const PRESETS: Record<AntyCharacterPreset, Partial<AntyCharacterProps>> = {
+  /** Standard display with shadow and glow */
+  default: {
+    size: 160,
+    showShadow: true,
+    showGlow: true,
+  },
   /** Large, centered display for landing pages */
   hero: {
     size: 240,
