@@ -487,7 +487,8 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
   // State
   const [currentExpression, setCurrentExpression] = useState<ExpressionName>(expression);
   const [particles] = useState<Particle[]>([]);
-  const isOff = expression === 'off';
+  const [isOffInternal, setIsOffInternal] = useState(false);
+  const isOff = expression === 'off' || isOffInternal;
   const initialEyeDimensions = getEyeDimensions('IDLE');
   const sizeScale = size / 160; // Scale factor based on default 160px size
 
@@ -1024,9 +1025,11 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
     },
     // Power off/on transitions
     powerOff: () => {
+      setIsOffInternal(true);
       animationController.transitionTo(AnimationState.OFF);
     },
     wakeUp: () => {
+      setIsOffInternal(false);
       animationController.transitionTo(AnimationState.IDLE);
     },
     // Search bar morph (when searchEnabled)
@@ -1042,6 +1045,33 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
   useEffect(() => {
     setCurrentExpression(expression);
   }, [expression]);
+
+  // ESC key and click-outside to close search bar
+  useEffect(() => {
+    if (!isSearchActive) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        internalMorphToCharacter();
+      }
+    };
+
+    const handleClickOutside = (e: MouseEvent) => {
+      // Check if click is outside the container
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        internalMorphToCharacter();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('mousedown', handleClickOutside);
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isSearchActive, internalMorphToCharacter]);
 
   // Play emotion when expression changes
   useEffect(() => {

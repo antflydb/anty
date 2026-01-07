@@ -11208,7 +11208,8 @@ const AntyCharacter = forwardRef((props, ref) => {
     // State
     const [currentExpression, setCurrentExpression] = useState(expression);
     const [particles] = useState([]);
-    const isOff = expression === 'off';
+    const [isOffInternal, setIsOffInternal] = useState(false);
+    const isOff = expression === 'off' || isOffInternal;
     const initialEyeDimensions = getEyeDimensions('IDLE');
     const sizeScale = size / 160; // Scale factor based on default 160px size
     const [refsReady, setRefsReady] = useState(false);
@@ -11690,9 +11691,11 @@ const AntyCharacter = forwardRef((props, ref) => {
         },
         // Power off/on transitions
         powerOff: () => {
+            setIsOffInternal(true);
             animationController.transitionTo(AnimationState.OFF);
         },
         wakeUp: () => {
+            setIsOffInternal(false);
             animationController.transitionTo(AnimationState.IDLE);
         },
         // Search bar morph (when searchEnabled)
@@ -11707,6 +11710,29 @@ const AntyCharacter = forwardRef((props, ref) => {
     useEffect(() => {
         setCurrentExpression(expression);
     }, [expression]);
+    // ESC key and click-outside to close search bar
+    useEffect(() => {
+        if (!isSearchActive)
+            return;
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                internalMorphToCharacter();
+            }
+        };
+        const handleClickOutside = (e) => {
+            // Check if click is outside the container
+            if (containerRef.current && !containerRef.current.contains(e.target)) {
+                internalMorphToCharacter();
+            }
+        };
+        document.addEventListener('keydown', handleKeyDown);
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('keydown', handleKeyDown);
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [isSearchActive, internalMorphToCharacter]);
     // Play emotion when expression changes
     useEffect(() => {
         if (!animationController.isReady)
