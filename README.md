@@ -1,6 +1,6 @@
 # Anty
 
-Embeddable Anty animation system with 18 emotions, chat integration, particle effects, and anty->search bar morphing. Integrated (replaceable) chat bar element. WIP FlappyAF game
+Embeddable Anty animation system with 18 emotions, chat integration, particle effects, and anty->search bar morphing. Integrated (replaceable) chat bar element. FlappyAF game is WIP.
 
 ## Features
 
@@ -14,8 +14,7 @@ Embeddable Anty animation system with 18 emotions, chat integration, particle ef
 - **Customizable Size** - Scales from tiny icons to large displays (24px to 320px+)
 - **Shadow and Glow Effects** - Configurable ambient lighting effects
 - **Power On/Off Transitions** - Animated state changes
-- **Idle Animations** - Continuous floating, breathing, and occasional blink animations
-- **Keyboard Look Controls** - Hold `[` or `]` keys to make Anty look left or right
+- **Idle Animations** - Continuous floating and occasional blink animations
 
 ## Installation
 
