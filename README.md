@@ -4,7 +4,7 @@ Embeddable Anty animation system with 18 emotions, chat integration, particle ef
 
 ## Features
 
-- **Presets** - Quick setup with `hero`, `assistant`, `icon`, `logo` presets
+- **Presets** - Quick setup with `default`, `hero`, `assistant`, `icon`, `logo` presets
 - **18 Expressive Emotions** - Happy, sad, angry, excited, celebrate, pleased, shocked, spin, wink, idea, jump, nod, headshake, look-around, look-left, look-right, back-forth, and smize
 - **Chat Integration with OpenAI** - Built-in chat panel with emotion mapping for AI-driven responses
 - **Particle Effects** - Sparkles, confetti, love hearts, and feeding particles
@@ -80,6 +80,7 @@ function App() {
 Use presets for quick setup with sensible defaults:
 
 ```tsx
+<AntyCharacter preset="default" />     // Standard (160px), with shadow & glow
 <AntyCharacter preset="hero" />        // Large (240px), with shadow & glow - for landing pages
 <AntyCharacter preset="assistant" />   // Small (80px), with shadow - for chat corners
 <AntyCharacter preset="icon" />        // Tiny (32px), no effects - for navbars
@@ -94,6 +95,7 @@ Presets can be overridden with explicit props:
 
 | Preset | Size | Shadow | Glow | Notes |
 |--------|------|--------|------|-------|
+| `default` | 160 | ✓ | ✓ | Standard display |
 | `hero` | 240 | ✓ | ✓ | Large centered display |
 | `assistant` | 80 | ✓ | - | Small chat assistant |
 | `icon` | 32 | - | - | Tiny, still animated |
@@ -128,7 +130,7 @@ Presets can be overridden with explicit props:
 
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
-| `preset` | `'hero' \| 'assistant' \| 'icon' \| 'logo'` | - | Preset configuration (see Presets section) |
+| `preset` | `'default' \| 'hero' \| 'assistant' \| 'icon' \| 'logo'` | - | Preset configuration (see Presets section) |
 | `expression` | `ExpressionName` | `'idle'` | Current expression/emotion to display |
 | `size` | `number` | `160` | Character size in pixels |
 | `showShadow` | `boolean` | `true` | Whether to show shadow |

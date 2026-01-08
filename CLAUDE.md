@@ -124,6 +124,7 @@ Example minimal emotion:
 The `AntyCharacter` component supports presets for common use cases:
 
 ```tsx
+<AntyCharacter preset="default" />     // 160px, shadow, glow - standard display
 <AntyCharacter preset="hero" />        // 240px, shadow, glow - landing pages
 <AntyCharacter preset="assistant" />   // 80px, shadow - chat corners
 <AntyCharacter preset="icon" />        // 32px, no effects - navbars
