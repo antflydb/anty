@@ -611,6 +611,10 @@ export interface SearchBarConfig {
     bracketScale: number;
     /** Border width for gradient border */
     borderWidth: number;
+    /** Whether to auto-focus input when morphing to search bar (default: true on desktop, false on touch) */
+    autoFocusOnMorph?: boolean;
+    /** Whether to show keyboard shortcut indicator (default: true on desktop, false on touch) */
+    showShortcut?: boolean;
 }
 /**
  * Default search bar configuration

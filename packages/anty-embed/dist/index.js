@@ -6504,6 +6504,12 @@ const DEFAULT_SEARCH_BAR_CONFIG = {
     borderWidth: 2.75,
 };
 
+// Detect touch device - memoized to avoid repeated checks
+function isTouchDevice$1() {
+    if (typeof window === 'undefined')
+        return false;
+    return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+}
 // Inline Kbd component (no external dependencies)
 function Kbd({ children, style }) {
     return (jsxRuntime.jsx("kbd", { style: {
@@ -6525,9 +6531,13 @@ function Kbd({ children, style }) {
             ...style,
         }, children: children }));
 }
-function AntySearchBar({ active, value, onChange, inputRef, barRef, borderRef, borderGradientRef, placeholderRef, kbdRef, glowRef, config = DEFAULT_SEARCH_BAR_CONFIG, placeholder = 'Search...', keyboardShortcut, }) {
+function AntySearchBar({ active, value, onChange, onSubmit, inputRef, barRef, borderRef, borderGradientRef, placeholderRef, kbdRef, glowRef, config = DEFAULT_SEARCH_BAR_CONFIG, placeholder = 'Search...', keyboardShortcut, }) {
     // Only hide placeholder when there's actual text typed
     const showPlaceholder = !value;
+    // Detect touch device for conditional features
+    const isTouch = react.useMemo(() => isTouchDevice$1(), []);
+    // Determine whether to show keyboard shortcut (default: hide on touch devices)
+    const shouldShowShortcut = config.showShortcut ?? !isTouch;
     // Extract config values
     const { width, height, borderRadius, innerRadius, borderWidth } = config;
     // Default height for content area (input stays at standard size)
@@ -6541,6 +6551,7 @@ function AntySearchBar({ active, value, onChange, inputRef, barRef, borderRef, b
     return (jsxRuntime.jsxs("div", { ref: barRef, style: {
             position: 'absolute',
             width: `${width}px`,
+            maxWidth: '90vw', // Prevent overflow on mobile
             height: `${height}px`,
             left: '50%',
             top: '50%',
@@ -6603,13 +6614,17 @@ function AntySearchBar({ active, value, onChange, inputRef, barRef, borderRef, b
                                     right: '24px',
                                     top: 0,
                                     height: '100%',
-                                    display: 'flex',
+                                    display: shouldShowShortcut ? 'flex' : 'none',
                                     alignItems: 'center',
                                     pointerEvents: 'none',
                                     userSelect: 'none',
                                     opacity: showPlaceholder ? 1 : 0,
                                     transition: showPlaceholder ? 'none' : 'opacity 0.15s ease-out',
-                                }, children: keyboardShortcut && (jsxRuntime.jsx(Kbd, { style: { fontSize: '12px', color: '#9ca3af' }, children: keyboardShortcut })) }), jsxRuntime.jsx("input", { ref: inputRef, type: "text", value: value, onChange: (e) => onChange(e.target.value), placeholder: "" // Empty placeholder since we use fake one
+                                }, children: keyboardShortcut && (jsxRuntime.jsx(Kbd, { style: { fontSize: '12px', color: '#9ca3af' }, children: keyboardShortcut })) }), jsxRuntime.jsx("input", { ref: inputRef, type: "search", inputMode: "search", autoComplete: "off", autoCorrect: "off", autoCapitalize: "off", spellCheck: false, "aria-label": "Search", value: value, onChange: (e) => onChange(e.target.value), onKeyDown: (e) => {
+                                    if (e.key === 'Enter' && onSubmit) {
+                                        onSubmit(e.currentTarget.value);
+                                    }
+                                }, placeholder: "" // Empty placeholder since we use fake one
                                 , style: {
                                     width: '100%',
                                     height: '100%',
@@ -10555,12 +10570,21 @@ function useAnimationController(elements, options = {}) {
     }), [playEmotion, transitionTo, startIdle, pause, resume, killAll, getState, getEmotion, isIdleActive, isIdlePlaying, getDebugInfo, setSuperMode, showGlows, hideGlows, hideShadow, showShadow]);
 }
 
+// Detect touch device
+function isTouchDevice() {
+    if (typeof window === 'undefined')
+        return false;
+    return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+}
 // Reference size at which bracketScale produces the desired visual size
 const BRACKET_REFERENCE_SIZE = 160;
 function useSearchMorph({ characterRef, searchBarRefs, config = DEFAULT_SEARCH_BAR_CONFIG, characterSize = BRACKET_REFERENCE_SIZE, onMorphStart, onMorphComplete, onReturnStart, onReturnComplete, }) {
     const morphingRef = react.useRef(false);
     // Track all active tweens so we can kill them if needed
     const activeTweensRef = react.useRef([]);
+    // Detect touch device for conditional auto-focus (default: true on desktop, false on touch)
+    const isTouch = react.useMemo(() => isTouchDevice(), []);
+    const shouldAutoFocus = config.autoFocusOnMorph ?? !isTouch;
     const morphToSearchBar = react.useCallback(() => {
         // Prevent multiple simultaneous morphs
         if (morphingRef.current) {
@@ -10753,13 +10777,16 @@ function useSearchMorph({ characterRef, searchBarRefs, config = DEFAULT_SEARCH_B
                 console.log('[SEARCH] Animation complete (timeout)');
             }
             morphingRef.current = false;
-            searchBarRefs.input.current?.focus();
+            // Conditionally auto-focus (default: true on desktop, false on touch)
+            if (shouldAutoFocus) {
+                searchBarRefs.input.current?.focus();
+            }
             onMorphComplete?.();
         }, 900);
         if (ENABLE_ANIMATION_DEBUG_LOGS) {
             console.log('[SEARCH] Animations started with delays');
         }
-    }, [characterRef, searchBarRefs, config, onMorphStart, onMorphComplete]);
+    }, [characterRef, searchBarRefs, config, onMorphStart, onMorphComplete, shouldAutoFocus]);
     const morphToCharacter = react.useCallback(() => {
         // Prevent multiple simultaneous morphs
         if (morphingRef.current) {
@@ -11292,23 +11319,24 @@ const AntyCharacter = react.forwardRef((props, ref) => {
                 // Spawn lightbulb emoji for idea animation
                 if (emotion === 'idea' && containerRef.current) {
                     setTimeout(() => {
-                        const rect = containerRef.current?.getBoundingClientRect();
-                        if (!rect)
+                        const container = containerRef.current;
+                        if (!container)
                             return;
                         const lightbulb = document.createElement('div');
                         lightbulb.textContent = '💡';
                         const bulbSize = (isSuperMode ? 70 : 48) * sizeScale;
-                        const bulbOffset = (isSuperMode ? 32 : 22) * sizeScale;
+                        // Use absolute positioning relative to container
                         lightbulb.style.cssText = `
-                position: fixed;
-                left: ${rect.left + rect.width / 2 - bulbOffset}px;
-                top: ${rect.top - 80 * sizeScale}px;
+                position: absolute;
+                left: 50%;
+                top: ${ -80 * sizeScale}px;
+                transform: translateX(-50%);
                 font-size: ${bulbSize}px;
                 z-index: 1000;
                 pointer-events: none;
                 opacity: 0;
               `;
-                        document.body.appendChild(lightbulb);
+                        container.appendChild(lightbulb);
                         const bulbTl = gsapWithCSS.timeline({ onComplete: () => lightbulb.remove() });
                         bulbTl.to(lightbulb, { y: -25, duration: 0.9, ease: 'power2.out' }, 0);
                         bulbTl.to(lightbulb, { opacity: 1, duration: 0.12, ease: 'power2.out' }, 0);
@@ -11318,24 +11346,26 @@ const AntyCharacter = react.forwardRef((props, ref) => {
                 // Spawn teardrop emoji for sad animation
                 if (emotion === 'sad' && containerRef.current) {
                     setTimeout(() => {
-                        const rect = containerRef.current?.getBoundingClientRect();
-                        if (!rect)
+                        const container = containerRef.current;
+                        if (!container)
                             return;
                         const teardrop = document.createElement('div');
                         teardrop.textContent = '💧';
                         const dropSize = (isSuperMode ? 52 : 36) * sizeScale;
                         const dropOffset = (isSuperMode ? 24 : 16) * sizeScale;
-                        const xOffset = rect.width * 0.35;
+                        // Position to the right of center (35% of container width)
+                        const xOffset = size * 0.35;
+                        // Use absolute positioning relative to container
                         teardrop.style.cssText = `
-                position: fixed;
-                left: ${rect.left + rect.width / 2 + xOffset - dropOffset}px;
-                top: ${rect.top - 20 * sizeScale}px;
+                position: absolute;
+                left: calc(50% + ${xOffset - dropOffset}px);
+                top: ${ -20 * sizeScale}px;
                 font-size: ${dropSize}px;
                 z-index: 1000;
                 pointer-events: none;
                 opacity: 0;
               `;
-                        document.body.appendChild(teardrop);
+                        container.appendChild(teardrop);
                         const dropTl = gsapWithCSS.timeline({ onComplete: () => teardrop.remove() });
                         dropTl.to(teardrop, { y: 35, duration: 1.2, ease: 'power2.in' }, 0);
                         dropTl.to(teardrop, { opacity: 1, duration: 0.15, ease: 'power2.out' }, 0);
@@ -11345,24 +11375,26 @@ const AntyCharacter = react.forwardRef((props, ref) => {
                 // Spawn exclamation emoji for shocked animation
                 if (emotion === 'shocked' && containerRef.current) {
                     setTimeout(() => {
-                        const rect = containerRef.current?.getBoundingClientRect();
-                        if (!rect)
+                        const container = containerRef.current;
+                        if (!container)
                             return;
                         const exclamation = document.createElement('div');
                         exclamation.textContent = '❗';
                         const emojiSize = (isSuperMode ? 70 : 48) * sizeScale;
                         const emojiOffset = (isSuperMode ? 32 : 22) * sizeScale;
-                        const xOffset = rect.width * 0.35;
+                        // Position to the right of center (35% of container width)
+                        const xOffset = size * 0.35;
+                        // Use absolute positioning relative to container
                         exclamation.style.cssText = `
-                position: fixed;
-                left: ${rect.left + rect.width / 2 + xOffset - emojiOffset}px;
-                top: ${rect.top - 50 * sizeScale}px;
+                position: absolute;
+                left: calc(50% + ${xOffset - emojiOffset}px);
+                top: ${ -50 * sizeScale}px;
                 font-size: ${emojiSize}px;
                 z-index: 1000;
                 pointer-events: none;
                 opacity: 0;
               `;
-                        document.body.appendChild(exclamation);
+                        container.appendChild(exclamation);
                         const exclamationTl = gsapWithCSS.timeline({ onComplete: () => exclamation.remove() });
                         exclamationTl.to(exclamation, { y: -25, duration: 0.9, ease: 'power2.out' }, 0);
                         exclamationTl.to(exclamation, { opacity: 1, duration: 0.12, ease: 'power2.out' }, 0);
@@ -11476,9 +11508,6 @@ const AntyCharacter = react.forwardRef((props, ref) => {
             const container = containerRef.current;
             if (!container)
                 return;
-            const containerRect = container.getBoundingClientRect();
-            const antyX = containerRect.left + containerRect.width / 2;
-            const antyY = containerRect.top + containerRect.height / 2;
             for (let i = 0; i < 8; i++) {
                 setTimeout(() => {
                     const heart = document.createElement('div');
@@ -11502,12 +11531,14 @@ const AntyCharacter = react.forwardRef((props, ref) => {
               <path d="M28.7988 7.20117H34.8852V13.2875H28.7988V7.20117Z" fill="#8B5CF6"/>
             </svg>
           `;
-                    heart.style.position = 'fixed';
-                    heart.style.left = `${antyX}px`;
-                    heart.style.top = `${antyY}px`;
+                    // Use absolute positioning relative to container center
+                    heart.style.position = 'absolute';
+                    heart.style.left = '50%';
+                    heart.style.top = '50%';
+                    heart.style.transform = 'translate(-50%, -50%)';
                     heart.style.pointerEvents = 'none';
                     heart.style.zIndex = '1000';
-                    document.body.appendChild(heart);
+                    container.appendChild(heart);
                     const angle = (i / 8) * Math.PI * 2;
                     const distance = gsapWithCSS.utils.random(60, 100);
                     gsapWithCSS.fromTo(heart, { x: 0, y: 0, scale: 0.5, opacity: 0 }, {
@@ -11722,7 +11753,7 @@ const AntyCharacter = react.forwardRef((props, ref) => {
     react.useEffect(() => {
         setCurrentExpression(expression);
     }, [expression]);
-    // ESC key and click-outside to close search bar
+    // ESC key and click/touch-outside to close search bar
     react.useEffect(() => {
         if (!isSearchActive)
             return;
@@ -11745,9 +11776,11 @@ const AntyCharacter = react.forwardRef((props, ref) => {
         };
         document.addEventListener('keydown', handleKeyDown);
         document.addEventListener('mousedown', handleClickOutside);
+        document.addEventListener('touchstart', handleClickOutside, { passive: true });
         return () => {
             document.removeEventListener('keydown', handleKeyDown);
             document.removeEventListener('mousedown', handleClickOutside);
+            document.removeEventListener('touchstart', handleClickOutside);
         };
     }, [isSearchActive, internalMorphToCharacter]);
     // Play emotion when expression changes
@@ -11855,8 +11888,9 @@ const AntyCharacter = react.forwardRef((props, ref) => {
     const containerStyle = useFullContainer ? styles.fullContainer(size) : styles.container(size);
     return (jsxRuntime.jsxs("div", { ref: containerRef, style: {
             ...containerStyle,
+            touchAction: 'manipulation', // Prevent double-tap zoom on mobile
             ...style,
-        }, className: className, children: [jsxRuntime.jsx(AntyParticleCanvas, { ref: canvasRef, particles: particles, width: size * 5, height: size * 5, sizeScale: sizeScale }), jsxRuntime.jsxs("div", { style: useFullContainer ? styles.characterArea(size) : { position: 'relative', width: size, height: size }, children: [showGlow && !hasExternalGlow && (jsxRuntime.jsx("div", { ref: internalOuterGlowRef, style: styles.outerGlow(sizeScale) })), showGlow && !hasExternalGlow && (jsxRuntime.jsx("div", { ref: internalInnerGlowRef, style: styles.innerGlow(sizeScale) })), isSuperMode && (jsxRuntime.jsx("div", { ref: superGlowRef, style: styles.superGlow })), jsxRuntime.jsxs("div", { ref: characterRef, className: isSuperMode ? 'super-mode' : undefined, style: styles.character, children: [jsxRuntime.jsx("div", { ref: rightBodyRef, style: styles.rightBody, children: jsxRuntime.jsx("img", { alt: "", style: styles.bodyImage, src: bodyRightSvg }) }), jsxRuntime.jsx("div", { ref: leftBodyRef, style: styles.leftBody, children: jsxRuntime.jsx("img", { alt: "", style: styles.bodyImage, src: bodyLeftSvg }) }), jsxRuntime.jsx("div", { style: styles.leftEyeContainer, children: jsxRuntime.jsx("div", { ref: leftEyeRef, style: styles.eyeWrapper(initialEyeDimensions.width, initialEyeDimensions.height, sizeScale), children: jsxRuntime.jsx("svg", { ref: leftEyeSvgRef, width: "100%", height: "100%", viewBox: initialEyeDimensions.viewBox, fill: "none", xmlns: "http://www.w3.org/2000/svg", style: { display: 'block' }, children: jsxRuntime.jsx("path", { ref: leftEyePathRef, d: getEyeShape('IDLE', 'left'), fill: "#052333" }) }) }) }), jsxRuntime.jsx("div", { style: styles.rightEyeContainer, children: jsxRuntime.jsx("div", { ref: rightEyeRef, style: styles.eyeWrapper(initialEyeDimensions.width, initialEyeDimensions.height, sizeScale), children: jsxRuntime.jsx("svg", { ref: rightEyeSvgRef, width: "100%", height: "100%", viewBox: initialEyeDimensions.viewBox, fill: "none", xmlns: "http://www.w3.org/2000/svg", style: { display: 'block' }, children: jsxRuntime.jsx("path", { ref: rightEyePathRef, d: getEyeShape('IDLE', 'right'), fill: "#052333" }) }) }) }), debugMode && (jsxRuntime.jsxs(jsxRuntime.Fragment, { children: [jsxRuntime.jsx("div", { style: styles.debugBorder }), !isOff && (jsxRuntime.jsxs(jsxRuntime.Fragment, { children: [jsxRuntime.jsx("div", { style: styles.debugCrosshair('calc(33.41% + 13.915% - 1px)', 'calc(31.63% + 5.825% - 7px)', 'yellow', true) }), jsxRuntime.jsx("div", { style: styles.debugCrosshair('calc(33.41% + 13.915% - 6px)', 'calc(31.63% + 5.825% - 2px)', 'yellow', false) })] })), !isOff && (jsxRuntime.jsxs(jsxRuntime.Fragment, { children: [jsxRuntime.jsx("div", { style: styles.debugCrosshair('calc(33.41% + 13.915% - 1px)', 'calc(57.36% + 5.82% - 7px)', 'orange', true) }), jsxRuntime.jsx("div", { style: styles.debugCrosshair('calc(33.41% + 13.915% - 6px)', 'calc(57.36% + 5.82% - 2px)', 'orange', false) })] }))] }))] }), searchEnabled && (jsxRuntime.jsx(AntySearchBar, { active: isSearchActive, value: searchValueState, onChange: handleSearchChange, inputRef: searchInputRef, barRef: searchBarRef, borderRef: searchBorderRef, borderGradientRef: searchBorderGradientRef, placeholderRef: searchPlaceholderRef, kbdRef: searchKbdRef, glowRef: searchGlowRef, config: searchConfig, placeholder: searchPlaceholder, keyboardShortcut: searchShortcut }))] }), showShadow && !hasExternalShadow && (jsxRuntime.jsx("div", { ref: internalShadowRef, style: styles.shadow(sizeScale) }))] }));
+        }, className: className, children: [jsxRuntime.jsx(AntyParticleCanvas, { ref: canvasRef, particles: particles, width: size * 5, height: size * 5, sizeScale: sizeScale }), jsxRuntime.jsxs("div", { style: useFullContainer ? styles.characterArea(size) : { position: 'relative', width: size, height: size }, children: [showGlow && !hasExternalGlow && (jsxRuntime.jsx("div", { ref: internalOuterGlowRef, style: styles.outerGlow(sizeScale) })), showGlow && !hasExternalGlow && (jsxRuntime.jsx("div", { ref: internalInnerGlowRef, style: styles.innerGlow(sizeScale) })), isSuperMode && (jsxRuntime.jsx("div", { ref: superGlowRef, style: styles.superGlow })), jsxRuntime.jsxs("div", { ref: characterRef, className: isSuperMode ? 'super-mode' : undefined, style: styles.character, children: [jsxRuntime.jsx("div", { ref: rightBodyRef, style: styles.rightBody, children: jsxRuntime.jsx("img", { alt: "", style: styles.bodyImage, src: bodyRightSvg }) }), jsxRuntime.jsx("div", { ref: leftBodyRef, style: styles.leftBody, children: jsxRuntime.jsx("img", { alt: "", style: styles.bodyImage, src: bodyLeftSvg }) }), jsxRuntime.jsx("div", { style: styles.leftEyeContainer, children: jsxRuntime.jsx("div", { ref: leftEyeRef, style: styles.eyeWrapper(initialEyeDimensions.width, initialEyeDimensions.height, sizeScale), children: jsxRuntime.jsx("svg", { ref: leftEyeSvgRef, width: "100%", height: "100%", viewBox: initialEyeDimensions.viewBox, fill: "none", xmlns: "http://www.w3.org/2000/svg", style: { display: 'block' }, children: jsxRuntime.jsx("path", { ref: leftEyePathRef, d: getEyeShape('IDLE', 'left'), fill: "#052333" }) }) }) }), jsxRuntime.jsx("div", { style: styles.rightEyeContainer, children: jsxRuntime.jsx("div", { ref: rightEyeRef, style: styles.eyeWrapper(initialEyeDimensions.width, initialEyeDimensions.height, sizeScale), children: jsxRuntime.jsx("svg", { ref: rightEyeSvgRef, width: "100%", height: "100%", viewBox: initialEyeDimensions.viewBox, fill: "none", xmlns: "http://www.w3.org/2000/svg", style: { display: 'block' }, children: jsxRuntime.jsx("path", { ref: rightEyePathRef, d: getEyeShape('IDLE', 'right'), fill: "#052333" }) }) }) }), debugMode && (jsxRuntime.jsxs(jsxRuntime.Fragment, { children: [jsxRuntime.jsx("div", { style: styles.debugBorder }), !isOff && (jsxRuntime.jsxs(jsxRuntime.Fragment, { children: [jsxRuntime.jsx("div", { style: styles.debugCrosshair('calc(33.41% + 13.915% - 1px)', 'calc(31.63% + 5.825% - 7px)', 'yellow', true) }), jsxRuntime.jsx("div", { style: styles.debugCrosshair('calc(33.41% + 13.915% - 6px)', 'calc(31.63% + 5.825% - 2px)', 'yellow', false) })] })), !isOff && (jsxRuntime.jsxs(jsxRuntime.Fragment, { children: [jsxRuntime.jsx("div", { style: styles.debugCrosshair('calc(33.41% + 13.915% - 1px)', 'calc(57.36% + 5.82% - 7px)', 'orange', true) }), jsxRuntime.jsx("div", { style: styles.debugCrosshair('calc(33.41% + 13.915% - 6px)', 'calc(57.36% + 5.82% - 2px)', 'orange', false) })] }))] }))] }), searchEnabled && (jsxRuntime.jsx(AntySearchBar, { active: isSearchActive, value: searchValueState, onChange: handleSearchChange, onSubmit: onSearchSubmit, inputRef: searchInputRef, barRef: searchBarRef, borderRef: searchBorderRef, borderGradientRef: searchBorderGradientRef, placeholderRef: searchPlaceholderRef, kbdRef: searchKbdRef, glowRef: searchGlowRef, config: searchConfig, placeholder: searchPlaceholder, keyboardShortcut: searchShortcut }))] }), showShadow && !hasExternalShadow && (jsxRuntime.jsx("div", { ref: internalShadowRef, style: styles.shadow(sizeScale) }))] }));
 });
 AntyCharacter.displayName = 'AntyCharacter';
 

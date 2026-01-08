@@ -582,22 +582,23 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
           // Spawn lightbulb emoji for idea animation
           if (emotion === 'idea' && containerRef.current) {
             setTimeout(() => {
-              const rect = containerRef.current?.getBoundingClientRect();
-              if (!rect) return;
+              const container = containerRef.current;
+              if (!container) return;
               const lightbulb = document.createElement('div');
               lightbulb.textContent = '💡';
               const bulbSize = (isSuperMode ? 70 : 48) * sizeScale;
-              const bulbOffset = (isSuperMode ? 32 : 22) * sizeScale;
+              // Use absolute positioning relative to container
               lightbulb.style.cssText = `
-                position: fixed;
-                left: ${rect.left + rect.width / 2 - bulbOffset}px;
-                top: ${rect.top - 80 * sizeScale}px;
+                position: absolute;
+                left: 50%;
+                top: ${-80 * sizeScale}px;
+                transform: translateX(-50%);
                 font-size: ${bulbSize}px;
                 z-index: 1000;
                 pointer-events: none;
                 opacity: 0;
               `;
-              document.body.appendChild(lightbulb);
+              container.appendChild(lightbulb);
               const bulbTl = gsap.timeline({ onComplete: () => lightbulb.remove() });
               bulbTl.to(lightbulb, { y: -25, duration: 0.9, ease: 'power2.out' }, 0);
               bulbTl.to(lightbulb, { opacity: 1, duration: 0.12, ease: 'power2.out' }, 0);
@@ -608,23 +609,25 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
           // Spawn teardrop emoji for sad animation
           if (emotion === 'sad' && containerRef.current) {
             setTimeout(() => {
-              const rect = containerRef.current?.getBoundingClientRect();
-              if (!rect) return;
+              const container = containerRef.current;
+              if (!container) return;
               const teardrop = document.createElement('div');
               teardrop.textContent = '💧';
               const dropSize = (isSuperMode ? 52 : 36) * sizeScale;
               const dropOffset = (isSuperMode ? 24 : 16) * sizeScale;
-              const xOffset = rect.width * 0.35;
+              // Position to the right of center (35% of container width)
+              const xOffset = size * 0.35;
+              // Use absolute positioning relative to container
               teardrop.style.cssText = `
-                position: fixed;
-                left: ${rect.left + rect.width / 2 + xOffset - dropOffset}px;
-                top: ${rect.top - 20 * sizeScale}px;
+                position: absolute;
+                left: calc(50% + ${xOffset - dropOffset}px);
+                top: ${-20 * sizeScale}px;
                 font-size: ${dropSize}px;
                 z-index: 1000;
                 pointer-events: none;
                 opacity: 0;
               `;
-              document.body.appendChild(teardrop);
+              container.appendChild(teardrop);
               const dropTl = gsap.timeline({ onComplete: () => teardrop.remove() });
               dropTl.to(teardrop, { y: 35, duration: 1.2, ease: 'power2.in' }, 0);
               dropTl.to(teardrop, { opacity: 1, duration: 0.15, ease: 'power2.out' }, 0);
@@ -635,23 +638,25 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
           // Spawn exclamation emoji for shocked animation
           if (emotion === 'shocked' && containerRef.current) {
             setTimeout(() => {
-              const rect = containerRef.current?.getBoundingClientRect();
-              if (!rect) return;
+              const container = containerRef.current;
+              if (!container) return;
               const exclamation = document.createElement('div');
               exclamation.textContent = '❗';
               const emojiSize = (isSuperMode ? 70 : 48) * sizeScale;
               const emojiOffset = (isSuperMode ? 32 : 22) * sizeScale;
-              const xOffset = rect.width * 0.35;
+              // Position to the right of center (35% of container width)
+              const xOffset = size * 0.35;
+              // Use absolute positioning relative to container
               exclamation.style.cssText = `
-                position: fixed;
-                left: ${rect.left + rect.width / 2 + xOffset - emojiOffset}px;
-                top: ${rect.top - 50 * sizeScale}px;
+                position: absolute;
+                left: calc(50% + ${xOffset - emojiOffset}px);
+                top: ${-50 * sizeScale}px;
                 font-size: ${emojiSize}px;
                 z-index: 1000;
                 pointer-events: none;
                 opacity: 0;
               `;
-              document.body.appendChild(exclamation);
+              container.appendChild(exclamation);
               const exclamationTl = gsap.timeline({ onComplete: () => exclamation.remove() });
               exclamationTl.to(exclamation, { y: -25, duration: 0.9, ease: 'power2.out' }, 0);
               exclamationTl.to(exclamation, { opacity: 1, duration: 0.12, ease: 'power2.out' }, 0);
@@ -773,10 +778,6 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
       const container = containerRef.current;
       if (!container) return;
 
-      const containerRect = container.getBoundingClientRect();
-      const antyX = containerRect.left + containerRect.width / 2;
-      const antyY = containerRect.top + containerRect.height / 2;
-
       for (let i = 0; i < 8; i++) {
         setTimeout(() => {
           const heart = document.createElement('div');
@@ -800,13 +801,15 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
               <path d="M28.7988 7.20117H34.8852V13.2875H28.7988V7.20117Z" fill="#8B5CF6"/>
             </svg>
           `;
-          heart.style.position = 'fixed';
-          heart.style.left = `${antyX}px`;
-          heart.style.top = `${antyY}px`;
+          // Use absolute positioning relative to container center
+          heart.style.position = 'absolute';
+          heart.style.left = '50%';
+          heart.style.top = '50%';
+          heart.style.transform = 'translate(-50%, -50%)';
           heart.style.pointerEvents = 'none';
           heart.style.zIndex = '1000';
 
-          document.body.appendChild(heart);
+          container.appendChild(heart);
 
           const angle = (i / 8) * Math.PI * 2;
           const distance = gsap.utils.random(60, 100);
@@ -1056,7 +1059,7 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
     setCurrentExpression(expression);
   }, [expression]);
 
-  // ESC key and click-outside to close search bar
+  // ESC key and click/touch-outside to close search bar
   useEffect(() => {
     if (!isSearchActive) return;
 
@@ -1067,7 +1070,7 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
       }
     };
 
-    const handleClickOutside = (e: MouseEvent) => {
+    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
       const target = e.target as HTMLElement;
       // Ignore clicks on interactive elements (buttons, inputs, links)
       if (target.closest('button, input, a, [role="button"]')) {
@@ -1081,10 +1084,12 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
 
     document.addEventListener('keydown', handleKeyDown);
     document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside, { passive: true });
 
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
     };
   }, [isSearchActive, internalMorphToCharacter]);
 
@@ -1212,6 +1217,7 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
       ref={containerRef}
       style={{
         ...containerStyle,
+        touchAction: 'manipulation', // Prevent double-tap zoom on mobile
         ...style,
       }}
       className={className}
@@ -1335,6 +1341,7 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
             active={isSearchActive}
             value={searchValueState}
             onChange={handleSearchChange}
+            onSubmit={onSearchSubmit}
             inputRef={searchInputRef}
             barRef={searchBarRef}
             borderRef={searchBorderRef}

@@ -1,7 +1,13 @@
 'use client';
 
-import { type RefObject } from 'react';
+import { type RefObject, useMemo } from 'react';
 import { type SearchBarConfig, DEFAULT_SEARCH_BAR_CONFIG } from '../types';
+
+// Detect touch device - memoized to avoid repeated checks
+function isTouchDevice(): boolean {
+  if (typeof window === 'undefined') return false;
+  return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+}
 
 // Inline Kbd component (no external dependencies)
 function Kbd({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
@@ -35,6 +41,8 @@ export interface AntySearchBarProps {
   active: boolean;
   value: string;
   onChange: (value: string) => void;
+  /** Callback when search is submitted (Enter pressed) */
+  onSubmit?: (value: string) => void;
   inputRef: RefObject<HTMLInputElement | null>;
   barRef: RefObject<HTMLDivElement | null>;
   borderRef: RefObject<HTMLDivElement | null>;
@@ -54,6 +62,7 @@ export function AntySearchBar({
   active,
   value,
   onChange,
+  onSubmit,
   inputRef,
   barRef,
   borderRef,
@@ -67,6 +76,12 @@ export function AntySearchBar({
 }: AntySearchBarProps) {
   // Only hide placeholder when there's actual text typed
   const showPlaceholder = !value;
+
+  // Detect touch device for conditional features
+  const isTouch = useMemo(() => isTouchDevice(), []);
+
+  // Determine whether to show keyboard shortcut (default: hide on touch devices)
+  const shouldShowShortcut = config.showShortcut ?? !isTouch;
 
   // Extract config values
   const { width, height, borderRadius, innerRadius, borderWidth } = config;
@@ -87,6 +102,7 @@ export function AntySearchBar({
       style={{
         position: 'absolute',
         width: `${width}px`,
+        maxWidth: '90vw', // Prevent overflow on mobile
         height: `${height}px`,
         left: '50%',
         top: '50%',
@@ -173,7 +189,7 @@ export function AntySearchBar({
               {placeholder}
             </div>
 
-            {/* Animated keyboard shortcut indicator */}
+            {/* Animated keyboard shortcut indicator - hidden on touch devices by default */}
             <div
               ref={kbdRef}
               style={{
@@ -181,7 +197,7 @@ export function AntySearchBar({
                 right: '24px',
                 top: 0,
                 height: '100%',
-                display: 'flex',
+                display: shouldShowShortcut ? 'flex' : 'none',
                 alignItems: 'center',
                 pointerEvents: 'none',
                 userSelect: 'none',
@@ -196,9 +212,20 @@ export function AntySearchBar({
 
             <input
               ref={inputRef}
-              type="text"
+              type="search"
+              inputMode="search"
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck={false}
+              aria-label="Search"
               value={value}
               onChange={(e) => onChange(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && onSubmit) {
+                  onSubmit(e.currentTarget.value);
+                }
+              }}
               placeholder="" // Empty placeholder since we use fake one
               style={{
                 width: '100%',
