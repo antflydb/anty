@@ -1,5 +1,5 @@
 import { jsx, jsxs, Fragment } from 'react/jsx-runtime';
-import { useRef, useLayoutEffect, useEffect, forwardRef, useState, useImperativeHandle, useMemo, useCallback, createElement } from 'react';
+import { useRef, useLayoutEffect, useEffect, forwardRef, useState, useImperativeHandle, useCallback, useMemo, createElement } from 'react';
 
 function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
 
@@ -6532,8 +6532,11 @@ function Kbd({ children, style }) {
 function AntySearchBar({ active, value, onChange, onSubmit, inputRef, barRef, borderRef, borderGradientRef, placeholderRef, kbdRef, glowRef, config = DEFAULT_SEARCH_BAR_CONFIG, placeholder = 'Search...', keyboardShortcut, }) {
     // Only hide placeholder when there's actual text typed
     const showPlaceholder = !value;
-    // Detect touch device for conditional features
-    const isTouch = useMemo(() => isTouchDevice$1(), []);
+    // Detect touch device after hydration to avoid SSR mismatch
+    const [isTouch, setIsTouch] = useState(false);
+    useEffect(() => {
+        setIsTouch(isTouchDevice$1());
+    }, []);
     // Determine whether to show keyboard shortcut (default: hide on touch devices)
     const shouldShowShortcut = config.showShortcut ?? !isTouch;
     // Extract config values
@@ -10580,8 +10583,11 @@ function useSearchMorph({ characterRef, searchBarRefs, config = DEFAULT_SEARCH_B
     const morphingRef = useRef(false);
     // Track all active tweens so we can kill them if needed
     const activeTweensRef = useRef([]);
-    // Detect touch device for conditional auto-focus (default: true on desktop, false on touch)
-    const isTouch = useMemo(() => isTouchDevice(), []);
+    // Detect touch device after mount to avoid SSR mismatch
+    const [isTouch, setIsTouch] = useState(false);
+    useEffect(() => {
+        setIsTouch(isTouchDevice());
+    }, []);
     const shouldAutoFocus = config.autoFocusOnMorph ?? !isTouch;
     const morphToSearchBar = useCallback(() => {
         // Prevent multiple simultaneous morphs

@@ -1,6 +1,6 @@
 'use client';
 
-import { type RefObject, useMemo } from 'react';
+import { type RefObject, useState, useEffect } from 'react';
 import { type SearchBarConfig, DEFAULT_SEARCH_BAR_CONFIG } from '../types';
 
 // Detect touch device - memoized to avoid repeated checks
@@ -77,8 +77,11 @@ export function AntySearchBar({
   // Only hide placeholder when there's actual text typed
   const showPlaceholder = !value;
 
-  // Detect touch device for conditional features
-  const isTouch = useMemo(() => isTouchDevice(), []);
+  // Detect touch device after hydration to avoid SSR mismatch
+  const [isTouch, setIsTouch] = useState(false);
+  useEffect(() => {
+    setIsTouch(isTouchDevice());
+  }, []);
 
   // Determine whether to show keyboard shortcut (default: hide on touch devices)
   const shouldShowShortcut = config.showShortcut ?? !isTouch;

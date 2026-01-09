@@ -6534,8 +6534,11 @@ function Kbd({ children, style }) {
 function AntySearchBar({ active, value, onChange, onSubmit, inputRef, barRef, borderRef, borderGradientRef, placeholderRef, kbdRef, glowRef, config = DEFAULT_SEARCH_BAR_CONFIG, placeholder = 'Search...', keyboardShortcut, }) {
     // Only hide placeholder when there's actual text typed
     const showPlaceholder = !value;
-    // Detect touch device for conditional features
-    const isTouch = react.useMemo(() => isTouchDevice$1(), []);
+    // Detect touch device after hydration to avoid SSR mismatch
+    const [isTouch, setIsTouch] = react.useState(false);
+    react.useEffect(() => {
+        setIsTouch(isTouchDevice$1());
+    }, []);
     // Determine whether to show keyboard shortcut (default: hide on touch devices)
     const shouldShowShortcut = config.showShortcut ?? !isTouch;
     // Extract config values
@@ -10582,8 +10585,11 @@ function useSearchMorph({ characterRef, searchBarRefs, config = DEFAULT_SEARCH_B
     const morphingRef = react.useRef(false);
     // Track all active tweens so we can kill them if needed
     const activeTweensRef = react.useRef([]);
-    // Detect touch device for conditional auto-focus (default: true on desktop, false on touch)
-    const isTouch = react.useMemo(() => isTouchDevice(), []);
+    // Detect touch device after mount to avoid SSR mismatch
+    const [isTouch, setIsTouch] = react.useState(false);
+    react.useEffect(() => {
+        setIsTouch(isTouchDevice());
+    }, []);
     const shouldAutoFocus = config.autoFocusOnMorph ?? !isTouch;
     const morphToSearchBar = react.useCallback(() => {
         // Prevent multiple simultaneous morphs

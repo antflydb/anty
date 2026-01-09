@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useCallback, type RefObject, useMemo } from 'react';
+import { useRef, useCallback, type RefObject, useState, useEffect } from 'react';
 import gsap from 'gsap';
 import type { AntyCharacterHandle } from '../components/AntyCharacter';
 import type { SearchBarConfig } from '../types';
@@ -58,8 +58,11 @@ export function useSearchMorph({
   // Track all active tweens so we can kill them if needed
   const activeTweensRef = useRef<gsap.core.Tween[]>([]);
 
-  // Detect touch device for conditional auto-focus (default: true on desktop, false on touch)
-  const isTouch = useMemo(() => isTouchDevice(), []);
+  // Detect touch device after mount to avoid SSR mismatch
+  const [isTouch, setIsTouch] = useState(false);
+  useEffect(() => {
+    setIsTouch(isTouchDevice());
+  }, []);
   const shouldAutoFocus = config.autoFocusOnMorph ?? !isTouch;
 
   const morphToSearchBar = useCallback(() => {
