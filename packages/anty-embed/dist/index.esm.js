@@ -12071,46 +12071,65 @@ const X = createLucideIcon("X", [
   ["path", { d: "m6 6 12 12", key: "d8bk6v" }]
 ]);
 
+// Lazy-loaded OpenAI client class - loaded only when needed
 let OpenAIClient = null;
-try {
-    // Dynamic require for optional peer dependency
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    OpenAIClient = require('openai').default;
-}
-catch {
-    // openai not installed - will error when AntyChat is used
+let openaiLoadPromise = null;
+async function loadOpenAI() {
+    // Return cached client if already loaded
+    if (OpenAIClient)
+        return OpenAIClient;
+    // Return existing promise if load is in progress
+    if (openaiLoadPromise)
+        return openaiLoadPromise;
+    // Start loading
+    openaiLoadPromise = (async () => {
+        try {
+            const module = await import('openai');
+            OpenAIClient = module.default;
+            return OpenAIClient;
+        }
+        catch {
+            openaiLoadPromise = null; // Reset so it can be retried
+            throw new Error('The "openai" package is required for chat functionality. ' +
+                'Install it with: npm install openai');
+        }
+    })();
+    return openaiLoadPromise;
 }
 class AntyChat {
     constructor(apiKey) {
         this.client = null;
         this.apiKey = null;
+        this.initPromise = null;
         this.apiKey = apiKey || null;
         if (this.apiKey) {
-            this.ensureOpenAI();
-            this.client = new OpenAIClient({
-                apiKey: this.apiKey,
-                dangerouslyAllowBrowser: true, // For demo purposes
-            });
+            // Start initialization but don't block constructor
+            this.initPromise = this.initClient(this.apiKey);
         }
     }
-    ensureOpenAI() {
-        if (!OpenAIClient) {
-            throw new Error('The "openai" package is required for chat functionality. ' +
-                'Install it with: npm install openai');
-        }
-    }
-    setApiKey(apiKey) {
-        this.ensureOpenAI();
-        this.apiKey = apiKey;
-        this.client = new OpenAIClient({
+    async initClient(apiKey) {
+        const Client = await loadOpenAI();
+        this.client = new Client({
             apiKey,
             dangerouslyAllowBrowser: true,
         });
     }
-    async sendMessage(messages, onChunk) {
+    async ensureClient() {
+        if (this.initPromise) {
+            await this.initPromise;
+        }
         if (!this.client) {
             throw new Error('OpenAI client not initialized. Please set API key.');
         }
+        return this.client;
+    }
+    async setApiKey(apiKey) {
+        this.apiKey = apiKey;
+        this.initPromise = this.initClient(apiKey);
+        await this.initPromise;
+    }
+    async sendMessage(messages, onChunk) {
+        const client = await this.ensureClient();
         const systemPrompt = {
             role: 'system',
             content: `You are Anty, a friendly AI assistant. You're chatting with someone who can see you react to the conversation.
@@ -12153,7 +12172,7 @@ Keep responses concise and natural.`,
         };
         const allMessages = [systemPrompt, ...messages];
         try {
-            const stream = await this.client.chat.completions.create({
+            const stream = await client.chat.completions.create({
                 model: 'gpt-4o-mini', // Changed from gpt-4 for 60x cost savings
                 messages: allMessages,
                 stream: true,
