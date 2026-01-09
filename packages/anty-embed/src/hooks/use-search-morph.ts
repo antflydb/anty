@@ -1,11 +1,17 @@
 'use client';
 
-import { useRef, useCallback, type RefObject } from 'react';
+import { useRef, useCallback, type RefObject, useState, useEffect } from 'react';
 import gsap from 'gsap';
 import type { AntyCharacterHandle } from '../components/AntyCharacter';
 import type { SearchBarConfig } from '../types';
 import { DEFAULT_SEARCH_BAR_CONFIG } from '../types';
 import { ENABLE_ANIMATION_DEBUG_LOGS } from '../lib/animation/feature-flags';
+
+// Detect touch device
+function isTouchDevice(): boolean {
+  if (typeof window === 'undefined') return false;
+  return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+}
 
 export interface SearchBarRefs {
   bar: RefObject<HTMLDivElement | null>;
@@ -51,6 +57,13 @@ export function useSearchMorph({
   const morphingRef = useRef(false);
   // Track all active tweens so we can kill them if needed
   const activeTweensRef = useRef<gsap.core.Tween[]>([]);
+
+  // Detect touch device after mount to avoid SSR mismatch
+  const [isTouch, setIsTouch] = useState(false);
+  useEffect(() => {
+    setIsTouch(isTouchDevice());
+  }, []);
+  const shouldAutoFocus = config.autoFocusOnMorph ?? !isTouch;
 
   const morphToSearchBar = useCallback(() => {
     // Prevent multiple simultaneous morphs
@@ -278,14 +291,17 @@ export function useSearchMorph({
         console.log('[SEARCH] Animation complete (timeout)');
       }
       morphingRef.current = false;
-      searchBarRefs.input.current?.focus();
+      // Conditionally auto-focus (default: true on desktop, false on touch)
+      if (shouldAutoFocus) {
+        searchBarRefs.input.current?.focus();
+      }
       onMorphComplete?.();
     }, 900);
 
     if (ENABLE_ANIMATION_DEBUG_LOGS) {
       console.log('[SEARCH] Animations started with delays');
     }
-  }, [characterRef, searchBarRefs, config, onMorphStart, onMorphComplete]);
+  }, [characterRef, searchBarRefs, config, onMorphStart, onMorphComplete, shouldAutoFocus]);
 
   const morphToCharacter = useCallback(() => {
     // Prevent multiple simultaneous morphs
