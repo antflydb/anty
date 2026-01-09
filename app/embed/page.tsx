@@ -213,6 +213,8 @@ export default function EmbedDemoPage() {
     <div
       style={{
         minHeight: '100vh',
+        width: '100%',
+        boxSizing: 'border-box',
         background: '#ffffff',
         padding: '24px 16px',
         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
