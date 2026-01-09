@@ -284,6 +284,8 @@ export default function EmbedDemoPage() {
           <div
             style={{
               padding: '24px',
+              width: '100%',
+              boxSizing: 'border-box',
             }}
           >
             {/* Size Control */}
