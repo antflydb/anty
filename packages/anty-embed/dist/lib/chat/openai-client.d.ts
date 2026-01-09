@@ -9,9 +9,11 @@ export interface ChatResponse {
 export declare class AntyChat {
     private client;
     private apiKey;
+    private initPromise;
     constructor(apiKey?: string);
+    private initClient;
     private ensureOpenAI;
-    setApiKey(apiKey: string): void;
+    setApiKey(apiKey: string): Promise<void>;
     sendMessage(messages: ChatMessage[], onChunk?: (chunk: string) => void): Promise<ChatResponse>;
 }
 export declare const createAntyChat: (apiKey?: string) => AntyChat;
