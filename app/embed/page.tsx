@@ -239,6 +239,8 @@ export default function EmbedDemoPage() {
               alignItems: 'center',
               justifyContent: 'center',
               minHeight: '280px',
+              width: '100%',
+              boxSizing: 'border-box',
             }}
           >
             <AntyCharacter
