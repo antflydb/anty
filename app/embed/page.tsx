@@ -214,7 +214,7 @@ export default function EmbedDemoPage() {
       style={{
         minHeight: '100vh',
         background: '#ffffff',
-        padding: '40px 20px',
+        padding: '24px 16px',
         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
         color: '#1e293b',
       }}
@@ -224,8 +224,8 @@ export default function EmbedDemoPage() {
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: '1fr 300px',
-            gap: '32px',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))',
+            gap: '24px',
             marginBottom: '48px',
           }}
         >
@@ -233,12 +233,12 @@ export default function EmbedDemoPage() {
           <div
             style={{
               position: 'relative',
-              padding: '48px',
+              padding: '24px',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
-              minHeight: '400px',
+              minHeight: '280px',
             }}
           >
             <AntyCharacter
@@ -589,8 +589,8 @@ export default function EmbedDemoPage() {
         {/* Emotions Grid */}
         <div
           style={{
-            padding: '32px',
-            marginBottom: '48px',
+            padding: '16px 0',
+            marginBottom: '32px',
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: emotionsEnabled ? '20px' : '0' }}>
@@ -678,7 +678,7 @@ export default function EmbedDemoPage() {
           style={{
             backgroundColor: '#1e293b',
             borderRadius: '16px',
-            padding: '32px',
+            padding: '20px',
             border: '1px solid #334155',
           }}
         >
