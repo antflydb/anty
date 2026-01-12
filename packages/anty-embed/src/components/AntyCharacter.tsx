@@ -19,6 +19,11 @@ import { createLookAnimation, createReturnFromLookAnimation } from '../lib/anima
 
 gsap.registerPlugin(useGSAP);
 
+// Reference size at which bracketScale produces the desired visual size
+const BRACKET_REFERENCE_SIZE = 160;
+// Bracket container is positioned with 13.15% insets, so it's 86.85% of character size
+const BRACKET_SIZE_RATIO = 0.8685;
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -446,6 +451,9 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
   const searchKbdRef = useRef<HTMLDivElement>(null);
   const searchGlowRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  // CSS-positioned bracket duplicates (for glued resize behavior)
+  const searchLeftBracketRef = useRef<HTMLDivElement>(null);
+  const searchRightBracketRef = useRef<HTMLDivElement>(null);
 
   // Internal search state
   const [internalSearchValue, setInternalSearchValue] = useState('');
@@ -470,6 +478,8 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
     kbd: searchKbdRef,
     glow: searchGlowRef,
     input: searchInputRef,
+    leftBracket: searchLeftBracketRef,
+    rightBracket: searchRightBracketRef,
   };
 
   // Internal refs for shadow/glow (self-contained, used if external refs not provided)
@@ -1349,6 +1359,9 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
             placeholderRef={searchPlaceholderRef}
             kbdRef={searchKbdRef}
             glowRef={searchGlowRef}
+            leftBracketRef={searchLeftBracketRef}
+            rightBracketRef={searchRightBracketRef}
+            scaledBracketSize={BRACKET_SIZE_RATIO * (searchConfig?.bracketScale ?? 0.14) * BRACKET_REFERENCE_SIZE}
             config={searchConfig}
             placeholder={searchPlaceholder}
             keyboardShortcut={searchShortcut}

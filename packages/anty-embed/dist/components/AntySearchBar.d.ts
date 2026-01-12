@@ -13,6 +13,12 @@ export interface AntySearchBarProps {
     placeholderRef: RefObject<HTMLDivElement | null>;
     kbdRef: RefObject<HTMLDivElement | null>;
     glowRef: RefObject<HTMLDivElement | null>;
+    /** Ref for left bracket duplicate (CSS-positioned at top-left) */
+    leftBracketRef?: RefObject<HTMLDivElement | null>;
+    /** Ref for right bracket duplicate (CSS-positioned at bottom-right) */
+    rightBracketRef?: RefObject<HTMLDivElement | null>;
+    /** Scaled bracket size in pixels (for CSS-positioned duplicates) */
+    scaledBracketSize?: number;
     /** Search bar configuration - controls dimensions and corner radius */
     config?: SearchBarConfig;
     /** Placeholder text shown when input is empty */
@@ -20,4 +26,4 @@ export interface AntySearchBarProps {
     /** Keyboard shortcut indicator (e.g., "⌘K") */
     keyboardShortcut?: string;
 }
-export declare function AntySearchBar({ active, value, onChange, onSubmit, inputRef, barRef, borderRef, borderGradientRef, placeholderRef, kbdRef, glowRef, config, placeholder, keyboardShortcut, }: AntySearchBarProps): import("react/jsx-runtime").JSX.Element;
+export declare function AntySearchBar({ active, value, onChange, onSubmit, inputRef, barRef, borderRef, borderGradientRef, placeholderRef, kbdRef, glowRef, leftBracketRef, rightBracketRef, scaledBracketSize, config, placeholder, keyboardShortcut, }: AntySearchBarProps): import("react/jsx-runtime").JSX.Element;

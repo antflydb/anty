@@ -6,7 +6,6 @@ import type { AntyCharacterHandle } from '../components/AntyCharacter';
 import type { SearchBarConfig } from '../types';
 import { DEFAULT_SEARCH_BAR_CONFIG } from '../types';
 import { ENABLE_ANIMATION_DEBUG_LOGS } from '../lib/animation/feature-flags';
-import { type BracketTargets } from '../lib/animation/bracket-positions';
 
 // Detect touch device
 function isTouchDevice(): boolean {
@@ -22,6 +21,10 @@ export interface SearchBarRefs {
   kbd: RefObject<HTMLDivElement | null>;
   glow: RefObject<HTMLDivElement | null>;
   input: RefObject<HTMLInputElement | null>;
+  /** CSS-positioned left bracket duplicate (for glued resize behavior) */
+  leftBracket: RefObject<HTMLDivElement | null>;
+  /** CSS-positioned right bracket duplicate (for glued resize behavior) */
+  rightBracket: RefObject<HTMLDivElement | null>;
 }
 
 // Reference size at which bracketScale produces the desired visual size
@@ -66,136 +69,6 @@ export function useSearchMorph({
   }, []);
   const shouldAutoFocus = config.autoFocusOnMorph ?? !isTouch;
 
-  // Track search mode state for resize handling
-  const [isSearchActive, setIsSearchActive] = useState(false);
-  const isAnimatingRef = useRef(false);
-  const lastTargetsRef = useRef<BracketTargets | null>(null);
-  // Store original bracket sizes for recalculation (before any transforms)
-  const originalBracketSizeRef = useRef<{ left: DOMRect; right: DOMRect } | null>(null);
-
-  // Recalculate bracket positions on resize (only when search is active)
-  // Uses delta-based approach: NO reset, just calculate difference and apply
-  const recalculateWithValidation = useCallback(() => {
-    // Guard: Don't recalc during active animation
-    if (isAnimatingRef.current) {
-      if (ENABLE_ANIMATION_DEBUG_LOGS) {
-        console.log('[RESIZE] Skipped - animation in progress');
-      }
-      return;
-    }
-
-    const leftBody = characterRef.current?.leftBodyRef?.current;
-    const rightBody = characterRef.current?.rightBodyRef?.current;
-    const searchBar = searchBarRefs.bar.current;
-
-    if (!leftBody || !rightBody || !searchBar) {
-      if (ENABLE_ANIMATION_DEBUG_LOGS) {
-        console.warn('[RESIZE] Missing refs - cannot recalculate');
-      }
-      return;
-    }
-
-    // === DELTA-BASED APPROACH ===
-    // Key insight: We can derive home position without resetting
-    // home = visualPosition - currentTransform
-    // This eliminates the visible reset that causes jank
-
-    // 1. Get current transform values
-    const currentLeftX = gsap.getProperty(leftBody, 'x') as number;
-    const currentLeftY = gsap.getProperty(leftBody, 'y') as number;
-    const currentRightX = gsap.getProperty(rightBody, 'x') as number;
-    const currentRightY = gsap.getProperty(rightBody, 'y') as number;
-
-    // 2. Get current visual positions (WITH transforms applied)
-    const leftRect = leftBody.getBoundingClientRect();
-    const rightRect = rightBody.getBoundingClientRect();
-    const searchBarRect = searchBar.getBoundingClientRect();
-
-    // Current visual centers
-    const leftVisualCenterX = leftRect.left + leftRect.width / 2;
-    const leftVisualCenterY = leftRect.top + leftRect.height / 2;
-    const rightVisualCenterX = rightRect.left + rightRect.width / 2;
-    const rightVisualCenterY = rightRect.top + rightRect.height / 2;
-
-    // 3. Calculate target positions (search bar corners)
-    // Brackets are already scaled, so use their current visual size
-    const scaledLeftSize = leftRect.width;
-    const scaledRightSize = rightRect.width;
-
-    // Target: bracket centers positioned so outer edges align with search bar corners
-    const leftTargetCenterX = searchBarRect.left + scaledLeftSize / 2;
-    const leftTargetCenterY = searchBarRect.top + scaledLeftSize / 2;
-    const rightTargetCenterX = searchBarRect.right - scaledRightSize / 2;
-    const rightTargetCenterY = searchBarRect.bottom - scaledRightSize / 2;
-
-    // 4. Calculate deltas (how much to adjust)
-    const leftDeltaX = leftTargetCenterX - leftVisualCenterX;
-    const leftDeltaY = leftTargetCenterY - leftVisualCenterY;
-    const rightDeltaX = rightTargetCenterX - rightVisualCenterX;
-    const rightDeltaY = rightTargetCenterY - rightVisualCenterY;
-
-    // Log if significant adjustment needed
-    if (ENABLE_ANIMATION_DEBUG_LOGS) {
-      console.log('[RESIZE] Delta adjustment:', {
-        left: `(${leftDeltaX.toFixed(1)}, ${leftDeltaY.toFixed(1)})`,
-        right: `(${rightDeltaX.toFixed(1)}, ${rightDeltaY.toFixed(1)})`,
-        viewport: window.innerWidth,
-      });
-    }
-
-    // 5. Apply deltas to current transforms (NO RESET - single visual change)
-    gsap.set(leftBody, {
-      x: currentLeftX + leftDeltaX,
-      y: currentLeftY + leftDeltaY,
-    });
-    gsap.set(rightBody, {
-      x: currentRightX + rightDeltaX,
-      y: currentRightY + rightDeltaY,
-    });
-
-    // Update stored targets for reference
-    const currentScale = gsap.getProperty(leftBody, 'scale') as number;
-    lastTargetsRef.current = {
-      left: { x: currentLeftX + leftDeltaX, y: currentLeftY + leftDeltaY, scale: currentScale },
-      right: { x: currentRightX + rightDeltaX, y: currentRightY + rightDeltaY, scale: currentScale },
-    };
-
-    // Also update glow size to match search bar
-    const searchGlow = searchBarRefs.glow.current;
-    if (searchGlow) {
-      gsap.set(searchGlow, { width: searchBarRect.width * 0.92 });
-    }
-  }, [characterRef, searchBarRefs]);
-
-  // Resize listener - only active when search mode is open
-  useEffect(() => {
-    if (!isSearchActive) return;
-
-    let timeout: ReturnType<typeof setTimeout>;
-    const handleResize = () => {
-      clearTimeout(timeout);
-      // Debounce to avoid excessive recalculations
-      timeout = setTimeout(recalculateWithValidation, 50);
-    };
-
-    window.addEventListener('resize', handleResize);
-
-    // Also use ResizeObserver for more precise detection (handles zoom, etc.)
-    let observer: ResizeObserver | null = null;
-    if (searchBarRefs.bar.current) {
-      observer = new ResizeObserver(handleResize);
-      observer.observe(searchBarRefs.bar.current);
-    }
-
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      if (observer) {
-        observer.disconnect();
-      }
-      clearTimeout(timeout);
-    };
-  }, [isSearchActive, recalculateWithValidation, searchBarRefs.bar]);
-
   const morphToSearchBar = useCallback(() => {
     // Prevent multiple simultaneous morphs
     if (morphingRef.current) {
@@ -206,7 +79,6 @@ export function useSearchMorph({
     }
 
     morphingRef.current = true;
-    isAnimatingRef.current = true; // Prevent resize recalculation during animation
     if (ENABLE_ANIMATION_DEBUG_LOGS) {
       console.log('[SEARCH] Opening search mode');
     }
@@ -284,9 +156,6 @@ export function useSearchMorph({
     const leftBracketRect = leftBody.getBoundingClientRect();
     const rightBracketRect = rightBody.getBoundingClientRect();
 
-    // Store original bracket sizes for resize recalculation
-    originalBracketSizeRef.current = { left: leftBracketRect, right: rightBracketRect };
-
     const leftBracketSize = leftBracketRect.width;
     const rightBracketSize = rightBracketRect.width;
 
@@ -317,12 +186,6 @@ export function useSearchMorph({
         right: { x: rightTransformX, y: rightTransformY }
       });
     }
-
-    // Store targets for resize validation
-    lastTargetsRef.current = {
-      left: { x: leftTransformX, y: leftTransformY, scale: bracketScale },
-      right: { x: rightTransformX, y: rightTransformY, scale: bracketScale },
-    };
 
     // Set z-index on character container AND brackets
     const characterContainer = leftBody.parentElement;
@@ -419,6 +282,23 @@ export function useSearchMorph({
       }
     }, 450);
 
+    // 550ms: CROSSFADE - Switch from GSAP-animated originals to CSS-positioned duplicates
+    // This is when original brackets have reached their final positions
+    // CSS duplicates are glued to search bar corners and handle resize automatically
+    setTimeout(() => {
+      const leftDupe = searchBarRefs.leftBracket.current;
+      const rightDupe = searchBarRefs.rightBracket.current;
+
+      if (leftDupe && rightDupe && leftBody && rightBody) {
+        if (ENABLE_ANIMATION_DEBUG_LOGS) {
+          console.log('[SEARCH] Crossfade: switching to CSS-positioned duplicates');
+        }
+        // Crossfade: fade in CSS duplicates, fade out GSAP originals
+        gsap.to([leftDupe, rightDupe], { opacity: 1, duration: 0.05, ease: 'power1.out' });
+        gsap.to([leftBody, rightBody], { opacity: 0, duration: 0.05, ease: 'power1.in' });
+      }
+    }, 550);
+
     // 850ms: Start breathing animation on glow
     setTimeout(() => {
       if (searchGlow) {
@@ -426,14 +306,12 @@ export function useSearchMorph({
       }
     }, 850);
 
-    // Complete callback after animation duration (~850ms)
+    // Complete callback after animation duration (~900ms)
     setTimeout(() => {
       if (ENABLE_ANIMATION_DEBUG_LOGS) {
         console.log('[SEARCH] Animation complete (timeout)');
       }
       morphingRef.current = false;
-      isAnimatingRef.current = false; // Allow resize recalculation
-      setIsSearchActive(true); // Enable resize listener
       // Conditionally auto-focus (default: true on desktop, false on touch)
       if (shouldAutoFocus) {
         searchBarRefs.input.current?.focus();
@@ -456,13 +334,15 @@ export function useSearchMorph({
     }
 
     morphingRef.current = true;
-    isAnimatingRef.current = true; // Prevent resize recalculation during animation
-    setIsSearchActive(false); // Disable resize listener
     onReturnStart?.();
 
     // Kill any existing tweens
     activeTweensRef.current.forEach(tween => tween.kill());
     activeTweensRef.current = [];
+
+    // Get duplicate bracket refs for crossfade
+    const leftDupe = searchBarRefs.leftBracket.current;
+    const rightDupe = searchBarRefs.rightBracket.current;
 
     // Show glows when halves come back together
     setTimeout(() => {
@@ -509,6 +389,18 @@ export function useSearchMorph({
 
     // Hide search glow canvas effect immediately
     characterRef.current?.hideSearchGlow?.();
+
+    // REVERSE CROSSFADE: Switch back from CSS duplicates to GSAP originals
+    // Originals still have their transforms from when morph completed, so they're at the corners
+    if (leftDupe && rightDupe && leftBody && rightBody) {
+      if (ENABLE_ANIMATION_DEBUG_LOGS) {
+        console.log('[SEARCH] Reverse crossfade: switching back to GSAP originals');
+      }
+      // Make originals visible (still at corner positions via transforms)
+      gsap.set([leftBody, rightBody], { opacity: 1 });
+      // Hide CSS duplicates
+      gsap.to([leftDupe, rightDupe], { opacity: 0, duration: 0.05, ease: 'power1.in' });
+    }
 
     // Border gradient fades out (0s)
     if (searchBorderGradient) {
@@ -620,7 +512,11 @@ export function useSearchMorph({
       if (searchPlaceholder) gsap.set(searchPlaceholder, { opacity: 0, filter: 'blur(0px)', y: 0 });
       if (searchKbd) gsap.set(searchKbd, { opacity: 0, filter: 'blur(0px)', y: 0 });
       if (searchGlow) gsap.set(searchGlow, { opacity: 0, scale: 1 });
-      gsap.set([leftBody, rightBody], { x: 0, y: 0, scale: 1, rotation: 0, scaleX: 1, scaleY: 1 });
+      // Reset original brackets
+      gsap.set([leftBody, rightBody], { x: 0, y: 0, scale: 1, rotation: 0, scaleX: 1, scaleY: 1, opacity: 1 });
+      // Ensure CSS duplicates are hidden
+      if (leftDupe) gsap.set(leftDupe, { opacity: 0 });
+      if (rightDupe) gsap.set(rightDupe, { opacity: 0 });
 
       // Resume idle animations after morph back is complete
       if (characterRef.current?.resumeIdle) {
@@ -628,10 +524,6 @@ export function useSearchMorph({
       }
 
       morphingRef.current = false;
-      isAnimatingRef.current = false;
-      // Clear stored bracket data
-      lastTargetsRef.current = null;
-      originalBracketSizeRef.current = null;
       onReturnComplete?.();
     }, 750);
   }, [characterRef, searchBarRefs, onReturnStart, onReturnComplete]);

@@ -9,6 +9,10 @@ export interface SearchBarRefs {
     kbd: RefObject<HTMLDivElement | null>;
     glow: RefObject<HTMLDivElement | null>;
     input: RefObject<HTMLInputElement | null>;
+    /** CSS-positioned left bracket duplicate (for glued resize behavior) */
+    leftBracket: RefObject<HTMLDivElement | null>;
+    /** CSS-positioned right bracket duplicate (for glued resize behavior) */
+    rightBracket: RefObject<HTMLDivElement | null>;
 }
 export interface UseSearchMorphOptions {
     characterRef: RefObject<AntyCharacterHandle | null>;

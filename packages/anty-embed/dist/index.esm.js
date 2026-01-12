@@ -6502,6 +6502,9 @@ const DEFAULT_SEARCH_BAR_CONFIG = {
     borderWidth: 2.75,
 };
 
+// Inlined SVG data URLs for bracket duplicates (same as AntyCharacter)
+const bodyRightSvg = "data:image/svg+xml,%3Csvg%20preserveAspectRatio%3D%22none%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20overflow%3D%22visible%22%20style%3D%22display%3A%20block%3B%22%20viewBox%3D%220%200%20173.082%20173.082%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%3Cpath%20id%3D%22RIGHT%22%20d%3D%22M173.082%20115.977C173.082%20147.515%20147.515%20173.082%20115.976%20173.082H4.18192C0.463682%20173.082%20-1.39842%20168.586%201.23077%20165.957L29.5407%20137.647H115.976C127.945%20137.647%20137.647%20127.945%20137.647%20115.977V29.5407L165.957%201.23077C168.586%20-1.39842%20173.082%200.463679%20173.082%204.18192V115.977Z%22%20fill%3D%22var%28--fill-0%2C%20%23052333%29%22%2F%3E%0A%3C%2Fsvg%3E";
+const bodyLeftSvg = "data:image/svg+xml,%3Csvg%20preserveAspectRatio%3D%22none%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20overflow%3D%22visible%22%20style%3D%22display%3A%20block%3B%22%20viewBox%3D%220%200%20173.694%20173.694%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%3Cpath%20id%3D%22LEFT%22%20d%3D%22M144.153%2035.4344H57.1051C45.1368%2035.4345%2035.4344%2045.1368%2035.4344%2057.1051V144.153L7.12469%20172.463C4.4955%20175.092%200%20173.23%200%20169.512V57.1051C2.28235e-05%2025.5668%2025.5668%204.78163e-05%2057.1051%200H169.512C173.23%200%20175.092%204.49551%20172.463%207.1247L144.153%2035.4344Z%22%20fill%3D%22var%28--fill-0%2C%20%23052333%29%22%2F%3E%0A%3C%2Fsvg%3E";
 // Detect touch device - memoized to avoid repeated checks
 function isTouchDevice$1() {
     if (typeof window === 'undefined')
@@ -6536,7 +6539,7 @@ function Kbd({ children, style }) {
             ...style,
         }, children: children }));
 }
-function AntySearchBar({ active, value, onChange, onSubmit, inputRef, barRef, borderRef, borderGradientRef, placeholderRef, kbdRef, glowRef, config = DEFAULT_SEARCH_BAR_CONFIG, placeholder = 'Search...', keyboardShortcut, }) {
+function AntySearchBar({ active, value, onChange, onSubmit, inputRef, barRef, borderRef, borderGradientRef, placeholderRef, kbdRef, glowRef, leftBracketRef, rightBracketRef, scaledBracketSize = 0, config = DEFAULT_SEARCH_BAR_CONFIG, placeholder = 'Search...', keyboardShortcut, }) {
     // Only hide placeholder when there's actual text typed
     const showPlaceholder = !value;
     // Detect touch device after hydration to avoid SSR mismatch
@@ -6656,7 +6659,25 @@ function AntySearchBar({ active, value, onChange, onSubmit, inputRef, barRef, bo
                                     fontFamily: 'Inter, sans-serif',
                                     fontWeight: 500,
                                     fontSize: `${fontSize}px`,
-                                } })] }) }) })] }));
+                                } })] }) }) }), scaledBracketSize > 0 && (jsxs(Fragment, { children: [jsx("div", { ref: leftBracketRef, style: {
+                            position: 'absolute',
+                            left: 0,
+                            top: 0,
+                            width: `${scaledBracketSize}px`,
+                            height: `${scaledBracketSize}px`,
+                            opacity: 0, // GSAP controls via crossfade
+                            pointerEvents: 'none',
+                            zIndex: 3,
+                        }, children: jsx("img", { alt: "", style: { width: '100%', height: '100%', display: 'block' }, src: bodyLeftSvg }) }), jsx("div", { ref: rightBracketRef, style: {
+                            position: 'absolute',
+                            right: 0,
+                            bottom: 0,
+                            width: `${scaledBracketSize}px`,
+                            height: `${scaledBracketSize}px`,
+                            opacity: 0, // GSAP controls via crossfade
+                            pointerEvents: 'none',
+                            zIndex: 3,
+                        }, children: jsx("img", { alt: "", style: { width: '100%', height: '100%', display: 'block' }, src: bodyRightSvg }) })] }))] }));
 }
 
 /**
@@ -10597,8 +10618,8 @@ function isTouchDevice() {
     return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 }
 // Reference size at which bracketScale produces the desired visual size
-const BRACKET_REFERENCE_SIZE = 160;
-function useSearchMorph({ characterRef, searchBarRefs, config = DEFAULT_SEARCH_BAR_CONFIG, characterSize = BRACKET_REFERENCE_SIZE, onMorphStart, onMorphComplete, onReturnStart, onReturnComplete, }) {
+const BRACKET_REFERENCE_SIZE$1 = 160;
+function useSearchMorph({ characterRef, searchBarRefs, config = DEFAULT_SEARCH_BAR_CONFIG, characterSize = BRACKET_REFERENCE_SIZE$1, onMorphStart, onMorphComplete, onReturnStart, onReturnComplete, }) {
     const morphingRef = useRef(false);
     // Track all active tweens so we can kill them if needed
     const activeTweensRef = useRef([]);
@@ -10608,117 +10629,6 @@ function useSearchMorph({ characterRef, searchBarRefs, config = DEFAULT_SEARCH_B
         setIsTouch(isTouchDevice());
     }, []);
     const shouldAutoFocus = config.autoFocusOnMorph ?? !isTouch;
-    // Track search mode state for resize handling
-    const [isSearchActive, setIsSearchActive] = useState(false);
-    const isAnimatingRef = useRef(false);
-    const lastTargetsRef = useRef(null);
-    // Store original bracket sizes for recalculation (before any transforms)
-    const originalBracketSizeRef = useRef(null);
-    // Recalculate bracket positions on resize (only when search is active)
-    // Uses delta-based approach: NO reset, just calculate difference and apply
-    const recalculateWithValidation = useCallback(() => {
-        // Guard: Don't recalc during active animation
-        if (isAnimatingRef.current) {
-            if (ENABLE_ANIMATION_DEBUG_LOGS) {
-                console.log('[RESIZE] Skipped - animation in progress');
-            }
-            return;
-        }
-        const leftBody = characterRef.current?.leftBodyRef?.current;
-        const rightBody = characterRef.current?.rightBodyRef?.current;
-        const searchBar = searchBarRefs.bar.current;
-        if (!leftBody || !rightBody || !searchBar) {
-            if (ENABLE_ANIMATION_DEBUG_LOGS) {
-                console.warn('[RESIZE] Missing refs - cannot recalculate');
-            }
-            return;
-        }
-        // === DELTA-BASED APPROACH ===
-        // Key insight: We can derive home position without resetting
-        // home = visualPosition - currentTransform
-        // This eliminates the visible reset that causes jank
-        // 1. Get current transform values
-        const currentLeftX = gsapWithCSS.getProperty(leftBody, 'x');
-        const currentLeftY = gsapWithCSS.getProperty(leftBody, 'y');
-        const currentRightX = gsapWithCSS.getProperty(rightBody, 'x');
-        const currentRightY = gsapWithCSS.getProperty(rightBody, 'y');
-        // 2. Get current visual positions (WITH transforms applied)
-        const leftRect = leftBody.getBoundingClientRect();
-        const rightRect = rightBody.getBoundingClientRect();
-        const searchBarRect = searchBar.getBoundingClientRect();
-        // Current visual centers
-        const leftVisualCenterX = leftRect.left + leftRect.width / 2;
-        const leftVisualCenterY = leftRect.top + leftRect.height / 2;
-        const rightVisualCenterX = rightRect.left + rightRect.width / 2;
-        const rightVisualCenterY = rightRect.top + rightRect.height / 2;
-        // 3. Calculate target positions (search bar corners)
-        // Brackets are already scaled, so use their current visual size
-        const scaledLeftSize = leftRect.width;
-        const scaledRightSize = rightRect.width;
-        // Target: bracket centers positioned so outer edges align with search bar corners
-        const leftTargetCenterX = searchBarRect.left + scaledLeftSize / 2;
-        const leftTargetCenterY = searchBarRect.top + scaledLeftSize / 2;
-        const rightTargetCenterX = searchBarRect.right - scaledRightSize / 2;
-        const rightTargetCenterY = searchBarRect.bottom - scaledRightSize / 2;
-        // 4. Calculate deltas (how much to adjust)
-        const leftDeltaX = leftTargetCenterX - leftVisualCenterX;
-        const leftDeltaY = leftTargetCenterY - leftVisualCenterY;
-        const rightDeltaX = rightTargetCenterX - rightVisualCenterX;
-        const rightDeltaY = rightTargetCenterY - rightVisualCenterY;
-        // Log if significant adjustment needed
-        if (ENABLE_ANIMATION_DEBUG_LOGS) {
-            console.log('[RESIZE] Delta adjustment:', {
-                left: `(${leftDeltaX.toFixed(1)}, ${leftDeltaY.toFixed(1)})`,
-                right: `(${rightDeltaX.toFixed(1)}, ${rightDeltaY.toFixed(1)})`,
-                viewport: window.innerWidth,
-            });
-        }
-        // 5. Apply deltas to current transforms (NO RESET - single visual change)
-        gsapWithCSS.set(leftBody, {
-            x: currentLeftX + leftDeltaX,
-            y: currentLeftY + leftDeltaY,
-        });
-        gsapWithCSS.set(rightBody, {
-            x: currentRightX + rightDeltaX,
-            y: currentRightY + rightDeltaY,
-        });
-        // Update stored targets for reference
-        const currentScale = gsapWithCSS.getProperty(leftBody, 'scale');
-        lastTargetsRef.current = {
-            left: { x: currentLeftX + leftDeltaX, y: currentLeftY + leftDeltaY, scale: currentScale },
-            right: { x: currentRightX + rightDeltaX, y: currentRightY + rightDeltaY, scale: currentScale },
-        };
-        // Also update glow size to match search bar
-        const searchGlow = searchBarRefs.glow.current;
-        if (searchGlow) {
-            gsapWithCSS.set(searchGlow, { width: searchBarRect.width * 0.92 });
-        }
-    }, [characterRef, searchBarRefs]);
-    // Resize listener - only active when search mode is open
-    useEffect(() => {
-        if (!isSearchActive)
-            return;
-        let timeout;
-        const handleResize = () => {
-            clearTimeout(timeout);
-            // Debounce to avoid excessive recalculations
-            timeout = setTimeout(recalculateWithValidation, 50);
-        };
-        window.addEventListener('resize', handleResize);
-        // Also use ResizeObserver for more precise detection (handles zoom, etc.)
-        let observer = null;
-        if (searchBarRefs.bar.current) {
-            observer = new ResizeObserver(handleResize);
-            observer.observe(searchBarRefs.bar.current);
-        }
-        return () => {
-            window.removeEventListener('resize', handleResize);
-            if (observer) {
-                observer.disconnect();
-            }
-            clearTimeout(timeout);
-        };
-    }, [isSearchActive, recalculateWithValidation, searchBarRefs.bar]);
     const morphToSearchBar = useCallback(() => {
         // Prevent multiple simultaneous morphs
         if (morphingRef.current) {
@@ -10728,7 +10638,6 @@ function useSearchMorph({ characterRef, searchBarRefs, config = DEFAULT_SEARCH_B
             return;
         }
         morphingRef.current = true;
-        isAnimatingRef.current = true; // Prevent resize recalculation during animation
         if (ENABLE_ANIMATION_DEBUG_LOGS) {
             console.log('[SEARCH] Opening search mode');
         }
@@ -10784,7 +10693,7 @@ function useSearchMorph({ characterRef, searchBarRefs, config = DEFAULT_SEARCH_B
         // Calculate positions
         // Compensate bracket scale so brackets are always the same visual size regardless of character size
         const baseBracketScale = config.bracketScale;
-        const bracketScale = baseBracketScale * (BRACKET_REFERENCE_SIZE / characterSize);
+        const bracketScale = baseBracketScale * (BRACKET_REFERENCE_SIZE$1 / characterSize);
         // Set search bar to final scale BEFORE reading position
         gsapWithCSS.set(searchBar, { scale: 1, opacity: 0 });
         // Get actual search bar position (at final scale)
@@ -10792,8 +10701,6 @@ function useSearchMorph({ characterRef, searchBarRefs, config = DEFAULT_SEARCH_B
         // Get current bracket sizes (BEFORE scaling)
         const leftBracketRect = leftBody.getBoundingClientRect();
         const rightBracketRect = rightBody.getBoundingClientRect();
-        // Store original bracket sizes for resize recalculation
-        originalBracketSizeRef.current = { left: leftBracketRect, right: rightBracketRect };
         const leftBracketSize = leftBracketRect.width;
         const rightBracketSize = rightBracketRect.width;
         const scaledLeftBracketSize = leftBracketSize * bracketScale;
@@ -10819,11 +10726,6 @@ function useSearchMorph({ characterRef, searchBarRefs, config = DEFAULT_SEARCH_B
                 right: { x: rightTransformX, y: rightTransformY }
             });
         }
-        // Store targets for resize validation
-        lastTargetsRef.current = {
-            left: { x: leftTransformX, y: leftTransformY, scale: bracketScale },
-            right: { x: rightTransformX, y: rightTransformY, scale: bracketScale },
-        };
         // Set z-index on character container AND brackets
         const characterContainer = leftBody.parentElement;
         gsapWithCSS.set(characterContainer, { zIndex: 10 });
@@ -10907,20 +10809,33 @@ function useSearchMorph({ characterRef, searchBarRefs, config = DEFAULT_SEARCH_B
                 gsapWithCSS.to(searchGlow, { opacity: 1, scale: 1, duration: 0.3, ease: 'power2.out' });
             }
         }, 450);
+        // 550ms: CROSSFADE - Switch from GSAP-animated originals to CSS-positioned duplicates
+        // This is when original brackets have reached their final positions
+        // CSS duplicates are glued to search bar corners and handle resize automatically
+        setTimeout(() => {
+            const leftDupe = searchBarRefs.leftBracket.current;
+            const rightDupe = searchBarRefs.rightBracket.current;
+            if (leftDupe && rightDupe && leftBody && rightBody) {
+                if (ENABLE_ANIMATION_DEBUG_LOGS) {
+                    console.log('[SEARCH] Crossfade: switching to CSS-positioned duplicates');
+                }
+                // Crossfade: fade in CSS duplicates, fade out GSAP originals
+                gsapWithCSS.to([leftDupe, rightDupe], { opacity: 1, duration: 0.05, ease: 'power1.out' });
+                gsapWithCSS.to([leftBody, rightBody], { opacity: 0, duration: 0.05, ease: 'power1.in' });
+            }
+        }, 550);
         // 850ms: Start breathing animation on glow
         setTimeout(() => {
             if (searchGlow) {
                 gsapWithCSS.to(searchGlow, { scale: 1.12, opacity: 0.7, duration: 2, ease: 'sine.inOut', repeat: -1, yoyo: true });
             }
         }, 850);
-        // Complete callback after animation duration (~850ms)
+        // Complete callback after animation duration (~900ms)
         setTimeout(() => {
             if (ENABLE_ANIMATION_DEBUG_LOGS) {
                 console.log('[SEARCH] Animation complete (timeout)');
             }
             morphingRef.current = false;
-            isAnimatingRef.current = false; // Allow resize recalculation
-            setIsSearchActive(true); // Enable resize listener
             // Conditionally auto-focus (default: true on desktop, false on touch)
             if (shouldAutoFocus) {
                 searchBarRefs.input.current?.focus();
@@ -10940,12 +10855,13 @@ function useSearchMorph({ characterRef, searchBarRefs, config = DEFAULT_SEARCH_B
             return;
         }
         morphingRef.current = true;
-        isAnimatingRef.current = true; // Prevent resize recalculation during animation
-        setIsSearchActive(false); // Disable resize listener
         onReturnStart?.();
         // Kill any existing tweens
         activeTweensRef.current.forEach(tween => tween.kill());
         activeTweensRef.current = [];
+        // Get duplicate bracket refs for crossfade
+        const leftDupe = searchBarRefs.leftBracket.current;
+        const rightDupe = searchBarRefs.rightBracket.current;
         // Show glows when halves come back together
         setTimeout(() => {
             characterRef.current?.showGlows?.(true);
@@ -10986,6 +10902,17 @@ function useSearchMorph({ characterRef, searchBarRefs, config = DEFAULT_SEARCH_B
         }
         // Hide search glow canvas effect immediately
         characterRef.current?.hideSearchGlow?.();
+        // REVERSE CROSSFADE: Switch back from CSS duplicates to GSAP originals
+        // Originals still have their transforms from when morph completed, so they're at the corners
+        if (leftDupe && rightDupe && leftBody && rightBody) {
+            if (ENABLE_ANIMATION_DEBUG_LOGS) {
+                console.log('[SEARCH] Reverse crossfade: switching back to GSAP originals');
+            }
+            // Make originals visible (still at corner positions via transforms)
+            gsapWithCSS.set([leftBody, rightBody], { opacity: 1 });
+            // Hide CSS duplicates
+            gsapWithCSS.to([leftDupe, rightDupe], { opacity: 0, duration: 0.05, ease: 'power1.in' });
+        }
         // Border gradient fades out (0s)
         if (searchBorderGradient) {
             activeTweensRef.current.push(gsapWithCSS.to(searchBorderGradient, {
@@ -11078,16 +11005,18 @@ function useSearchMorph({ characterRef, searchBarRefs, config = DEFAULT_SEARCH_B
                 gsapWithCSS.set(searchKbd, { opacity: 0, filter: 'blur(0px)', y: 0 });
             if (searchGlow)
                 gsapWithCSS.set(searchGlow, { opacity: 0, scale: 1 });
-            gsapWithCSS.set([leftBody, rightBody], { x: 0, y: 0, scale: 1, rotation: 0, scaleX: 1, scaleY: 1 });
+            // Reset original brackets
+            gsapWithCSS.set([leftBody, rightBody], { x: 0, y: 0, scale: 1, rotation: 0, scaleX: 1, scaleY: 1, opacity: 1 });
+            // Ensure CSS duplicates are hidden
+            if (leftDupe)
+                gsapWithCSS.set(leftDupe, { opacity: 0 });
+            if (rightDupe)
+                gsapWithCSS.set(rightDupe, { opacity: 0 });
             // Resume idle animations after morph back is complete
             if (characterRef.current?.resumeIdle) {
                 characterRef.current.resumeIdle();
             }
             morphingRef.current = false;
-            isAnimatingRef.current = false;
-            // Clear stored bracket data
-            lastTargetsRef.current = null;
-            originalBracketSizeRef.current = null;
             onReturnComplete?.();
         }, 750);
     }, [characterRef, searchBarRefs, onReturnStart, onReturnComplete]);
@@ -11099,6 +11028,10 @@ function useSearchMorph({ characterRef, searchBarRefs, config = DEFAULT_SEARCH_B
 }
 
 gsapWithCSS.registerPlugin(useGSAP);
+// Reference size at which bracketScale produces the desired visual size
+const BRACKET_REFERENCE_SIZE = 160;
+// Bracket container is positioned with 13.15% insets, so it's 86.85% of character size
+const BRACKET_SIZE_RATIO = 0.8685;
 /** Preset configurations for common use cases */
 const PRESETS = {
     /** Standard display with shadow and glow */
@@ -11353,6 +11286,9 @@ const AntyCharacter = forwardRef((props, ref) => {
     const searchKbdRef = useRef(null);
     const searchGlowRef = useRef(null);
     const searchInputRef = useRef(null);
+    // CSS-positioned bracket duplicates (for glued resize behavior)
+    const searchLeftBracketRef = useRef(null);
+    const searchRightBracketRef = useRef(null);
     // Internal search state
     const [internalSearchValue, setInternalSearchValue] = useState('');
     const [isSearchActive, setIsSearchActive] = useState(false);
@@ -11375,6 +11311,8 @@ const AntyCharacter = forwardRef((props, ref) => {
         kbd: searchKbdRef,
         glow: searchGlowRef,
         input: searchInputRef,
+        leftBracket: searchLeftBracketRef,
+        rightBracket: searchRightBracketRef,
     };
     // Internal refs for shadow/glow (self-contained, used if external refs not provided)
     const internalShadowRef = useRef(null);
@@ -12040,7 +11978,7 @@ const AntyCharacter = forwardRef((props, ref) => {
             ...containerStyle,
             touchAction: 'manipulation', // Prevent double-tap zoom on mobile
             ...style,
-        }, className: className, children: [jsx(AntyParticleCanvas, { ref: canvasRef, particles: particles, width: size * 5, height: size * 5, sizeScale: sizeScale }), jsxs("div", { style: useFullContainer ? styles.characterArea(size) : { position: 'relative', width: size, height: size }, children: [showGlow && !hasExternalGlow && (jsx("div", { ref: internalOuterGlowRef, style: styles.outerGlow(sizeScale) })), showGlow && !hasExternalGlow && (jsx("div", { ref: internalInnerGlowRef, style: styles.innerGlow(sizeScale) })), isSuperMode && (jsx("div", { ref: superGlowRef, style: styles.superGlow })), jsxs("div", { ref: characterRef, className: isSuperMode ? 'super-mode' : undefined, style: styles.character, children: [jsx("div", { ref: rightBodyRef, style: styles.rightBody, children: jsx("img", { alt: "", style: styles.bodyImage, src: bodyRightSvg }) }), jsx("div", { ref: leftBodyRef, style: styles.leftBody, children: jsx("img", { alt: "", style: styles.bodyImage, src: bodyLeftSvg }) }), jsx("div", { style: styles.leftEyeContainer, children: jsx("div", { ref: leftEyeRef, style: styles.eyeWrapper(initialEyeDimensions.width, initialEyeDimensions.height, sizeScale), children: jsx("svg", { ref: leftEyeSvgRef, width: "100%", height: "100%", viewBox: initialEyeDimensions.viewBox, fill: "none", xmlns: "http://www.w3.org/2000/svg", style: { display: 'block' }, children: jsx("path", { ref: leftEyePathRef, d: getEyeShape('IDLE', 'left'), fill: "#052333" }) }) }) }), jsx("div", { style: styles.rightEyeContainer, children: jsx("div", { ref: rightEyeRef, style: styles.eyeWrapper(initialEyeDimensions.width, initialEyeDimensions.height, sizeScale), children: jsx("svg", { ref: rightEyeSvgRef, width: "100%", height: "100%", viewBox: initialEyeDimensions.viewBox, fill: "none", xmlns: "http://www.w3.org/2000/svg", style: { display: 'block' }, children: jsx("path", { ref: rightEyePathRef, d: getEyeShape('IDLE', 'right'), fill: "#052333" }) }) }) }), debugMode && (jsxs(Fragment, { children: [jsx("div", { style: styles.debugBorder }), !isOff && (jsxs(Fragment, { children: [jsx("div", { style: styles.debugCrosshair('calc(33.41% + 13.915% - 1px)', 'calc(31.63% + 5.825% - 7px)', 'yellow', true) }), jsx("div", { style: styles.debugCrosshair('calc(33.41% + 13.915% - 6px)', 'calc(31.63% + 5.825% - 2px)', 'yellow', false) })] })), !isOff && (jsxs(Fragment, { children: [jsx("div", { style: styles.debugCrosshair('calc(33.41% + 13.915% - 1px)', 'calc(57.36% + 5.82% - 7px)', 'orange', true) }), jsx("div", { style: styles.debugCrosshair('calc(33.41% + 13.915% - 6px)', 'calc(57.36% + 5.82% - 2px)', 'orange', false) })] }))] }))] }), searchEnabled && (jsx(AntySearchBar, { active: isSearchActive, value: searchValueState, onChange: handleSearchChange, onSubmit: onSearchSubmit, inputRef: searchInputRef, barRef: searchBarRef, borderRef: searchBorderRef, borderGradientRef: searchBorderGradientRef, placeholderRef: searchPlaceholderRef, kbdRef: searchKbdRef, glowRef: searchGlowRef, config: searchConfig, placeholder: searchPlaceholder, keyboardShortcut: searchShortcut }))] }), showShadow && !hasExternalShadow && (jsx("div", { ref: internalShadowRef, style: styles.shadow(sizeScale) }))] }));
+        }, className: className, children: [jsx(AntyParticleCanvas, { ref: canvasRef, particles: particles, width: size * 5, height: size * 5, sizeScale: sizeScale }), jsxs("div", { style: useFullContainer ? styles.characterArea(size) : { position: 'relative', width: size, height: size }, children: [showGlow && !hasExternalGlow && (jsx("div", { ref: internalOuterGlowRef, style: styles.outerGlow(sizeScale) })), showGlow && !hasExternalGlow && (jsx("div", { ref: internalInnerGlowRef, style: styles.innerGlow(sizeScale) })), isSuperMode && (jsx("div", { ref: superGlowRef, style: styles.superGlow })), jsxs("div", { ref: characterRef, className: isSuperMode ? 'super-mode' : undefined, style: styles.character, children: [jsx("div", { ref: rightBodyRef, style: styles.rightBody, children: jsx("img", { alt: "", style: styles.bodyImage, src: bodyRightSvg }) }), jsx("div", { ref: leftBodyRef, style: styles.leftBody, children: jsx("img", { alt: "", style: styles.bodyImage, src: bodyLeftSvg }) }), jsx("div", { style: styles.leftEyeContainer, children: jsx("div", { ref: leftEyeRef, style: styles.eyeWrapper(initialEyeDimensions.width, initialEyeDimensions.height, sizeScale), children: jsx("svg", { ref: leftEyeSvgRef, width: "100%", height: "100%", viewBox: initialEyeDimensions.viewBox, fill: "none", xmlns: "http://www.w3.org/2000/svg", style: { display: 'block' }, children: jsx("path", { ref: leftEyePathRef, d: getEyeShape('IDLE', 'left'), fill: "#052333" }) }) }) }), jsx("div", { style: styles.rightEyeContainer, children: jsx("div", { ref: rightEyeRef, style: styles.eyeWrapper(initialEyeDimensions.width, initialEyeDimensions.height, sizeScale), children: jsx("svg", { ref: rightEyeSvgRef, width: "100%", height: "100%", viewBox: initialEyeDimensions.viewBox, fill: "none", xmlns: "http://www.w3.org/2000/svg", style: { display: 'block' }, children: jsx("path", { ref: rightEyePathRef, d: getEyeShape('IDLE', 'right'), fill: "#052333" }) }) }) }), debugMode && (jsxs(Fragment, { children: [jsx("div", { style: styles.debugBorder }), !isOff && (jsxs(Fragment, { children: [jsx("div", { style: styles.debugCrosshair('calc(33.41% + 13.915% - 1px)', 'calc(31.63% + 5.825% - 7px)', 'yellow', true) }), jsx("div", { style: styles.debugCrosshair('calc(33.41% + 13.915% - 6px)', 'calc(31.63% + 5.825% - 2px)', 'yellow', false) })] })), !isOff && (jsxs(Fragment, { children: [jsx("div", { style: styles.debugCrosshair('calc(33.41% + 13.915% - 1px)', 'calc(57.36% + 5.82% - 7px)', 'orange', true) }), jsx("div", { style: styles.debugCrosshair('calc(33.41% + 13.915% - 6px)', 'calc(57.36% + 5.82% - 2px)', 'orange', false) })] }))] }))] }), searchEnabled && (jsx(AntySearchBar, { active: isSearchActive, value: searchValueState, onChange: handleSearchChange, onSubmit: onSearchSubmit, inputRef: searchInputRef, barRef: searchBarRef, borderRef: searchBorderRef, borderGradientRef: searchBorderGradientRef, placeholderRef: searchPlaceholderRef, kbdRef: searchKbdRef, glowRef: searchGlowRef, leftBracketRef: searchLeftBracketRef, rightBracketRef: searchRightBracketRef, scaledBracketSize: BRACKET_SIZE_RATIO * (searchConfig?.bracketScale ?? 0.14) * BRACKET_REFERENCE_SIZE, config: searchConfig, placeholder: searchPlaceholder, keyboardShortcut: searchShortcut }))] }), showShadow && !hasExternalShadow && (jsx("div", { ref: internalShadowRef, style: styles.shadow(sizeScale) }))] }));
 });
 AntyCharacter.displayName = 'AntyCharacter';
 
