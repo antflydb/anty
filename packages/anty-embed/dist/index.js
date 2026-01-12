@@ -6510,6 +6510,13 @@ function isTouchDevice$1() {
         return false;
     return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 }
+// Responsive typography constants - aligned with iOS/Material/Tailwind
+const RESPONSIVE_BREAKPOINT = 480;
+const MIN_SEARCH_WIDTH = 280;
+const TYPOGRAPHY = {
+    mobile: { fontSize: 16, padding: 16 }, // Standard body, 8px grid
+    desktop: { fontSize: 18, padding: 24 }, // Large body, comfortable spacing
+};
 // Inline Kbd component (no external dependencies)
 function Kbd({ children, style }) {
     return (jsxRuntime.jsx("kbd", { style: {
@@ -6539,10 +6546,23 @@ function AntySearchBar({ active, value, onChange, onSubmit, inputRef, barRef, bo
     react.useEffect(() => {
         setIsTouch(isTouchDevice$1());
     }, []);
-    // Determine whether to show keyboard shortcut (default: hide on touch devices)
-    const shouldShowShortcut = config.showShortcut ?? !isTouch;
+    // Track viewport width for responsive sizing (SSR-safe)
+    const [viewportWidth, setViewportWidth] = react.useState(1024);
+    react.useEffect(() => {
+        setViewportWidth(window.innerWidth);
+        const handleResize = () => setViewportWidth(window.innerWidth);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
     // Extract config values
     const { width, height, borderRadius, innerRadius, borderWidth } = config;
+    // Responsive calculations
+    const isMobile = viewportWidth < RESPONSIVE_BREAKPOINT;
+    const { fontSize, padding: sidePadding } = isMobile ? TYPOGRAPHY.mobile : TYPOGRAPHY.desktop;
+    const actualWidth = Math.max(MIN_SEARCH_WIDTH, Math.min(width, viewportWidth * 0.9));
+    const glowWidth = actualWidth * 0.92;
+    // Determine whether to show keyboard shortcut (default: hide on touch devices)
+    const shouldShowShortcut = config.showShortcut ?? !isTouch;
     // Default height for content area (input stays at standard size)
     const defaultHeight = DEFAULT_SEARCH_BAR_CONFIG.height;
     // Calculate if we should center content or top-align
@@ -6553,8 +6573,7 @@ function AntySearchBar({ active, value, onChange, onSubmit, inputRef, barRef, bo
     const contentTopPadding = 2; // px - top padding when top-aligned
     return (jsxRuntime.jsxs("div", { ref: barRef, style: {
             position: 'absolute',
-            width: `${width}px`,
-            maxWidth: '90vw', // Prevent overflow on mobile
+            width: `${actualWidth}px`,
             height: `${height}px`,
             left: '50%',
             top: '50%',
@@ -6564,7 +6583,7 @@ function AntySearchBar({ active, value, onChange, onSubmit, inputRef, barRef, bo
             zIndex: 2,
         }, children: [jsxRuntime.jsx("div", { ref: glowRef, style: {
                     position: 'absolute',
-                    width: `${width * 0.92}px`,
+                    width: `${glowWidth}px`,
                     height: `${height * 1.8}px`, // Taller to create elongated ellipse effect
                     left: '50%',
                     top: '50%',
@@ -6599,7 +6618,7 @@ function AntySearchBar({ active, value, onChange, onSubmit, inputRef, barRef, bo
                                 : { top: '50%', transform: 'translateY(-50%)' }),
                         }, children: [jsxRuntime.jsx("div", { ref: placeholderRef, style: {
                                     position: 'absolute',
-                                    left: '24px',
+                                    left: `${sidePadding}px`,
                                     top: 0,
                                     height: '100%',
                                     display: 'flex',
@@ -6609,12 +6628,12 @@ function AntySearchBar({ active, value, onChange, onSubmit, inputRef, barRef, bo
                                     opacity: showPlaceholder ? 1 : 0,
                                     fontFamily: 'Inter, sans-serif',
                                     fontWeight: 500,
-                                    fontSize: '17.85px',
+                                    fontSize: `${fontSize}px`,
                                     color: '#D4D3D3',
                                     transition: showPlaceholder ? 'none' : 'opacity 0.15s ease-out',
                                 }, children: placeholder }), jsxRuntime.jsx("div", { ref: kbdRef, style: {
                                     position: 'absolute',
-                                    right: '24px',
+                                    right: `${sidePadding}px`,
                                     top: 0,
                                     height: '100%',
                                     display: shouldShowShortcut ? 'flex' : 'none',
@@ -6631,14 +6650,14 @@ function AntySearchBar({ active, value, onChange, onSubmit, inputRef, barRef, bo
                                 , style: {
                                     width: '100%',
                                     height: '100%',
-                                    padding: '0 24px',
+                                    padding: `0 ${sidePadding}px`,
                                     backgroundColor: 'transparent',
                                     outline: 'none',
                                     border: 'none',
                                     color: '#052333',
                                     fontFamily: 'Inter, sans-serif',
                                     fontWeight: 500,
-                                    fontSize: '17.85px',
+                                    fontSize: `${fontSize}px`,
                                 } })] }) }) })] }));
 }
 
@@ -10591,6 +10610,125 @@ function useSearchMorph({ characterRef, searchBarRefs, config = DEFAULT_SEARCH_B
         setIsTouch(isTouchDevice());
     }, []);
     const shouldAutoFocus = config.autoFocusOnMorph ?? !isTouch;
+    // Track search mode state for resize handling
+    const [isSearchActive, setIsSearchActive] = react.useState(false);
+    const isAnimatingRef = react.useRef(false);
+    const lastTargetsRef = react.useRef(null);
+    // Store original bracket sizes for recalculation (before any transforms)
+    const originalBracketSizeRef = react.useRef(null);
+    // Recalculate bracket positions on resize (only when search is active)
+    const recalculateWithValidation = react.useCallback(() => {
+        // Guard: Don't recalc during active animation
+        if (isAnimatingRef.current) {
+            if (ENABLE_ANIMATION_DEBUG_LOGS) {
+                console.log('[RESIZE] Skipped - animation in progress');
+            }
+            return;
+        }
+        const leftBody = characterRef.current?.leftBodyRef?.current;
+        const rightBody = characterRef.current?.rightBodyRef?.current;
+        const searchBar = searchBarRefs.bar.current;
+        if (!leftBody || !rightBody || !searchBar) {
+            if (ENABLE_ANIMATION_DEBUG_LOGS) {
+                console.warn('[RESIZE] Missing refs - cannot recalculate');
+            }
+            return;
+        }
+        // Save current transforms before reset (for logging)
+        const prevLeftX = gsapWithCSS.getProperty(leftBody, 'x');
+        const prevLeftY = gsapWithCSS.getProperty(leftBody, 'y');
+        const prevRightX = gsapWithCSS.getProperty(rightBody, 'x');
+        const prevRightY = gsapWithCSS.getProperty(rightBody, 'y');
+        // Temporarily reset brackets to get their CURRENT "home" positions
+        // (This accounts for centering that shifts when viewport resizes)
+        gsapWithCSS.set([leftBody, rightBody], { x: 0, y: 0, scale: 1 });
+        // Get fresh positions
+        const searchBarRect = searchBar.getBoundingClientRect();
+        const leftBracketRect = leftBody.getBoundingClientRect();
+        const rightBracketRect = rightBody.getBoundingClientRect();
+        // Calculate compensated scale
+        const compensatedScale = config.bracketScale * (BRACKET_REFERENCE_SIZE / characterSize);
+        const scaledLeftSize = leftBracketRect.width * compensatedScale;
+        const scaledRightSize = rightBracketRect.width * compensatedScale;
+        // Target positions: bracket centers at search bar corners (so outer edges align)
+        const leftTargetCenterX = searchBarRect.left + (scaledLeftSize / 2);
+        const leftTargetCenterY = searchBarRect.top + (scaledLeftSize / 2);
+        const rightTargetCenterX = searchBarRect.right - (scaledRightSize / 2);
+        const rightTargetCenterY = searchBarRect.bottom - (scaledRightSize / 2);
+        // Get bracket's current center position (at scale=1, transform=0)
+        const leftCurrentCenterX = leftBracketRect.left + (leftBracketRect.width / 2);
+        const leftCurrentCenterY = leftBracketRect.top + (leftBracketRect.height / 2);
+        const rightCurrentCenterX = rightBracketRect.left + (rightBracketRect.width / 2);
+        const rightCurrentCenterY = rightBracketRect.top + (rightBracketRect.height / 2);
+        // Calculate new transforms
+        const newTargets = {
+            left: {
+                x: leftTargetCenterX - leftCurrentCenterX,
+                y: leftTargetCenterY - leftCurrentCenterY,
+                scale: compensatedScale,
+            },
+            right: {
+                x: rightTargetCenterX - rightCurrentCenterX,
+                y: rightTargetCenterY - rightCurrentCenterY,
+                scale: compensatedScale,
+            },
+        };
+        // Log validation info
+        if (ENABLE_ANIMATION_DEBUG_LOGS) {
+            const leftDeltaX = Math.abs(newTargets.left.x - prevLeftX);
+            const leftDeltaY = Math.abs(newTargets.left.y - prevLeftY);
+            const rightDeltaX = Math.abs(newTargets.right.x - prevRightX);
+            const rightDeltaY = Math.abs(newTargets.right.y - prevRightY);
+            console.log('[RESIZE] Position adjustment:', {
+                leftDelta: `(${leftDeltaX.toFixed(1)}, ${leftDeltaY.toFixed(1)})`,
+                rightDelta: `(${rightDeltaX.toFixed(1)}, ${rightDeltaY.toFixed(1)})`,
+                viewport: window.innerWidth,
+            });
+        }
+        // Apply new positions (instant)
+        gsapWithCSS.set(leftBody, {
+            x: newTargets.left.x,
+            y: newTargets.left.y,
+            scale: newTargets.left.scale,
+        });
+        gsapWithCSS.set(rightBody, {
+            x: newTargets.right.x,
+            y: newTargets.right.y,
+            scale: newTargets.right.scale,
+        });
+        // Store for reference
+        lastTargetsRef.current = newTargets;
+        // Also update glow size to match search bar
+        const searchGlow = searchBarRefs.glow.current;
+        if (searchGlow) {
+            gsapWithCSS.set(searchGlow, { width: searchBarRect.width * 0.92 });
+        }
+    }, [characterRef, searchBarRefs, config.bracketScale, characterSize]);
+    // Resize listener - only active when search mode is open
+    react.useEffect(() => {
+        if (!isSearchActive)
+            return;
+        let timeout;
+        const handleResize = () => {
+            clearTimeout(timeout);
+            // Debounce to avoid excessive recalculations
+            timeout = setTimeout(recalculateWithValidation, 50);
+        };
+        window.addEventListener('resize', handleResize);
+        // Also use ResizeObserver for more precise detection (handles zoom, etc.)
+        let observer = null;
+        if (searchBarRefs.bar.current) {
+            observer = new ResizeObserver(handleResize);
+            observer.observe(searchBarRefs.bar.current);
+        }
+        return () => {
+            window.removeEventListener('resize', handleResize);
+            if (observer) {
+                observer.disconnect();
+            }
+            clearTimeout(timeout);
+        };
+    }, [isSearchActive, recalculateWithValidation, searchBarRefs.bar]);
     const morphToSearchBar = react.useCallback(() => {
         // Prevent multiple simultaneous morphs
         if (morphingRef.current) {
@@ -10600,6 +10738,7 @@ function useSearchMorph({ characterRef, searchBarRefs, config = DEFAULT_SEARCH_B
             return;
         }
         morphingRef.current = true;
+        isAnimatingRef.current = true; // Prevent resize recalculation during animation
         if (ENABLE_ANIMATION_DEBUG_LOGS) {
             console.log('[SEARCH] Opening search mode');
         }
@@ -10663,6 +10802,8 @@ function useSearchMorph({ characterRef, searchBarRefs, config = DEFAULT_SEARCH_B
         // Get current bracket sizes (BEFORE scaling)
         const leftBracketRect = leftBody.getBoundingClientRect();
         const rightBracketRect = rightBody.getBoundingClientRect();
+        // Store original bracket sizes for resize recalculation
+        originalBracketSizeRef.current = { left: leftBracketRect, right: rightBracketRect };
         const leftBracketSize = leftBracketRect.width;
         const rightBracketSize = rightBracketRect.width;
         const scaledLeftBracketSize = leftBracketSize * bracketScale;
@@ -10688,6 +10829,11 @@ function useSearchMorph({ characterRef, searchBarRefs, config = DEFAULT_SEARCH_B
                 right: { x: rightTransformX, y: rightTransformY }
             });
         }
+        // Store targets for resize validation
+        lastTargetsRef.current = {
+            left: { x: leftTransformX, y: leftTransformY, scale: bracketScale },
+            right: { x: rightTransformX, y: rightTransformY, scale: bracketScale },
+        };
         // Set z-index on character container AND brackets
         const characterContainer = leftBody.parentElement;
         gsapWithCSS.set(characterContainer, { zIndex: 10 });
@@ -10783,6 +10929,8 @@ function useSearchMorph({ characterRef, searchBarRefs, config = DEFAULT_SEARCH_B
                 console.log('[SEARCH] Animation complete (timeout)');
             }
             morphingRef.current = false;
+            isAnimatingRef.current = false; // Allow resize recalculation
+            setIsSearchActive(true); // Enable resize listener
             // Conditionally auto-focus (default: true on desktop, false on touch)
             if (shouldAutoFocus) {
                 searchBarRefs.input.current?.focus();
@@ -10802,6 +10950,8 @@ function useSearchMorph({ characterRef, searchBarRefs, config = DEFAULT_SEARCH_B
             return;
         }
         morphingRef.current = true;
+        isAnimatingRef.current = true; // Prevent resize recalculation during animation
+        setIsSearchActive(false); // Disable resize listener
         onReturnStart?.();
         // Kill any existing tweens
         activeTweensRef.current.forEach(tween => tween.kill());
@@ -10944,6 +11094,10 @@ function useSearchMorph({ characterRef, searchBarRefs, config = DEFAULT_SEARCH_B
                 characterRef.current.resumeIdle();
             }
             morphingRef.current = false;
+            isAnimatingRef.current = false;
+            // Clear stored bracket data
+            lastTargetsRef.current = null;
+            originalBracketSizeRef.current = null;
             onReturnComplete?.();
         }, 750);
     }, [characterRef, searchBarRefs, onReturnStart, onReturnComplete]);

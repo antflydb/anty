@@ -9,6 +9,15 @@ function isTouchDevice(): boolean {
   return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 }
 
+// Responsive typography constants - aligned with iOS/Material/Tailwind
+const RESPONSIVE_BREAKPOINT = 480;
+const MIN_SEARCH_WIDTH = 280;
+
+const TYPOGRAPHY = {
+  mobile: { fontSize: 16, padding: 16 },   // Standard body, 8px grid
+  desktop: { fontSize: 18, padding: 24 },  // Large body, comfortable spacing
+};
+
 // Inline Kbd component (no external dependencies)
 function Kbd({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
   return (
@@ -83,11 +92,27 @@ export function AntySearchBar({
     setIsTouch(isTouchDevice());
   }, []);
 
-  // Determine whether to show keyboard shortcut (default: hide on touch devices)
-  const shouldShowShortcut = config.showShortcut ?? !isTouch;
+  // Track viewport width for responsive sizing (SSR-safe)
+  const [viewportWidth, setViewportWidth] = useState(1024);
+  useEffect(() => {
+    setViewportWidth(window.innerWidth);
+
+    const handleResize = () => setViewportWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Extract config values
   const { width, height, borderRadius, innerRadius, borderWidth } = config;
+
+  // Responsive calculations
+  const isMobile = viewportWidth < RESPONSIVE_BREAKPOINT;
+  const { fontSize, padding: sidePadding } = isMobile ? TYPOGRAPHY.mobile : TYPOGRAPHY.desktop;
+  const actualWidth = Math.max(MIN_SEARCH_WIDTH, Math.min(width, viewportWidth * 0.9));
+  const glowWidth = actualWidth * 0.92;
+
+  // Determine whether to show keyboard shortcut (default: hide on touch devices)
+  const shouldShowShortcut = config.showShortcut ?? !isTouch;
 
   // Default height for content area (input stays at standard size)
   const defaultHeight = DEFAULT_SEARCH_BAR_CONFIG.height;
@@ -104,8 +129,7 @@ export function AntySearchBar({
       ref={barRef}
       style={{
         position: 'absolute',
-        width: `${width}px`,
-        maxWidth: '90vw', // Prevent overflow on mobile
+        width: `${actualWidth}px`,
         height: `${height}px`,
         left: '50%',
         top: '50%',
@@ -120,7 +144,7 @@ export function AntySearchBar({
         ref={glowRef}
         style={{
           position: 'absolute',
-          width: `${width * 0.92}px`,
+          width: `${glowWidth}px`,
           height: `${height * 1.8}px`, // Taller to create elongated ellipse effect
           left: '50%',
           top: '50%',
@@ -174,7 +198,7 @@ export function AntySearchBar({
               ref={placeholderRef}
               style={{
                 position: 'absolute',
-                left: '24px',
+                left: `${sidePadding}px`,
                 top: 0,
                 height: '100%',
                 display: 'flex',
@@ -184,7 +208,7 @@ export function AntySearchBar({
                 opacity: showPlaceholder ? 1 : 0,
                 fontFamily: 'Inter, sans-serif',
                 fontWeight: 500,
-                fontSize: '17.85px',
+                fontSize: `${fontSize}px`,
                 color: '#D4D3D3',
                 transition: showPlaceholder ? 'none' : 'opacity 0.15s ease-out',
               }}
@@ -197,7 +221,7 @@ export function AntySearchBar({
               ref={kbdRef}
               style={{
                 position: 'absolute',
-                right: '24px',
+                right: `${sidePadding}px`,
                 top: 0,
                 height: '100%',
                 display: shouldShowShortcut ? 'flex' : 'none',
@@ -233,14 +257,14 @@ export function AntySearchBar({
               style={{
                 width: '100%',
                 height: '100%',
-                padding: '0 24px',
+                padding: `0 ${sidePadding}px`,
                 backgroundColor: 'transparent',
                 outline: 'none',
                 border: 'none',
                 color: '#052333',
                 fontFamily: 'Inter, sans-serif',
                 fontWeight: 500,
-                fontSize: '17.85px',
+                fontSize: `${fontSize}px`,
               }}
             />
           </div>
