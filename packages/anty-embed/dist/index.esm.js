@@ -10615,6 +10615,7 @@ function useSearchMorph({ characterRef, searchBarRefs, config = DEFAULT_SEARCH_B
     // Store original bracket sizes for recalculation (before any transforms)
     const originalBracketSizeRef = useRef(null);
     // Recalculate bracket positions on resize (only when search is active)
+    // Uses delta-based approach: NO reset, just calculate difference and apply
     const recalculateWithValidation = useCallback(() => {
         // Guard: Don't recalc during active animation
         if (isAnimatingRef.current) {
@@ -10632,76 +10633,67 @@ function useSearchMorph({ characterRef, searchBarRefs, config = DEFAULT_SEARCH_B
             }
             return;
         }
-        // Save current transforms before reset (for logging)
-        const prevLeftX = gsapWithCSS.getProperty(leftBody, 'x');
-        const prevLeftY = gsapWithCSS.getProperty(leftBody, 'y');
-        const prevRightX = gsapWithCSS.getProperty(rightBody, 'x');
-        const prevRightY = gsapWithCSS.getProperty(rightBody, 'y');
-        // Temporarily reset brackets to get their CURRENT "home" positions
-        // (This accounts for centering that shifts when viewport resizes)
-        gsapWithCSS.set([leftBody, rightBody], { x: 0, y: 0, scale: 1 });
-        // Get fresh positions
+        // === DELTA-BASED APPROACH ===
+        // Key insight: We can derive home position without resetting
+        // home = visualPosition - currentTransform
+        // This eliminates the visible reset that causes jank
+        // 1. Get current transform values
+        const currentLeftX = gsapWithCSS.getProperty(leftBody, 'x');
+        const currentLeftY = gsapWithCSS.getProperty(leftBody, 'y');
+        const currentRightX = gsapWithCSS.getProperty(rightBody, 'x');
+        const currentRightY = gsapWithCSS.getProperty(rightBody, 'y');
+        // 2. Get current visual positions (WITH transforms applied)
+        const leftRect = leftBody.getBoundingClientRect();
+        const rightRect = rightBody.getBoundingClientRect();
         const searchBarRect = searchBar.getBoundingClientRect();
-        const leftBracketRect = leftBody.getBoundingClientRect();
-        const rightBracketRect = rightBody.getBoundingClientRect();
-        // Calculate compensated scale
-        const compensatedScale = config.bracketScale * (BRACKET_REFERENCE_SIZE / characterSize);
-        const scaledLeftSize = leftBracketRect.width * compensatedScale;
-        const scaledRightSize = rightBracketRect.width * compensatedScale;
-        // Target positions: bracket centers at search bar corners (so outer edges align)
-        const leftTargetCenterX = searchBarRect.left + (scaledLeftSize / 2);
-        const leftTargetCenterY = searchBarRect.top + (scaledLeftSize / 2);
-        const rightTargetCenterX = searchBarRect.right - (scaledRightSize / 2);
-        const rightTargetCenterY = searchBarRect.bottom - (scaledRightSize / 2);
-        // Get bracket's current center position (at scale=1, transform=0)
-        const leftCurrentCenterX = leftBracketRect.left + (leftBracketRect.width / 2);
-        const leftCurrentCenterY = leftBracketRect.top + (leftBracketRect.height / 2);
-        const rightCurrentCenterX = rightBracketRect.left + (rightBracketRect.width / 2);
-        const rightCurrentCenterY = rightBracketRect.top + (rightBracketRect.height / 2);
-        // Calculate new transforms
-        const newTargets = {
-            left: {
-                x: leftTargetCenterX - leftCurrentCenterX,
-                y: leftTargetCenterY - leftCurrentCenterY,
-                scale: compensatedScale,
-            },
-            right: {
-                x: rightTargetCenterX - rightCurrentCenterX,
-                y: rightTargetCenterY - rightCurrentCenterY,
-                scale: compensatedScale,
-            },
-        };
-        // Log validation info
+        // Current visual centers
+        const leftVisualCenterX = leftRect.left + leftRect.width / 2;
+        const leftVisualCenterY = leftRect.top + leftRect.height / 2;
+        const rightVisualCenterX = rightRect.left + rightRect.width / 2;
+        const rightVisualCenterY = rightRect.top + rightRect.height / 2;
+        // 3. Calculate target positions (search bar corners)
+        // Brackets are already scaled, so use their current visual size
+        const scaledLeftSize = leftRect.width;
+        const scaledRightSize = rightRect.width;
+        // Target: bracket centers positioned so outer edges align with search bar corners
+        const leftTargetCenterX = searchBarRect.left + scaledLeftSize / 2;
+        const leftTargetCenterY = searchBarRect.top + scaledLeftSize / 2;
+        const rightTargetCenterX = searchBarRect.right - scaledRightSize / 2;
+        const rightTargetCenterY = searchBarRect.bottom - scaledRightSize / 2;
+        // 4. Calculate deltas (how much to adjust)
+        const leftDeltaX = leftTargetCenterX - leftVisualCenterX;
+        const leftDeltaY = leftTargetCenterY - leftVisualCenterY;
+        const rightDeltaX = rightTargetCenterX - rightVisualCenterX;
+        const rightDeltaY = rightTargetCenterY - rightVisualCenterY;
+        // Log if significant adjustment needed
         if (ENABLE_ANIMATION_DEBUG_LOGS) {
-            const leftDeltaX = Math.abs(newTargets.left.x - prevLeftX);
-            const leftDeltaY = Math.abs(newTargets.left.y - prevLeftY);
-            const rightDeltaX = Math.abs(newTargets.right.x - prevRightX);
-            const rightDeltaY = Math.abs(newTargets.right.y - prevRightY);
-            console.log('[RESIZE] Position adjustment:', {
-                leftDelta: `(${leftDeltaX.toFixed(1)}, ${leftDeltaY.toFixed(1)})`,
-                rightDelta: `(${rightDeltaX.toFixed(1)}, ${rightDeltaY.toFixed(1)})`,
+            console.log('[RESIZE] Delta adjustment:', {
+                left: `(${leftDeltaX.toFixed(1)}, ${leftDeltaY.toFixed(1)})`,
+                right: `(${rightDeltaX.toFixed(1)}, ${rightDeltaY.toFixed(1)})`,
                 viewport: window.innerWidth,
             });
         }
-        // Apply new positions (instant)
+        // 5. Apply deltas to current transforms (NO RESET - single visual change)
         gsapWithCSS.set(leftBody, {
-            x: newTargets.left.x,
-            y: newTargets.left.y,
-            scale: newTargets.left.scale,
+            x: currentLeftX + leftDeltaX,
+            y: currentLeftY + leftDeltaY,
         });
         gsapWithCSS.set(rightBody, {
-            x: newTargets.right.x,
-            y: newTargets.right.y,
-            scale: newTargets.right.scale,
+            x: currentRightX + rightDeltaX,
+            y: currentRightY + rightDeltaY,
         });
-        // Store for reference
-        lastTargetsRef.current = newTargets;
+        // Update stored targets for reference
+        const currentScale = gsapWithCSS.getProperty(leftBody, 'scale');
+        lastTargetsRef.current = {
+            left: { x: currentLeftX + leftDeltaX, y: currentLeftY + leftDeltaY, scale: currentScale },
+            right: { x: currentRightX + rightDeltaX, y: currentRightY + rightDeltaY, scale: currentScale },
+        };
         // Also update glow size to match search bar
         const searchGlow = searchBarRefs.glow.current;
         if (searchGlow) {
             gsapWithCSS.set(searchGlow, { width: searchBarRect.width * 0.92 });
         }
-    }, [characterRef, searchBarRefs, config.bracketScale, characterSize]);
+    }, [characterRef, searchBarRefs]);
     // Resize listener - only active when search mode is open
     useEffect(() => {
         if (!isSearchActive)
