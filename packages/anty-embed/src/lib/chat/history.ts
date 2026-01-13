@@ -5,7 +5,10 @@
 
 const STORAGE_KEY_SESSIONS = 'anty-chat-sessions';
 const STORAGE_KEY_CURRENT_SESSION = 'anty-chat-current-session';
+const STORAGE_KEY_LAST_CLOSED = 'anty-chat-last-closed';
+const SESSION_KEY_PAGE_LOADED = 'anty-chat-page-loaded'; // sessionStorage - cleared on refresh
 const MAX_SESSIONS = 50; // Keep last 50 conversations
+const STALE_SESSION_TIMEOUT = 5 * 60 * 1000; // 5 minutes
 
 export interface ChatMessage {
   id: string;
@@ -161,4 +164,36 @@ export function formatSessionDate(isoString: string): string {
   } else {
     return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
   }
+}
+
+/**
+ * Record when chat panel was closed
+ */
+export function recordChatClosed(): void {
+  localStorage.setItem(STORAGE_KEY_LAST_CLOSED, Date.now().toString());
+}
+
+/**
+ * Check if session is stale (closed more than 5 minutes ago or fresh page load)
+ * Returns true if we should start a new session instead of restoring
+ */
+export function shouldStartFreshSession(): boolean {
+  // Check if this is a fresh page load (sessionStorage is cleared on refresh/new tab)
+  const pageLoaded = sessionStorage.getItem(SESSION_KEY_PAGE_LOADED);
+  if (!pageLoaded) {
+    // Mark that we've loaded (so subsequent opens in same session don't trigger)
+    sessionStorage.setItem(SESSION_KEY_PAGE_LOADED, 'true');
+    return true; // Fresh page load - start new session
+  }
+
+  // Check if chat was closed more than 5 minutes ago
+  const lastClosed = localStorage.getItem(STORAGE_KEY_LAST_CLOSED);
+  if (lastClosed) {
+    const timeSinceClosed = Date.now() - parseInt(lastClosed, 10);
+    if (timeSinceClosed >= STALE_SESSION_TIMEOUT) {
+      return true; // Stale session - start new
+    }
+  }
+
+  return false; // Recent session - restore it
 }

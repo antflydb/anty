@@ -60,3 +60,12 @@ export declare function createNewSession(): ChatSession;
  * Format a date for display in the history list
  */
 export declare function formatSessionDate(isoString: string): string;
+/**
+ * Record when chat panel was closed
+ */
+export declare function recordChatClosed(): void;
+/**
+ * Check if session is stale (closed more than 5 minutes ago or fresh page load)
+ * Returns true if we should start a new session instead of restoring
+ */
+export declare function shouldStartFreshSession(): boolean;

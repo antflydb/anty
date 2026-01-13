@@ -18,6 +18,8 @@ import {
   setCurrentSessionId,
   generateTitle,
   formatSessionDate,
+  recordChatClosed,
+  shouldStartFreshSession,
 } from '../lib/chat/history';
 
 export interface AntyChatPanelProps {
@@ -108,7 +110,8 @@ export function AntyChatPanel({ isOpen, onClose, onEmotion }: AntyChatPanelProps
       // Opening: show immediately, then animate in
       setIsVisible(true);
     } else if (!isOpen && isVisible && panelRef.current && !isAnimatingRef.current) {
-      // Closing: animate out, then hide
+      // Closing: record close time and animate out
+      recordChatClosed();
       isAnimatingRef.current = true;
       gsap.to(panelRef.current, {
         x: '100%',
@@ -211,7 +214,13 @@ export function AntyChatPanel({ isOpen, onClose, onEmotion }: AntyChatPanelProps
     // Load all sessions for history view
     setSessions(getSessions());
 
-    // Try to restore current session
+    // Check if we should start fresh (new page load or 5+ min since close)
+    if (shouldStartFreshSession()) {
+      // Don't restore - will create new session when panel opens
+      return;
+    }
+
+    // Try to restore current session (recent close, same browser session)
     const savedSessionId = getCurrentSessionId();
     if (savedSessionId) {
       const session = getSession(savedSessionId);
