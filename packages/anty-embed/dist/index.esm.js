@@ -6628,16 +6628,14 @@ function AntySearchBar({ active, value, onChange, onSubmit, inputRef, barRef, bo
                                     left: `${sidePadding}px`,
                                     top: 0,
                                     height: '100%',
-                                    display: 'flex',
+                                    display: showPlaceholder ? 'flex' : 'none',
                                     alignItems: 'center',
                                     pointerEvents: 'none',
                                     userSelect: 'none',
-                                    opacity: showPlaceholder ? 1 : 0,
                                     fontFamily: 'Inter, sans-serif',
                                     fontWeight: 500,
                                     fontSize: `${fontSize}px`,
                                     color: '#D4D3D3',
-                                    transition: showPlaceholder ? 'none' : 'opacity 0.15s ease-out',
                                 }, children: placeholder }), jsx("div", { ref: kbdRef, style: {
                                     position: 'absolute',
                                     right: `${sidePadding}px`,
@@ -11069,12 +11067,12 @@ function useSearchMorph({ characterRef, searchBarRefs, config = DEFAULT_SEARCH_B
             }
             gsapWithCSS.set(searchBorderGradient, { opacity: 1 });
         }
-        // Set placeholder and kbd visible
+        // Only set filter/y - don't touch opacity, let React control it based on input value
         if (searchPlaceholder) {
-            gsapWithCSS.set(searchPlaceholder, { opacity: 1, filter: 'blur(0px)', y: 0 });
+            gsapWithCSS.set(searchPlaceholder, { filter: 'blur(0px)', y: 0, clearProps: 'opacity' });
         }
         if (searchKbd) {
-            gsapWithCSS.set(searchKbd, { opacity: 1, filter: 'blur(0px)', y: 0 });
+            gsapWithCSS.set(searchKbd, { filter: 'blur(0px)', y: 0, clearProps: 'opacity' });
         }
         // Set glow visible with breathing animation (if showGlow)
         if (searchGlow && (config.showGlow ?? true)) {
@@ -11411,8 +11409,9 @@ const AntyCharacter = forwardRef((props, ref) => {
             setInternalSearchValue(value);
         }
     }, [onSearchChange]);
-    // Build search bar refs object for the hook
-    const searchBarRefs = {
+    // Build search bar refs object for the hook - memoized to prevent unnecessary re-renders
+    // The refs themselves are stable (from useRef), so this can have an empty dependency array
+    const searchBarRefs = useMemo(() => ({
         bar: searchBarRef,
         border: searchBorderRef,
         borderGradient: searchBorderGradientRef,
@@ -11422,7 +11421,7 @@ const AntyCharacter = forwardRef((props, ref) => {
         input: searchInputRef,
         leftBracket: searchLeftBracketRef,
         rightBracket: searchRightBracketRef,
-    };
+    }), []);
     // Internal refs for shadow/glow (self-contained, used if external refs not provided)
     const internalShadowRef = useRef(null);
     const internalInnerGlowRef = useRef(null);

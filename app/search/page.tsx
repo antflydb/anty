@@ -269,7 +269,7 @@ export default function SearchDebugPage() {
           alignItems: 'center',
           justifyContent: 'center',
           padding: '40px 20px',
-          paddingBottom: panelOpen ? '320px' : '80px',
+          paddingBottom: panelOpen ? '240px' : '60px',
           transition: 'padding-bottom 0.3s ease',
         }}
       >
@@ -288,7 +288,7 @@ export default function SearchDebugPage() {
         onClick={() => setPanelOpen(!panelOpen)}
         style={{
           position: 'fixed',
-          bottom: panelOpen ? 'calc(280px + 16px)' : '16px',
+          bottom: panelOpen ? 'calc(200px + 12px)' : '12px',
           left: '50%',
           transform: 'translateX(-50%)',
           padding: '8px 20px',
@@ -320,7 +320,7 @@ export default function SearchDebugPage() {
           bottom: 0,
           left: 0,
           right: 0,
-          height: panelOpen ? '280px' : '0px',
+          height: panelOpen ? '200px' : '0px',
           background: '#f8fafc',
           borderTop: panelOpen ? '1px solid #e2e8f0' : 'none',
           overflow: 'hidden',
@@ -330,209 +330,185 @@ export default function SearchDebugPage() {
       >
         <div
           style={{
-            maxWidth: '800px',
-            margin: '0 auto',
-            padding: '24px',
+            padding: '20px 32px',
             height: '100%',
             overflowY: 'auto',
           }}
         >
-          {/* Dimensions */}
-          <div style={{ marginBottom: '20px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-              <label style={{ fontSize: '14px', fontWeight: 600, color: '#334155' }}>
-                Dimensions
-              </label>
-              {hasCustomDimensions && (
-                <button
-                  onClick={resetDimensions}
-                  style={{
-                    padding: '4px 8px',
-                    borderRadius: '4px',
-                    border: '1px solid #e2e8f0',
-                    background: '#ffffff',
-                    color: '#64748b',
-                    cursor: 'pointer',
-                    fontSize: '11px',
-                  }}
-                >
-                  Reset
-                </button>
-              )}
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-              {/* Width */}
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                  <span style={{ fontSize: '12px', color: '#94a3b8' }}>Width</span>
-                  <EditableNumber value={width} onChange={setWidth} min={280} max={1000} />
-                </div>
-                <input
-                  type="range"
-                  min="280"
-                  max="1000"
-                  value={Math.min(width, 1000)}
-                  onChange={(e) => setWidth(parseInt(e.target.value))}
-                  style={{
-                    width: '100%',
-                    height: '6px',
-                    borderRadius: '3px',
-                    background: sliderGradient(Math.min(width, 1000), 280, 1000),
-                    appearance: 'none',
-                    cursor: 'pointer',
-                    outline: 'none',
-                  }}
-                />
-              </div>
-              {/* Height */}
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                  <span style={{ fontSize: '12px', color: '#94a3b8' }}>Height</span>
-                  <EditableNumber value={height} onChange={setHeight} min={40} max={400} />
-                </div>
-                <input
-                  type="range"
-                  min="40"
-                  max="400"
-                  value={Math.min(height, 400)}
-                  onChange={(e) => setHeight(parseInt(e.target.value))}
-                  style={{
-                    width: '100%',
-                    height: '6px',
-                    borderRadius: '3px',
-                    background: sliderGradient(Math.min(height, 400), 40, 400),
-                    appearance: 'none',
-                    cursor: 'pointer',
-                    outline: 'none',
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Visual Options */}
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ fontSize: '14px', fontWeight: 600, color: '#334155', marginBottom: '12px', display: 'block' }}>
-              Visual
-            </label>
-            <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
-              {/* Corners toggle */}
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                <input
-                  type="checkbox"
-                  checked={showBrackets}
-                  onChange={(e) => setShowBrackets(e.target.checked)}
-                  style={{ width: '16px', height: '16px', accentColor: '#8B5CF6' }}
-                />
-                <span style={{ fontSize: '13px', color: '#334155' }}>Corners</span>
-              </label>
-              {/* Glow toggle - disabled when border is solid */}
-              <label style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                cursor: borderStyle === 'solid' ? 'not-allowed' : 'pointer',
-                opacity: borderStyle === 'solid' ? 0.5 : 1,
-              }}>
-                <input
-                  type="checkbox"
-                  checked={showGlow && borderStyle === 'gradient'}
-                  disabled={borderStyle === 'solid'}
-                  onChange={(e) => setShowGlow(e.target.checked)}
-                  style={{ width: '16px', height: '16px', accentColor: '#8B5CF6' }}
-                />
-                <span style={{ fontSize: '13px', color: '#334155' }}>Glow</span>
-              </label>
-              {/* Border style */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '13px', color: '#334155' }}>Border:</span>
-                <div style={{ display: 'flex', borderRadius: '6px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
+          {/* Horizontal layout - all options in one row */}
+          <div style={{ display: 'flex', gap: '32px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+            {/* Dimensions */}
+            <div style={{ flex: '1 1 320px', minWidth: '280px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                <label style={{ fontSize: '13px', fontWeight: 600, color: '#334155' }}>Dimensions</label>
+                {hasCustomDimensions && (
                   <button
-                    onClick={() => setBorderStyle('gradient')}
+                    onClick={resetDimensions}
                     style={{
-                      padding: '4px 12px',
-                      border: 'none',
-                      background: borderStyle === 'gradient' ? '#8B5CF6' : '#ffffff',
-                      color: borderStyle === 'gradient' ? '#ffffff' : '#64748b',
+                      padding: '2px 6px',
+                      borderRadius: '4px',
+                      border: '1px solid #e2e8f0',
+                      background: '#ffffff',
+                      color: '#64748b',
                       cursor: 'pointer',
-                      fontSize: '12px',
-                      fontWeight: 500,
+                      fontSize: '10px',
                     }}
                   >
-                    Gradient
+                    Reset
                   </button>
-                  <button
-                    onClick={() => setBorderStyle('solid')}
+                )}
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                    <span style={{ fontSize: '11px', color: '#94a3b8' }}>Width</span>
+                    <EditableNumber value={width} onChange={setWidth} min={280} max={1000} />
+                  </div>
+                  <input
+                    type="range"
+                    min="280"
+                    max="1000"
+                    value={Math.min(width, 1000)}
+                    onChange={(e) => setWidth(parseInt(e.target.value))}
                     style={{
-                      padding: '4px 12px',
-                      border: 'none',
-                      borderLeft: '1px solid #e2e8f0',
-                      background: borderStyle === 'solid' ? '#8B5CF6' : '#ffffff',
-                      color: borderStyle === 'solid' ? '#ffffff' : '#64748b',
+                      width: '100%',
+                      height: '4px',
+                      borderRadius: '2px',
+                      background: sliderGradient(Math.min(width, 1000), 280, 1000),
+                      appearance: 'none',
                       cursor: 'pointer',
-                      fontSize: '12px',
-                      fontWeight: 500,
                     }}
-                  >
-                    Solid
-                  </button>
+                  />
+                </div>
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                    <span style={{ fontSize: '11px', color: '#94a3b8' }}>Height</span>
+                    <EditableNumber value={height} onChange={setHeight} min={40} max={400} />
+                  </div>
+                  <input
+                    type="range"
+                    min="40"
+                    max="400"
+                    value={Math.min(height, 400)}
+                    onChange={(e) => setHeight(parseInt(e.target.value))}
+                    style={{
+                      width: '100%',
+                      height: '4px',
+                      borderRadius: '2px',
+                      background: sliderGradient(Math.min(height, 400), 40, 400),
+                      appearance: 'none',
+                      cursor: 'pointer',
+                    }}
+                  />
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Content Options */}
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ fontSize: '14px', fontWeight: 600, color: '#334155', marginBottom: '12px', display: 'block' }}>
-              Content
-            </label>
-            <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
-              {/* Placeholder */}
-              <div style={{ flex: '1 1 200px' }}>
-                <label style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '4px', display: 'block' }}>
-                  Placeholder
+            {/* Visual */}
+            <div style={{ flex: '0 0 auto' }}>
+              <label style={{ fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '10px', display: 'block' }}>Visual</label>
+              <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '12px', color: '#334155' }}>
+                  <input
+                    type="checkbox"
+                    checked={showBrackets}
+                    onChange={(e) => setShowBrackets(e.target.checked)}
+                    style={{ width: '14px', height: '14px', accentColor: '#8B5CF6' }}
+                  />
+                  Corners
                 </label>
+                <label style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  cursor: borderStyle === 'solid' ? 'not-allowed' : 'pointer',
+                  opacity: borderStyle === 'solid' ? 0.5 : 1,
+                  fontSize: '12px',
+                  color: '#334155',
+                }}>
+                  <input
+                    type="checkbox"
+                    checked={showGlow && borderStyle === 'gradient'}
+                    disabled={borderStyle === 'solid'}
+                    onChange={(e) => setShowGlow(e.target.checked)}
+                    style={{ width: '14px', height: '14px', accentColor: '#8B5CF6' }}
+                  />
+                  Glow
+                </label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ fontSize: '12px', color: '#334155' }}>Border:</span>
+                  <div style={{ display: 'flex', borderRadius: '4px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
+                    <button
+                      onClick={() => setBorderStyle('gradient')}
+                      style={{
+                        padding: '3px 10px',
+                        border: 'none',
+                        background: borderStyle === 'gradient' ? '#8B5CF6' : '#ffffff',
+                        color: borderStyle === 'gradient' ? '#ffffff' : '#64748b',
+                        cursor: 'pointer',
+                        fontSize: '11px',
+                        fontWeight: 500,
+                      }}
+                    >
+                      Gradient
+                    </button>
+                    <button
+                      onClick={() => setBorderStyle('solid')}
+                      style={{
+                        padding: '3px 10px',
+                        border: 'none',
+                        borderLeft: '1px solid #e2e8f0',
+                        background: borderStyle === 'solid' ? '#8B5CF6' : '#ffffff',
+                        color: borderStyle === 'solid' ? '#ffffff' : '#64748b',
+                        cursor: 'pointer',
+                        fontSize: '11px',
+                        fontWeight: 500,
+                      }}
+                    >
+                      Solid
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div style={{ flex: '1 1 240px', minWidth: '200px' }}>
+              <label style={{ fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '10px', display: 'block' }}>Content</label>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
                 <input
                   type="text"
                   value={placeholder}
                   onChange={(e) => setPlaceholder(e.target.value)}
+                  placeholder="Placeholder text"
                   style={{
-                    width: '100%',
-                    padding: '8px 12px',
-                    borderRadius: '6px',
+                    flex: '1 1 140px',
+                    padding: '6px 10px',
+                    borderRadius: '4px',
                     border: '1px solid #e2e8f0',
-                    fontSize: '14px',
-                    boxSizing: 'border-box',
+                    fontSize: '12px',
+                    minWidth: '120px',
                   }}
                 />
-              </div>
-              {/* Hotkey */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '12px', color: '#334155' }}>
                   <input
                     type="checkbox"
                     checked={showHotkey}
                     onChange={(e) => setShowHotkey(e.target.checked)}
-                    style={{ width: '16px', height: '16px', accentColor: '#8B5CF6' }}
+                    style={{ width: '14px', height: '14px', accentColor: '#8B5CF6' }}
                   />
-                  <span style={{ fontSize: '13px', color: '#334155' }}>Hotkey</span>
+                  Hotkey
                 </label>
-                {showHotkey && (
-                  <ShortcutCapture value={hotkey} onChange={setHotkey} />
-                )}
+                {showHotkey && <ShortcutCapture value={hotkey} onChange={setHotkey} />}
               </div>
             </div>
           </div>
 
           {/* Back link */}
-          <div style={{ textAlign: 'center', paddingTop: '8px' }}>
-            <a href="/" style={{ color: '#7c3aed', textDecoration: 'none', fontSize: '13px' }}>
-              ← Back to Playground
-            </a>
-            <span style={{ color: '#94a3b8', margin: '0 12px' }}>|</span>
-            <a href="/embed" style={{ color: '#7c3aed', textDecoration: 'none', fontSize: '13px' }}>
-              Embed Demo →
-            </a>
+          <div style={{ textAlign: 'center', marginTop: '16px' }}>
+            <a href="/" style={{ color: '#7c3aed', textDecoration: 'none', fontSize: '12px' }}>← Playground</a>
+            <span style={{ color: '#94a3b8', margin: '0 10px' }}>|</span>
+            <a href="/embed" style={{ color: '#7c3aed', textDecoration: 'none', fontSize: '12px' }}>Embed →</a>
           </div>
         </div>
       </div>

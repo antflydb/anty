@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.2.0 (2026-01-13)
+
+### New Features
+
+- **Search-only mode** - New `searchOnly` prop renders just the search bar without the character, perfect for standalone search implementations
+- **Search bar debug page** - New `/search` route with visual customization panel for testing search bar configurations
+- **SearchBarConfig options** - New config options for visual customization:
+  - `showBrackets` - Toggle corner bracket visibility
+  - `showGlow` - Toggle glow effect behind search bar
+  - `borderStyle` - Choose between `'gradient'` (animated) or `'solid'` (gray) border
+- **Chat auto-fresh** - Chat panel auto-opens to new conversation after 5 min idle or fresh page load
+- **Editable dimension inputs** - Click dimension values in debug panel to manually enter exact pixel values
+
+### Bug Fixes
+
+- **Placeholder hides when typing** - Fixed placeholder text remaining visible when user types in search bar (searchOnly mode)
+- **Glow stays centered on resize** - Fixed glow offset issue when search bar dimensions change (uses margin-based centering)
+- **Animation stability** - Memoized searchBarRefs to prevent GSAP animations from resetting on every keystroke
+
 ## 1.1.0 (2026-01-07)
 
 ### New Features

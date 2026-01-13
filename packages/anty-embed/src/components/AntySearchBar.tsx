@@ -225,7 +225,8 @@ export function AntySearchBar({
               ),
             }}
           >
-            {/* Fake animated placeholder */}
+            {/* Fake animated placeholder - hidden when there's input text */}
+            {/* Uses display:none when text is present to override any GSAP opacity animations */}
             <div
               ref={placeholderRef}
               style={{
@@ -233,16 +234,14 @@ export function AntySearchBar({
                 left: `${sidePadding}px`,
                 top: 0,
                 height: '100%',
-                display: 'flex',
+                display: showPlaceholder ? 'flex' : 'none',
                 alignItems: 'center',
                 pointerEvents: 'none',
                 userSelect: 'none',
-                opacity: showPlaceholder ? 1 : 0,
                 fontFamily: 'Inter, sans-serif',
                 fontWeight: 500,
                 fontSize: `${fontSize}px`,
                 color: '#D4D3D3',
-                transition: showPlaceholder ? 'none' : 'opacity 0.15s ease-out',
               }}
             >
               {placeholder}

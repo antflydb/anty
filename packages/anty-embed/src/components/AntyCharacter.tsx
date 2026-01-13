@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react';
+import { useRef, useState, useEffect, useCallback, forwardRef, useImperativeHandle, useMemo } from 'react';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 import { AntyParticleCanvas, type ParticleCanvasHandle } from './AntyParticleCanvas';
@@ -487,8 +487,9 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
     }
   }, [onSearchChange]);
 
-  // Build search bar refs object for the hook
-  const searchBarRefs: SearchBarRefs = {
+  // Build search bar refs object for the hook - memoized to prevent unnecessary re-renders
+  // The refs themselves are stable (from useRef), so this can have an empty dependency array
+  const searchBarRefs: SearchBarRefs = useMemo(() => ({
     bar: searchBarRef,
     border: searchBorderRef,
     borderGradient: searchBorderGradientRef,
@@ -498,7 +499,7 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
     input: searchInputRef,
     leftBracket: searchLeftBracketRef,
     rightBracket: searchRightBracketRef,
-  };
+  }), []);
 
   // Internal refs for shadow/glow (self-contained, used if external refs not provided)
   const internalShadowRef = useRef<HTMLDivElement>(null);

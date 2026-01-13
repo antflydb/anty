@@ -575,12 +575,12 @@ export function useSearchMorph({
       gsap.set(searchBorderGradient, { opacity: 1 });
     }
 
-    // Set placeholder and kbd visible
+    // Only set filter/y - don't touch opacity, let React control it based on input value
     if (searchPlaceholder) {
-      gsap.set(searchPlaceholder, { opacity: 1, filter: 'blur(0px)', y: 0 });
+      gsap.set(searchPlaceholder, { filter: 'blur(0px)', y: 0, clearProps: 'opacity' });
     }
     if (searchKbd) {
-      gsap.set(searchKbd, { opacity: 1, filter: 'blur(0px)', y: 0 });
+      gsap.set(searchKbd, { filter: 'blur(0px)', y: 0, clearProps: 'opacity' });
     }
 
     // Set glow visible with breathing animation (if showGlow)
