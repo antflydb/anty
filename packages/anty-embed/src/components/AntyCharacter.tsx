@@ -130,6 +130,17 @@ export interface AntyCharacterProps {
   onSearchClose?: () => void;
   /** Callback when morph back to character completes */
   onSearchCloseComplete?: () => void;
+
+  // === SEARCH-ONLY MODE ===
+  /**
+   * When true, renders only the search bar without the character.
+   * Useful for standalone search implementations.
+   * - No character SVG elements rendered
+   * - Search bar starts in visible/"morphed" state
+   * - cmd+K triggers scale+fade animation instead of morph
+   * - No shadow or character glow
+   */
+  searchOnly?: boolean;
 }
 
 export interface AntyCharacterHandle {
@@ -166,6 +177,10 @@ export interface AntyCharacterHandle {
   morphToSearchBar?: () => void;
   /** Morph search bar back to character */
   morphToCharacter?: () => void;
+  /** Show search bar instantly without morph (for searchOnly mode) */
+  showSearchInstant?: () => void;
+  /** Refresh search bar state (call after config changes to avoid remount) */
+  refreshSearchBar?: () => void;
   /** Check if currently in search mode */
   isSearchMode?: () => boolean;
 
@@ -429,6 +444,8 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
     onSearchOpenComplete,
     onSearchClose,
     onSearchCloseComplete,
+    // Search-only mode
+    searchOnly = false,
   } = props;
   // Refs for DOM elements
   const containerRef = useRef<HTMLDivElement>(null);
@@ -456,8 +473,9 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
   const searchRightBracketRef = useRef<HTMLDivElement>(null);
 
   // Internal search state
+  // In searchOnly mode, search bar is always active/visible
   const [internalSearchValue, setInternalSearchValue] = useState('');
-  const [isSearchActive, setIsSearchActive] = useState(false);
+  const [isSearchActive, setIsSearchActive] = useState(searchOnly);
 
   // Use external value if provided, otherwise internal
   const searchValueState = externalSearchValue !== undefined ? externalSearchValue : internalSearchValue;
@@ -749,8 +767,8 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
     };
   }, [animationController]);
 
-  // Use search morph hook (when searchEnabled)
-  const { morphToSearchBar: internalMorphToSearchBar, morphToCharacter: internalMorphToCharacter, isMorphing } = useSearchMorph({
+  // Use search morph hook (when searchEnabled or searchOnly)
+  const { morphToSearchBar: internalMorphToSearchBar, morphToCharacter: internalMorphToCharacter, showInstant, hideInstant, isMorphing } = useSearchMorph({
     characterRef: selfRef,
     searchBarRefs,
     config: searchConfig,
@@ -1058,20 +1076,36 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
     // Search bar morph (when searchEnabled)
     morphToSearchBar: searchEnabled ? internalMorphToSearchBar : undefined,
     morphToCharacter: searchEnabled ? internalMorphToCharacter : undefined,
+    showSearchInstant: (searchEnabled || searchOnly) ? showInstant : undefined,
+    refreshSearchBar: (searchEnabled || searchOnly) ? showInstant : undefined, // Same as showInstant - re-applies current config
     isSearchMode: () => isSearchActive,
     leftEyeRef,
     rightEyeRef,
     leftEyePathRef,
     rightEyePathRef,
-  }), [size, animationController, isSuperMode, searchEnabled, internalMorphToSearchBar, internalMorphToCharacter, isSearchActive]);
+  }), [size, animationController, isSuperMode, searchEnabled, searchOnly, internalMorphToSearchBar, internalMorphToCharacter, showInstant, isSearchActive]);
 
   useEffect(() => {
     setCurrentExpression(expression);
   }, [expression]);
 
-  // ESC key and click/touch-outside to close search bar
+  // Initialize search bar as visible in searchOnly mode
+  // Uses showInstant from useSearchMorph to avoid code duplication
   useEffect(() => {
-    if (!isSearchActive) return;
+    if (!searchOnly) return;
+
+    // Small delay to ensure refs are connected
+    const timer = setTimeout(() => {
+      showInstant();
+    }, 50);
+
+    return () => clearTimeout(timer);
+  }, [searchOnly, showInstant]);
+
+  // ESC key and click/touch-outside to close search bar
+  // In searchOnly mode, these don't close the search bar (it's always visible)
+  useEffect(() => {
+    if (!isSearchActive || searchOnly) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -1101,7 +1135,7 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('touchstart', handleClickOutside);
     };
-  }, [isSearchActive, internalMorphToCharacter]);
+  }, [isSearchActive, searchOnly, internalMorphToCharacter]);
 
   // Play emotion when expression changes
   useEffect(() => {
@@ -1219,8 +1253,11 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
 
   // Use fullContainer (1.5x height) when rendering internal shadow/glow
   // Use regular container when using external refs (main page manages its own container size)
-  const useFullContainer = (showShadow && !hasExternalShadow) || (showGlow && !hasExternalGlow);
-  const containerStyle = useFullContainer ? styles.fullContainer(size) : styles.container(size);
+  // In searchOnly mode, use minimal container for just the search bar
+  const useFullContainer = !searchOnly && ((showShadow && !hasExternalShadow) || (showGlow && !hasExternalGlow));
+  const containerStyle = searchOnly
+    ? { position: 'relative' as const, width: '100%' }
+    : (useFullContainer ? styles.fullContainer(size) : styles.container(size));
 
   return (
     <div
@@ -1236,117 +1273,126 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
       <AntyParticleCanvas ref={canvasRef} particles={particles} width={size * 5} height={size * 5} sizeScale={sizeScale} />
 
       {/* Character area - positioned at top of fullContainer, or fills regular container */}
-      <div style={useFullContainer ? styles.characterArea(size) : { position: 'relative', width: size, height: size }}>
-        {/* Outer glow (behind everything) - only render if not using external ref */}
-        {showGlow && !hasExternalGlow && (
-          <div
-            ref={internalOuterGlowRef}
-            style={styles.outerGlow(sizeScale)}
-          />
-        )}
+      {/* In searchOnly mode, we only render the search bar container */}
+      <div style={searchOnly
+        ? { position: 'relative', width: '100%', minHeight: searchConfig.height + 40 }
+        : (useFullContainer ? styles.characterArea(size) : { position: 'relative', width: size, height: size })
+      }>
+        {/* Character elements - skip when searchOnly */}
+        {!searchOnly && (
+          <>
+            {/* Outer glow (behind everything) - only render if not using external ref */}
+            {showGlow && !hasExternalGlow && (
+              <div
+                ref={internalOuterGlowRef}
+                style={styles.outerGlow(sizeScale)}
+              />
+            )}
 
-        {/* Inner glow - only render if not using external ref */}
-        {showGlow && !hasExternalGlow && (
-          <div
-            ref={internalInnerGlowRef}
-            style={styles.innerGlow(sizeScale)}
-          />
-        )}
+            {/* Inner glow - only render if not using external ref */}
+            {showGlow && !hasExternalGlow && (
+              <div
+                ref={internalInnerGlowRef}
+                style={styles.innerGlow(sizeScale)}
+              />
+            )}
 
-        {/* Super Mode Golden Glow */}
-        {isSuperMode && (
-          <div
-            ref={superGlowRef}
-            style={styles.superGlow}
-          />
-        )}
+            {/* Super Mode Golden Glow */}
+            {isSuperMode && (
+              <div
+                ref={superGlowRef}
+                style={styles.superGlow}
+              />
+            )}
 
-        {/* Character body with animations */}
-        <div
-          ref={characterRef}
-          className={isSuperMode ? 'super-mode' : undefined}
-          style={styles.character}
-        >
-          {/* Anty body layers from Figma */}
-          <div ref={rightBodyRef} style={styles.rightBody}>
-            <img alt="" style={styles.bodyImage} src={bodyRightSvg} />
-          </div>
-          <div ref={leftBodyRef} style={styles.leftBody}>
-            <img alt="" style={styles.bodyImage} src={bodyLeftSvg} />
-          </div>
-
-          {/* Left eye */}
-          <div style={styles.leftEyeContainer}>
+            {/* Character body with animations */}
             <div
-              ref={leftEyeRef}
-              style={styles.eyeWrapper(initialEyeDimensions.width, initialEyeDimensions.height, sizeScale)}
+              ref={characterRef}
+              className={isSuperMode ? 'super-mode' : undefined}
+              style={styles.character}
             >
-              <svg
-                ref={leftEyeSvgRef}
-                width="100%"
-                height="100%"
-                viewBox={initialEyeDimensions.viewBox}
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                style={{ display: 'block' }}
-              >
-                <path
-                  ref={leftEyePathRef}
-                  d={getEyeShape('IDLE', 'left')}
-                  fill="#052333"
-                />
-              </svg>
-            </div>
-          </div>
+              {/* Anty body layers from Figma */}
+              <div ref={rightBodyRef} style={styles.rightBody}>
+                <img alt="" style={styles.bodyImage} src={bodyRightSvg} />
+              </div>
+              <div ref={leftBodyRef} style={styles.leftBody}>
+                <img alt="" style={styles.bodyImage} src={bodyLeftSvg} />
+              </div>
 
-          {/* Right eye */}
-          <div style={styles.rightEyeContainer}>
-            <div
-              ref={rightEyeRef}
-              style={styles.eyeWrapper(initialEyeDimensions.width, initialEyeDimensions.height, sizeScale)}
-            >
-              <svg
-                ref={rightEyeSvgRef}
-                width="100%"
-                height="100%"
-                viewBox={initialEyeDimensions.viewBox}
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                style={{ display: 'block' }}
-              >
-                <path
-                  ref={rightEyePathRef}
-                  d={getEyeShape('IDLE', 'right')}
-                  fill="#052333"
-                />
-              </svg>
-            </div>
-          </div>
+              {/* Left eye */}
+              <div style={styles.leftEyeContainer}>
+                <div
+                  ref={leftEyeRef}
+                  style={styles.eyeWrapper(initialEyeDimensions.width, initialEyeDimensions.height, sizeScale)}
+                >
+                  <svg
+                    ref={leftEyeSvgRef}
+                    width="100%"
+                    height="100%"
+                    viewBox={initialEyeDimensions.viewBox}
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    style={{ display: 'block' }}
+                  >
+                    <path
+                      ref={leftEyePathRef}
+                      d={getEyeShape('IDLE', 'left')}
+                      fill="#052333"
+                    />
+                  </svg>
+                </div>
+              </div>
 
-          {/* Debug overlays */}
-          {debugMode && (
-            <>
-              <div style={styles.debugBorder} />
+              {/* Right eye */}
+              <div style={styles.rightEyeContainer}>
+                <div
+                  ref={rightEyeRef}
+                  style={styles.eyeWrapper(initialEyeDimensions.width, initialEyeDimensions.height, sizeScale)}
+                >
+                  <svg
+                    ref={rightEyeSvgRef}
+                    width="100%"
+                    height="100%"
+                    viewBox={initialEyeDimensions.viewBox}
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    style={{ display: 'block' }}
+                  >
+                    <path
+                      ref={rightEyePathRef}
+                      d={getEyeShape('IDLE', 'right')}
+                      fill="#052333"
+                    />
+                  </svg>
+                </div>
+              </div>
 
-              {!isOff && (
+              {/* Debug overlays */}
+              {debugMode && (
                 <>
-                  <div style={styles.debugCrosshair('calc(33.41% + 13.915% - 1px)', 'calc(31.63% + 5.825% - 7px)', 'yellow', true)} />
-                  <div style={styles.debugCrosshair('calc(33.41% + 13.915% - 6px)', 'calc(31.63% + 5.825% - 2px)', 'yellow', false)} />
+                  <div style={styles.debugBorder} />
+
+                  {!isOff && (
+                    <>
+                      <div style={styles.debugCrosshair('calc(33.41% + 13.915% - 1px)', 'calc(31.63% + 5.825% - 7px)', 'yellow', true)} />
+                      <div style={styles.debugCrosshair('calc(33.41% + 13.915% - 6px)', 'calc(31.63% + 5.825% - 2px)', 'yellow', false)} />
+                    </>
+                  )}
+
+                  {!isOff && (
+                    <>
+                      <div style={styles.debugCrosshair('calc(33.41% + 13.915% - 1px)', 'calc(57.36% + 5.82% - 7px)', 'orange', true)} />
+                      <div style={styles.debugCrosshair('calc(33.41% + 13.915% - 6px)', 'calc(57.36% + 5.82% - 2px)', 'orange', false)} />
+                    </>
+                  )}
                 </>
               )}
+            </div>
+          </>
+        )}
 
-              {!isOff && (
-                <>
-                  <div style={styles.debugCrosshair('calc(33.41% + 13.915% - 1px)', 'calc(57.36% + 5.82% - 7px)', 'orange', true)} />
-                  <div style={styles.debugCrosshair('calc(33.41% + 13.915% - 6px)', 'calc(57.36% + 5.82% - 2px)', 'orange', false)} />
-                </>
-              )}
-            </>
-          )}
-        </div>
-
-        {/* Integrated search bar (when searchEnabled) */}
-        {searchEnabled && (
+        {/* Integrated search bar (when searchEnabled or searchOnly) */}
+        {(searchEnabled || searchOnly) && (
           <AntySearchBar
             active={isSearchActive}
             value={searchValueState}
@@ -1369,8 +1415,8 @@ export const AntyCharacter = forwardRef<AntyCharacterHandle, AntyCharacterProps>
         )}
       </div>
 
-      {/* Shadow (below character) - only render if not using external ref */}
-      {showShadow && !hasExternalShadow && (
+      {/* Shadow (below character) - only render if not using external ref, and not in searchOnly mode */}
+      {showShadow && !hasExternalShadow && !searchOnly && (
         <div
           ref={internalShadowRef}
           style={styles.shadow(sizeScale)}

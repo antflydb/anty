@@ -747,6 +747,16 @@ export interface SearchBarConfig {
   autoFocusOnMorph?: boolean;
   /** Whether to show keyboard shortcut indicator (default: true on desktop, false on touch) */
   showShortcut?: boolean;
+
+  // Visual customization options
+  /** Whether to show corner brackets (default: true) */
+  showBrackets?: boolean;
+  /** Whether to show the glow effect behind search bar (default: true) */
+  showGlow?: boolean;
+  /** Border style: 'gradient' for rotating animation, 'solid' for plain gray (default: 'gradient') */
+  borderStyle?: 'gradient' | 'solid';
+  /** Preset mode identifier for future preset system */
+  mode?: string;
 }
 
 /**

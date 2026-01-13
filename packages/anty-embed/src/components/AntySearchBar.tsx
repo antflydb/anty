@@ -115,8 +115,17 @@ export function AntySearchBar({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Extract config values
-  const { width, height, borderRadius, innerRadius, borderWidth } = config;
+  // Extract config values with defaults
+  const {
+    width,
+    height,
+    borderRadius,
+    innerRadius,
+    borderWidth,
+    showBrackets = true,
+    showGlow = true,
+    borderStyle = 'gradient',
+  } = config;
 
   // Responsive calculations
   const isMobile = viewportWidth < RESPONSIVE_BREAKPOINT;
@@ -153,22 +162,27 @@ export function AntySearchBar({
       }}
     >
       {/* AI Gradient Glow - positioned behind search bar, slightly smaller so blur peeks out */}
-      <div
-        ref={glowRef}
-        style={{
-          position: 'absolute',
-          width: `${glowWidth}px`,
-          height: `${height * 1.8}px`, // Taller to create elongated ellipse effect
-          left: '50%',
-          top: '50%',
-          transform: 'translate(-50%, -50%)',
-          opacity: 0, // GSAP controls opacity and animation
-          zIndex: -1,
-          background: 'radial-gradient(ellipse 100% 50%, rgba(147, 197, 253, 0.5) 0%, rgba(167, 139, 250, 0.4) 30%, rgba(229, 237, 255, 0.2) 60%, transparent 85%)',
-          filter: 'blur(50px)',
-          pointerEvents: 'none',
-        }}
-      />
+      {/* Only rendered when showGlow is true */}
+      {/* NOTE: Centering uses margin instead of transform so GSAP can animate scale freely */}
+      {showGlow && (
+        <div
+          ref={glowRef}
+          style={{
+            position: 'absolute',
+            width: `${glowWidth}px`,
+            height: `${height * 1.8}px`, // Taller to create elongated ellipse effect
+            left: '50%',
+            top: '50%',
+            marginLeft: `${-glowWidth / 2}px`,
+            marginTop: `${-(height * 1.8) / 2}px`,
+            opacity: 0, // GSAP controls opacity and animation
+            zIndex: -1,
+            background: 'radial-gradient(ellipse 100% 50%, rgba(147, 197, 253, 0.5) 0%, rgba(167, 139, 250, 0.4) 30%, rgba(229, 237, 255, 0.2) 60%, transparent 85%)',
+            filter: 'blur(50px)',
+            pointerEvents: 'none',
+          }}
+        />
+      )}
       {/* Animated gradient border wrapper */}
       <div
         ref={borderGradientRef}
@@ -178,8 +192,13 @@ export function AntySearchBar({
           height: '100%',
           borderRadius: `${borderRadius}px`,
           padding: `${borderWidth}px`,
-          background: 'linear-gradient(white, white) padding-box, conic-gradient(from 0deg, #E5EDFF 0%, #C7D2FE 25%, #D8B4FE 50%, #C7D2FE 75%, #E5EDFF 100%) border-box',
-          border: `${borderWidth}px solid transparent`,
+          // Use rotating gradient or solid gray based on borderStyle
+          background: borderStyle === 'gradient'
+            ? 'linear-gradient(white, white) padding-box, conic-gradient(from 0deg, #E5EDFF 0%, #C7D2FE 25%, #D8B4FE 50%, #C7D2FE 75%, #E5EDFF 100%) border-box'
+            : 'white',
+          border: borderStyle === 'gradient'
+            ? `${borderWidth}px solid transparent`
+            : `${borderWidth}px solid #E2E8F0`,
           opacity: 0, // GSAP controls opacity
         }}
       >
@@ -286,7 +305,8 @@ export function AntySearchBar({
 
       {/* CSS-positioned bracket duplicates - these stay glued to corners during resize */}
       {/* Hidden initially, GSAP crossfades to these after morph animation completes */}
-      {scaledBracketSize > 0 && (
+      {/* Only rendered when showBrackets is true */}
+      {showBrackets && scaledBracketSize > 0 && (
         <>
           {/* Left bracket duplicate - top-left corner */}
           <div

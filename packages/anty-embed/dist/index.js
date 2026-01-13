@@ -6557,8 +6557,8 @@ function AntySearchBar({ active, value, onChange, onSubmit, inputRef, barRef, bo
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
     }, []);
-    // Extract config values
-    const { width, height, borderRadius, innerRadius, borderWidth } = config;
+    // Extract config values with defaults
+    const { width, height, borderRadius, innerRadius, borderWidth, showBrackets = true, showGlow = true, borderStyle = 'gradient', } = config;
     // Responsive calculations
     const isMobile = viewportWidth < RESPONSIVE_BREAKPOINT;
     const { fontSize, padding: sidePadding } = isMobile ? TYPOGRAPHY.mobile : TYPOGRAPHY.desktop;
@@ -6584,26 +6584,32 @@ function AntySearchBar({ active, value, onChange, onSubmit, inputRef, barRef, bo
             opacity: 0, // GSAP controls opacity
             pointerEvents: active ? 'auto' : 'none',
             zIndex: 2,
-        }, children: [jsxRuntime.jsx("div", { ref: glowRef, style: {
+        }, children: [showGlow && (jsxRuntime.jsx("div", { ref: glowRef, style: {
                     position: 'absolute',
                     width: `${glowWidth}px`,
                     height: `${height * 1.8}px`, // Taller to create elongated ellipse effect
                     left: '50%',
                     top: '50%',
-                    transform: 'translate(-50%, -50%)',
+                    marginLeft: `${-glowWidth / 2}px`,
+                    marginTop: `${-(height * 1.8) / 2}px`,
                     opacity: 0, // GSAP controls opacity and animation
                     zIndex: -1,
                     background: 'radial-gradient(ellipse 100% 50%, rgba(147, 197, 253, 0.5) 0%, rgba(167, 139, 250, 0.4) 30%, rgba(229, 237, 255, 0.2) 60%, transparent 85%)',
                     filter: 'blur(50px)',
                     pointerEvents: 'none',
-                } }), jsxRuntime.jsx("div", { ref: borderGradientRef, style: {
+                } })), jsxRuntime.jsx("div", { ref: borderGradientRef, style: {
                     position: 'relative',
                     width: '100%',
                     height: '100%',
                     borderRadius: `${borderRadius}px`,
                     padding: `${borderWidth}px`,
-                    background: 'linear-gradient(white, white) padding-box, conic-gradient(from 0deg, #E5EDFF 0%, #C7D2FE 25%, #D8B4FE 50%, #C7D2FE 75%, #E5EDFF 100%) border-box',
-                    border: `${borderWidth}px solid transparent`,
+                    // Use rotating gradient or solid gray based on borderStyle
+                    background: borderStyle === 'gradient'
+                        ? 'linear-gradient(white, white) padding-box, conic-gradient(from 0deg, #E5EDFF 0%, #C7D2FE 25%, #D8B4FE 50%, #C7D2FE 75%, #E5EDFF 100%) border-box'
+                        : 'white',
+                    border: borderStyle === 'gradient'
+                        ? `${borderWidth}px solid transparent`
+                        : `${borderWidth}px solid #E2E8F0`,
                     opacity: 0, // GSAP controls opacity
                 }, children: jsxRuntime.jsx("div", { ref: borderRef, style: {
                         position: 'relative',
@@ -6661,7 +6667,7 @@ function AntySearchBar({ active, value, onChange, onSubmit, inputRef, barRef, bo
                                     fontFamily: 'Inter, sans-serif',
                                     fontWeight: 500,
                                     fontSize: `${fontSize}px`,
-                                } })] }) }) }), scaledBracketSize > 0 && (jsxRuntime.jsxs(jsxRuntime.Fragment, { children: [jsxRuntime.jsx("div", { ref: leftBracketRef, style: {
+                                } })] }) }) }), showBrackets && scaledBracketSize > 0 && (jsxRuntime.jsxs(jsxRuntime.Fragment, { children: [jsxRuntime.jsx("div", { ref: leftBracketRef, style: {
                             position: 'absolute',
                             left: 0,
                             top: 0,
@@ -10574,13 +10580,17 @@ function useAnimationController(elements, options = {}) {
     }, []);
     /**
      * Hide shadow (for search enter - pauses tracker and hides)
+     * CRITICAL: Must hide shadow immediately to prevent any flash during cmd+K
      */
     const hideShadow = react.useCallback(() => {
         if (shadowTrackerRef.current) {
             shadowTrackerRef.current.pause();
         }
         if (elements.shadow) {
-            gsapWithCSS.to(elements.shadow, { opacity: 0, duration: 0.1, ease: 'power2.in' });
+            // Kill any existing tweens first to prevent conflicts
+            gsapWithCSS.killTweensOf(elements.shadow);
+            // Immediately set to hidden (no flash)
+            gsapWithCSS.set(elements.shadow, { opacity: 0 });
         }
     }, [elements.shadow]);
     /**
@@ -10774,7 +10784,8 @@ function useSearchMorph({ characterRef, searchBarRefs, config = DEFAULT_SEARCH_B
         setTimeout(() => {
             if (searchGlow) {
                 // Start glow fade-in - glow element is sized to match search bar, blur creates the peek effect
-                gsapWithCSS.set(searchGlow, { opacity: 0, scale: 0.92 });
+                // Centering is via CSS margins, so GSAP can animate scale freely (from center)
+                gsapWithCSS.set(searchGlow, { opacity: 0, scale: 0.92, transformOrigin: 'center center' });
                 gsapWithCSS.to(searchGlow, { opacity: 0.7, scale: 0.95, duration: 0.35, ease: 'power2.out' });
             }
         }, 300);
@@ -10829,6 +10840,7 @@ function useSearchMorph({ characterRef, searchBarRefs, config = DEFAULT_SEARCH_B
         // 850ms: Start breathing animation on glow
         setTimeout(() => {
             if (searchGlow) {
+                // Breathing animation - xPercent/yPercent already set, just animate scale
                 gsapWithCSS.to(searchGlow, { scale: 1.12, opacity: 0.7, duration: 2, ease: 'sine.inOut', repeat: -1, yoyo: true });
             }
         }, 850);
@@ -11022,9 +11034,103 @@ function useSearchMorph({ characterRef, searchBarRefs, config = DEFAULT_SEARCH_B
             onReturnComplete?.();
         }, 750);
     }, [characterRef, searchBarRefs, onReturnStart, onReturnComplete]);
+    /**
+     * Show search bar instantly without morph animation.
+     * Used for searchOnly mode where there's no character to morph from.
+     * Sets the same final state as morphToSearchBar but immediately.
+     */
+    const showInstant = react.useCallback(() => {
+        const searchBar = searchBarRefs.bar.current;
+        const searchBorderGradient = searchBarRefs.borderGradient.current;
+        const searchPlaceholder = searchBarRefs.placeholder.current;
+        const searchKbd = searchBarRefs.kbd.current;
+        const searchGlow = searchBarRefs.glow.current;
+        const leftDupe = searchBarRefs.leftBracket.current;
+        const rightDupe = searchBarRefs.rightBracket.current;
+        if (!searchBar)
+            return;
+        // Kill any existing animations
+        gsapWithCSS.killTweensOf([searchBar, searchBorderGradient, searchPlaceholder, searchKbd, searchGlow, leftDupe, rightDupe].filter(Boolean));
+        // Set search bar visible
+        gsapWithCSS.set(searchBar, { opacity: 1, scale: 1 });
+        // Set border gradient visible and start rotation (if gradient style)
+        if (searchBorderGradient) {
+            const borderStyle = config.borderStyle ?? 'gradient';
+            if (borderStyle === 'gradient') {
+                searchBorderGradient.style.background = 'linear-gradient(white, white) padding-box, conic-gradient(from 0deg, #E5EDFF 0%, #C7D2FE 25%, #D8B4FE 50%, #C7D2FE 75%, #E5EDFF 100%) border-box';
+                // Start rotating gradient
+                const rotationAnim = { deg: 0 };
+                gsapWithCSS.to(rotationAnim, {
+                    deg: 360, duration: 4, ease: 'none', repeat: -1,
+                    onUpdate: () => {
+                        if (searchBorderGradient) {
+                            searchBorderGradient.style.background = `linear-gradient(white, white) padding-box, conic-gradient(from ${rotationAnim.deg}deg, #E5EDFF 0%, #C7D2FE 25%, #D8B4FE 50%, #C7D2FE 75%, #E5EDFF 100%) border-box`;
+                        }
+                    }
+                });
+            }
+            gsapWithCSS.set(searchBorderGradient, { opacity: 1 });
+        }
+        // Set placeholder and kbd visible
+        if (searchPlaceholder) {
+            gsapWithCSS.set(searchPlaceholder, { opacity: 1, filter: 'blur(0px)', y: 0 });
+        }
+        if (searchKbd) {
+            gsapWithCSS.set(searchKbd, { opacity: 1, filter: 'blur(0px)', y: 0 });
+        }
+        // Set glow visible with breathing animation (if showGlow)
+        if (searchGlow && (config.showGlow ?? true)) {
+            // Centering is via CSS margins, so GSAP can animate scale freely (from center)
+            gsapWithCSS.set(searchGlow, { opacity: 1, scale: 1, transformOrigin: 'center center' });
+            // Start breathing animation
+            gsapWithCSS.to(searchGlow, { scale: 1.12, opacity: 0.7, duration: 2, ease: 'sine.inOut', repeat: -1, yoyo: true });
+        }
+        // Set bracket duplicates visible (if showBrackets)
+        if ((config.showBrackets ?? true) && leftDupe && rightDupe) {
+            gsapWithCSS.set([leftDupe, rightDupe], { opacity: 1 });
+        }
+        // Auto-focus if enabled
+        if (shouldAutoFocus) {
+            searchBarRefs.input.current?.focus();
+        }
+        onMorphComplete?.();
+    }, [searchBarRefs, config, shouldAutoFocus, onMorphComplete]);
+    /**
+     * Hide search bar instantly without morph animation.
+     * Used for searchOnly mode cleanup.
+     */
+    const hideInstant = react.useCallback(() => {
+        const searchBar = searchBarRefs.bar.current;
+        const searchBorderGradient = searchBarRefs.borderGradient.current;
+        const searchPlaceholder = searchBarRefs.placeholder.current;
+        const searchKbd = searchBarRefs.kbd.current;
+        const searchGlow = searchBarRefs.glow.current;
+        const leftDupe = searchBarRefs.leftBracket.current;
+        const rightDupe = searchBarRefs.rightBracket.current;
+        // Kill all animations
+        gsapWithCSS.killTweensOf([searchBar, searchBorderGradient, searchPlaceholder, searchKbd, searchGlow, leftDupe, rightDupe].filter(Boolean));
+        // Hide everything
+        if (searchBar)
+            gsapWithCSS.set(searchBar, { opacity: 0 });
+        if (searchBorderGradient)
+            gsapWithCSS.set(searchBorderGradient, { opacity: 0 });
+        if (searchPlaceholder)
+            gsapWithCSS.set(searchPlaceholder, { opacity: 0 });
+        if (searchKbd)
+            gsapWithCSS.set(searchKbd, { opacity: 0 });
+        if (searchGlow)
+            gsapWithCSS.set(searchGlow, { opacity: 0, scale: 1 });
+        if (leftDupe)
+            gsapWithCSS.set(leftDupe, { opacity: 0 });
+        if (rightDupe)
+            gsapWithCSS.set(rightDupe, { opacity: 0 });
+        onReturnComplete?.();
+    }, [searchBarRefs, onReturnComplete]);
     return {
         morphToSearchBar,
         morphToCharacter,
+        showInstant,
+        hideInstant,
         isMorphing: morphingRef.current,
     };
 }
@@ -11267,7 +11373,9 @@ const AntyCharacter = react.forwardRef((props, ref) => {
     // Optional external refs (for playground where shadow/glow are rendered externally)
     shadowRef: externalShadowRef, innerGlowRef: externalInnerGlowRef, outerGlowRef: externalOuterGlowRef, 
     // Search bar integration
-    searchEnabled = presetDefaults.searchEnabled ?? false, searchValue: externalSearchValue, onSearchChange, onSearchSubmit, searchPlaceholder = 'Search...', searchShortcut, searchConfig = DEFAULT_SEARCH_BAR_CONFIG, onSearchOpen, onSearchOpenComplete, onSearchClose, onSearchCloseComplete, } = props;
+    searchEnabled = presetDefaults.searchEnabled ?? false, searchValue: externalSearchValue, onSearchChange, onSearchSubmit, searchPlaceholder = 'Search...', searchShortcut, searchConfig = DEFAULT_SEARCH_BAR_CONFIG, onSearchOpen, onSearchOpenComplete, onSearchClose, onSearchCloseComplete, 
+    // Search-only mode
+    searchOnly = false, } = props;
     // Refs for DOM elements
     const containerRef = react.useRef(null);
     const characterRef = react.useRef(null);
@@ -11292,8 +11400,9 @@ const AntyCharacter = react.forwardRef((props, ref) => {
     const searchLeftBracketRef = react.useRef(null);
     const searchRightBracketRef = react.useRef(null);
     // Internal search state
+    // In searchOnly mode, search bar is always active/visible
     const [internalSearchValue, setInternalSearchValue] = react.useState('');
-    const [isSearchActive, setIsSearchActive] = react.useState(false);
+    const [isSearchActive, setIsSearchActive] = react.useState(searchOnly);
     // Use external value if provided, otherwise internal
     const searchValueState = externalSearchValue !== undefined ? externalSearchValue : internalSearchValue;
     const handleSearchChange = react.useCallback((value) => {
@@ -11560,8 +11669,8 @@ const AntyCharacter = react.forwardRef((props, ref) => {
             showShadow: () => animationController.showShadow(),
         };
     }, [animationController]);
-    // Use search morph hook (when searchEnabled)
-    const { morphToSearchBar: internalMorphToSearchBar, morphToCharacter: internalMorphToCharacter, isMorphing } = useSearchMorph({
+    // Use search morph hook (when searchEnabled or searchOnly)
+    const { morphToSearchBar: internalMorphToSearchBar, morphToCharacter: internalMorphToCharacter, showInstant, hideInstant, isMorphing } = useSearchMorph({
         characterRef: selfRef,
         searchBarRefs,
         config: searchConfig,
@@ -11834,18 +11943,32 @@ const AntyCharacter = react.forwardRef((props, ref) => {
         // Search bar morph (when searchEnabled)
         morphToSearchBar: searchEnabled ? internalMorphToSearchBar : undefined,
         morphToCharacter: searchEnabled ? internalMorphToCharacter : undefined,
+        showSearchInstant: (searchEnabled || searchOnly) ? showInstant : undefined,
+        refreshSearchBar: (searchEnabled || searchOnly) ? showInstant : undefined, // Same as showInstant - re-applies current config
         isSearchMode: () => isSearchActive,
         leftEyeRef,
         rightEyeRef,
         leftEyePathRef,
         rightEyePathRef,
-    }), [size, animationController, isSuperMode, searchEnabled, internalMorphToSearchBar, internalMorphToCharacter, isSearchActive]);
+    }), [size, animationController, isSuperMode, searchEnabled, searchOnly, internalMorphToSearchBar, internalMorphToCharacter, showInstant, isSearchActive]);
     react.useEffect(() => {
         setCurrentExpression(expression);
     }, [expression]);
-    // ESC key and click/touch-outside to close search bar
+    // Initialize search bar as visible in searchOnly mode
+    // Uses showInstant from useSearchMorph to avoid code duplication
     react.useEffect(() => {
-        if (!isSearchActive)
+        if (!searchOnly)
+            return;
+        // Small delay to ensure refs are connected
+        const timer = setTimeout(() => {
+            showInstant();
+        }, 50);
+        return () => clearTimeout(timer);
+    }, [searchOnly, showInstant]);
+    // ESC key and click/touch-outside to close search bar
+    // In searchOnly mode, these don't close the search bar (it's always visible)
+    react.useEffect(() => {
+        if (!isSearchActive || searchOnly)
             return;
         const handleKeyDown = (e) => {
             if (e.key === 'Escape') {
@@ -11872,7 +11995,7 @@ const AntyCharacter = react.forwardRef((props, ref) => {
             document.removeEventListener('mousedown', handleClickOutside);
             document.removeEventListener('touchstart', handleClickOutside);
         };
-    }, [isSearchActive, internalMorphToCharacter]);
+    }, [isSearchActive, searchOnly, internalMorphToCharacter]);
     // Play emotion when expression changes
     react.useEffect(() => {
         if (!animationController.isReady)
@@ -11974,13 +12097,18 @@ const AntyCharacter = react.forwardRef((props, ref) => {
     const bodyLeftSvg = "data:image/svg+xml,%3Csvg%20preserveAspectRatio%3D%22none%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20overflow%3D%22visible%22%20style%3D%22display%3A%20block%3B%22%20viewBox%3D%220%200%20173.694%20173.694%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%3Cpath%20id%3D%22LEFT%22%20d%3D%22M144.153%2035.4344H57.1051C45.1368%2035.4345%2035.4344%2045.1368%2035.4344%2057.1051V144.153L7.12469%20172.463C4.4955%20175.092%200%20173.23%200%20169.512V57.1051C2.28235e-05%2025.5668%2025.5668%204.78163e-05%2057.1051%200H169.512C173.23%200%20175.092%204.49551%20172.463%207.1247L144.153%2035.4344Z%22%20fill%3D%22var%28--fill-0%2C%20%23052333%29%22%2F%3E%0A%3C%2Fsvg%3E";
     // Use fullContainer (1.5x height) when rendering internal shadow/glow
     // Use regular container when using external refs (main page manages its own container size)
-    const useFullContainer = (showShadow && !hasExternalShadow) || (showGlow && !hasExternalGlow);
-    const containerStyle = useFullContainer ? styles.fullContainer(size) : styles.container(size);
+    // In searchOnly mode, use minimal container for just the search bar
+    const useFullContainer = !searchOnly && ((showShadow && !hasExternalShadow) || (showGlow && !hasExternalGlow));
+    const containerStyle = searchOnly
+        ? { position: 'relative', width: '100%' }
+        : (useFullContainer ? styles.fullContainer(size) : styles.container(size));
     return (jsxRuntime.jsxs("div", { ref: containerRef, style: {
             ...containerStyle,
             touchAction: 'manipulation', // Prevent double-tap zoom on mobile
             ...style,
-        }, className: className, children: [jsxRuntime.jsx(AntyParticleCanvas, { ref: canvasRef, particles: particles, width: size * 5, height: size * 5, sizeScale: sizeScale }), jsxRuntime.jsxs("div", { style: useFullContainer ? styles.characterArea(size) : { position: 'relative', width: size, height: size }, children: [showGlow && !hasExternalGlow && (jsxRuntime.jsx("div", { ref: internalOuterGlowRef, style: styles.outerGlow(sizeScale) })), showGlow && !hasExternalGlow && (jsxRuntime.jsx("div", { ref: internalInnerGlowRef, style: styles.innerGlow(sizeScale) })), isSuperMode && (jsxRuntime.jsx("div", { ref: superGlowRef, style: styles.superGlow })), jsxRuntime.jsxs("div", { ref: characterRef, className: isSuperMode ? 'super-mode' : undefined, style: styles.character, children: [jsxRuntime.jsx("div", { ref: rightBodyRef, style: styles.rightBody, children: jsxRuntime.jsx("img", { alt: "", style: styles.bodyImage, src: bodyRightSvg }) }), jsxRuntime.jsx("div", { ref: leftBodyRef, style: styles.leftBody, children: jsxRuntime.jsx("img", { alt: "", style: styles.bodyImage, src: bodyLeftSvg }) }), jsxRuntime.jsx("div", { style: styles.leftEyeContainer, children: jsxRuntime.jsx("div", { ref: leftEyeRef, style: styles.eyeWrapper(initialEyeDimensions.width, initialEyeDimensions.height, sizeScale), children: jsxRuntime.jsx("svg", { ref: leftEyeSvgRef, width: "100%", height: "100%", viewBox: initialEyeDimensions.viewBox, fill: "none", xmlns: "http://www.w3.org/2000/svg", style: { display: 'block' }, children: jsxRuntime.jsx("path", { ref: leftEyePathRef, d: getEyeShape('IDLE', 'left'), fill: "#052333" }) }) }) }), jsxRuntime.jsx("div", { style: styles.rightEyeContainer, children: jsxRuntime.jsx("div", { ref: rightEyeRef, style: styles.eyeWrapper(initialEyeDimensions.width, initialEyeDimensions.height, sizeScale), children: jsxRuntime.jsx("svg", { ref: rightEyeSvgRef, width: "100%", height: "100%", viewBox: initialEyeDimensions.viewBox, fill: "none", xmlns: "http://www.w3.org/2000/svg", style: { display: 'block' }, children: jsxRuntime.jsx("path", { ref: rightEyePathRef, d: getEyeShape('IDLE', 'right'), fill: "#052333" }) }) }) }), debugMode && (jsxRuntime.jsxs(jsxRuntime.Fragment, { children: [jsxRuntime.jsx("div", { style: styles.debugBorder }), !isOff && (jsxRuntime.jsxs(jsxRuntime.Fragment, { children: [jsxRuntime.jsx("div", { style: styles.debugCrosshair('calc(33.41% + 13.915% - 1px)', 'calc(31.63% + 5.825% - 7px)', 'yellow', true) }), jsxRuntime.jsx("div", { style: styles.debugCrosshair('calc(33.41% + 13.915% - 6px)', 'calc(31.63% + 5.825% - 2px)', 'yellow', false) })] })), !isOff && (jsxRuntime.jsxs(jsxRuntime.Fragment, { children: [jsxRuntime.jsx("div", { style: styles.debugCrosshair('calc(33.41% + 13.915% - 1px)', 'calc(57.36% + 5.82% - 7px)', 'orange', true) }), jsxRuntime.jsx("div", { style: styles.debugCrosshair('calc(33.41% + 13.915% - 6px)', 'calc(57.36% + 5.82% - 2px)', 'orange', false) })] }))] }))] }), searchEnabled && (jsxRuntime.jsx(AntySearchBar, { active: isSearchActive, value: searchValueState, onChange: handleSearchChange, onSubmit: onSearchSubmit, inputRef: searchInputRef, barRef: searchBarRef, borderRef: searchBorderRef, borderGradientRef: searchBorderGradientRef, placeholderRef: searchPlaceholderRef, kbdRef: searchKbdRef, glowRef: searchGlowRef, leftBracketRef: searchLeftBracketRef, rightBracketRef: searchRightBracketRef, scaledBracketSize: BRACKET_SIZE_RATIO * (searchConfig?.bracketScale ?? 0.14) * BRACKET_REFERENCE_SIZE, config: searchConfig, placeholder: searchPlaceholder, keyboardShortcut: searchShortcut }))] }), showShadow && !hasExternalShadow && (jsxRuntime.jsx("div", { ref: internalShadowRef, style: styles.shadow(sizeScale) }))] }));
+        }, className: className, children: [jsxRuntime.jsx(AntyParticleCanvas, { ref: canvasRef, particles: particles, width: size * 5, height: size * 5, sizeScale: sizeScale }), jsxRuntime.jsxs("div", { style: searchOnly
+                    ? { position: 'relative', width: '100%', minHeight: searchConfig.height + 40 }
+                    : (useFullContainer ? styles.characterArea(size) : { position: 'relative', width: size, height: size }), children: [!searchOnly && (jsxRuntime.jsxs(jsxRuntime.Fragment, { children: [showGlow && !hasExternalGlow && (jsxRuntime.jsx("div", { ref: internalOuterGlowRef, style: styles.outerGlow(sizeScale) })), showGlow && !hasExternalGlow && (jsxRuntime.jsx("div", { ref: internalInnerGlowRef, style: styles.innerGlow(sizeScale) })), isSuperMode && (jsxRuntime.jsx("div", { ref: superGlowRef, style: styles.superGlow })), jsxRuntime.jsxs("div", { ref: characterRef, className: isSuperMode ? 'super-mode' : undefined, style: styles.character, children: [jsxRuntime.jsx("div", { ref: rightBodyRef, style: styles.rightBody, children: jsxRuntime.jsx("img", { alt: "", style: styles.bodyImage, src: bodyRightSvg }) }), jsxRuntime.jsx("div", { ref: leftBodyRef, style: styles.leftBody, children: jsxRuntime.jsx("img", { alt: "", style: styles.bodyImage, src: bodyLeftSvg }) }), jsxRuntime.jsx("div", { style: styles.leftEyeContainer, children: jsxRuntime.jsx("div", { ref: leftEyeRef, style: styles.eyeWrapper(initialEyeDimensions.width, initialEyeDimensions.height, sizeScale), children: jsxRuntime.jsx("svg", { ref: leftEyeSvgRef, width: "100%", height: "100%", viewBox: initialEyeDimensions.viewBox, fill: "none", xmlns: "http://www.w3.org/2000/svg", style: { display: 'block' }, children: jsxRuntime.jsx("path", { ref: leftEyePathRef, d: getEyeShape('IDLE', 'left'), fill: "#052333" }) }) }) }), jsxRuntime.jsx("div", { style: styles.rightEyeContainer, children: jsxRuntime.jsx("div", { ref: rightEyeRef, style: styles.eyeWrapper(initialEyeDimensions.width, initialEyeDimensions.height, sizeScale), children: jsxRuntime.jsx("svg", { ref: rightEyeSvgRef, width: "100%", height: "100%", viewBox: initialEyeDimensions.viewBox, fill: "none", xmlns: "http://www.w3.org/2000/svg", style: { display: 'block' }, children: jsxRuntime.jsx("path", { ref: rightEyePathRef, d: getEyeShape('IDLE', 'right'), fill: "#052333" }) }) }) }), debugMode && (jsxRuntime.jsxs(jsxRuntime.Fragment, { children: [jsxRuntime.jsx("div", { style: styles.debugBorder }), !isOff && (jsxRuntime.jsxs(jsxRuntime.Fragment, { children: [jsxRuntime.jsx("div", { style: styles.debugCrosshair('calc(33.41% + 13.915% - 1px)', 'calc(31.63% + 5.825% - 7px)', 'yellow', true) }), jsxRuntime.jsx("div", { style: styles.debugCrosshair('calc(33.41% + 13.915% - 6px)', 'calc(31.63% + 5.825% - 2px)', 'yellow', false) })] })), !isOff && (jsxRuntime.jsxs(jsxRuntime.Fragment, { children: [jsxRuntime.jsx("div", { style: styles.debugCrosshair('calc(33.41% + 13.915% - 1px)', 'calc(57.36% + 5.82% - 7px)', 'orange', true) }), jsxRuntime.jsx("div", { style: styles.debugCrosshair('calc(33.41% + 13.915% - 6px)', 'calc(57.36% + 5.82% - 2px)', 'orange', false) })] }))] }))] })] })), (searchEnabled || searchOnly) && (jsxRuntime.jsx(AntySearchBar, { active: isSearchActive, value: searchValueState, onChange: handleSearchChange, onSubmit: onSearchSubmit, inputRef: searchInputRef, barRef: searchBarRef, borderRef: searchBorderRef, borderGradientRef: searchBorderGradientRef, placeholderRef: searchPlaceholderRef, kbdRef: searchKbdRef, glowRef: searchGlowRef, leftBracketRef: searchLeftBracketRef, rightBracketRef: searchRightBracketRef, scaledBracketSize: BRACKET_SIZE_RATIO * (searchConfig?.bracketScale ?? 0.14) * BRACKET_REFERENCE_SIZE, config: searchConfig, placeholder: searchPlaceholder, keyboardShortcut: searchShortcut }))] }), showShadow && !hasExternalShadow && !searchOnly && (jsxRuntime.jsx("div", { ref: internalShadowRef, style: styles.shadow(sizeScale) }))] }));
 });
 AntyCharacter.displayName = 'AntyCharacter';
 

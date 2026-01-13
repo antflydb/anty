@@ -45,6 +45,10 @@ export interface UseSearchMorphOptions {
 export interface UseSearchMorphReturn {
   morphToSearchBar: () => void;
   morphToCharacter: () => void;
+  /** Show search bar instantly without morph animation (for searchOnly mode) */
+  showInstant: () => void;
+  /** Hide search bar instantly without morph animation (for searchOnly mode) */
+  hideInstant: () => void;
   isMorphing: boolean;
 }
 
@@ -241,7 +245,8 @@ export function useSearchMorph({
     setTimeout(() => {
       if (searchGlow) {
         // Start glow fade-in - glow element is sized to match search bar, blur creates the peek effect
-        gsap.set(searchGlow, { opacity: 0, scale: 0.92 });
+        // Centering is via CSS margins, so GSAP can animate scale freely (from center)
+        gsap.set(searchGlow, { opacity: 0, scale: 0.92, transformOrigin: 'center center' });
         gsap.to(searchGlow, { opacity: 0.7, scale: 0.95, duration: 0.35, ease: 'power2.out' });
       }
     }, 300);
@@ -302,6 +307,7 @@ export function useSearchMorph({
     // 850ms: Start breathing animation on glow
     setTimeout(() => {
       if (searchGlow) {
+        // Breathing animation - xPercent/yPercent already set, just animate scale
         gsap.to(searchGlow, { scale: 1.12, opacity: 0.7, duration: 2, ease: 'sine.inOut', repeat: -1, yoyo: true });
       }
     }, 850);
@@ -528,9 +534,109 @@ export function useSearchMorph({
     }, 750);
   }, [characterRef, searchBarRefs, onReturnStart, onReturnComplete]);
 
+  /**
+   * Show search bar instantly without morph animation.
+   * Used for searchOnly mode where there's no character to morph from.
+   * Sets the same final state as morphToSearchBar but immediately.
+   */
+  const showInstant = useCallback(() => {
+    const searchBar = searchBarRefs.bar.current;
+    const searchBorderGradient = searchBarRefs.borderGradient.current;
+    const searchPlaceholder = searchBarRefs.placeholder.current;
+    const searchKbd = searchBarRefs.kbd.current;
+    const searchGlow = searchBarRefs.glow.current;
+    const leftDupe = searchBarRefs.leftBracket.current;
+    const rightDupe = searchBarRefs.rightBracket.current;
+
+    if (!searchBar) return;
+
+    // Kill any existing animations
+    gsap.killTweensOf([searchBar, searchBorderGradient, searchPlaceholder, searchKbd, searchGlow, leftDupe, rightDupe].filter(Boolean));
+
+    // Set search bar visible
+    gsap.set(searchBar, { opacity: 1, scale: 1 });
+
+    // Set border gradient visible and start rotation (if gradient style)
+    if (searchBorderGradient) {
+      const borderStyle = config.borderStyle ?? 'gradient';
+      if (borderStyle === 'gradient') {
+        searchBorderGradient.style.background = 'linear-gradient(white, white) padding-box, conic-gradient(from 0deg, #E5EDFF 0%, #C7D2FE 25%, #D8B4FE 50%, #C7D2FE 75%, #E5EDFF 100%) border-box';
+        // Start rotating gradient
+        const rotationAnim = { deg: 0 };
+        gsap.to(rotationAnim, {
+          deg: 360, duration: 4, ease: 'none', repeat: -1,
+          onUpdate: () => {
+            if (searchBorderGradient) {
+              searchBorderGradient.style.background = `linear-gradient(white, white) padding-box, conic-gradient(from ${rotationAnim.deg}deg, #E5EDFF 0%, #C7D2FE 25%, #D8B4FE 50%, #C7D2FE 75%, #E5EDFF 100%) border-box`;
+            }
+          }
+        });
+      }
+      gsap.set(searchBorderGradient, { opacity: 1 });
+    }
+
+    // Set placeholder and kbd visible
+    if (searchPlaceholder) {
+      gsap.set(searchPlaceholder, { opacity: 1, filter: 'blur(0px)', y: 0 });
+    }
+    if (searchKbd) {
+      gsap.set(searchKbd, { opacity: 1, filter: 'blur(0px)', y: 0 });
+    }
+
+    // Set glow visible with breathing animation (if showGlow)
+    if (searchGlow && (config.showGlow ?? true)) {
+      // Centering is via CSS margins, so GSAP can animate scale freely (from center)
+      gsap.set(searchGlow, { opacity: 1, scale: 1, transformOrigin: 'center center' });
+      // Start breathing animation
+      gsap.to(searchGlow, { scale: 1.12, opacity: 0.7, duration: 2, ease: 'sine.inOut', repeat: -1, yoyo: true });
+    }
+
+    // Set bracket duplicates visible (if showBrackets)
+    if ((config.showBrackets ?? true) && leftDupe && rightDupe) {
+      gsap.set([leftDupe, rightDupe], { opacity: 1 });
+    }
+
+    // Auto-focus if enabled
+    if (shouldAutoFocus) {
+      searchBarRefs.input.current?.focus();
+    }
+
+    onMorphComplete?.();
+  }, [searchBarRefs, config, shouldAutoFocus, onMorphComplete]);
+
+  /**
+   * Hide search bar instantly without morph animation.
+   * Used for searchOnly mode cleanup.
+   */
+  const hideInstant = useCallback(() => {
+    const searchBar = searchBarRefs.bar.current;
+    const searchBorderGradient = searchBarRefs.borderGradient.current;
+    const searchPlaceholder = searchBarRefs.placeholder.current;
+    const searchKbd = searchBarRefs.kbd.current;
+    const searchGlow = searchBarRefs.glow.current;
+    const leftDupe = searchBarRefs.leftBracket.current;
+    const rightDupe = searchBarRefs.rightBracket.current;
+
+    // Kill all animations
+    gsap.killTweensOf([searchBar, searchBorderGradient, searchPlaceholder, searchKbd, searchGlow, leftDupe, rightDupe].filter(Boolean));
+
+    // Hide everything
+    if (searchBar) gsap.set(searchBar, { opacity: 0 });
+    if (searchBorderGradient) gsap.set(searchBorderGradient, { opacity: 0 });
+    if (searchPlaceholder) gsap.set(searchPlaceholder, { opacity: 0 });
+    if (searchKbd) gsap.set(searchKbd, { opacity: 0 });
+    if (searchGlow) gsap.set(searchGlow, { opacity: 0, scale: 1 });
+    if (leftDupe) gsap.set(leftDupe, { opacity: 0 });
+    if (rightDupe) gsap.set(rightDupe, { opacity: 0 });
+
+    onReturnComplete?.();
+  }, [searchBarRefs, onReturnComplete]);
+
   return {
     morphToSearchBar,
     morphToCharacter,
+    showInstant,
+    hideInstant,
     isMorphing: morphingRef.current,
   };
 }

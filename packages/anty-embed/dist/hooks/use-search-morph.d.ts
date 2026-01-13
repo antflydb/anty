@@ -28,6 +28,10 @@ export interface UseSearchMorphOptions {
 export interface UseSearchMorphReturn {
     morphToSearchBar: () => void;
     morphToCharacter: () => void;
+    /** Show search bar instantly without morph animation (for searchOnly mode) */
+    showInstant: () => void;
+    /** Hide search bar instantly without morph animation (for searchOnly mode) */
+    hideInstant: () => void;
     isMorphing: boolean;
 }
 export declare function useSearchMorph({ characterRef, searchBarRefs, config, characterSize, onMorphStart, onMorphComplete, onReturnStart, onReturnComplete, }: UseSearchMorphOptions): UseSearchMorphReturn;

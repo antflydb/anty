@@ -65,6 +65,15 @@ export interface AntyCharacterProps {
     onSearchClose?: () => void;
     /** Callback when morph back to character completes */
     onSearchCloseComplete?: () => void;
+    /**
+     * When true, renders only the search bar without the character.
+     * Useful for standalone search implementations.
+     * - No character SVG elements rendered
+     * - Search bar starts in visible/"morphed" state
+     * - cmd+K triggers scale+fade animation instead of morph
+     * - No shadow or character glow
+     */
+    searchOnly?: boolean;
 }
 export interface AntyCharacterHandle {
     spawnFeedingParticles: () => void;
@@ -94,6 +103,10 @@ export interface AntyCharacterHandle {
     morphToSearchBar?: () => void;
     /** Morph search bar back to character */
     morphToCharacter?: () => void;
+    /** Show search bar instantly without morph (for searchOnly mode) */
+    showSearchInstant?: () => void;
+    /** Refresh search bar state (call after config changes to avoid remount) */
+    refreshSearchBar?: () => void;
     /** Check if currently in search mode */
     isSearchMode?: () => boolean;
     leftBodyRef?: React.RefObject<HTMLDivElement | null>;

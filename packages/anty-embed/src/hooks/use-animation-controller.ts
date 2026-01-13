@@ -1026,13 +1026,17 @@ export function useAnimationController(
 
   /**
    * Hide shadow (for search enter - pauses tracker and hides)
+   * CRITICAL: Must hide shadow immediately to prevent any flash during cmd+K
    */
   const hideShadow = useCallback(() => {
     if (shadowTrackerRef.current) {
       shadowTrackerRef.current.pause();
     }
     if (elements.shadow) {
-      gsap.to(elements.shadow, { opacity: 0, duration: 0.1, ease: 'power2.in' });
+      // Kill any existing tweens first to prevent conflicts
+      gsap.killTweensOf(elements.shadow);
+      // Immediately set to hidden (no flash)
+      gsap.set(elements.shadow, { opacity: 0 });
     }
   }, [elements.shadow]);
 

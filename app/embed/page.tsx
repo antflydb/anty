@@ -149,6 +149,7 @@ export default function EmbedDemoPage() {
   const [placeholder, setPlaceholder] = useState('Ask Anty anything...');
   const [showHotkey, setShowHotkey] = useState(true);
   const [hotkey, setHotkey] = useState('⌘K');
+  const [searchOnly, setSearchOnly] = useState(false);
 
   // Logo mode - static logo state (OFF eyes, no shadow/glow, no animations)
   const [logoMode, setLogoMode] = useState(false);
@@ -159,7 +160,7 @@ export default function EmbedDemoPage() {
   // Reset search mode when component will remount due to key change
   useEffect(() => {
     setIsSearchMode(false);
-  }, [size, searchEnabled, frozen, barWidth, barHeight, showHotkey, logoMode]);
+  }, [size, searchEnabled, frozen, barWidth, barHeight, showHotkey, logoMode, searchOnly]);
 
   const toggleEmotions = (enabled: boolean) => {
     setEmotionsEnabled(enabled);
@@ -246,16 +247,17 @@ export default function EmbedDemoPage() {
             }}
           >
             <AntyCharacter
-              key={`anty-${size}-${searchEnabled}-${frozen}-${barWidth}-${barHeight}-${showHotkey}-${logoMode}`}
+              key={`anty-${size}-${searchEnabled}-${frozen}-${barWidth}-${barHeight}-${showHotkey}-${logoMode}-${searchOnly}`}
               ref={antyRef}
-              size={size}
-              expression={emotionsEnabled ? 'idle' : 'off'}
-              showShadow={showShadow && !logoMode}
-              showGlow={showGlow && !logoMode}
-              frozen={frozen}
-              isSuperMode={isSuperMode}
-              logoMode={logoMode}
-              searchEnabled={searchEnabled}
+              size={searchOnly ? undefined : size}
+              expression={searchOnly ? 'idle' : (emotionsEnabled ? 'idle' : 'off')}
+              showShadow={searchOnly ? false : (showShadow && !logoMode)}
+              showGlow={searchOnly ? false : (showGlow && !logoMode)}
+              frozen={searchOnly ? true : frozen}
+              isSuperMode={searchOnly ? false : isSuperMode}
+              logoMode={searchOnly ? false : logoMode}
+              searchEnabled={searchOnly || searchEnabled}
+              searchOnly={searchOnly}
               searchPlaceholder={placeholder}
               searchShortcut={showHotkey ? hotkey : undefined}
               searchConfig={{
@@ -402,15 +404,25 @@ export default function EmbedDemoPage() {
                     type="checkbox"
                     checked={searchEnabled}
                     onChange={(e) => setSearchEnabled(e.target.checked)}
+                    disabled={searchOnly}
+                    style={{ width: '18px', height: '18px', accentColor: '#8B5CF6', opacity: searchOnly ? 0.5 : 1 }}
+                  />
+                  <span style={{ fontSize: '14px', color: searchOnly ? '#94a3b8' : '#334155' }}>Enable Search</span>
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={searchOnly}
+                    onChange={(e) => setSearchOnly(e.target.checked)}
                     style={{ width: '18px', height: '18px', accentColor: '#8B5CF6' }}
                   />
-                  <span style={{ fontSize: '14px', color: '#334155' }}>Enable Search</span>
+                  <span style={{ fontSize: '14px', color: '#334155' }}>Search Only</span>
                 </label>
               </div>
             </div>
 
             {/* Search Bar Options */}
-            {searchEnabled && (
+            {(searchEnabled || searchOnly) && (
               <div style={{ marginBottom: '24px' }}>
                 <label style={{ fontSize: '14px', color: '#64748b', marginBottom: '12px', display: 'block' }}>
                   Search Bar
